@@ -1,0 +1,89 @@
+# ===========================
+# Frontend (Node.js/React/Next.js/Vue)
+# ===========================
+node_modules/
+dist/
+build/
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+
+
+# ===========================
+# Backend (Python/Django/FastAPI)
+# ===========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+
+
+# ===========================
+# Environment Variables
+# ===========================
+.env
+.env.prod
+.env.dev
+.env.local
+.env.*.local
+
+
+# ===========================
+# Editor and IDEs
+# ===========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+
+# ===========================
+# Logs
+# ===========================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# ===========================
+# Dependencies and Builds
+# ===========================
+coverage/
+.nyc_output/
+.grunt/
+bower_components/
+
+
+# ===========================
+# Testing
+# ===========================
+.pytest_cache/
+.coverage
+htmlcov/
+
+
+# ===========================
+# Extras
+# ===========================
+.claude/
+.venv/
+*.docx
+
+# ===========================
+# Misc
+# ===========================
+*.tmp
+*.temp
+.sass-cache/
+*.map

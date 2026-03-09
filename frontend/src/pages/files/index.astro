@@ -1,0 +1,322 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+---
+<DashboardLayout title="Student Files — Academix" currentPath="/files">
+  <div id="page-loading" class="p-6 space-y-4">
+    <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
+    <div class="h-10 bg-card rounded-xl border border-border animate-pulse"></div>
+    <div class="h-64 bg-card rounded-xl border border-border animate-pulse"></div>
+  </div>
+
+  <div id="page-content" class="hidden">
+    <!-- Shared top bar -->
+    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+      <div>
+        <h1 class="text-xl font-semibold text-foreground">Student Files</h1>
+        <p class="text-sm text-muted-foreground">Academic records and performance overview</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <input id="search-input" type="text" placeholder="Search students..." class="w-64 bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+      </div>
+    </div>
+
+    <div class="p-6 space-y-4">
+      <!-- Admin filters -->
+      <div id="admin-filters" class="hidden flex gap-3">
+        <select id="career-filter" class="bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="">All Careers</option>
+        </select>
+        <select id="period-filter" class="bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="">All Periods</option>
+        </select>
+      </div>
+
+      <!-- Files table -->
+      <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-border">
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Student</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Career</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Period</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">GPA</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Status</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="files-table-body"></tbody>
+          </table>
+        </div>
+        <div id="files-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No student files found</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Student detail side panel -->
+  <div id="panel-backdrop" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50" ></div>
+  <div id="detail-panel" class="hidden fixed inset-y-0 right-0 z-50 w-[480px] bg-card border-l border-border p-6 shadow-xl overflow-y-auto">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-lg font-semibold text-foreground">Student File</h2>
+      <button id="close-panel-btn" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div id="panel-content"></div>
+  </div>
+</DashboardLayout>
+
+<script>
+  const STORAGE_KEY = "user-storage";
+  const TOKEN_KEY = "access_token";
+  const API_URL = "http://localhost:8000/api";
+
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
+    catch { return null; }
+  }
+
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) window.location.replace('/login');
+  const user = getUser();
+  if (!user) window.location.replace('/login');
+  const role = user?.role ?? '';
+
+  if (role === 's') window.location.replace('/');
+
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(`${API_URL}${path}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      ...options,
+    });
+    if (res.status === 401) window.location.replace('/login');
+    return res.json();
+  }
+
+  function showContent() {
+    document.getElementById('page-loading')?.classList.add('hidden');
+    document.getElementById('page-content')?.classList.remove('hidden');
+  }
+
+  function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = String(str ?? '');
+    return d.innerHTML;
+  }
+
+  function formatDate(str) {
+    if (!str) return '-';
+    return new Date(str).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function gpaBadge(gpa) {
+    const v = parseFloat(gpa) || 0;
+    const color = v >= 75 ? 'bg-green-500/15 text-green-400' : v >= 50 ? 'bg-blue-500/15 text-blue-400' : 'bg-red-500/15 text-red-400';
+    return `<span class="inline-flex items-center rounded-full ${color} px-2 py-0.5 text-xs font-medium">${v.toFixed(1)}</span>`;
+  }
+
+  let allFiles = [];
+  let displayFiles = [];
+
+  function renderTable(files) {
+    const tbody = document.getElementById('files-table-body');
+    const empty = document.getElementById('files-empty');
+    if (!tbody) return;
+    if (files.length === 0) {
+      tbody.innerHTML = '';
+      empty?.classList.remove('hidden');
+      return;
+    }
+    empty?.classList.add('hidden');
+    tbody.innerHTML = files.map(f => {
+      const name = f.student_name || `${f.first_name || ''} ${f.last_name || ''}`.trim() || f.username || 'Unknown';
+      const career = f.career_name || f.career || '-';
+      const period = f.period_name || f.period || '-';
+      const gpa = f.gpa ?? f.average_grade ?? '-';
+      const status = f.enrollment_status || f.status || '-';
+      const statusColor = status === 'active' ? 'bg-green-500/15 text-green-400' : 'bg-muted text-muted-foreground';
+      return `<tr class="border-b border-border hover:bg-muted/40 transition-colors">
+        <td class="py-3 pr-4">
+          <div class="flex items-center gap-3">
+            <div class="flex size-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">${(name[0] || '?').toUpperCase()}</div>
+            <span class="text-sm font-medium text-foreground">${escHtml(name)}</span>
+          </div>
+        </td>
+        <td class="py-3 pr-4 text-sm text-muted-foreground">${escHtml(career)}</td>
+        <td class="py-3 pr-4 text-sm text-muted-foreground">${escHtml(period)}</td>
+        <td class="py-3 pr-4">${gpaBadge(gpa)}</td>
+        <td class="py-3 pr-4"><span class="inline-flex items-center rounded-full ${statusColor} px-2 py-0.5 text-xs font-medium capitalize">${escHtml(status)}</span></td>
+        <td class="py-3">
+          <button class="view-file-btn text-sm text-primary hover:underline font-medium" data-id="${f.student_id || f.id}">View File</button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    tbody.querySelectorAll('.view-file-btn').forEach(btn => {
+      btn.addEventListener('click', () => openPanel(btn.dataset.id));
+    });
+  }
+
+  async function openPanel(studentId) {
+    const backdrop = document.getElementById('panel-backdrop');
+    const panel = document.getElementById('detail-panel');
+    const content = document.getElementById('panel-content');
+    backdrop?.classList.remove('hidden');
+    panel?.classList.remove('hidden');
+    if (content) content.innerHTML = '<div class="text-sm text-muted-foreground">Loading...</div>';
+
+    try {
+      const data = await apiFetch(`/grades/files/${studentId}/`);
+      if (!content) return;
+
+      const name = data.student_name || `${data.first_name || ''} ${data.last_name || ''}`.trim() || 'Student';
+      const initials = name.split(' ').map(p => p[0]).join('').toUpperCase().substring(0, 2);
+      const periods = data.periods || data.academic_records || [];
+
+      content.innerHTML = `
+        <div class="flex items-center gap-4 mb-6 p-4 bg-muted/30 rounded-xl">
+          <div class="flex size-14 items-center justify-center rounded-full bg-primary/15 text-lg font-bold text-primary">${initials}</div>
+          <div>
+            <p class="font-semibold text-foreground">${escHtml(name)}</p>
+            <p class="text-sm text-muted-foreground">${escHtml(data.username || '')}</p>
+            <p class="text-sm text-muted-foreground">${escHtml(data.email || '')}</p>
+          </div>
+        </div>
+        <div class="mb-6 flex items-center justify-between">
+          <span class="text-sm text-muted-foreground">Overall GPA</span>
+          ${gpaBadge(data.overall_gpa || data.gpa)}
+        </div>
+        <div class="space-y-3" id="periods-accordion">
+          ${periods.map((p, i) => `
+            <div class="border border-border rounded-lg overflow-hidden">
+              <button class="accordion-btn w-full flex items-center justify-between p-4 text-left hover:bg-muted/40 transition-colors" data-index="${i}">
+                <div>
+                  <p class="font-medium text-foreground">${escHtml(p.period_name || p.period || 'Period')}</p>
+                  <p class="text-xs text-muted-foreground">${escHtml(p.career_name || p.career || '')}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  ${gpaBadge(p.gpa || p.average)}
+                  <svg class="accordion-icon transition-transform" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+              </button>
+              <div class="accordion-body hidden border-t border-border">
+                <table class="w-full">
+                  <thead><tr class="border-b border-border bg-muted/20">
+                    <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Subject</th>
+                    <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Code</th>
+                    <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Credits</th>
+                    <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Grade</th>
+                    <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Status</th>
+                  </tr></thead>
+                  <tbody>
+                    ${(p.subjects || p.grades || []).map(s => `
+                      <tr class="border-b border-border hover:bg-muted/40">
+                        <td class="p-3 text-sm text-foreground">${escHtml(s.subject_name || s.subject || '-')}</td>
+                        <td class="p-3 text-sm text-muted-foreground">${escHtml(s.code || '-')}</td>
+                        <td class="p-3 text-sm text-muted-foreground">${s.credits || '-'}</td>
+                        <td class="p-3 text-sm text-foreground font-medium">${s.final_grade ?? s.grade ?? '-'}</td>
+                        <td class="p-3"><span class="inline-flex items-center rounded-full ${(s.passed || s.status === 'passed') ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'} px-2 py-0.5 text-xs font-medium">${(s.passed || s.status === 'passed') ? 'Pass' : 'Fail'}</span></td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      content.querySelectorAll('.accordion-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const body = btn.nextElementSibling;
+          const icon = btn.querySelector('.accordion-icon');
+          body?.classList.toggle('hidden');
+          icon?.classList.toggle('rotate-180');
+        });
+      });
+    } catch {
+      if (content) content.innerHTML = '<div class="text-sm text-red-400">Failed to load student file.</div>';
+    }
+  }
+
+  function closePanel() {
+    document.getElementById('panel-backdrop')?.classList.add('hidden');
+    document.getElementById('detail-panel')?.classList.add('hidden');
+  }
+
+  document.getElementById('close-panel-btn')?.addEventListener('click', closePanel);
+  document.getElementById('panel-backdrop')?.addEventListener('click', closePanel);
+
+  // Search
+  document.getElementById('search-input')?.addEventListener('input', (e) => {
+    const q = (e.target as HTMLInputElement).value.toLowerCase();
+    displayFiles = allFiles.filter(f => {
+      const name = (f.student_name || `${f.first_name || ''} ${f.last_name || ''}`).toLowerCase();
+      return name.includes(q);
+    });
+    renderTable(displayFiles);
+  });
+
+  // Admin career/period filter
+  function applyFilters() {
+    const career = (document.getElementById('career-filter') as HTMLSelectElement)?.value;
+    const period = (document.getElementById('period-filter') as HTMLSelectElement)?.value;
+    displayFiles = allFiles.filter(f => {
+      if (career && (f.career_id || f.career) != career && f.career_name !== career) return false;
+      if (period && (f.period_id || f.period) != period && f.period_name !== period) return false;
+      return true;
+    });
+    renderTable(displayFiles);
+  }
+
+  document.getElementById('career-filter')?.addEventListener('change', applyFilters);
+  document.getElementById('period-filter')?.addEventListener('change', applyFilters);
+
+  (async () => {
+    // Show admin filters for admin/management
+    if (role === 'm' || role === 'a') {
+      document.getElementById('admin-filters')?.classList.remove('hidden');
+      try {
+        const [careers, periods] = await Promise.all([
+          apiFetch('/academic/careers/'),
+          apiFetch('/academic/periods/'),
+        ]);
+        const careerSel = document.getElementById('career-filter') as HTMLSelectElement;
+        const periodSel = document.getElementById('period-filter') as HTMLSelectElement;
+        const careerList = Array.isArray(careers) ? careers : (careers.results || []);
+        const periodList = Array.isArray(periods) ? periods : (periods.results || []);
+        careerList.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.id;
+          opt.textContent = c.name;
+          careerSel?.appendChild(opt);
+        });
+        periodList.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = p.name;
+          periodSel?.appendChild(opt);
+        });
+      } catch {}
+    }
+
+    // Check URL param for direct student view
+    const urlParams = new URLSearchParams(window.location.search);
+    const directStudent = urlParams.get('student');
+
+    try {
+      const data = await apiFetch('/grades/files/');
+      allFiles = Array.isArray(data) ? data : (data.results || []);
+      displayFiles = allFiles;
+      renderTable(displayFiles);
+    } catch {
+      allFiles = [];
+    }
+
+    if (directStudent) {
+      openPanel(directStudent);
+    }
+
+    showContent();
+  })();
+</script>

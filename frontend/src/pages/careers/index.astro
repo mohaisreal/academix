@@ -1,0 +1,259 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+---
+<DashboardLayout title="Careers — Academix" currentPath="/careers">
+  <div id="page-loading" class="p-6 space-y-4">
+    <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
+    <div class="h-64 bg-card rounded-xl border border-border animate-pulse"></div>
+  </div>
+
+  <div id="page-content" class="hidden">
+    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+      <div>
+        <h1 class="text-xl font-semibold text-foreground">Careers</h1>
+        <p class="text-sm text-muted-foreground">Manage academic programs and careers</p>
+      </div>
+      <button id="new-career-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Career
+      </button>
+    </div>
+
+    <div class="p-6">
+      <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-border">
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Name</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Code</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Duration</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Subjects</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Status</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="careers-table-body"></tbody>
+          </table>
+        </div>
+        <div id="careers-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No careers found</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Side panel backdrop -->
+  <div id="panel-backdrop" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50"></div>
+  <!-- Side panel -->
+  <div id="career-panel" class="hidden fixed inset-y-0 right-0 z-50 w-96 bg-card border-l border-border p-6 shadow-xl overflow-y-auto">
+    <div class="flex items-center justify-between mb-6">
+      <h2 id="panel-title" class="text-lg font-semibold text-foreground">New Career</h2>
+      <button id="close-panel-btn" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form id="career-form" class="space-y-4">
+      <input id="edit-id" type="hidden" value="" />
+      <div>
+        <label class="text-xs font-medium text-muted-foreground">Name *</label>
+        <input id="career-name" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Computer Science" />
+      </div>
+      <div>
+        <label class="text-xs font-medium text-muted-foreground">Code *</label>
+        <input id="career-code" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="CS" />
+      </div>
+      <div>
+        <label class="text-xs font-medium text-muted-foreground">Description</label>
+        <textarea id="career-desc" rows="3" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none" placeholder="Brief description..."></textarea>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-muted-foreground">Duration (Years)</label>
+        <input id="career-duration" type="number" min="1" max="6" value="4" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+      </div>
+      <div class="flex items-center gap-3">
+        <input id="career-active" type="checkbox" checked class="size-4 rounded border-border text-primary focus:ring-primary" />
+        <label for="career-active" class="text-sm text-foreground">Active</label>
+      </div>
+      <div id="form-error" class="hidden text-xs text-red-400"></div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" id="cancel-form-btn" class="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
+        <button type="submit" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Save</button>
+      </div>
+    </form>
+  </div>
+</DashboardLayout>
+
+<script>
+  const STORAGE_KEY = "user-storage";
+  const TOKEN_KEY = "access_token";
+  const API_URL = "http://localhost:8000/api";
+
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
+    catch { return null; }
+  }
+
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) window.location.replace('/login');
+  const user = getUser();
+  if (!user) window.location.replace('/login');
+  const role = user?.role ?? '';
+
+  if (role !== 'm' && role !== 'a') window.location.replace('/');
+
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(`${API_URL}${path}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      ...options,
+    });
+    if (res.status === 401) window.location.replace('/login');
+    return res.json();
+  }
+
+  function showContent() {
+    document.getElementById('page-loading')?.classList.add('hidden');
+    document.getElementById('page-content')?.classList.remove('hidden');
+  }
+
+  function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = String(str ?? '');
+    return d.innerHTML;
+  }
+
+  let careers = [];
+
+  function renderTable() {
+    const tbody = document.getElementById('careers-table-body');
+    const empty = document.getElementById('careers-empty');
+    if (!tbody) return;
+    if (careers.length === 0) {
+      tbody.innerHTML = '';
+      empty?.classList.remove('hidden');
+      return;
+    }
+    empty?.classList.add('hidden');
+    tbody.innerHTML = careers.map(c => {
+      const active = c.is_active !== false;
+      const subjects = c.subjects_count ?? c.subjects?.length ?? '-';
+      return `<tr class="border-b border-border hover:bg-muted/40 transition-colors">
+        <td class="py-3 pr-4 text-sm font-medium text-foreground">${escHtml(c.name)}</td>
+        <td class="py-3 pr-4 text-sm text-muted-foreground font-mono">${escHtml(c.code)}</td>
+        <td class="py-3 pr-4 text-sm text-muted-foreground">${c.duration_years || c.duration || '-'} yrs</td>
+        <td class="py-3 pr-4 text-sm text-muted-foreground">${subjects}</td>
+        <td class="py-3 pr-4">
+          <span class="inline-flex items-center rounded-full ${active ? 'bg-green-500/15 text-green-400' : 'bg-muted text-muted-foreground'} px-2 py-0.5 text-xs font-medium">${active ? 'Active' : 'Inactive'}</span>
+        </td>
+        <td class="py-3">
+          <div class="flex items-center gap-2">
+            <button class="edit-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors" data-id="${c.id}">Edit</button>
+            <button class="toggle-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-muted transition-colors ${active ? 'text-red-400 hover:border-red-500/30' : 'text-green-400 hover:border-green-500/30'}" data-id="${c.id}" data-active="${active}">${active ? 'Deactivate' : 'Activate'}</button>
+            ${role === 'a' ? `<button class="delete-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-colors" data-id="${c.id}">Delete</button>` : ''}
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    tbody.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const career = careers.find(c => c.id == (btn as HTMLElement).dataset.id);
+        if (career) openPanel(career);
+      });
+    });
+
+    tbody.querySelectorAll('.toggle-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = (btn as HTMLElement).dataset.id;
+        const active = (btn as HTMLElement).dataset.active === 'true';
+        try {
+          await apiFetch(`/academic/careers/${id}/`, { method: 'PATCH', body: JSON.stringify({ is_active: !active }) });
+          await loadCareers();
+        } catch { alert('Failed to update status'); }
+      });
+    });
+
+    tbody.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Delete this career? This cannot be undone.')) return;
+        const id = (btn as HTMLElement).dataset.id;
+        try {
+          await fetch(`${API_URL}/academic/careers/${id}/`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+          await loadCareers();
+        } catch { alert('Failed to delete career'); }
+      });
+    });
+  }
+
+  async function loadCareers() {
+    try {
+      const data = await apiFetch('/academic/careers/');
+      careers = Array.isArray(data) ? data : (data.results || []);
+      renderTable();
+    } catch { careers = []; }
+  }
+
+  function openPanel(career = null) {
+    const title = document.getElementById('panel-title');
+    const idEl = document.getElementById('edit-id') as HTMLInputElement;
+    const nameEl = document.getElementById('career-name') as HTMLInputElement;
+    const codeEl = document.getElementById('career-code') as HTMLInputElement;
+    const descEl = document.getElementById('career-desc') as HTMLTextAreaElement;
+    const durEl = document.getElementById('career-duration') as HTMLInputElement;
+    const activeEl = document.getElementById('career-active') as HTMLInputElement;
+    document.getElementById('form-error')?.classList.add('hidden');
+
+    if (career) {
+      if (title) title.textContent = 'Edit Career';
+      if (idEl) idEl.value = career.id;
+      if (nameEl) nameEl.value = career.name || '';
+      if (codeEl) codeEl.value = career.code || '';
+      if (descEl) descEl.value = career.description || '';
+      if (durEl) durEl.value = career.duration_years || career.duration || 4;
+      if (activeEl) activeEl.checked = career.is_active !== false;
+    } else {
+      if (title) title.textContent = 'New Career';
+      if (idEl) idEl.value = '';
+      (document.getElementById('career-form') as HTMLFormElement)?.reset();
+      if (activeEl) activeEl.checked = true;
+    }
+    document.getElementById('panel-backdrop')?.classList.remove('hidden');
+    document.getElementById('career-panel')?.classList.remove('hidden');
+  }
+
+  function closePanel() {
+    document.getElementById('panel-backdrop')?.classList.add('hidden');
+    document.getElementById('career-panel')?.classList.add('hidden');
+  }
+
+  document.getElementById('new-career-btn')?.addEventListener('click', () => openPanel());
+  document.getElementById('close-panel-btn')?.addEventListener('click', closePanel);
+  document.getElementById('cancel-form-btn')?.addEventListener('click', closePanel);
+  document.getElementById('panel-backdrop')?.addEventListener('click', closePanel);
+
+  document.getElementById('career-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById('form-error');
+    const id = (document.getElementById('edit-id') as HTMLInputElement).value;
+    const name = (document.getElementById('career-name') as HTMLInputElement).value;
+    const code = (document.getElementById('career-code') as HTMLInputElement).value;
+    const description = (document.getElementById('career-desc') as HTMLTextAreaElement).value;
+    const duration_years = parseInt((document.getElementById('career-duration') as HTMLInputElement).value);
+    const is_active = (document.getElementById('career-active') as HTMLInputElement).checked;
+    try {
+      if (id) {
+        await apiFetch(`/academic/careers/${id}/`, { method: 'PATCH', body: JSON.stringify({ name, code, description, duration_years, is_active }) });
+      } else {
+        await apiFetch('/academic/careers/', { method: 'POST', body: JSON.stringify({ name, code, description, duration_years, is_active }) });
+      }
+      closePanel();
+      await loadCareers();
+    } catch {
+      errEl?.classList.remove('hidden');
+      if (errEl) errEl.textContent = 'Failed to save career';
+    }
+  });
+
+  (async () => {
+    await loadCareers();
+    showContent();
+  })();
+</script>

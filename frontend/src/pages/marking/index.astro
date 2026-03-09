@@ -1,0 +1,373 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+---
+<DashboardLayout title="Marking — Academix" currentPath="/marking">
+  <div id="page-loading" class="p-6 space-y-4">
+    <div class="grid grid-cols-3 gap-4" style="height:calc(100vh - 80px)">
+      <div class="h-full bg-card rounded-xl border border-border animate-pulse"></div>
+      <div class="h-full bg-card rounded-xl border border-border animate-pulse col-span-2"></div>
+    </div>
+  </div>
+
+  <div id="page-content" class="hidden">
+    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+      <div>
+        <h1 class="text-xl font-semibold text-foreground">Marking</h1>
+        <p class="text-sm text-muted-foreground">Grade student evaluations</p>
+      </div>
+    </div>
+
+    <div class="flex" style="height:calc(100vh - 130px)">
+      <!-- Left panel -->
+      <div class="w-80 shrink-0 border-r border-border overflow-y-auto p-4 space-y-4">
+        <div>
+          <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Select Class</p>
+          <div id="class-list" class="space-y-2"></div>
+        </div>
+        <div id="eval-section" class="hidden">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Evaluations</p>
+            <button id="new-eval-btn" class="text-xs text-primary hover:underline">+ New</button>
+          </div>
+          <div id="eval-list" class="space-y-2"></div>
+        </div>
+      </div>
+
+      <!-- Right panel -->
+      <div class="flex-1 overflow-y-auto">
+        <div id="empty-state" class="flex flex-col items-center justify-center h-full text-center">
+          <div class="flex size-16 items-center justify-center rounded-full bg-muted mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </div>
+          <p class="text-lg font-medium text-foreground">Select a class and evaluation</p>
+          <p class="text-sm text-muted-foreground mt-1">Choose from the left panel to begin grading</p>
+        </div>
+        <div id="grading-panel" class="hidden p-6 space-y-4"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- New evaluation modal -->
+  <div id="new-eval-backdrop" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+    <div class="bg-card border border-border rounded-xl p-6 w-96 shadow-xl">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="text-lg font-semibold text-foreground">New Evaluation</h3>
+        <button id="close-eval-modal" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="new-eval-form" class="space-y-4">
+        <div>
+          <label class="text-xs font-medium text-muted-foreground">Name *</label>
+          <input id="eval-name" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Midterm Exam" />
+        </div>
+        <div>
+          <label class="text-xs font-medium text-muted-foreground">Type *</label>
+          <select id="eval-type" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+            <option value="exam">Exam</option>
+            <option value="quiz">Quiz</option>
+            <option value="assignment">Assignment</option>
+            <option value="project">Project</option>
+            <option value="participation">Participation</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-muted-foreground">Max Score *</label>
+          <input id="eval-max-score" type="number" required min="1" value="100" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+        </div>
+        <div>
+          <label class="text-xs font-medium text-muted-foreground">Due Date</label>
+          <input id="eval-due-date" type="date" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+        </div>
+        <div id="eval-form-error" class="hidden text-xs text-red-400"></div>
+        <div class="flex gap-3 pt-2">
+          <button type="button" id="cancel-eval-btn" class="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
+          <button type="submit" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Create</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</DashboardLayout>
+
+<script>
+  const STORAGE_KEY = "user-storage";
+  const TOKEN_KEY = "access_token";
+  const API_URL = "http://localhost:8000/api";
+
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
+    catch { return null; }
+  }
+
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) window.location.replace('/login');
+  const user = getUser();
+  if (!user) window.location.replace('/login');
+  const role = user?.role ?? '';
+
+  if (role !== 't') window.location.replace('/');
+
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(`${API_URL}${path}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      ...options,
+    });
+    if (res.status === 401) window.location.replace('/login');
+    return res.json();
+  }
+
+  function showContent() {
+    document.getElementById('page-loading')?.classList.add('hidden');
+    document.getElementById('page-content')?.classList.remove('hidden');
+  }
+
+  function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = String(str ?? '');
+    return d.innerHTML;
+  }
+
+  function formatDate(str) {
+    if (!str) return '-';
+    return new Date(str).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  let selectedClassId = null;
+  let selectedEvalId = null;
+  let gradeMap = {};
+
+  function renderClassList(classes) {
+    const list = document.getElementById('class-list');
+    if (!list) return;
+    list.innerHTML = classes.map(c => {
+      const subject = c.subject_name || c.subject?.name || 'Class';
+      const students = c.student_count || c.students_count || 0;
+      return `<div class="class-item cursor-pointer rounded-lg border border-border p-3 hover:border-primary/50 hover:bg-muted/40 transition-colors" data-id="${c.id}">
+        <p class="text-sm font-medium text-foreground">${escHtml(subject)}</p>
+        <p class="text-xs text-muted-foreground mt-0.5">${students} students</p>
+      </div>`;
+    }).join('');
+
+    list.querySelectorAll('.class-item').forEach(el => {
+      el.addEventListener('click', () => {
+        list.querySelectorAll('.class-item').forEach(i => i.classList.remove('border-primary', 'bg-primary/5'));
+        el.classList.add('border-primary', 'bg-primary/5');
+        selectedClassId = el.dataset.id;
+        loadEvaluations(selectedClassId);
+      });
+    });
+  }
+
+  async function loadEvaluations(classId) {
+    const section = document.getElementById('eval-section');
+    const list = document.getElementById('eval-list');
+    section?.classList.remove('hidden');
+    if (list) list.innerHTML = '<div class="text-xs text-muted-foreground">Loading...</div>';
+
+    try {
+      const data = await apiFetch(`/grades/evaluations/?class=${classId}`);
+      const evals = Array.isArray(data) ? data : (data.results || []);
+      renderEvalList(evals);
+    } catch {
+      if (list) list.innerHTML = '<div class="text-xs text-red-400">Failed to load evaluations</div>';
+    }
+  }
+
+  function renderEvalList(evals) {
+    const list = document.getElementById('eval-list');
+    if (!list) return;
+    if (evals.length === 0) {
+      list.innerHTML = '<div class="text-xs text-muted-foreground py-2">No evaluations yet. Create one.</div>';
+      return;
+    }
+    list.innerHTML = evals.map(e => {
+      const typeBg = { exam: 'bg-purple-500/15 text-purple-400', quiz: 'bg-blue-500/15 text-blue-400', assignment: 'bg-orange-500/15 text-orange-400', project: 'bg-teal-500/15 text-teal-400' };
+      const type = e.evaluation_type || e.type || 'other';
+      const bg = typeBg[type] || 'bg-muted text-muted-foreground';
+      return `<div class="eval-item cursor-pointer rounded-lg border border-border p-3 hover:border-primary/50 hover:bg-muted/40 transition-colors" data-id="${e.id}" data-name="${escHtml(e.name)}" data-type="${type}" data-max="${e.max_score}" data-due="${e.due_date || ''}">
+        <div class="flex items-center justify-between gap-2">
+          <p class="text-sm font-medium text-foreground truncate">${escHtml(e.name)}</p>
+          <span class="inline-flex items-center rounded-full ${bg} px-1.5 py-0.5 text-xs capitalize shrink-0">${type}</span>
+        </div>
+        <p class="text-xs text-muted-foreground mt-0.5">Max: ${e.max_score} · Due: ${formatDate(e.due_date)}</p>
+      </div>`;
+    }).join('');
+
+    list.querySelectorAll('.eval-item').forEach(el => {
+      el.addEventListener('click', () => {
+        list.querySelectorAll('.eval-item').forEach(i => i.classList.remove('border-primary', 'bg-primary/5'));
+        el.classList.add('border-primary', 'bg-primary/5');
+        selectedEvalId = el.dataset.id;
+        loadGradingPanel(selectedEvalId, el.dataset);
+      });
+    });
+  }
+
+  async function loadGradingPanel(evalId, evalData) {
+    const empty = document.getElementById('empty-state');
+    const panel = document.getElementById('grading-panel');
+    empty?.classList.add('hidden');
+    panel?.classList.remove('hidden');
+    if (panel) panel.innerHTML = '<div class="text-sm text-muted-foreground">Loading students...</div>';
+    gradeMap = {};
+
+    try {
+      const data = await apiFetch(`/grades/marking/${evalId}/`);
+      const students = Array.isArray(data) ? data : (data.results || data.students || []);
+      const typeBg = { exam: 'bg-purple-500/15 text-purple-400', quiz: 'bg-blue-500/15 text-blue-400', assignment: 'bg-orange-500/15 text-orange-400', project: 'bg-teal-500/15 text-teal-400' };
+      const type = evalData.type || 'other';
+      const bg = typeBg[type] || 'bg-muted text-muted-foreground';
+
+      panel.innerHTML = `
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-semibold text-foreground">${escHtml(evalData.name)}</h2>
+            <div class="flex items-center gap-3 mt-1">
+              <span class="inline-flex items-center rounded-full ${bg} px-2 py-0.5 text-xs capitalize">${type}</span>
+              <span class="text-xs text-muted-foreground">Due: ${formatDate(evalData.due)}</span>
+              <span class="text-xs text-muted-foreground">Max Score: ${evalData.max}</span>
+            </div>
+          </div>
+          <button id="bulk-save-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+            Save All Grades
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-border">
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Student</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Current Score</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Score</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Feedback</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Save</th>
+              </tr>
+            </thead>
+            <tbody id="grading-table-body">
+              ${students.map(s => {
+                const sName = s.student_name || `${s.first_name || ''} ${s.last_name || ''}`.trim() || 'Student';
+                const sId = s.student_id || s.id;
+                const currentScore = s.score ?? s.grade_score ?? '';
+                const feedback = s.feedback || '';
+                return `<tr class="border-b border-border hover:bg-muted/40">
+                  <td class="py-3 pr-4">
+                    <div class="flex items-center gap-2">
+                      <div class="flex size-7 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">${(sName[0] || '?').toUpperCase()}</div>
+                      <span class="text-sm font-medium text-foreground">${escHtml(sName)}</span>
+                    </div>
+                  </td>
+                  <td class="py-3 pr-4 text-sm text-muted-foreground">${currentScore !== '' ? currentScore : '-'}</td>
+                  <td class="py-3 pr-4">
+                    <input type="number" min="0" max="${evalData.max}" class="score-input w-24 bg-input border border-border rounded-lg px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" data-student-id="${sId}" value="${currentScore}" placeholder="0–${evalData.max}" />
+                  </td>
+                  <td class="py-3 pr-4">
+                    <input type="text" class="feedback-input w-40 bg-input border border-border rounded-lg px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" data-student-id="${sId}" value="${escHtml(feedback)}" placeholder="Optional feedback" />
+                  </td>
+                  <td class="py-3">
+                    <button class="save-single-btn inline-flex items-center rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors" data-student-id="${sId}">Save</button>
+                  </td>
+                </tr>`;
+              }).join('')}
+              ${students.length === 0 ? '<tr><td colspan="5" class="py-6 text-center text-sm text-muted-foreground">No students found for this evaluation</td></tr>' : ''}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      async function saveGrade(studentId) {
+        const scoreEl = document.querySelector(`.score-input[data-student-id="${studentId}"]`) as HTMLInputElement;
+        const feedbackEl = document.querySelector(`.feedback-input[data-student-id="${studentId}"]`) as HTMLInputElement;
+        const score = scoreEl?.value;
+        const feedback = feedbackEl?.value || '';
+        if (score === '' || score == null) { alert('Please enter a score'); return; }
+        try {
+          await apiFetch(`/grades/marking/${evalId}/`, {
+            method: 'POST',
+            body: JSON.stringify({ student_id: studentId, score: parseFloat(score), feedback }),
+          });
+          if (scoreEl) scoreEl.style.borderColor = 'var(--color-green-500, #22c55e)';
+          setTimeout(() => { if (scoreEl) scoreEl.style.borderColor = ''; }, 1500);
+        } catch {
+          alert('Failed to save grade');
+        }
+      }
+
+      panel.querySelectorAll('.save-single-btn').forEach(btn => {
+        btn.addEventListener('click', () => saveGrade((btn as HTMLElement).dataset.studentId));
+      });
+
+      document.getElementById('bulk-save-btn')?.addEventListener('click', async () => {
+        const scoreInputs = panel.querySelectorAll('.score-input');
+        const promises = Array.from(scoreInputs).map(inp => {
+          const sId = (inp as HTMLElement).dataset.studentId;
+          return saveGrade(sId);
+        });
+        await Promise.all(promises);
+      });
+
+    } catch {
+      if (panel) panel.innerHTML = '<div class="text-sm text-red-400 p-4">Failed to load grading data</div>';
+    }
+  }
+
+  // New evaluation modal
+  document.getElementById('new-eval-btn')?.addEventListener('click', () => {
+    document.getElementById('new-eval-backdrop')?.classList.remove('hidden');
+  });
+
+  function closeEvalModal() {
+    document.getElementById('new-eval-backdrop')?.classList.add('hidden');
+    document.getElementById('eval-form-error')?.classList.add('hidden');
+    (document.getElementById('new-eval-form') as HTMLFormElement)?.reset();
+  }
+
+  document.getElementById('close-eval-modal')?.addEventListener('click', closeEvalModal);
+  document.getElementById('cancel-eval-btn')?.addEventListener('click', closeEvalModal);
+  document.getElementById('new-eval-backdrop')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeEvalModal();
+  });
+
+  document.getElementById('new-eval-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById('eval-form-error');
+    if (!selectedClassId) {
+      errEl?.classList.remove('hidden');
+      if (errEl) errEl.textContent = 'Please select a class first';
+      return;
+    }
+    const name = (document.getElementById('eval-name') as HTMLInputElement).value;
+    const type = (document.getElementById('eval-type') as HTMLSelectElement).value;
+    const maxScore = (document.getElementById('eval-max-score') as HTMLInputElement).value;
+    const dueDate = (document.getElementById('eval-due-date') as HTMLInputElement).value;
+
+    try {
+      await apiFetch('/grades/evaluations/', {
+        method: 'POST',
+        body: JSON.stringify({ name, cls: selectedClassId, type, max_score: parseFloat(maxScore), due_date: dueDate || null }),
+      });
+      closeEvalModal();
+      loadEvaluations(selectedClassId);
+    } catch {
+      errEl?.classList.remove('hidden');
+      if (errEl) errEl.textContent = 'Failed to create evaluation';
+    }
+  });
+
+  (async () => {
+    // Check URL param
+    const urlParams = new URLSearchParams(window.location.search);
+    const preselectedClass = urlParams.get('class');
+
+    try {
+      const data = await apiFetch('/academic/classes/my-classes/');
+      const classes = Array.isArray(data) ? data : (data.results || []);
+      renderClassList(classes);
+
+      if (preselectedClass) {
+        const el = document.querySelector(`.class-item[data-id="${preselectedClass}"]`) as HTMLElement;
+        if (el) el.click();
+      }
+    } catch {}
+    showContent();
+  })();
+</script>

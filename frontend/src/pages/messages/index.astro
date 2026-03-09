@@ -1,0 +1,317 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+---
+<DashboardLayout title="Messages — Academix" currentPath="/messages">
+  <div id="page-loading" class="p-6 space-y-4">
+    <div class="flex gap-4" style="height:calc(100vh - 80px)">
+      <div class="w-80 bg-card rounded-xl border border-border animate-pulse"></div>
+      <div class="flex-1 bg-card rounded-xl border border-border animate-pulse"></div>
+    </div>
+  </div>
+
+  <div id="page-content" class="hidden flex" style="height:calc(100vh - 64px)">
+    <!-- Left panel: message list -->
+    <div class="w-80 shrink-0 border-r border-border flex flex-col">
+      <div class="p-4 border-b border-border">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex gap-1">
+            <button id="tab-inbox" class="msg-tab px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-primary-foreground">Inbox</button>
+            <button id="tab-sent" class="msg-tab px-3 py-1.5 text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">Sent</button>
+          </div>
+          <button id="compose-btn" class="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Compose
+          </button>
+        </div>
+      </div>
+      <div id="message-list" class="flex-1 overflow-y-auto divide-y divide-border"></div>
+    </div>
+
+    <!-- Right panel: thread view -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <div id="thread-empty" class="flex flex-col items-center justify-center h-full text-center">
+        <div class="flex size-16 items-center justify-center rounded-full bg-muted mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <p class="text-lg font-medium text-foreground">Select a message</p>
+        <p class="text-sm text-muted-foreground mt-1">Choose a message from the left panel</p>
+      </div>
+      <div id="thread-view" class="hidden flex flex-col h-full">
+        <div id="thread-header" class="p-4 border-b border-border shrink-0"></div>
+        <div id="thread-messages" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
+        <div class="shrink-0 border-t border-border p-4">
+          <div class="flex gap-3">
+            <textarea id="reply-body" rows="3" placeholder="Type your reply..." class="flex-1 bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"></textarea>
+            <button id="send-reply-btn" class="self-end inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors shrink-0">
+              Send
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compose panel -->
+  <div id="compose-backdrop" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-start justify-end">
+    <div class="w-96 h-full bg-card border-l border-border p-6 overflow-y-auto shadow-xl">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-lg font-semibold text-foreground">New Message</h2>
+        <button id="close-compose-btn" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="compose-form" class="space-y-4">
+        <div>
+          <label class="text-xs font-medium text-muted-foreground">To (User ID or username) *</label>
+          <input id="compose-to" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Username or user ID" />
+        </div>
+        <div>
+          <label class="text-xs font-medium text-muted-foreground">Subject *</label>
+          <input id="compose-subject" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Message subject" />
+        </div>
+        <div>
+          <label class="text-xs font-medium text-muted-foreground">Message *</label>
+          <textarea id="compose-body" rows="6" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none" placeholder="Write your message..."></textarea>
+        </div>
+        <div id="compose-error" class="hidden text-xs text-red-400"></div>
+        <div id="compose-success" class="hidden text-xs text-green-400"></div>
+        <div class="flex gap-3 pt-2">
+          <button type="button" id="cancel-compose-btn" class="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
+          <button type="submit" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Send</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</DashboardLayout>
+
+<script>
+  const STORAGE_KEY = "user-storage";
+  const TOKEN_KEY = "access_token";
+  const API_URL = "http://localhost:8000/api";
+
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
+    catch { return null; }
+  }
+
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) window.location.replace('/login');
+  const user = getUser();
+  if (!user) window.location.replace('/login');
+  const role = user?.role ?? '';
+
+  if (role !== 't') window.location.replace('/');
+
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(`${API_URL}${path}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      ...options,
+    });
+    if (res.status === 401) window.location.replace('/login');
+    return res.json();
+  }
+
+  function showContent() {
+    document.getElementById('page-loading')?.classList.add('hidden');
+    document.getElementById('page-content')?.classList.remove('hidden');
+  }
+
+  function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = String(str ?? '');
+    return d.innerHTML;
+  }
+
+  function formatTime(str) {
+    if (!str) return '';
+    const date = new Date(str);
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
+    if (diff < 86400) return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  function initials(name) {
+    if (!name) return '??';
+    return name.split(' ').map(p => p[0]).join('').toUpperCase().substring(0, 2);
+  }
+
+  let activeTab = 'inbox';
+  let selectedMessageId = null;
+
+  function renderMessageList(messages) {
+    const list = document.getElementById('message-list');
+    if (!list) return;
+    if (messages.length === 0) {
+      list.innerHTML = '<div class="p-4 text-sm text-muted-foreground text-center">No messages</div>';
+      return;
+    }
+    list.innerHTML = messages.map(m => {
+      const fromName = m.sender_name || m.from_name || m.sender || 'Unknown';
+      const toName = m.recipient_name || m.to_name || m.recipient || 'Unknown';
+      const displayName = activeTab === 'inbox' ? fromName : toName;
+      const unread = !m.is_read && activeTab === 'inbox';
+      const preview = (m.body || m.message || '').substring(0, 60);
+      return `<div class="msg-item cursor-pointer p-4 hover:bg-muted/40 transition-colors ${unread ? 'bg-primary/5' : ''}" data-id="${m.id}">
+        <div class="flex items-start gap-3">
+          <div class="flex size-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary shrink-0">${initials(displayName)}</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-1">
+              <span class="text-sm ${unread ? 'font-semibold text-foreground' : 'font-medium text-foreground'} truncate">${escHtml(displayName)}</span>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <span class="text-xs text-muted-foreground">${formatTime(m.created_at || m.sent_at)}</span>
+                ${unread ? '<span class="size-2 rounded-full bg-primary"></span>' : ''}
+              </div>
+            </div>
+            <p class="text-xs font-medium text-foreground truncate mt-0.5">${escHtml(m.subject || '(no subject)')}</p>
+            <p class="text-xs text-muted-foreground truncate mt-0.5">${escHtml(preview)}</p>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    list.querySelectorAll('.msg-item').forEach(el => {
+      el.addEventListener('click', () => {
+        list.querySelectorAll('.msg-item').forEach(i => i.classList.remove('bg-primary/10'));
+        el.classList.add('bg-primary/10');
+        el.classList.remove('bg-primary/5');
+        loadThread((el as HTMLElement).dataset.id);
+      });
+    });
+  }
+
+  async function loadMessages() {
+    const list = document.getElementById('message-list');
+    if (list) list.innerHTML = '<div class="p-4 text-sm text-muted-foreground text-center">Loading...</div>';
+    try {
+      const endpoint = activeTab === 'inbox' ? '/messaging/inbox/' : '/messaging/sent/';
+      const data = await apiFetch(endpoint);
+      const messages = Array.isArray(data) ? data : (data.results || []);
+      renderMessageList(messages);
+    } catch {
+      if (list) list.innerHTML = '<div class="p-4 text-sm text-red-400 text-center">Failed to load messages</div>';
+    }
+  }
+
+  async function loadThread(messageId) {
+    selectedMessageId = messageId;
+    document.getElementById('thread-empty')?.classList.add('hidden');
+    const threadView = document.getElementById('thread-view');
+    threadView?.classList.remove('hidden');
+
+    const header = document.getElementById('thread-header');
+    const msgs = document.getElementById('thread-messages');
+    if (header) header.innerHTML = '<div class="text-sm text-muted-foreground">Loading...</div>';
+    if (msgs) msgs.innerHTML = '';
+
+    try {
+      const data = await apiFetch(`/messaging/${messageId}/`);
+      const thread = data.thread || data.replies || [];
+      const subject = data.subject || '(no subject)';
+      const allMessages = [data, ...thread].filter(Boolean);
+
+      if (header) {
+        header.innerHTML = `<p class="font-semibold text-foreground">${escHtml(subject)}</p>`;
+      }
+
+      if (msgs) {
+        msgs.innerHTML = allMessages.map(m => {
+          const senderName = m.sender_name || m.from_name || 'Unknown';
+          const time = m.created_at || m.sent_at;
+          const body = m.body || m.message || '';
+          const isOwn = (m.sender_id || m.sender) === user?.id || m.sender_name === `${user?.first_name} ${user?.last_name}`.trim();
+          return `<div class="flex ${isOwn ? 'justify-end' : 'justify-start'} gap-3">
+            ${!isOwn ? `<div class="flex size-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary shrink-0 mt-1">${initials(senderName)}</div>` : ''}
+            <div class="max-w-xs lg:max-w-md">
+              <div class="flex items-center gap-2 mb-1 ${isOwn ? 'justify-end' : ''}">
+                <span class="text-xs font-medium text-foreground">${escHtml(senderName)}</span>
+                <span class="text-xs text-muted-foreground">${formatTime(time)}</span>
+              </div>
+              <div class="${isOwn ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'} rounded-xl px-4 py-3 text-sm">
+                ${escHtml(body)}
+              </div>
+            </div>
+            ${isOwn ? `<div class="flex size-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary shrink-0 mt-1">${initials(senderName)}</div>` : ''}
+          </div>`;
+        }).join('');
+        msgs.scrollTop = msgs.scrollHeight;
+      }
+    } catch {
+      if (header) header.innerHTML = '<div class="text-sm text-red-400">Failed to load thread</div>';
+    }
+  }
+
+  // Tab switching
+  document.getElementById('tab-inbox')?.addEventListener('click', () => {
+    activeTab = 'inbox';
+    document.getElementById('tab-inbox')?.classList.replace('text-muted-foreground', 'bg-primary');
+    document.getElementById('tab-inbox')?.classList.add('text-primary-foreground');
+    document.getElementById('tab-sent')?.classList.remove('bg-primary', 'text-primary-foreground');
+    document.getElementById('tab-sent')?.classList.add('text-muted-foreground');
+    loadMessages();
+  });
+
+  document.getElementById('tab-sent')?.addEventListener('click', () => {
+    activeTab = 'sent';
+    document.getElementById('tab-sent')?.classList.add('bg-primary', 'text-primary-foreground');
+    document.getElementById('tab-sent')?.classList.remove('text-muted-foreground');
+    document.getElementById('tab-inbox')?.classList.remove('bg-primary', 'text-primary-foreground');
+    document.getElementById('tab-inbox')?.classList.add('text-muted-foreground');
+    loadMessages();
+  });
+
+  // Send reply
+  document.getElementById('send-reply-btn')?.addEventListener('click', async () => {
+    const body = (document.getElementById('reply-body') as HTMLTextAreaElement).value.trim();
+    if (!body || !selectedMessageId) return;
+    try {
+      await apiFetch(`/messaging/${selectedMessageId}/reply/`, {
+        method: 'POST',
+        body: JSON.stringify({ body }),
+      });
+      (document.getElementById('reply-body') as HTMLTextAreaElement).value = '';
+      loadThread(selectedMessageId);
+    } catch { alert('Failed to send reply'); }
+  });
+
+  // Compose
+  function openCompose() { document.getElementById('compose-backdrop')?.classList.remove('hidden'); }
+  function closeCompose() {
+    document.getElementById('compose-backdrop')?.classList.add('hidden');
+    document.getElementById('compose-error')?.classList.add('hidden');
+    document.getElementById('compose-success')?.classList.add('hidden');
+    (document.getElementById('compose-form') as HTMLFormElement)?.reset();
+  }
+
+  document.getElementById('compose-btn')?.addEventListener('click', openCompose);
+  document.getElementById('close-compose-btn')?.addEventListener('click', closeCompose);
+  document.getElementById('cancel-compose-btn')?.addEventListener('click', closeCompose);
+
+  document.getElementById('compose-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const to = (document.getElementById('compose-to') as HTMLInputElement).value;
+    const subject = (document.getElementById('compose-subject') as HTMLInputElement).value;
+    const body = (document.getElementById('compose-body') as HTMLTextAreaElement).value;
+    const errEl = document.getElementById('compose-error');
+    const successEl = document.getElementById('compose-success');
+    try {
+      await apiFetch('/messaging/compose/', {
+        method: 'POST',
+        body: JSON.stringify({ recipient: to, subject, body }),
+      });
+      successEl?.classList.remove('hidden');
+      if (successEl) successEl.textContent = 'Message sent!';
+      errEl?.classList.add('hidden');
+      setTimeout(closeCompose, 1200);
+      if (activeTab === 'sent') loadMessages();
+    } catch {
+      errEl?.classList.remove('hidden');
+      if (errEl) errEl.textContent = 'Failed to send message';
+    }
+  });
+
+  (async () => {
+    await loadMessages();
+    showContent();
+  })();
+</script>

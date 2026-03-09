@@ -1,0 +1,225 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+---
+<DashboardLayout title="My Academic File — Academix" currentPath="/my-file">
+  <div id="page-loading" class="p-6 space-y-4">
+    <div class="grid grid-cols-3 gap-4">
+      <div class="h-64 bg-card rounded-xl border border-border animate-pulse col-span-1"></div>
+      <div class="h-64 bg-card rounded-xl border border-border animate-pulse col-span-2"></div>
+    </div>
+    <div class="h-48 bg-card rounded-xl border border-border animate-pulse"></div>
+  </div>
+
+  <div id="page-content" class="hidden">
+    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+      <div>
+        <h1 class="text-xl font-semibold text-foreground">Academic File</h1>
+        <p class="text-sm text-muted-foreground">Your complete academic record</p>
+      </div>
+      <button onclick="window.print()" class="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors print:hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Print File
+      </button>
+    </div>
+
+    <div class="p-6 space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Student info -->
+        <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+          <div class="flex flex-col items-center text-center mb-5">
+            <div id="student-avatar" class="flex size-16 items-center justify-center rounded-full bg-primary/15 text-2xl font-bold text-primary mb-3">??</div>
+            <p id="student-name" class="text-lg font-semibold text-foreground">-</p>
+            <p id="student-username" class="text-sm text-muted-foreground">-</p>
+          </div>
+          <div class="space-y-3" id="student-details"></div>
+        </div>
+
+        <!-- Academic summary -->
+        <div class="bg-card text-card-foreground rounded-xl border border-border p-5 lg:col-span-2">
+          <h2 class="text-lg font-semibold text-foreground mb-4">Academic Summary</h2>
+          <div class="grid grid-cols-2 gap-4" id="academic-summary"></div>
+        </div>
+      </div>
+
+      <!-- Period records -->
+      <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+        <h2 class="text-lg font-semibold text-foreground mb-4">Academic History</h2>
+        <div id="periods-accordion" class="space-y-3"></div>
+        <div id="file-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No academic records found</div>
+      </div>
+    </div>
+  </div>
+</DashboardLayout>
+
+<style>
+  @media print {
+    .accordion-body { display: block !important; }
+    .accordion-icon { display: none !important; }
+  }
+</style>
+
+<script>
+  const STORAGE_KEY = "user-storage";
+  const TOKEN_KEY = "access_token";
+  const API_URL = "http://localhost:8000/api";
+
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
+    catch { return null; }
+  }
+
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) window.location.replace('/login');
+  const user = getUser();
+  if (!user) window.location.replace('/login');
+  const role = user?.role ?? '';
+
+  if (role !== 's') window.location.replace('/');
+
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(`${API_URL}${path}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      ...options,
+    });
+    if (res.status === 401) window.location.replace('/login');
+    return res.json();
+  }
+
+  function showContent() {
+    document.getElementById('page-loading')?.classList.add('hidden');
+    document.getElementById('page-content')?.classList.remove('hidden');
+  }
+
+  function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = String(str ?? '');
+    return d.innerHTML;
+  }
+
+  function formatDate(str) {
+    if (!str) return '-';
+    return new Date(str).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  }
+
+  function gpaBadge(gpa, large = false) {
+    const v = parseFloat(gpa) || 0;
+    const color = v >= 75 ? 'bg-green-500/15 text-green-400' : v >= 50 ? 'bg-blue-500/15 text-blue-400' : 'bg-red-500/15 text-red-400';
+    const size = large ? 'px-3 py-1 text-sm' : 'px-2 py-0.5 text-xs';
+    return `<span class="inline-flex items-center rounded-full ${color} ${size} font-semibold">${v.toFixed(1)}</span>`;
+  }
+
+  (async () => {
+    try {
+      const data = await apiFetch('/grades/my-file/');
+
+      // Student info
+      const name = data.student_name || data.full_name || `${data.first_name || ''} ${data.last_name || ''}`.trim() || user?.username || 'Student';
+      const initials = name.split(' ').map(p => p[0]).join('').toUpperCase().substring(0, 2);
+
+      const avatarEl = document.getElementById('student-avatar');
+      const nameEl = document.getElementById('student-name');
+      const usernameEl = document.getElementById('student-username');
+      if (avatarEl) avatarEl.textContent = initials;
+      if (nameEl) nameEl.textContent = name;
+      if (usernameEl) usernameEl.textContent = data.username || user?.username || '-';
+
+      const detailsEl = document.getElementById('student-details');
+      if (detailsEl) {
+        const fields = [
+          { label: 'Email', value: data.email || '-' },
+          { label: 'Phone', value: data.phone || data.phone_number || '-' },
+          { label: 'Date of Birth', value: formatDate(data.date_of_birth || data.dob) },
+        ];
+        detailsEl.innerHTML = fields.map(f => `
+          <div class="flex justify-between items-center py-2 border-b border-border last:border-0">
+            <span class="text-xs text-muted-foreground uppercase tracking-wide">${f.label}</span>
+            <span class="text-sm text-foreground font-medium">${escHtml(f.value)}</span>
+          </div>
+        `).join('');
+      }
+
+      const periods = data.periods || data.academic_records || [];
+      const summaryEl = document.getElementById('academic-summary');
+      if (summaryEl) {
+        summaryEl.innerHTML = [
+          { label: 'Overall GPA', value: gpaBadge(data.overall_gpa || data.gpa, true) },
+          { label: 'Total Periods', value: `<span class="text-2xl font-bold text-foreground">${periods.length}</span>` },
+        ].map(s => `
+          <div class="bg-muted/30 rounded-lg p-4">
+            <p class="text-xs text-muted-foreground mb-2">${s.label}</p>
+            ${s.value}
+          </div>
+        `).join('');
+      }
+
+      const accordion = document.getElementById('periods-accordion');
+      const fileEmpty = document.getElementById('file-empty');
+
+      if (periods.length === 0) {
+        fileEmpty?.classList.remove('hidden');
+        showContent();
+        return;
+      }
+
+      if (accordion) {
+        accordion.innerHTML = periods.map((p, i) => {
+          const subjects = p.subjects || p.grades || p.classes || [];
+          return `
+            <div class="border border-border rounded-lg overflow-hidden">
+              <button class="accordion-btn w-full flex items-center justify-between p-4 text-left hover:bg-muted/40 transition-colors" data-idx="${i}">
+                <div>
+                  <p class="font-medium text-foreground">${escHtml(p.period_name || p.period || 'Period')}</p>
+                  <p class="text-xs text-muted-foreground">${escHtml(p.career_name || p.career || '')}</p>
+                </div>
+                <div class="flex items-center gap-3">
+                  ${gpaBadge(p.gpa || p.period_gpa || p.average)}
+                  <svg class="accordion-icon transition-transform" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+              </button>
+              <div class="accordion-body hidden border-t border-border">
+                <div class="overflow-x-auto">
+                  <table class="w-full">
+                    <thead>
+                      <tr class="border-b border-border bg-muted/20">
+                        <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Subject</th>
+                        <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Code</th>
+                        <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Credits</th>
+                        <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Final Grade</th>
+                        <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Result</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${subjects.map(s => {
+                        const passed = s.passed ?? s.status === 'passed' ?? (parseFloat(s.final_grade || s.grade || 0) >= 60);
+                        return `<tr class="border-b border-border hover:bg-muted/40">
+                          <td class="p-3 text-sm text-foreground">${escHtml(s.subject_name || s.subject || '-')}</td>
+                          <td class="p-3 text-sm text-muted-foreground">${escHtml(s.code || '-')}</td>
+                          <td class="p-3 text-sm text-muted-foreground">${s.credits || '-'}</td>
+                          <td class="p-3 text-sm font-medium text-foreground">${s.final_grade ?? s.grade ?? '-'}</td>
+                          <td class="p-3"><span class="inline-flex items-center rounded-full ${passed ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'} px-2 py-0.5 text-xs font-medium">${passed ? 'Pass' : 'Fail'}</span></td>
+                        </tr>`;
+                      }).join('')}
+                      ${subjects.length === 0 ? `<tr><td colspan="5" class="p-3 text-center text-sm text-muted-foreground">No subjects</td></tr>` : ''}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        accordion.querySelectorAll('.accordion-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const body = btn.nextElementSibling;
+            const icon = btn.querySelector('.accordion-icon');
+            body?.classList.toggle('hidden');
+            icon?.classList.toggle('rotate-180');
+          });
+        });
+      }
+    } catch {
+      document.getElementById('file-empty')?.classList.remove('hidden');
+    }
+    showContent();
+  })();
+</script>

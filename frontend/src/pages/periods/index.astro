@@ -1,0 +1,266 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+---
+<DashboardLayout title="Academic Periods — Academix" currentPath="/periods">
+  <div id="page-loading" class="p-6 space-y-4">
+    <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
+    <div class="h-64 bg-card rounded-xl border border-border animate-pulse"></div>
+  </div>
+
+  <div id="page-content" class="hidden">
+    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+      <div>
+        <h1 class="text-xl font-semibold text-foreground">Academic Periods</h1>
+        <p class="text-sm text-muted-foreground">Manage academic semesters and periods</p>
+      </div>
+      <button id="new-period-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Period
+      </button>
+    </div>
+
+    <div class="p-6 space-y-4">
+      <!-- Warning banner -->
+      <div class="flex items-start gap-3 rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-4">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 mt-0.5 shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <p class="text-sm text-yellow-400">Activating a period will deactivate all other periods. Only one period can be active at a time.</p>
+      </div>
+
+      <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-border">
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Name</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Code</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Start Date</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">End Date</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Status</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="periods-table-body"></tbody>
+          </table>
+        </div>
+        <div id="periods-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No periods found</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="panel-backdrop" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50"></div>
+  <div id="period-panel" class="hidden fixed inset-y-0 right-0 z-50 w-96 bg-card border-l border-border p-6 shadow-xl overflow-y-auto">
+    <div class="flex items-center justify-between mb-6">
+      <h2 id="panel-title" class="text-lg font-semibold text-foreground">New Period</h2>
+      <button id="close-panel-btn" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form id="period-form" class="space-y-4">
+      <input id="edit-id" type="hidden" value="" />
+      <div>
+        <label class="text-xs font-medium text-muted-foreground">Name *</label>
+        <input id="period-name" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Spring 2026" />
+      </div>
+      <div>
+        <label class="text-xs font-medium text-muted-foreground">Code *</label>
+        <input id="period-code" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="SP2026" />
+      </div>
+      <div>
+        <label class="text-xs font-medium text-muted-foreground">Start Date *</label>
+        <input id="period-start" type="date" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+      </div>
+      <div>
+        <label class="text-xs font-medium text-muted-foreground">End Date *</label>
+        <input id="period-end" type="date" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+      </div>
+      <div class="flex items-center gap-3">
+        <input id="period-active" type="checkbox" class="size-4 rounded border-border" />
+        <label for="period-active" class="text-sm text-foreground">Active (will deactivate others)</label>
+      </div>
+      <div id="form-error" class="hidden text-xs text-red-400"></div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" id="cancel-form-btn" class="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
+        <button type="submit" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Save</button>
+      </div>
+    </form>
+  </div>
+</DashboardLayout>
+
+<script>
+  const STORAGE_KEY = "user-storage";
+  const TOKEN_KEY = "access_token";
+  const API_URL = "http://localhost:8000/api";
+
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
+    catch { return null; }
+  }
+
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) window.location.replace('/login');
+  const user = getUser();
+  if (!user) window.location.replace('/login');
+  const role = user?.role ?? '';
+
+  if (role !== 'm' && role !== 'a') window.location.replace('/');
+
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(`${API_URL}${path}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      ...options,
+    });
+    if (res.status === 401) window.location.replace('/login');
+    return res.json();
+  }
+
+  function showContent() {
+    document.getElementById('page-loading')?.classList.add('hidden');
+    document.getElementById('page-content')?.classList.remove('hidden');
+  }
+
+  function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = String(str ?? '');
+    return d.innerHTML;
+  }
+
+  function formatDate(str) {
+    if (!str) return '-';
+    return new Date(str).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  let periods = [];
+
+  function renderTable() {
+    const tbody = document.getElementById('periods-table-body');
+    const empty = document.getElementById('periods-empty');
+    if (!tbody) return;
+    if (periods.length === 0) {
+      tbody.innerHTML = '';
+      empty?.classList.remove('hidden');
+      return;
+    }
+    empty?.classList.add('hidden');
+    tbody.innerHTML = periods.map(p => {
+      const active = p.is_active === true;
+      return `<tr class="border-b border-border hover:bg-muted/40 transition-colors">
+        <td class="py-3 pr-4 text-sm font-medium text-foreground">${escHtml(p.name)}</td>
+        <td class="py-3 pr-4 text-sm text-muted-foreground font-mono">${escHtml(p.code)}</td>
+        <td class="py-3 pr-4 text-sm text-muted-foreground">${formatDate(p.start_date)}</td>
+        <td class="py-3 pr-4 text-sm text-muted-foreground">${formatDate(p.end_date)}</td>
+        <td class="py-3 pr-4">
+          ${active ? '<span class="inline-flex items-center rounded-full bg-green-500/15 text-green-400 px-2 py-0.5 text-xs font-medium">Active</span>' : '<span class="inline-flex items-center rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-xs font-medium">Inactive</span>'}
+        </td>
+        <td class="py-3">
+          <div class="flex items-center gap-2">
+            <button class="edit-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors" data-id="${p.id}">Edit</button>
+            ${!active ? `<button class="activate-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-green-400 hover:bg-green-500/10 hover:border-green-500/30 transition-colors" data-id="${p.id}">Activate</button>` : ''}
+            <button class="delete-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-colors" data-id="${p.id}">Delete</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    tbody.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const period = periods.find(p => p.id == (btn as HTMLElement).dataset.id);
+        if (period) openPanel(period);
+      });
+    });
+
+    tbody.querySelectorAll('.activate-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = (btn as HTMLElement).dataset.id;
+        if (!confirm('Activate this period? All other periods will be deactivated.')) return;
+        try {
+          await apiFetch(`/academic/periods/${id}/`, { method: 'PATCH', body: JSON.stringify({ is_active: true }) });
+          await loadPeriods();
+        } catch { alert('Failed to activate period'); }
+      });
+    });
+
+    tbody.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Delete this period?')) return;
+        const id = (btn as HTMLElement).dataset.id;
+        try {
+          await fetch(`${API_URL}/academic/periods/${id}/`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+          await loadPeriods();
+        } catch { alert('Failed to delete period'); }
+      });
+    });
+  }
+
+  async function loadPeriods() {
+    try {
+      const data = await apiFetch('/academic/periods/');
+      periods = Array.isArray(data) ? data : (data.results || []);
+      renderTable();
+    } catch { periods = []; }
+  }
+
+  function openPanel(period = null) {
+    document.getElementById('form-error')?.classList.add('hidden');
+    const title = document.getElementById('panel-title');
+    const idEl = document.getElementById('edit-id') as HTMLInputElement;
+
+    if (period) {
+      if (title) title.textContent = 'Edit Period';
+      if (idEl) idEl.value = period.id;
+      (document.getElementById('period-name') as HTMLInputElement).value = period.name || '';
+      (document.getElementById('period-code') as HTMLInputElement).value = period.code || '';
+      (document.getElementById('period-start') as HTMLInputElement).value = period.start_date || '';
+      (document.getElementById('period-end') as HTMLInputElement).value = period.end_date || '';
+      (document.getElementById('period-active') as HTMLInputElement).checked = period.is_active === true;
+    } else {
+      if (title) title.textContent = 'New Period';
+      if (idEl) idEl.value = '';
+      (document.getElementById('period-form') as HTMLFormElement)?.reset();
+    }
+    document.getElementById('panel-backdrop')?.classList.remove('hidden');
+    document.getElementById('period-panel')?.classList.remove('hidden');
+  }
+
+  function closePanel() {
+    document.getElementById('panel-backdrop')?.classList.add('hidden');
+    document.getElementById('period-panel')?.classList.add('hidden');
+  }
+
+  document.getElementById('new-period-btn')?.addEventListener('click', () => openPanel());
+  document.getElementById('close-panel-btn')?.addEventListener('click', closePanel);
+  document.getElementById('cancel-form-btn')?.addEventListener('click', closePanel);
+  document.getElementById('panel-backdrop')?.addEventListener('click', closePanel);
+
+  document.getElementById('period-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById('form-error');
+    const id = (document.getElementById('edit-id') as HTMLInputElement).value;
+    const name = (document.getElementById('period-name') as HTMLInputElement).value;
+    const code = (document.getElementById('period-code') as HTMLInputElement).value;
+    const start_date = (document.getElementById('period-start') as HTMLInputElement).value;
+    const end_date = (document.getElementById('period-end') as HTMLInputElement).value;
+    const is_active = (document.getElementById('period-active') as HTMLInputElement).checked;
+
+    if (is_active && !id) {
+      if (!confirm('Activating this period will deactivate all other periods. Continue?')) return;
+    }
+
+    try {
+      if (id) {
+        await apiFetch(`/academic/periods/${id}/`, { method: 'PATCH', body: JSON.stringify({ name, code, start_date, end_date, is_active }) });
+      } else {
+        await apiFetch('/academic/periods/', { method: 'POST', body: JSON.stringify({ name, code, start_date, end_date, is_active }) });
+      }
+      closePanel();
+      await loadPeriods();
+    } catch {
+      errEl?.classList.remove('hidden');
+      if (errEl) errEl.textContent = 'Failed to save period';
+    }
+  });
+
+  (async () => {
+    await loadPeriods();
+    showContent();
+  })();
+</script>

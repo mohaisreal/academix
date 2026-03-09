@@ -1,0 +1,132 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+---
+<DashboardLayout title="My Teachers — Academix" currentPath="/my-teachers">
+  <div id="page-loading" class="p-6 space-y-4">
+    <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
+    <div class="h-64 bg-card rounded-xl border border-border animate-pulse"></div>
+  </div>
+
+  <div id="page-content" class="hidden">
+    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+      <div>
+        <h1 class="text-xl font-semibold text-foreground">My Teachers</h1>
+        <p class="text-sm text-muted-foreground">Teachers for your current enrollment</p>
+      </div>
+    </div>
+
+    <div class="p-6">
+      <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-border">
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Teacher</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Email</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Phone</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Subjects</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="teachers-table-body"></tbody>
+          </table>
+        </div>
+        <div id="teachers-empty" class="hidden py-10 text-center text-sm text-muted-foreground">
+          No teachers found for your current enrollment
+        </div>
+      </div>
+    </div>
+  </div>
+</DashboardLayout>
+
+<script>
+  const STORAGE_KEY = "user-storage";
+  const TOKEN_KEY = "access_token";
+  const API_URL = "http://localhost:8000/api";
+
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
+    catch { return null; }
+  }
+
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) window.location.replace('/login');
+  const user = getUser();
+  if (!user) window.location.replace('/login');
+  const role = user?.role ?? '';
+
+  if (role !== 's') window.location.replace('/');
+
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(`${API_URL}${path}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      ...options,
+    });
+    if (res.status === 401) window.location.replace('/login');
+    return res.json();
+  }
+
+  function showContent() {
+    document.getElementById('page-loading')?.classList.add('hidden');
+    document.getElementById('page-content')?.classList.remove('hidden');
+  }
+
+  function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = String(str ?? '');
+    return d.innerHTML;
+  }
+
+  function initials(name) {
+    if (!name) return '??';
+    return name.split(' ').map(p => p[0]).join('').toUpperCase().substring(0, 2);
+  }
+
+  (async () => {
+    try {
+      const data = await apiFetch('/enrollment/my-teachers/');
+      const teachers = Array.isArray(data) ? data : (data.results || []);
+      const tbody = document.getElementById('teachers-table-body');
+      const empty = document.getElementById('teachers-empty');
+
+      if (teachers.length === 0) {
+        empty?.classList.remove('hidden');
+        showContent();
+        return;
+      }
+
+      tbody.innerHTML = teachers.map(t => {
+        const name = t.teacher_name || t.full_name || `${t.first_name || ''} ${t.last_name || ''}`.trim() || t.username || 'Unknown';
+        const email = t.email || '-';
+        const phone = t.phone || t.phone_number || '-';
+        const subjects = t.subjects || t.teaching_subjects || [];
+
+        return `<tr class="border-b border-border hover:bg-muted/40 transition-colors">
+          <td class="py-3 pr-4">
+            <div class="flex items-center gap-3">
+              <div class="flex size-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">${initials(name)}</div>
+              <span class="text-sm font-medium text-foreground">${escHtml(name)}</span>
+            </div>
+          </td>
+          <td class="py-3 pr-4 text-sm text-muted-foreground">${escHtml(email)}</td>
+          <td class="py-3 pr-4 text-sm text-muted-foreground">${escHtml(phone)}</td>
+          <td class="py-3 pr-4">
+            <div class="flex flex-wrap gap-1">
+              ${subjects.map(s => `<span class="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">${escHtml(typeof s === 'string' ? s : (s.name || s.subject_name || s))}</span>`).join('')}
+              ${subjects.length === 0 ? '<span class="text-xs text-muted-foreground">-</span>' : ''}
+            </div>
+          </td>
+          <td class="py-3">
+            <a href="/messages" class="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Send Message
+            </a>
+          </td>
+        </tr>`;
+      }).join('');
+    } catch {
+      document.getElementById('teachers-empty')?.classList.remove('hidden');
+    }
+    showContent();
+  })();
+</script>

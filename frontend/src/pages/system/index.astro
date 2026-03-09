@@ -1,0 +1,339 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+---
+<DashboardLayout title="System — Academix" currentPath="/system">
+  <div id="page-loading" class="p-6 space-y-4">
+    <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
+    <div class="h-64 bg-card rounded-xl border border-border animate-pulse"></div>
+  </div>
+
+  <div id="page-content" class="hidden">
+    <div class="border-b border-border px-6 py-4">
+      <h1 class="text-xl font-semibold text-foreground">System Administration</h1>
+      <p class="text-sm text-muted-foreground">User accounts and platform configuration</p>
+    </div>
+
+    <div class="p-6 space-y-6">
+      <!-- User Management -->
+      <section class="bg-card text-card-foreground rounded-xl border border-border overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-border">
+          <div>
+            <h2 class="text-sm font-semibold text-foreground">User Management</h2>
+            <p class="text-xs text-muted-foreground mt-0.5">Create and manage all system users</p>
+          </div>
+          <button id="new-user-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New User
+          </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="px-5 py-3 border-b border-border flex flex-wrap gap-3">
+          <div class="relative flex-1 min-w-48">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+            <input id="user-search" type="text" placeholder="Search by name or email..." class="pl-9 pr-4 py-2 w-full bg-input border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
+          <select id="role-filter" class="bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+            <option value="">All Roles</option>
+            <option value="s">Student</option>
+            <option value="t">Teacher</option>
+            <option value="m">Management</option>
+            <option value="a">Admin</option>
+          </select>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border bg-muted/50">
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">User</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Email</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Role</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Status</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-table"></tbody>
+          </table>
+        </div>
+        <div id="users-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No users found</div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Side panel backdrop -->
+  <div id="panel-backdrop" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50"></div>
+  <!-- User panel -->
+  <div id="user-panel" class="hidden fixed inset-y-0 right-0 z-50 w-96 bg-card border-l border-border p-6 shadow-xl overflow-y-auto">
+    <div class="flex items-center justify-between mb-6">
+      <h2 id="panel-title" class="text-lg font-semibold text-foreground">New User</h2>
+      <button id="close-panel-btn" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form id="user-form" class="space-y-4">
+      <input id="edit-id" type="hidden" value="" />
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-medium text-muted-foreground">First Name *</label>
+          <input id="user-first" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+        </div>
+        <div>
+          <label class="text-xs font-medium text-muted-foreground">Last Name *</label>
+          <input id="user-last" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+        </div>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-muted-foreground">Email *</label>
+        <input id="user-email" type="email" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+      </div>
+      <div>
+        <label class="text-xs font-medium text-muted-foreground">Username *</label>
+        <input id="user-username" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+      </div>
+      <div id="password-field">
+        <label class="text-xs font-medium text-muted-foreground">Password <span id="pw-hint" class="text-muted-foreground/60">(required for new users)</span></label>
+        <input id="user-password" type="password" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+      </div>
+      <div>
+        <label class="text-xs font-medium text-muted-foreground">Role *</label>
+        <select id="user-role" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="s">Student</option>
+          <option value="t">Teacher</option>
+          <option value="m">Management</option>
+          <option value="a">Administration</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-muted-foreground">Phone</label>
+        <input id="user-phone" type="tel" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+      </div>
+      <div class="flex items-center gap-3">
+        <input id="user-active" type="checkbox" checked class="size-4 rounded border-border" />
+        <label for="user-active" class="text-sm text-foreground">Active</label>
+      </div>
+      <div id="form-error" class="hidden text-xs text-red-400 bg-red-500/10 rounded-lg p-3"></div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" id="cancel-form-btn" class="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
+        <button type="submit" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Save</button>
+      </div>
+    </form>
+  </div>
+</DashboardLayout>
+
+<script>
+  const STORAGE_KEY = "user-storage";
+  const TOKEN_KEY = "access_token";
+  const API_URL = "http://localhost:8000/api";
+
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
+    catch { return null; }
+  }
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) window.location.replace('/login');
+  const user = getUser();
+  if (!user) window.location.replace('/login');
+  if (user.role !== 'a') window.location.replace('/');
+
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(`${API_URL}${path}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      ...options,
+    });
+    if (res.status === 401) window.location.replace('/login');
+    if (res.status === 204) return {};
+    return res.json();
+  }
+
+  function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = String(str ?? '');
+    return d.innerHTML;
+  }
+
+  const ROLE_LABELS: Record<string,string> = { s: 'Student', t: 'Teacher', m: 'Management', a: 'Admin' };
+  const ROLE_COLORS: Record<string,string> = {
+    s: 'bg-blue-500/15 text-blue-400',
+    t: 'bg-purple-500/15 text-purple-400',
+    m: 'bg-yellow-500/15 text-yellow-400',
+    a: 'bg-red-500/15 text-red-400',
+  };
+
+  let allUsers: any[] = [];
+  let searchQuery = '';
+  let roleFilter = '';
+
+  function renderTable() {
+    let filtered = allUsers;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(u =>
+        (u.first_name + ' ' + u.last_name).toLowerCase().includes(q) ||
+        u.email?.toLowerCase().includes(q) ||
+        u.username?.toLowerCase().includes(q)
+      );
+    }
+    if (roleFilter) {
+      filtered = filtered.filter(u => u.role === roleFilter);
+    }
+
+    const tbody = document.getElementById('users-table');
+    const empty = document.getElementById('users-empty');
+    if (!tbody) return;
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '';
+      empty?.classList.remove('hidden');
+      return;
+    }
+    empty?.classList.add('hidden');
+    tbody.innerHTML = filtered.map(u => {
+      const active = u.is_active !== false;
+      const initials = ((u.first_name?.[0] ?? '') + (u.last_name?.[0] ?? '')).toUpperCase() || '?';
+      const roleLabel = ROLE_LABELS[u.role] ?? u.role ?? '—';
+      const roleColor = ROLE_COLORS[u.role] ?? 'bg-muted text-muted-foreground';
+      const isSelf = u.id === user.id;
+      return `<tr class="border-b border-border hover:bg-muted/40 transition-colors">
+        <td class="px-5 py-3">
+          <div class="flex items-center gap-3">
+            <div class="size-8 rounded-full bg-primary/15 flex items-center justify-center text-xs font-semibold text-primary flex-shrink-0">${escHtml(initials)}</div>
+            <div>
+              <p class="text-sm font-medium text-foreground">${escHtml(u.first_name)} ${escHtml(u.last_name)} ${isSelf ? '<span class="text-xs text-muted-foreground">(you)</span>' : ''}</p>
+              <p class="text-xs text-muted-foreground">@${escHtml(u.username ?? '')}</p>
+            </div>
+          </div>
+        </td>
+        <td class="px-5 py-3 text-sm text-muted-foreground">${escHtml(u.email ?? '—')}</td>
+        <td class="px-5 py-3">
+          <span class="inline-flex items-center rounded-full ${roleColor} px-2 py-0.5 text-xs font-medium">${roleLabel}</span>
+        </td>
+        <td class="px-5 py-3">
+          <span class="inline-flex items-center rounded-full ${active ? 'bg-green-500/15 text-green-400' : 'bg-muted text-muted-foreground'} px-2 py-0.5 text-xs font-medium">
+            ${active ? 'Active' : 'Inactive'}
+          </span>
+        </td>
+        <td class="px-5 py-3">
+          <div class="flex items-center gap-2">
+            <button class="edit-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors" data-id="${u.id}">Edit</button>
+            ${!isSelf ? `<button class="toggle-btn rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${active ? 'border-border text-red-400 hover:bg-red-500/10 hover:border-red-500/30' : 'border-border text-green-400 hover:bg-green-500/10 hover:border-green-500/30'}" data-id="${u.id}" data-active="${active}">${active ? 'Deactivate' : 'Activate'}</button>` : ''}
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    tbody.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const u = allUsers.find(x => x.id == (btn as HTMLElement).dataset.id);
+        if (u) openPanel(u);
+      });
+    });
+    tbody.querySelectorAll('.toggle-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = (btn as HTMLElement).dataset.id;
+        const active = (btn as HTMLElement).dataset.active === 'true';
+        if (!confirm(`${active ? 'Deactivate' : 'Activate'} this user?`)) return;
+        await apiFetch(`/users/${id}/`, { method: 'PATCH', body: JSON.stringify({ is_active: !active }) });
+        await loadUsers();
+      });
+    });
+  }
+
+  async function loadUsers() {
+    const data = await apiFetch('/users/all/');
+    allUsers = Array.isArray(data) ? data : (data?.results ?? []);
+    renderTable();
+    document.getElementById('page-loading')?.classList.add('hidden');
+    document.getElementById('page-content')?.classList.remove('hidden');
+  }
+
+  function openPanel(u: any = null) {
+    document.getElementById('form-error')?.classList.add('hidden');
+    const title = document.getElementById('panel-title');
+    const pwHint = document.getElementById('pw-hint');
+    const pwInput = document.getElementById('user-password') as HTMLInputElement;
+    if (u) {
+      if (title) title.textContent = 'Edit User';
+      if (pwHint) pwHint.textContent = '(leave blank to keep current)';
+      pwInput.removeAttribute('required');
+      (document.getElementById('edit-id') as HTMLInputElement).value = u.id;
+      (document.getElementById('user-first') as HTMLInputElement).value = u.first_name ?? '';
+      (document.getElementById('user-last') as HTMLInputElement).value = u.last_name ?? '';
+      (document.getElementById('user-email') as HTMLInputElement).value = u.email ?? '';
+      (document.getElementById('user-username') as HTMLInputElement).value = u.username ?? '';
+      (document.getElementById('user-role') as HTMLSelectElement).value = u.role ?? 's';
+      (document.getElementById('user-phone') as HTMLInputElement).value = u.phone ?? '';
+      (document.getElementById('user-active') as HTMLInputElement).checked = u.is_active !== false;
+      pwInput.value = '';
+    } else {
+      if (title) title.textContent = 'New User';
+      if (pwHint) pwHint.textContent = '(required for new users)';
+      pwInput.setAttribute('required', '');
+      (document.getElementById('edit-id') as HTMLInputElement).value = '';
+      (document.getElementById('user-form') as HTMLFormElement)?.reset();
+      (document.getElementById('user-active') as HTMLInputElement).checked = true;
+    }
+    document.getElementById('panel-backdrop')?.classList.remove('hidden');
+    document.getElementById('user-panel')?.classList.remove('hidden');
+  }
+
+  function closePanel() {
+    document.getElementById('panel-backdrop')?.classList.add('hidden');
+    document.getElementById('user-panel')?.classList.add('hidden');
+  }
+
+  document.getElementById('new-user-btn')?.addEventListener('click', () => openPanel());
+  document.getElementById('close-panel-btn')?.addEventListener('click', closePanel);
+  document.getElementById('cancel-form-btn')?.addEventListener('click', closePanel);
+  document.getElementById('panel-backdrop')?.addEventListener('click', closePanel);
+
+  document.getElementById('user-search')?.addEventListener('input', e => {
+    searchQuery = (e.target as HTMLInputElement).value;
+    renderTable();
+  });
+  document.getElementById('role-filter')?.addEventListener('change', e => {
+    roleFilter = (e.target as HTMLSelectElement).value;
+    renderTable();
+  });
+
+  document.getElementById('user-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById('form-error');
+    const id = (document.getElementById('edit-id') as HTMLInputElement).value;
+    const body: any = {
+      first_name: (document.getElementById('user-first') as HTMLInputElement).value.trim(),
+      last_name: (document.getElementById('user-last') as HTMLInputElement).value.trim(),
+      email: (document.getElementById('user-email') as HTMLInputElement).value.trim(),
+      username: (document.getElementById('user-username') as HTMLInputElement).value.trim(),
+      role: (document.getElementById('user-role') as HTMLSelectElement).value,
+      phone: (document.getElementById('user-phone') as HTMLInputElement).value.trim(),
+      is_active: (document.getElementById('user-active') as HTMLInputElement).checked,
+    };
+    const pw = (document.getElementById('user-password') as HTMLInputElement).value;
+    if (pw) body.password = pw;
+
+    try {
+      const url = id ? `/users/${id}/` : '/users/';
+      const method = id ? 'PATCH' : 'POST';
+      const res = await fetch(`${API_URL}${url}`, {
+        method,
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        const msg = Object.values(errData).flat().join(', ') || 'Failed to save user';
+        errEl?.classList.remove('hidden');
+        if (errEl) errEl.textContent = String(msg);
+        return;
+      }
+      closePanel();
+      await loadUsers();
+    } catch {
+      errEl?.classList.remove('hidden');
+      if (errEl) errEl.textContent = 'Network error. Please try again.';
+    }
+  });
+
+  loadUsers();
+</script>

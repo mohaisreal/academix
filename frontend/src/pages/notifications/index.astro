@@ -1,0 +1,219 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+---
+<DashboardLayout title="Notifications — Academix" currentPath="/notifications">
+  <!-- Loading skeleton -->
+  <div id="page-loading" class="p-6 space-y-4">
+    <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
+    <div class="h-10 bg-card rounded-xl border border-border animate-pulse w-2/3"></div>
+    <div class="space-y-3">
+      <div class="h-20 bg-card rounded-xl border border-border animate-pulse"></div>
+      <div class="h-20 bg-card rounded-xl border border-border animate-pulse"></div>
+      <div class="h-20 bg-card rounded-xl border border-border animate-pulse"></div>
+      <div class="h-20 bg-card rounded-xl border border-border animate-pulse"></div>
+    </div>
+  </div>
+
+  <!-- Actual content -->
+  <div id="page-content" class="hidden">
+    <!-- Top bar -->
+    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+      <div>
+        <h1 class="text-xl font-semibold text-foreground">Notifications</h1>
+        <p class="text-sm text-muted-foreground">Stay updated with your latest activity</p>
+      </div>
+      <button id="mark-all-read-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        Mark All Read
+      </button>
+    </div>
+
+    <div class="p-6 space-y-4">
+      <!-- Tabs -->
+      <div class="flex gap-1 border-b border-border">
+        <button class="notif-tab active-tab px-4 py-2 text-sm font-medium text-foreground border-b-2 border-primary -mb-px" data-filter="all">All</button>
+        <button class="notif-tab px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground -mb-px" data-filter="unread">Unread <span id="unread-count" class="ml-1 text-xs bg-primary text-primary-foreground rounded-full px-1.5">0</span></button>
+        <button class="notif-tab px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground -mb-px" data-filter="info">Info</button>
+        <button class="notif-tab px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground -mb-px" data-filter="warning">Warning</button>
+        <button class="notif-tab px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground -mb-px" data-filter="error">Error</button>
+      </div>
+
+      <!-- Notification list -->
+      <div id="notifications-list" class="space-y-2"></div>
+
+      <!-- Empty state -->
+      <div id="empty-state" class="hidden flex flex-col items-center justify-center py-16 text-center">
+        <div class="flex size-16 items-center justify-center rounded-full bg-muted mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </div>
+        <p class="text-lg font-medium text-foreground">No notifications yet</p>
+        <p class="text-sm text-muted-foreground mt-1">You're all caught up!</p>
+      </div>
+    </div>
+  </div>
+</DashboardLayout>
+
+<script>
+  const STORAGE_KEY = "user-storage";
+  const TOKEN_KEY = "access_token";
+  const API_URL = "http://localhost:8000/api";
+
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
+    catch { return null; }
+  }
+
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) window.location.replace('/login');
+  const user = getUser();
+  if (!user) window.location.replace('/login');
+
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(`${API_URL}${path}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      ...options,
+    });
+    if (res.status === 401) window.location.replace('/login');
+    return res.json();
+  }
+
+  function showContent() {
+    document.getElementById('page-loading')?.classList.add('hidden');
+    document.getElementById('page-content')?.classList.remove('hidden');
+  }
+
+  function formatTimeAgo(dateStr) {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = Math.floor((now - date) / 1000);
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  const typeConfig = {
+    info:    { border: 'border-l-4 border-blue-500',   icon: 'text-blue-500',   bg: 'bg-blue-500/10' },
+    success: { border: 'border-l-4 border-green-500',  icon: 'text-green-500',  bg: 'bg-green-500/10' },
+    warning: { border: 'border-l-4 border-yellow-500', icon: 'text-yellow-500', bg: 'bg-yellow-500/10' },
+    error:   { border: 'border-l-4 border-red-500',    icon: 'text-red-500',    bg: 'bg-red-500/10' },
+  };
+
+  function typeIcon(type) {
+    const icons = {
+      info: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+      success: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+      warning: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+      error: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+    };
+    return icons[type] || icons.info;
+  }
+
+  let allNotifications = [];
+  let currentFilter = 'all';
+
+  function renderNotifications() {
+    const list = document.getElementById('notifications-list');
+    const empty = document.getElementById('empty-state');
+    if (!list) return;
+
+    let filtered = allNotifications;
+    if (currentFilter === 'unread') filtered = allNotifications.filter(n => !n.is_read);
+    else if (currentFilter !== 'all') filtered = allNotifications.filter(n => n.notification_type === currentFilter);
+
+    if (filtered.length === 0) {
+      list.innerHTML = '';
+      empty?.classList.remove('hidden');
+      return;
+    }
+    empty?.classList.add('hidden');
+
+    list.innerHTML = filtered.map(n => {
+      const cfg = typeConfig[n.notification_type] || typeConfig.info;
+      return `
+        <div class="notif-item bg-card text-card-foreground rounded-xl border border-border ${cfg.border} p-4 cursor-pointer hover:bg-muted/40 transition-colors flex items-start gap-4 ${n.is_read ? 'opacity-70' : ''}"
+             data-id="${n.id}" data-read="${n.is_read}">
+          <div class="flex size-9 shrink-0 items-center justify-center rounded-full ${cfg.bg} ${cfg.icon}">
+            ${typeIcon(n.notification_type)}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-2">
+              <p class="text-sm font-medium text-foreground">${escHtml(n.title || 'Notification')}</p>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="text-xs text-muted-foreground">${formatTimeAgo(n.created_at)}</span>
+                ${!n.is_read ? '<span class="size-2 rounded-full bg-primary shrink-0"></span>' : ''}
+              </div>
+            </div>
+            <p class="text-sm text-muted-foreground mt-0.5 line-clamp-2">${escHtml(n.message || '')}</p>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Click to mark read
+    list.querySelectorAll('.notif-item').forEach(el => {
+      el.addEventListener('click', async () => {
+        const id = el.dataset.id;
+        const isRead = el.dataset.read === 'true';
+        if (!isRead) {
+          try {
+            await apiFetch(`/notifications/${id}/mark-read/`, { method: 'PATCH' });
+            const notif = allNotifications.find(n => n.id == id);
+            if (notif) notif.is_read = true;
+            updateUnreadCount();
+            renderNotifications();
+          } catch {}
+        }
+      });
+    });
+  }
+
+  function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function updateUnreadCount() {
+    const count = allNotifications.filter(n => !n.is_read).length;
+    const el = document.getElementById('unread-count');
+    if (el) el.textContent = String(count);
+  }
+
+  // Tab click
+  document.querySelectorAll('.notif-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.notif-tab').forEach(b => {
+        b.classList.remove('active-tab', 'text-foreground', 'border-b-2', 'border-primary');
+        b.classList.add('text-muted-foreground');
+      });
+      btn.classList.add('active-tab', 'text-foreground', 'border-b-2', 'border-primary');
+      btn.classList.remove('text-muted-foreground');
+      currentFilter = btn.dataset.filter;
+      renderNotifications();
+    });
+  });
+
+  // Mark all read
+  document.getElementById('mark-all-read-btn')?.addEventListener('click', async () => {
+    try {
+      await apiFetch('/notifications/mark-all-read/', { method: 'POST' });
+      allNotifications.forEach(n => n.is_read = true);
+      updateUnreadCount();
+      renderNotifications();
+    } catch {}
+  });
+
+  (async () => {
+    try {
+      const data = await apiFetch('/notifications/');
+      allNotifications = Array.isArray(data) ? data : (data.results || []);
+      updateUnreadCount();
+      renderNotifications();
+    } catch {
+      allNotifications = [];
+    }
+    showContent();
+  })();
+</script>

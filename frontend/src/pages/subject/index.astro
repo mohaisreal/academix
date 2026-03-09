@@ -1,0 +1,287 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+---
+<DashboardLayout title="Subjects — Academix" currentPath="/subject">
+  <div id="page-loading" class="p-6 space-y-4">
+    <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
+    <div class="h-64 bg-card rounded-xl border border-border animate-pulse"></div>
+  </div>
+
+  <div id="page-content" class="hidden">
+    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+      <div>
+        <h1 class="text-xl font-semibold text-foreground">Subjects</h1>
+        <p class="text-sm text-muted-foreground">Manage course subjects and curriculum</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <select id="career-filter" class="bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="">All Careers</option>
+        </select>
+        <button id="new-subject-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Subject
+        </button>
+      </div>
+    </div>
+
+    <div class="p-6">
+      <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-border">
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Name</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Code</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Career</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Credits</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Hrs/Week</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Status</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="subjects-table-body"></tbody>
+          </table>
+        </div>
+        <div id="subjects-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No subjects found</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="panel-backdrop" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50"></div>
+  <div id="subject-panel" class="hidden fixed inset-y-0 right-0 z-50 w-96 bg-card border-l border-border p-6 shadow-xl overflow-y-auto">
+    <div class="flex items-center justify-between mb-6">
+      <h2 id="panel-title" class="text-lg font-semibold text-foreground">New Subject</h2>
+      <button id="close-panel-btn" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form id="subject-form" class="space-y-4">
+      <input id="edit-id" type="hidden" value="" />
+      <div>
+        <label class="text-xs font-medium text-muted-foreground">Name *</label>
+        <input id="subject-name" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Calculus I" />
+      </div>
+      <div>
+        <label class="text-xs font-medium text-muted-foreground">Code *</label>
+        <input id="subject-code" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="MATH101" />
+      </div>
+      <div>
+        <label class="text-xs font-medium text-muted-foreground">Career *</label>
+        <select id="subject-career" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="">Select career</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-muted-foreground">Credits (1–10)</label>
+        <input id="subject-credits" type="number" min="1" max="10" value="3" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+      </div>
+      <div>
+        <label class="text-xs font-medium text-muted-foreground">Hours/Week (1–20)</label>
+        <input id="subject-hours" type="number" min="1" max="20" value="4" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+      </div>
+      <div>
+        <label class="text-xs font-medium text-muted-foreground">Description</label>
+        <textarea id="subject-desc" rows="3" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none" placeholder="Brief description..."></textarea>
+      </div>
+      <div class="flex items-center gap-3">
+        <input id="subject-active" type="checkbox" checked class="size-4 rounded border-border" />
+        <label for="subject-active" class="text-sm text-foreground">Active</label>
+      </div>
+      <div id="form-error" class="hidden text-xs text-red-400"></div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" id="cancel-form-btn" class="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
+        <button type="submit" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Save</button>
+      </div>
+    </form>
+  </div>
+</DashboardLayout>
+
+<script>
+  const STORAGE_KEY = "user-storage";
+  const TOKEN_KEY = "access_token";
+  const API_URL = "http://localhost:8000/api";
+
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
+    catch { return null; }
+  }
+
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) window.location.replace('/login');
+  const user = getUser();
+  if (!user) window.location.replace('/login');
+  const role = user?.role ?? '';
+
+  if (role !== 'm' && role !== 'a') window.location.replace('/');
+
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(`${API_URL}${path}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      ...options,
+    });
+    if (res.status === 401) window.location.replace('/login');
+    return res.json();
+  }
+
+  function showContent() {
+    document.getElementById('page-loading')?.classList.add('hidden');
+    document.getElementById('page-content')?.classList.remove('hidden');
+  }
+
+  function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = String(str ?? '');
+    return d.innerHTML;
+  }
+
+  let subjects = [];
+  let careersList = [];
+
+  function renderTable() {
+    const tbody = document.getElementById('subjects-table-body');
+    const empty = document.getElementById('subjects-empty');
+    if (!tbody) return;
+    if (subjects.length === 0) {
+      tbody.innerHTML = '';
+      empty?.classList.remove('hidden');
+      return;
+    }
+    empty?.classList.add('hidden');
+    tbody.innerHTML = subjects.map(s => {
+      const active = s.is_active !== false;
+      const careerName = s.career_name || careersList.find(c => c.id === s.career)?.name || '-';
+      return `<tr class="border-b border-border hover:bg-muted/40 transition-colors">
+        <td class="py-3 pr-4 text-sm font-medium text-foreground">${escHtml(s.name)}</td>
+        <td class="py-3 pr-4 text-sm text-muted-foreground font-mono">${escHtml(s.code)}</td>
+        <td class="py-3 pr-4 text-sm text-muted-foreground">${escHtml(careerName)}</td>
+        <td class="py-3 pr-4 text-sm text-muted-foreground">${s.credits || '-'}</td>
+        <td class="py-3 pr-4 text-sm text-muted-foreground">${s.hours_per_week || s.hours_week || '-'}</td>
+        <td class="py-3 pr-4">
+          <span class="inline-flex items-center rounded-full ${active ? 'bg-green-500/15 text-green-400' : 'bg-muted text-muted-foreground'} px-2 py-0.5 text-xs font-medium">${active ? 'Active' : 'Inactive'}</span>
+        </td>
+        <td class="py-3">
+          <div class="flex items-center gap-2">
+            <button class="edit-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors" data-id="${s.id}">Edit</button>
+            <button class="delete-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-colors" data-id="${s.id}">Delete</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    tbody.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const subject = subjects.find(s => s.id == (btn as HTMLElement).dataset.id);
+        if (subject) openPanel(subject);
+      });
+    });
+
+    tbody.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Delete this subject?')) return;
+        const id = (btn as HTMLElement).dataset.id;
+        try {
+          await fetch(`${API_URL}/academic/subjects/${id}/`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+          await loadSubjects((document.getElementById('career-filter') as HTMLSelectElement)?.value || '');
+        } catch { alert('Failed to delete subject'); }
+      });
+    });
+  }
+
+  async function loadSubjects(careerId = '') {
+    try {
+      const path = careerId ? `/academic/subjects/?career=${careerId}` : '/academic/subjects/';
+      const data = await apiFetch(path);
+      subjects = Array.isArray(data) ? data : (data.results || []);
+      renderTable();
+    } catch { subjects = []; }
+  }
+
+  function openPanel(subject = null) {
+    document.getElementById('form-error')?.classList.add('hidden');
+    const title = document.getElementById('panel-title');
+    const idEl = document.getElementById('edit-id') as HTMLInputElement;
+
+    const careerSel = document.getElementById('subject-career') as HTMLSelectElement;
+    careerSel.innerHTML = '<option value="">Select career</option>';
+    careersList.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.name;
+      careerSel.appendChild(opt);
+    });
+
+    if (subject) {
+      if (title) title.textContent = 'Edit Subject';
+      if (idEl) idEl.value = subject.id;
+      (document.getElementById('subject-name') as HTMLInputElement).value = subject.name || '';
+      (document.getElementById('subject-code') as HTMLInputElement).value = subject.code || '';
+      careerSel.value = subject.career || '';
+      (document.getElementById('subject-credits') as HTMLInputElement).value = subject.credits || 3;
+      (document.getElementById('subject-hours') as HTMLInputElement).value = subject.hours_per_week || subject.hours_week || 4;
+      (document.getElementById('subject-desc') as HTMLTextAreaElement).value = subject.description || '';
+      (document.getElementById('subject-active') as HTMLInputElement).checked = subject.is_active !== false;
+    } else {
+      if (title) title.textContent = 'New Subject';
+      if (idEl) idEl.value = '';
+      (document.getElementById('subject-form') as HTMLFormElement)?.reset();
+      (document.getElementById('subject-active') as HTMLInputElement).checked = true;
+    }
+    document.getElementById('panel-backdrop')?.classList.remove('hidden');
+    document.getElementById('subject-panel')?.classList.remove('hidden');
+  }
+
+  function closePanel() {
+    document.getElementById('panel-backdrop')?.classList.add('hidden');
+    document.getElementById('subject-panel')?.classList.add('hidden');
+  }
+
+  document.getElementById('new-subject-btn')?.addEventListener('click', () => openPanel());
+  document.getElementById('close-panel-btn')?.addEventListener('click', closePanel);
+  document.getElementById('cancel-form-btn')?.addEventListener('click', closePanel);
+  document.getElementById('panel-backdrop')?.addEventListener('click', closePanel);
+
+  document.getElementById('career-filter')?.addEventListener('change', (e) => {
+    loadSubjects((e.target as HTMLSelectElement).value);
+  });
+
+  document.getElementById('subject-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById('form-error');
+    const id = (document.getElementById('edit-id') as HTMLInputElement).value;
+    const name = (document.getElementById('subject-name') as HTMLInputElement).value;
+    const code = (document.getElementById('subject-code') as HTMLInputElement).value;
+    const career = (document.getElementById('subject-career') as HTMLSelectElement).value;
+    const credits = parseInt((document.getElementById('subject-credits') as HTMLInputElement).value);
+    const hours_per_week = parseInt((document.getElementById('subject-hours') as HTMLInputElement).value);
+    const description = (document.getElementById('subject-desc') as HTMLTextAreaElement).value;
+    const is_active = (document.getElementById('subject-active') as HTMLInputElement).checked;
+    try {
+      if (id) {
+        await apiFetch(`/academic/subjects/${id}/`, { method: 'PATCH', body: JSON.stringify({ name, code, career, credits, hours_per_week, description, is_active }) });
+      } else {
+        await apiFetch('/academic/subjects/', { method: 'POST', body: JSON.stringify({ name, code, career, credits, hours_per_week, description, is_active }) });
+      }
+      closePanel();
+      await loadSubjects((document.getElementById('career-filter') as HTMLSelectElement)?.value || '');
+    } catch {
+      errEl?.classList.remove('hidden');
+      if (errEl) errEl.textContent = 'Failed to save subject';
+    }
+  });
+
+  (async () => {
+    try {
+      const data = await apiFetch('/academic/careers/');
+      careersList = Array.isArray(data) ? data : (data.results || []);
+      const sel = document.getElementById('career-filter') as HTMLSelectElement;
+      careersList.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.name;
+        sel?.appendChild(opt);
+      });
+    } catch {}
+    await loadSubjects();
+    showContent();
+  })();
+</script>

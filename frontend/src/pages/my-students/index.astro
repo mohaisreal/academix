@@ -1,0 +1,181 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+---
+<DashboardLayout title="My Students — Academix" currentPath="/my-students">
+  <div id="page-loading" class="p-6 space-y-4">
+    <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
+    <div class="h-64 bg-card rounded-xl border border-border animate-pulse"></div>
+  </div>
+
+  <div id="page-content" class="hidden">
+    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+      <div>
+        <h1 class="text-xl font-semibold text-foreground">My Students</h1>
+        <p class="text-sm text-muted-foreground">Students enrolled in your classes</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <select id="class-filter" class="bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="">All Classes</option>
+        </select>
+        <input id="search-input" type="text" placeholder="Search students..." class="w-52 bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+      </div>
+    </div>
+
+    <div class="p-6">
+      <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-border">
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Student</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Career</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Avg Grade</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="students-table-body"></tbody>
+          </table>
+        </div>
+        <div id="students-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No students found</div>
+      </div>
+    </div>
+  </div>
+</DashboardLayout>
+
+<script>
+  const STORAGE_KEY = "user-storage";
+  const TOKEN_KEY = "access_token";
+  const API_URL = "http://localhost:8000/api";
+
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
+    catch { return null; }
+  }
+
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) window.location.replace('/login');
+  const user = getUser();
+  if (!user) window.location.replace('/login');
+  const role = user?.role ?? '';
+
+  if (role !== 't') window.location.replace('/');
+
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(`${API_URL}${path}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      ...options,
+    });
+    if (res.status === 401) window.location.replace('/login');
+    return res.json();
+  }
+
+  function showContent() {
+    document.getElementById('page-loading')?.classList.add('hidden');
+    document.getElementById('page-content')?.classList.remove('hidden');
+  }
+
+  function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = String(str ?? '');
+    return d.innerHTML;
+  }
+
+  function initials(name) {
+    if (!name) return '??';
+    return name.split(' ').map(p => p[0]).join('').toUpperCase().substring(0, 2);
+  }
+
+  function gradeBadge(avg) {
+    const v = parseFloat(avg) || 0;
+    if (v > 75) return `<span class="inline-flex items-center rounded-full bg-green-500/15 text-green-400 px-2 py-0.5 text-xs font-medium">${v.toFixed(1)}</span>`;
+    if (v >= 50) return `<span class="inline-flex items-center rounded-full bg-blue-500/15 text-blue-400 px-2 py-0.5 text-xs font-medium">${v.toFixed(1)}</span>`;
+    return `<span class="inline-flex items-center rounded-full bg-yellow-500/15 text-yellow-400 px-2 py-0.5 text-xs font-medium">${v > 0 ? v.toFixed(1) : '-'}</span>`;
+  }
+
+  let allStudents = [];
+
+  function renderTable(students) {
+    const tbody = document.getElementById('students-table-body');
+    const empty = document.getElementById('students-empty');
+    if (!tbody) return;
+    if (students.length === 0) {
+      tbody.innerHTML = '';
+      empty?.classList.remove('hidden');
+      return;
+    }
+    empty?.classList.add('hidden');
+    tbody.innerHTML = students.map(s => {
+      const name = s.student_name || `${s.first_name || ''} ${s.last_name || ''}`.trim() || s.username || 'Unknown';
+      const email = s.email || '-';
+      const career = s.career_name || s.career || '-';
+      const avg = s.gpa ?? s.average_grade ?? s.avg_grade;
+      const studentId = s.student_id || s.id;
+      return `<tr class="border-b border-border hover:bg-muted/40 transition-colors">
+        <td class="py-3 pr-4">
+          <div class="flex items-center gap-3">
+            <div class="flex size-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">${initials(name)}</div>
+            <div>
+              <p class="text-sm font-medium text-foreground">${escHtml(name)}</p>
+              <p class="text-xs text-muted-foreground">${escHtml(email)}</p>
+            </div>
+          </div>
+        </td>
+        <td class="py-3 pr-4 text-sm text-muted-foreground">${escHtml(career)}</td>
+        <td class="py-3 pr-4">${gradeBadge(avg)}</td>
+        <td class="py-3">
+          <a href="/files?student=${studentId}" class="inline-flex items-center rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors">View File</a>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  document.getElementById('search-input')?.addEventListener('input', (e) => {
+    const q = (e.target as HTMLInputElement).value.toLowerCase();
+    const classFilter = (document.getElementById('class-filter') as HTMLSelectElement)?.value;
+    let filtered = allStudents.filter(s => {
+      const name = (s.student_name || `${s.first_name || ''} ${s.last_name || ''}`).toLowerCase();
+      return name.includes(q);
+    });
+    if (classFilter) {
+      filtered = filtered.filter(s => (s.class_id || s.class) == classFilter || s.classes?.some(c => c.id == classFilter || c == classFilter));
+    }
+    renderTable(filtered);
+  });
+
+  document.getElementById('class-filter')?.addEventListener('change', (e) => {
+    const classId = (e.target as HTMLSelectElement).value;
+    const q = (document.getElementById('search-input') as HTMLInputElement)?.value?.toLowerCase() || '';
+    let filtered = allStudents;
+    if (q) filtered = filtered.filter(s => {
+      const name = (s.student_name || `${s.first_name || ''} ${s.last_name || ''}`).toLowerCase();
+      return name.includes(q);
+    });
+    if (classId) filtered = filtered.filter(s => (s.class_id || s.class) == classId || s.classes?.some(c => c.id == classId || c == classId));
+    renderTable(filtered);
+  });
+
+  (async () => {
+    // Populate class filter
+    try {
+      const classData = await apiFetch('/academic/classes/my-classes/');
+      const classes = Array.isArray(classData) ? classData : (classData.results || []);
+      const sel = document.getElementById('class-filter') as HTMLSelectElement;
+      classes.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.subject_name || c.subject?.name || `Class ${c.id}`;
+        sel?.appendChild(opt);
+      });
+    } catch {}
+
+    try {
+      const data = await apiFetch('/grades/files/');
+      allStudents = Array.isArray(data) ? data : (data.results || []);
+      renderTable(allStudents);
+    } catch {
+      allStudents = [];
+      document.getElementById('students-empty')?.classList.remove('hidden');
+    }
+    showContent();
+  })();
+</script>

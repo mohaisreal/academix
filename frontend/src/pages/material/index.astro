@@ -1,0 +1,368 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+---
+<DashboardLayout title="Teaching Materials — Academix" currentPath="/material">
+  <div id="page-loading" class="p-6 space-y-4">
+    <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
+    <div class="h-10 bg-card rounded-xl border border-border animate-pulse w-1/2"></div>
+    <div class="grid grid-cols-3 gap-4">
+      <div class="h-40 bg-card rounded-xl border border-border animate-pulse"></div>
+      <div class="h-40 bg-card rounded-xl border border-border animate-pulse"></div>
+      <div class="h-40 bg-card rounded-xl border border-border animate-pulse"></div>
+    </div>
+  </div>
+
+  <div id="page-content" class="hidden">
+    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+      <div>
+        <h1 class="text-xl font-semibold text-foreground">Teaching Materials</h1>
+        <p class="text-sm text-muted-foreground">Upload and manage class resources</p>
+      </div>
+      <button id="upload-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Upload Material
+      </button>
+    </div>
+
+    <div class="p-6 space-y-4">
+      <!-- Class filter tabs -->
+      <div id="class-tabs" class="flex gap-1 overflow-x-auto pb-1 border-b border-border">
+        <button class="class-tab active-class-tab px-4 py-2 text-sm font-medium text-foreground border-b-2 border-primary -mb-px whitespace-nowrap" data-class="">All Classes</button>
+      </div>
+
+      <!-- Materials grid -->
+      <div id="materials-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      <div id="materials-empty" class="hidden flex flex-col items-center justify-center py-16 text-center">
+        <div class="flex size-16 items-center justify-center rounded-full bg-muted mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <p class="text-lg font-medium text-foreground">No materials yet</p>
+        <p class="text-sm text-muted-foreground mt-1">Upload your first teaching material</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload panel -->
+  <div id="upload-backdrop" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-start justify-end">
+    <div class="w-96 h-full bg-card border-l border-border p-6 overflow-y-auto shadow-xl">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-lg font-semibold text-foreground">Upload Material</h2>
+        <button id="close-upload-btn" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="upload-form" class="space-y-4">
+        <div>
+          <label class="text-xs font-medium text-muted-foreground">Title *</label>
+          <input id="mat-title" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Material title" />
+        </div>
+        <div>
+          <label class="text-xs font-medium text-muted-foreground">Description</label>
+          <textarea id="mat-desc" rows="3" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none" placeholder="Brief description..."></textarea>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-muted-foreground">Class *</label>
+          <select id="mat-class" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+            <option value="">Select a class</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-muted-foreground">Type *</label>
+          <select id="mat-type" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+            <option value="document">Document</option>
+            <option value="video">Video</option>
+            <option value="link">Link</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div id="file-input-section">
+          <label class="text-xs font-medium text-muted-foreground">File</label>
+          <input id="mat-file" type="file" class="mt-1 w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary hover:file:bg-primary/20 cursor-pointer" />
+        </div>
+        <div id="url-input-section" class="hidden">
+          <label class="text-xs font-medium text-muted-foreground">URL</label>
+          <input id="mat-url" type="url" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="https://..." />
+        </div>
+        <div id="upload-error" class="hidden text-xs text-red-400"></div>
+        <div id="upload-success" class="hidden text-xs text-green-400"></div>
+        <div class="flex gap-3 pt-2">
+          <button type="button" id="cancel-upload-btn" class="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
+          <button type="submit" id="submit-upload-btn" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Upload</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</DashboardLayout>
+
+<script>
+  const STORAGE_KEY = "user-storage";
+  const TOKEN_KEY = "access_token";
+  const API_URL = "http://localhost:8000/api";
+
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
+    catch { return null; }
+  }
+
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) window.location.replace('/login');
+  const user = getUser();
+  if (!user) window.location.replace('/login');
+  const role = user?.role ?? '';
+
+  if (role !== 't') window.location.replace('/');
+
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(`${API_URL}${path}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      ...options,
+    });
+    if (res.status === 401) window.location.replace('/login');
+    return res.json();
+  }
+
+  function showContent() {
+    document.getElementById('page-loading')?.classList.add('hidden');
+    document.getElementById('page-content')?.classList.remove('hidden');
+  }
+
+  function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = String(str ?? '');
+    return d.innerHTML;
+  }
+
+  function formatDate(str) {
+    if (!str) return '-';
+    return new Date(str).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  const TYPE_ICONS = {
+    document: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+    video: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
+    link: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`,
+    other: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>`,
+  };
+
+  const TYPE_BG = {
+    document: 'bg-blue-500/15 text-blue-400',
+    video: 'bg-red-500/15 text-red-400',
+    link: 'bg-green-500/15 text-green-400',
+    other: 'bg-muted text-muted-foreground',
+  };
+
+  let allMaterials = [];
+  let activeClassFilter = '';
+
+  function renderMaterials(materials) {
+    const grid = document.getElementById('materials-grid');
+    const empty = document.getElementById('materials-empty');
+    if (!grid) return;
+    if (materials.length === 0) {
+      grid.innerHTML = '';
+      empty?.classList.remove('hidden');
+      return;
+    }
+    empty?.classList.add('hidden');
+    grid.innerHTML = materials.map(m => {
+      const type = m.material_type || m.type || 'document';
+      const icon = TYPE_ICONS[type] || TYPE_ICONS.other;
+      const bg = TYPE_BG[type] || TYPE_BG.other;
+      const url = m.file_url || m.file || m.url || '';
+      const className = m.class_name || m.cls_name || '';
+      return `<div class="bg-card text-card-foreground rounded-xl border border-border p-5 flex flex-col gap-3 hover:border-primary/50 transition-colors">
+        <div class="flex items-start gap-3">
+          <div class="flex size-10 items-center justify-center rounded-lg ${bg} shrink-0">${icon}</div>
+          <div class="flex-1 min-w-0">
+            <p class="font-medium text-foreground truncate">${escHtml(m.title || m.name || 'Material')}</p>
+            <p class="text-xs text-muted-foreground mt-0.5 line-clamp-2">${escHtml(m.description || '')}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          ${className ? `<span class="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">${escHtml(className)}</span>` : ''}
+          <span class="inline-flex items-center rounded-full ${bg} px-2 py-0.5 text-xs font-medium capitalize">${type}</span>
+        </div>
+        <p class="text-xs text-muted-foreground">Uploaded ${formatDate(m.uploaded_at || m.created_at)}</p>
+        <div class="flex items-center gap-2 mt-auto">
+          ${url ? `<a href="${escHtml(url)}" target="_blank" rel="noopener" class="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download
+          </a>` : ''}
+          <button class="delete-mat-btn rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition-colors" data-id="${m.id}">
+            Delete
+          </button>
+        </div>
+      </div>`;
+    }).join('');
+
+    grid.querySelectorAll('.delete-mat-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Delete this material?')) return;
+        const id = (btn as HTMLElement).dataset.id;
+        try {
+          await fetch(`${API_URL}/material/${id}/`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          allMaterials = allMaterials.filter(m => m.id != id);
+          filterAndRender();
+        } catch { alert('Failed to delete material'); }
+      });
+    });
+  }
+
+  function filterAndRender() {
+    const filtered = activeClassFilter ? allMaterials.filter(m => String(m.cls || m.class_id || m.cls_id) === activeClassFilter) : allMaterials;
+    renderMaterials(filtered);
+  }
+
+  // Upload panel toggle
+  function openUpload() { document.getElementById('upload-backdrop')?.classList.remove('hidden'); }
+  function closeUpload() {
+    document.getElementById('upload-backdrop')?.classList.add('hidden');
+    document.getElementById('upload-error')?.classList.add('hidden');
+    document.getElementById('upload-success')?.classList.add('hidden');
+    (document.getElementById('upload-form') as HTMLFormElement)?.reset();
+  }
+
+  document.getElementById('upload-btn')?.addEventListener('click', openUpload);
+  document.getElementById('close-upload-btn')?.addEventListener('click', closeUpload);
+  document.getElementById('cancel-upload-btn')?.addEventListener('click', closeUpload);
+
+  // Toggle file/url based on type
+  document.getElementById('mat-type')?.addEventListener('change', (e) => {
+    const type = (e.target as HTMLSelectElement).value;
+    const fileSection = document.getElementById('file-input-section');
+    const urlSection = document.getElementById('url-input-section');
+    if (type === 'link') {
+      fileSection?.classList.add('hidden');
+      urlSection?.classList.remove('hidden');
+    } else {
+      fileSection?.classList.remove('hidden');
+      urlSection?.classList.add('hidden');
+    }
+  });
+
+  document.getElementById('upload-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById('upload-error');
+    const successEl = document.getElementById('upload-success');
+    const btn = document.getElementById('submit-upload-btn') as HTMLButtonElement;
+    btn.disabled = true;
+    btn.textContent = 'Uploading...';
+
+    const type = (document.getElementById('mat-type') as HTMLSelectElement).value;
+    const title = (document.getElementById('mat-title') as HTMLInputElement).value;
+    const desc = (document.getElementById('mat-desc') as HTMLTextAreaElement).value;
+    const cls = (document.getElementById('mat-class') as HTMLSelectElement).value;
+
+    try {
+      if (type === 'link') {
+        const url = (document.getElementById('mat-url') as HTMLInputElement).value;
+        await apiFetch('/material/', {
+          method: 'POST',
+          body: JSON.stringify({ title, description: desc, cls, material_type: type, url }),
+        });
+      } else {
+        const fileInput = document.getElementById('mat-file') as HTMLInputElement;
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('description', desc);
+        formData.append('cls', cls);
+        formData.append('material_type', type);
+        if (fileInput.files?.[0]) formData.append('file', fileInput.files[0]);
+
+        const res = await fetch(`${API_URL}/material/`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData,
+        });
+        if (res.status === 401) window.location.replace('/login');
+      }
+
+      successEl?.classList.remove('hidden');
+      if (successEl) successEl.textContent = 'Material uploaded successfully!';
+      errEl?.classList.add('hidden');
+
+      // Reload materials
+      const data = await apiFetch('/material/');
+      allMaterials = Array.isArray(data) ? data : (data.results || []);
+      filterAndRender();
+
+      setTimeout(closeUpload, 1500);
+    } catch {
+      errEl?.classList.remove('hidden');
+      if (errEl) errEl.textContent = 'Failed to upload material';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Upload';
+    }
+  });
+
+  (async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const preClass = urlParams.get('class');
+
+    const [matData, classData] = await Promise.allSettled([
+      apiFetch('/material/'),
+      apiFetch('/academic/classes/my-classes/'),
+    ]);
+
+    // Build class tabs and filter dropdown
+    const classes = classData.status === 'fulfilled' ? (Array.isArray(classData.value) ? classData.value : (classData.value.results || [])) : [];
+    const tabsEl = document.getElementById('class-tabs');
+    const matClassSel = document.getElementById('mat-class') as HTMLSelectElement;
+
+    classes.forEach(c => {
+      const subject = c.subject_name || c.subject?.name || `Class ${c.id}`;
+
+      // Tab
+      const tab = document.createElement('button');
+      tab.className = 'class-tab px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground -mb-px whitespace-nowrap';
+      tab.dataset.class = c.id;
+      tab.textContent = subject;
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.class-tab').forEach(t => {
+          t.classList.remove('active-class-tab', 'text-foreground', 'border-b-2', 'border-primary');
+          t.classList.add('text-muted-foreground');
+        });
+        tab.classList.add('active-class-tab', 'text-foreground', 'border-b-2', 'border-primary');
+        tab.classList.remove('text-muted-foreground');
+        activeClassFilter = c.id;
+        filterAndRender();
+      });
+      tabsEl?.appendChild(tab);
+
+      // Dropdown option
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = subject;
+      matClassSel?.appendChild(opt);
+    });
+
+    // "All" tab click
+    document.querySelector('.class-tab[data-class=""]')?.addEventListener('click', () => {
+      document.querySelectorAll('.class-tab').forEach(t => {
+        t.classList.remove('active-class-tab', 'text-foreground', 'border-b-2', 'border-primary');
+        t.classList.add('text-muted-foreground');
+      });
+      const allTab = document.querySelector('.class-tab[data-class=""]');
+      allTab?.classList.add('active-class-tab', 'text-foreground', 'border-b-2', 'border-primary');
+      allTab?.classList.remove('text-muted-foreground');
+      activeClassFilter = '';
+      filterAndRender();
+    });
+
+    allMaterials = matData.status === 'fulfilled' ? (Array.isArray(matData.value) ? matData.value : (matData.value.results || [])) : [];
+
+    if (preClass) {
+      activeClassFilter = preClass;
+      const tab = document.querySelector(`.class-tab[data-class="${preClass}"]`) as HTMLElement;
+      if (tab) tab.click();
+    } else {
+      filterAndRender();
+    }
+
+    showContent();
+  })();
+</script>

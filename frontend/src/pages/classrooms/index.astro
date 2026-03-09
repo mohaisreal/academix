@@ -1,0 +1,255 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+---
+<DashboardLayout title="Classrooms — Academix" currentPath="/classrooms">
+  <div id="page-loading" class="p-6 space-y-4">
+    <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
+    <div class="h-64 bg-card rounded-xl border border-border animate-pulse"></div>
+  </div>
+
+  <div id="page-content" class="hidden">
+    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+      <div>
+        <h1 class="text-xl font-semibold text-foreground">Classrooms</h1>
+        <p class="text-sm text-muted-foreground">Manage rooms and teaching spaces</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <select id="type-filter" class="bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="">All Types</option>
+          <option value="lecture">Lecture</option>
+          <option value="lab">Lab</option>
+          <option value="seminar">Seminar</option>
+        </select>
+        <button id="new-classroom-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Classroom
+        </button>
+      </div>
+    </div>
+
+    <div class="p-6">
+      <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-border">
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Name</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Building</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Capacity</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Type</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="classrooms-table-body"></tbody>
+          </table>
+        </div>
+        <div id="classrooms-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No classrooms found</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="panel-backdrop" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50"></div>
+  <div id="classroom-panel" class="hidden fixed inset-y-0 right-0 z-50 w-96 bg-card border-l border-border p-6 shadow-xl overflow-y-auto">
+    <div class="flex items-center justify-between mb-6">
+      <h2 id="panel-title" class="text-lg font-semibold text-foreground">New Classroom</h2>
+      <button id="close-panel-btn" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form id="classroom-form" class="space-y-4">
+      <input id="edit-id" type="hidden" value="" />
+      <div>
+        <label class="text-xs font-medium text-muted-foreground">Name *</label>
+        <input id="classroom-name" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Room 101" />
+      </div>
+      <div>
+        <label class="text-xs font-medium text-muted-foreground">Building *</label>
+        <input id="classroom-building" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Main Building" />
+      </div>
+      <div>
+        <label class="text-xs font-medium text-muted-foreground">Capacity *</label>
+        <input id="classroom-capacity" type="number" required min="1" value="30" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+      </div>
+      <div>
+        <label class="text-xs font-medium text-muted-foreground">Type *</label>
+        <select id="classroom-type" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="lecture">Lecture</option>
+          <option value="lab">Lab</option>
+          <option value="seminar">Seminar</option>
+        </select>
+      </div>
+      <div id="form-error" class="hidden text-xs text-red-400"></div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" id="cancel-form-btn" class="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
+        <button type="submit" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Save</button>
+      </div>
+    </form>
+  </div>
+</DashboardLayout>
+
+<script>
+  const STORAGE_KEY = "user-storage";
+  const TOKEN_KEY = "access_token";
+  const API_URL = "http://localhost:8000/api";
+
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
+    catch { return null; }
+  }
+
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) window.location.replace('/login');
+  const user = getUser();
+  if (!user) window.location.replace('/login');
+  const role = user?.role ?? '';
+
+  if (role !== 'm' && role !== 'a') window.location.replace('/');
+
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(`${API_URL}${path}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      ...options,
+    });
+    if (res.status === 401) window.location.replace('/login');
+    return res.json();
+  }
+
+  function showContent() {
+    document.getElementById('page-loading')?.classList.add('hidden');
+    document.getElementById('page-content')?.classList.remove('hidden');
+  }
+
+  function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = String(str ?? '');
+    return d.innerHTML;
+  }
+
+  const TYPE_BADGES = {
+    lecture: 'bg-blue-500/15 text-blue-400',
+    lab: 'bg-green-500/15 text-green-400',
+    seminar: 'bg-purple-500/15 text-purple-400',
+  };
+
+  let allClassrooms = [];
+
+  function renderTable(classrooms) {
+    const tbody = document.getElementById('classrooms-table-body');
+    const empty = document.getElementById('classrooms-empty');
+    if (!tbody) return;
+    if (classrooms.length === 0) {
+      tbody.innerHTML = '';
+      empty?.classList.remove('hidden');
+      return;
+    }
+    empty?.classList.add('hidden');
+    tbody.innerHTML = classrooms.map(c => {
+      const type = c.room_type || c.type || 'lecture';
+      const badge = TYPE_BADGES[type] || 'bg-muted text-muted-foreground';
+      return `<tr class="border-b border-border hover:bg-muted/40 transition-colors">
+        <td class="py-3 pr-4 text-sm font-medium text-foreground">${escHtml(c.name)}</td>
+        <td class="py-3 pr-4 text-sm text-muted-foreground">${escHtml(c.building || '-')}</td>
+        <td class="py-3 pr-4 text-sm text-muted-foreground">${c.capacity || '-'}</td>
+        <td class="py-3 pr-4">
+          <span class="inline-flex items-center rounded-full ${badge} px-2 py-0.5 text-xs font-medium capitalize">${type}</span>
+        </td>
+        <td class="py-3">
+          <div class="flex items-center gap-2">
+            <button class="edit-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors" data-id="${c.id}">Edit</button>
+            <button class="delete-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-colors" data-id="${c.id}">Delete</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    tbody.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const classroom = allClassrooms.find(c => c.id == (btn as HTMLElement).dataset.id);
+        if (classroom) openPanel(classroom);
+      });
+    });
+
+    tbody.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Delete this classroom?')) return;
+        const id = (btn as HTMLElement).dataset.id;
+        try {
+          await fetch(`${API_URL}/academic/classrooms/${id}/`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+          await loadClassrooms();
+        } catch { alert('Failed to delete classroom'); }
+      });
+    });
+  }
+
+  async function loadClassrooms() {
+    try {
+      const data = await apiFetch('/academic/classrooms/');
+      allClassrooms = Array.isArray(data) ? data : (data.results || []);
+      const filter = (document.getElementById('type-filter') as HTMLSelectElement)?.value;
+      renderTable(filter ? allClassrooms.filter(c => (c.room_type || c.type) === filter) : allClassrooms);
+    } catch { allClassrooms = []; }
+  }
+
+  document.getElementById('type-filter')?.addEventListener('change', (e) => {
+    const type = (e.target as HTMLSelectElement).value;
+    renderTable(type ? allClassrooms.filter(c => (c.room_type || c.type) === type) : allClassrooms);
+  });
+
+  function openPanel(classroom = null) {
+    document.getElementById('form-error')?.classList.add('hidden');
+    const title = document.getElementById('panel-title');
+    const idEl = document.getElementById('edit-id') as HTMLInputElement;
+
+    if (classroom) {
+      if (title) title.textContent = 'Edit Classroom';
+      if (idEl) idEl.value = classroom.id;
+      (document.getElementById('classroom-name') as HTMLInputElement).value = classroom.name || '';
+      (document.getElementById('classroom-building') as HTMLInputElement).value = classroom.building || '';
+      (document.getElementById('classroom-capacity') as HTMLInputElement).value = classroom.capacity || 30;
+      (document.getElementById('classroom-type') as HTMLSelectElement).value = classroom.room_type || classroom.type || 'lecture';
+    } else {
+      if (title) title.textContent = 'New Classroom';
+      if (idEl) idEl.value = '';
+      (document.getElementById('classroom-form') as HTMLFormElement)?.reset();
+    }
+    document.getElementById('panel-backdrop')?.classList.remove('hidden');
+    document.getElementById('classroom-panel')?.classList.remove('hidden');
+  }
+
+  function closePanel() {
+    document.getElementById('panel-backdrop')?.classList.add('hidden');
+    document.getElementById('classroom-panel')?.classList.add('hidden');
+  }
+
+  document.getElementById('new-classroom-btn')?.addEventListener('click', () => openPanel());
+  document.getElementById('close-panel-btn')?.addEventListener('click', closePanel);
+  document.getElementById('cancel-form-btn')?.addEventListener('click', closePanel);
+  document.getElementById('panel-backdrop')?.addEventListener('click', closePanel);
+
+  document.getElementById('classroom-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById('form-error');
+    const id = (document.getElementById('edit-id') as HTMLInputElement).value;
+    const name = (document.getElementById('classroom-name') as HTMLInputElement).value;
+    const building = (document.getElementById('classroom-building') as HTMLInputElement).value;
+    const capacity = parseInt((document.getElementById('classroom-capacity') as HTMLInputElement).value);
+    const room_type = (document.getElementById('classroom-type') as HTMLSelectElement).value;
+    try {
+      if (id) {
+        await apiFetch(`/academic/classrooms/${id}/`, { method: 'PATCH', body: JSON.stringify({ name, building, capacity, room_type }) });
+      } else {
+        await apiFetch('/academic/classrooms/', { method: 'POST', body: JSON.stringify({ name, building, capacity, room_type }) });
+      }
+      closePanel();
+      await loadClassrooms();
+    } catch {
+      errEl?.classList.remove('hidden');
+      if (errEl) errEl.textContent = 'Failed to save classroom';
+    }
+  });
+
+  (async () => {
+    await loadClassrooms();
+    showContent();
+  })();
+</script>

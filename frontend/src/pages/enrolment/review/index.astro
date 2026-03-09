@@ -1,0 +1,174 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+---
+<DashboardLayout title="Enrolment Review — Academix" currentPath="/enrolment/review">
+  <div id="page-loading" class="p-6 space-y-4">
+    <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
+    <div class="h-64 bg-card rounded-xl border border-border animate-pulse"></div>
+  </div>
+
+  <div id="page-content" class="hidden">
+    <div class="border-b border-border px-6 py-4">
+      <h1 class="text-xl font-semibold text-foreground">Enrolment Review</h1>
+      <p class="text-sm text-muted-foreground">Approve or reject pending enrolment requests</p>
+    </div>
+
+    <div class="p-6 space-y-4">
+      <!-- Tabs -->
+      <div class="flex gap-1 bg-muted rounded-lg p-1 w-fit">
+        <button id="tab-pending" class="tab-btn px-4 py-1.5 rounded-md text-sm font-medium bg-card text-foreground shadow-sm transition-all">
+          Pending <span id="pending-count" class="ml-1.5 bg-yellow-500/20 text-yellow-400 rounded-full px-1.5 py-0.5 text-xs">0</span>
+        </button>
+        <button id="tab-all" class="tab-btn px-4 py-1.5 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground transition-all">
+          All Requests
+        </button>
+      </div>
+
+      <div class="bg-card text-card-foreground rounded-xl border border-border overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border bg-muted/50">
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Student</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Career</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Period</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Status</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="review-table"></tbody>
+          </table>
+        </div>
+        <div id="review-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No enrolment requests found</div>
+      </div>
+    </div>
+  </div>
+</DashboardLayout>
+
+<script>
+  const STORAGE_KEY = "user-storage";
+  const TOKEN_KEY = "access_token";
+  const API_URL = "http://localhost:8000/api";
+
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
+    catch { return null; }
+  }
+
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) window.location.replace('/login');
+  const user = getUser();
+  if (!user) window.location.replace('/login');
+  if (user.role !== 'm' && user.role !== 'a') window.location.replace('/');
+
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(`${API_URL}${path}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      ...options,
+    });
+    if (res.status === 401) window.location.replace('/login');
+    if (res.status === 204) return {};
+    return res.json();
+  }
+
+  function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = String(str ?? '');
+    return d.innerHTML;
+  }
+
+  const STATUS_COLORS = {
+    pending: 'bg-yellow-500/15 text-yellow-400',
+    active: 'bg-green-500/15 text-green-400',
+    completed: 'bg-blue-500/15 text-blue-400',
+    dropped: 'bg-red-500/15 text-red-400',
+  };
+
+  let enrolments = [];
+  let currentTab = 'pending';
+
+  function renderTable() {
+    const filtered = currentTab === 'pending'
+      ? enrolments.filter(e => e.status === 'pending')
+      : enrolments;
+
+    const pending = enrolments.filter(e => e.status === 'pending');
+    const countEl = document.getElementById('pending-count');
+    if (countEl) countEl.textContent = String(pending.length);
+
+    const tbody = document.getElementById('review-table');
+    const empty = document.getElementById('review-empty');
+    if (!tbody) return;
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '';
+      empty?.classList.remove('hidden');
+      return;
+    }
+    empty?.classList.add('hidden');
+    tbody.innerHTML = filtered.map(e => {
+      const colorClass = STATUS_COLORS[e.status] ?? 'bg-muted text-muted-foreground';
+      const isPending = e.status === 'pending';
+      return `<tr class="border-b border-border hover:bg-muted/40 transition-colors">
+        <td class="px-4 py-3 text-sm font-medium text-foreground">${escHtml(e.student_name ?? `#${e.student}`)}</td>
+        <td class="px-4 py-3 text-sm text-muted-foreground">${escHtml(e.career_name ?? `Career #${e.career}`)}</td>
+        <td class="px-4 py-3 text-sm text-muted-foreground">${escHtml(e.period_name ?? `Period #${e.period}`)}</td>
+        <td class="px-4 py-3">
+          <span class="inline-flex items-center rounded-full ${colorClass} px-2 py-0.5 text-xs font-medium capitalize">${e.status}</span>
+        </td>
+        <td class="px-4 py-3">
+          ${isPending ? `
+          <div class="flex items-center gap-2">
+            <button class="approve-btn rounded-lg bg-green-500/15 border border-green-500/30 px-3 py-1 text-xs font-medium text-green-400 hover:bg-green-500/25 transition-colors" data-id="${e.id}">✓ Approve</button>
+            <button class="reject-btn rounded-lg bg-red-500/15 border border-red-500/30 px-3 py-1 text-xs font-medium text-red-400 hover:bg-red-500/25 transition-colors" data-id="${e.id}">✗ Reject</button>
+          </div>` : '<span class="text-xs text-muted-foreground">—</span>'}
+        </td>
+      </tr>`;
+    }).join('');
+
+    tbody.querySelectorAll('.approve-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        btn.textContent = 'Approving...';
+        (btn as HTMLButtonElement).disabled = true;
+        await apiFetch(`/enrollment/review/${btn.dataset.id}/approve/`, { method: 'PATCH' });
+        await loadData();
+      });
+    });
+    tbody.querySelectorAll('.reject-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Reject this enrolment request?')) return;
+        btn.textContent = 'Rejecting...';
+        (btn as HTMLButtonElement).disabled = true;
+        await apiFetch(`/enrollment/review/${btn.dataset.id}/reject/`, { method: 'PATCH' });
+        await loadData();
+      });
+    });
+  }
+
+  async function loadData() {
+    const data = await apiFetch('/enrollment/management/');
+    enrolments = Array.isArray(data) ? data : (data?.results ?? []);
+    renderTable();
+    document.getElementById('page-loading')?.classList.add('hidden');
+    document.getElementById('page-content')?.classList.remove('hidden');
+  }
+
+  document.getElementById('tab-pending')?.addEventListener('click', () => {
+    currentTab = 'pending';
+    document.getElementById('tab-pending')?.classList.add('bg-card', 'text-foreground', 'shadow-sm');
+    document.getElementById('tab-pending')?.classList.remove('text-muted-foreground');
+    document.getElementById('tab-all')?.classList.remove('bg-card', 'text-foreground', 'shadow-sm');
+    document.getElementById('tab-all')?.classList.add('text-muted-foreground');
+    renderTable();
+  });
+  document.getElementById('tab-all')?.addEventListener('click', () => {
+    currentTab = 'all';
+    document.getElementById('tab-all')?.classList.add('bg-card', 'text-foreground', 'shadow-sm');
+    document.getElementById('tab-all')?.classList.remove('text-muted-foreground');
+    document.getElementById('tab-pending')?.classList.remove('bg-card', 'text-foreground', 'shadow-sm');
+    document.getElementById('tab-pending')?.classList.add('text-muted-foreground');
+    renderTable();
+  });
+
+  loadData();
+</script>

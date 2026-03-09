@@ -1,0 +1,307 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+---
+<DashboardLayout title="Weekly Timetable — Academix" currentPath="/timetable">
+  <div id="page-loading" class="p-6 space-y-4">
+    <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
+    <div class="h-96 bg-card rounded-xl border border-border animate-pulse"></div>
+    <div class="h-48 bg-card rounded-xl border border-border animate-pulse"></div>
+  </div>
+
+  <div id="page-content" class="hidden">
+    <!-- Student timetable section -->
+    <div id="timetable-student" class="hidden">
+      <div class="flex items-center justify-between border-b border-border px-6 py-4">
+        <div>
+          <h1 class="text-xl font-semibold text-foreground">Weekly Timetable</h1>
+          <p class="text-sm text-muted-foreground">Your class schedule for this period</p>
+        </div>
+        <span id="student-period-badge" class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"></span>
+      </div>
+      <div class="p-6 space-y-6">
+        <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+          <h2 class="text-lg font-semibold text-foreground mb-4">Schedule Grid</h2>
+          <div class="overflow-x-auto">
+            <div id="student-grid" class="min-w-[700px]"></div>
+          </div>
+        </div>
+        <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+          <h2 class="text-lg font-semibold text-foreground mb-4">All Classes</h2>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="border-b border-border">
+                  <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Subject</th>
+                  <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Day</th>
+                  <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Time</th>
+                  <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Classroom</th>
+                </tr>
+              </thead>
+              <tbody id="student-table-body"></tbody>
+            </table>
+          </div>
+          <div id="student-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No classes scheduled for this period</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Teacher timetable section -->
+    <div id="timetable-teacher" class="hidden">
+      <div class="flex items-center justify-between border-b border-border px-6 py-4">
+        <div>
+          <h1 class="text-xl font-semibold text-foreground">Weekly Timetable</h1>
+          <p class="text-sm text-muted-foreground">Your teaching schedule for this period</p>
+        </div>
+        <span id="teacher-period-badge" class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"></span>
+      </div>
+      <div class="p-6 space-y-6">
+        <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+          <h2 class="text-lg font-semibold text-foreground mb-4">Schedule Grid</h2>
+          <div class="overflow-x-auto">
+            <div id="teacher-grid" class="min-w-[700px]"></div>
+          </div>
+        </div>
+        <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+          <h2 class="text-lg font-semibold text-foreground mb-4">All Classes</h2>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="border-b border-border">
+                  <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Subject</th>
+                  <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Day</th>
+                  <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Time</th>
+                  <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Classroom</th>
+                </tr>
+              </thead>
+              <tbody id="teacher-table-body"></tbody>
+            </table>
+          </div>
+          <div id="teacher-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No classes scheduled for this period</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Not allowed -->
+    <div id="timetable-denied" class="hidden p-6">
+      <div class="flex flex-col items-center justify-center py-20 text-center">
+        <p class="text-lg font-medium text-foreground">Access Denied</p>
+        <p class="text-sm text-muted-foreground mt-1">This page is for students and teachers only.</p>
+      </div>
+    </div>
+  </div>
+</DashboardLayout>
+
+<style>
+  .timetable-grid {
+    display: grid;
+    grid-template-columns: 70px repeat(5, 1fr);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .timetable-cell {
+    border-right: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+    min-height: 52px;
+    position: relative;
+  }
+  .timetable-header {
+    background: var(--color-muted);
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    padding: 8px 4px;
+    color: var(--color-muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .timetable-time {
+    background: var(--color-muted);
+    font-size: 11px;
+    color: var(--color-muted-foreground);
+    text-align: right;
+    padding: 6px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  .class-block {
+    position: absolute;
+    inset: 2px;
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-size: 11px;
+    color: white;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+</style>
+
+<script>
+  const STORAGE_KEY = "user-storage";
+  const TOKEN_KEY = "access_token";
+  const API_URL = "http://localhost:8000/api";
+
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
+    catch { return null; }
+  }
+
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) window.location.replace('/login');
+  const user = getUser();
+  if (!user) window.location.replace('/login');
+  const role = user?.role ?? '';
+
+  if (role !== 's' && role !== 't') window.location.replace('/');
+
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(`${API_URL}${path}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      ...options,
+    });
+    if (res.status === 401) window.location.replace('/login');
+    return res.json();
+  }
+
+  function showContent() {
+    document.getElementById('page-loading')?.classList.add('hidden');
+    document.getElementById('page-content')?.classList.remove('hidden');
+  }
+
+  const DAY_MAP = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 0: 6 };
+  const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7..20
+  const FALLBACK_COLORS = ['#6366f1','#0ea5e9','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4'];
+
+  function buildGrid(containerId, tableBodyId, emptyId, classes) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    // Determine days present
+    const daysPresent = new Set();
+    classes.forEach(c => {
+      const schedules = c.schedules || c.schedule || [];
+      schedules.forEach(s => daysPresent.add(Number(s.day_of_week)));
+    });
+    let days = [1,2,3,4,5];
+    if (daysPresent.has(6)) days.push(6);
+    if (daysPresent.has(0)) days.push(0);
+
+    const numCols = days.length;
+
+    let gridHtml = `<div style="display:grid;grid-template-columns:70px repeat(${numCols},1fr);border:1px solid var(--color-border);border-radius:8px;overflow:hidden;">`;
+
+    // Header row
+    gridHtml += `<div style="background:var(--color-muted);padding:8px;font-size:11px;font-weight:600;color:var(--color-muted-foreground);text-align:center;border-right:1px solid var(--color-border);border-bottom:1px solid var(--color-border);">TIME</div>`;
+    days.forEach(d => {
+      gridHtml += `<div style="background:var(--color-muted);padding:8px;font-size:11px;font-weight:600;color:var(--color-muted-foreground);text-align:center;border-right:1px solid var(--color-border);border-bottom:1px solid var(--color-border);">${DAY_NAMES[d === 0 ? 6 : d - 1]}</div>`;
+    });
+
+    // Build class map: day -> hour -> class info
+    const cellMap = {};
+    let colorIdx = 0;
+    classes.forEach(c => {
+      const color = c.color || FALLBACK_COLORS[colorIdx++ % FALLBACK_COLORS.length];
+      const subject = c.subject_name || c.subject?.name || 'Class';
+      const classroom = c.classroom_name || c.classroom?.name || '';
+      const schedules = c.schedules || c.schedule || [];
+      schedules.forEach(s => {
+        const day = Number(s.day_of_week);
+        const startH = parseInt((s.start_time || '00:00').split(':')[0]);
+        const endH = parseInt((s.end_time || '00:00').split(':')[0]);
+        const key = `${day}-${startH}`;
+        cellMap[key] = { subject, classroom, color, start: s.start_time, end: s.end_time, span: Math.max(1, endH - startH) };
+      });
+    });
+
+    const occupiedCells = new Set();
+    HOURS.forEach(hour => {
+      const timeStr = `${String(hour).padStart(2,'0')}:00`;
+      gridHtml += `<div style="background:var(--color-muted);font-size:11px;color:var(--color-muted-foreground);text-align:right;padding:6px 8px;display:flex;align-items:flex-start;justify-content:flex-end;border-right:1px solid var(--color-border);border-bottom:1px solid var(--color-border);min-height:52px;">${timeStr}</div>`;
+      days.forEach(day => {
+        const cellKey = `${day}-${hour}`;
+        if (occupiedCells.has(cellKey)) return;
+        const cls = cellMap[cellKey];
+        if (cls) {
+          for (let h = 0; h < cls.span - 1; h++) occupiedCells.add(`${day}-${hour + h + 1}`);
+          gridHtml += `<div style="position:relative;border-right:1px solid var(--color-border);border-bottom:1px solid var(--color-border);min-height:${52 * cls.span}px;grid-row:span ${cls.span}">
+            <div style="position:absolute;inset:3px;border-radius:6px;background:${cls.color};padding:5px 7px;font-size:11px;color:white;overflow:hidden;">
+              <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(cls.subject)}</div>
+              <div style="opacity:0.85;">${cls.start}–${cls.end}</div>
+              ${cls.classroom ? `<div style="opacity:0.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(cls.classroom)}</div>` : ''}
+            </div>
+          </div>`;
+        } else {
+          gridHtml += `<div style="border-right:1px solid var(--color-border);border-bottom:1px solid var(--color-border);min-height:52px;"></div>`;
+        }
+      });
+    });
+
+    gridHtml += `</div>`;
+    container.innerHTML = gridHtml;
+
+    // Table list
+    const tbody = document.getElementById(tableBodyId);
+    const emptyEl = document.getElementById(emptyId);
+    if (!tbody) return;
+
+    if (classes.length === 0) {
+      tbody.innerHTML = '';
+      emptyEl?.classList.remove('hidden');
+      return;
+    }
+    emptyEl?.classList.add('hidden');
+
+    let rows = '';
+    classes.forEach(c => {
+      const subject = c.subject_name || c.subject?.name || 'Class';
+      const classroom = c.classroom_name || c.classroom?.name || '-';
+      const schedules = c.schedules || c.schedule || [];
+      schedules.forEach(s => {
+        const day = DAY_NAMES[Number(s.day_of_week) === 0 ? 6 : Number(s.day_of_week) - 1];
+        rows += `<tr class="border-b border-border hover:bg-muted/40 transition-colors">
+          <td class="py-3 pr-4 text-sm font-medium text-foreground">${escHtml(subject)}</td>
+          <td class="py-3 pr-4 text-sm text-muted-foreground">${day}</td>
+          <td class="py-3 pr-4 text-sm text-muted-foreground">${s.start_time} – ${s.end_time}</td>
+          <td class="py-3 text-sm text-muted-foreground">${escHtml(classroom)}</td>
+        </tr>`;
+      });
+    });
+    tbody.innerHTML = rows;
+  }
+
+  function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = String(str);
+    return d.innerHTML;
+  }
+
+  (async () => {
+    try {
+      const data = await apiFetch('/academic/classes/my-schedule/');
+      const classes = Array.isArray(data) ? data : (data.results || []);
+
+      // Determine current period label
+      const periodName = classes[0]?.period_name || classes[0]?.period?.name || '';
+
+      if (role === 's') {
+        document.getElementById('timetable-student')?.classList.remove('hidden');
+        const badge = document.getElementById('student-period-badge');
+        if (badge && periodName) badge.textContent = periodName;
+        buildGrid('student-grid', 'student-table-body', 'student-empty', classes);
+      } else if (role === 't') {
+        document.getElementById('timetable-teacher')?.classList.remove('hidden');
+        const badge = document.getElementById('teacher-period-badge');
+        if (badge && periodName) badge.textContent = periodName;
+        buildGrid('teacher-grid', 'teacher-table-body', 'teacher-empty', classes);
+      }
+    } catch {
+      if (role === 's') document.getElementById('timetable-student')?.classList.remove('hidden');
+      else if (role === 't') document.getElementById('timetable-teacher')?.classList.remove('hidden');
+    }
+    showContent();
+  })();
+</script>
