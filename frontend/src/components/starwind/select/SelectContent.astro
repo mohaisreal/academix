@@ -33,7 +33,7 @@ type Props = HTMLAttributes<"div"> & {
 export const selectContent = tv({
   base: [
     "starwind-select-content",
-    "bg-popover text-popover-foreground absolute z-50 min-w-[8rem] rounded-md border shadow-md",
+    "bg-popover text-popover-foreground absolute z-50 min-w-[8rem] rounded-md border border-border shadow-lg",
     "data-[state=open]:animate-in fade-in zoom-in-95 overflow-hidden will-change-transform",
     "data-[state=closed]:animate-out data-[state=closed]:fill-mode-forwards fade-out zoom-out-95",
   ],

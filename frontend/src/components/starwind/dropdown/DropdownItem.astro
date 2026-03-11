@@ -15,7 +15,7 @@ type Props<Tag extends HTMLTag> = Polymorphic<{ as: Tag }> & {
 
 export const dropdownItem = tv({
   base: [
-    "focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 transition-colors outline-none select-none",
+    "text-popover-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 transition-colors outline-none select-none",
     "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
     "[&>svg]:size-4 [&>svg]:shrink-0",
   ],

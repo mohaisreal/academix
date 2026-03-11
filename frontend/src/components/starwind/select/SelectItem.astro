@@ -17,7 +17,9 @@ type Props = HTMLAttributes<"div"> & {
 export const selectItem = tv({
   base: [
     "relative flex w-full cursor-default items-center rounded-sm py-1.5 pr-8 pl-2 outline-none select-none",
+    "text-popover-foreground",
     "data-[active]:bg-accent data-[active]:text-accent-foreground",
+    "aria-selected:bg-primary/10 aria-selected:text-popover-foreground aria-selected:font-medium",
     "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
     "not-aria-selected:[&_svg]:hidden aria-selected:[&_svg]:flex",
   ],
