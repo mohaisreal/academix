@@ -1,0 +1,41 @@
+# Auto detect text files and normalize line endings to LF
+* text=auto
+
+# Shell scripts - must always have LF
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Python files - must have LF for proper execution
+*.py text eol=lf
+
+# Docker files
+Dockerfile text eol=lf
+*.dockerfile text eol=lf
+
+# Make files
+Makefile text eol=lf
+*.mk text eol=lf
+
+# Bash/Shell
+.bashrc text eol=lf
+.bash_profile text eol=lf
+.bash_aliases text eol=lf
+.profile text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.mov binary
+*.mp4 binary
+*.mp3 binary
+*.gz binary
+*.zip binary
+*.7z binary
+*.ttf binary
+*.otf binary
+*.db binary
+*.sqlite binary
+*.sqlite3 binary
