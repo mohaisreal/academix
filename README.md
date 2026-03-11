@@ -69,20 +69,20 @@ Key capabilities:
 
 ```
 ┌─────────────────────────────────────────────┐
-│                    Client                    │
-│           Astro + TailwindCSS + Zustand      │
-│               (Port 4321 / 80)               │
+│                    Client                   │
+│           Astro + TailwindCSS + Zustand     │
+│               (Port 4321 / 80)              │
 └───────────────────────┬─────────────────────┘
                         │ HTTP / REST
 ┌───────────────────────▼─────────────────────┐
-│              Django REST Framework           │
-│           JWT Auth · CORS · Gunicorn         │
-│                  (Port 8000)                 │
+│              Django REST Framework          │
+│           JWT Auth · CORS · Gunicorn        │
+│                  (Port 8000)                │
 └───────────────────────┬─────────────────────┘
                         │
 ┌───────────────────────▼─────────────────────┐
-│          PostgreSQL 16  (production)         │
-│          SQLite         (development)        │
+│          PostgreSQL 16  (production)        │
+│          SQLite         (development)       │
 └─────────────────────────────────────────────┘
 ```
 
