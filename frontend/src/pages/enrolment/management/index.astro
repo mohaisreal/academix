@@ -104,20 +104,20 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 <script>
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
-  const API_URL = "http://localhost:8000/api";
+  const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
 
   function getUser() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null')?.state?.user ?? null; }
     catch { return null; }
   }
 
   const token = localStorage.getItem(TOKEN_KEY);
-  if (!token) window.location.replace('/login');
+  if (!token) { window.location.replace('/login'); throw new Error('Unauthenticated'); }
   const user = getUser();
-  if (!user) window.location.replace('/login');
-  if (user.role !== 'm' && user.role !== 'a') window.location.replace('/');
+  if (!user) { window.location.replace('/login'); throw new Error('Unauthenticated'); }
+  if (user.role !== 'm' && user.role !== 'a') { window.location.replace('/'); throw new Error('Unauthorised'); }
 
-  async function apiFetch(path, options = {}) {
+  async function apiFetch(path: string, options: RequestInit = {}): Promise<any> {
     const res = await fetch(`${API_URL}${path}`, {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       ...options,
@@ -127,26 +127,29 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     return res.json();
   }
 
-  function escHtml(str) {
+  function escHtml(str: any): string {
     const d = document.createElement('div');
     d.textContent = String(str ?? '');
     return d.innerHTML;
   }
 
-  const STATUS_COLORS = {
+  const STATUS_COLORS: Record<string, string> = {
     pending: 'bg-yellow-500/15 text-yellow-400',
     active: 'bg-green-500/15 text-green-400',
     completed: 'bg-blue-500/15 text-blue-400',
     dropped: 'bg-red-500/15 text-red-400',
   };
 
-  let enrolments = [], careers = [], periods = [], students = [];
+  let enrolments: any[] = [], careers: any[] = [], periods: any[] = [], students: any[] = [];
   let filterStatus = '', filterCareer = '';
 
   function renderTable() {
     let filtered = enrolments;
     if (filterStatus) filtered = filtered.filter(e => e.status === filterStatus);
-    if (filterCareer) filtered = filtered.filter(e => String(e.career ?? e.career_id) === filterCareer);
+    if (filterCareer) filtered = filtered.filter(e => {
+      const career = careers.find(c => String(c.id) === filterCareer);
+      return career ? e.career_name === career.name : false;
+    });
 
     const tbody = document.getElementById('enrolments-table');
     const empty = document.getElementById('enrolments-empty');
@@ -158,9 +161,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     }
     empty?.classList.add('hidden');
     tbody.innerHTML = filtered.map(e => {
-      const studentName = e.student_name ?? `Student #${e.student}`;
-      const careerName = e.career_name ?? careers.find(c => c.id == e.career)?.name ?? `Career #${e.career}`;
-      const periodName = e.period_name ?? periods.find(p => p.id == e.period)?.name ?? `Period #${e.period}`;
+      const studentName = e.student?.full_name ?? (`${e.student?.first_name ?? ''} ${e.student?.last_name ?? ''}`.trim() || `Student #${e.student?.id ?? '?'}`);
+      const careerName = e.career_name ?? `Career #?`;
+      const periodName = e.period_name ?? `Period #?`;
       const colorClass = STATUS_COLORS[e.status] ?? 'bg-muted text-muted-foreground';
       return `<tr class="border-b border-border hover:bg-muted/40 transition-colors">
         <td class="px-4 py-3 text-sm font-medium text-foreground">${escHtml(studentName)}</td>
@@ -178,13 +181,13 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       </tr>`;
     }).join('');
 
-    tbody.querySelectorAll('.edit-btn').forEach(btn => {
+    tbody.querySelectorAll<HTMLButtonElement>('.edit-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const e = enrolments.find(x => x.id == btn.dataset.id);
         if (e) openPanel(e);
       });
     });
-    tbody.querySelectorAll('.delete-btn').forEach(btn => {
+    tbody.querySelectorAll<HTMLButtonElement>('.delete-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (!confirm('Delete this enrolment?')) return;
         await apiFetch(`/enrollment/management/${btn.dataset.id}/`, { method: 'DELETE' });
@@ -203,44 +206,52 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     careers = Array.isArray(cData) ? cData : (cData?.results ?? []);
     periods = Array.isArray(pData) ? pData : (pData?.results ?? []);
 
-    const careerFilter = document.getElementById('filter-career');
-    careerFilter.innerHTML = '<option value="">All Careers</option>';
-    careers.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c.id; opt.textContent = c.name;
-      careerFilter.appendChild(opt);
-    });
+    const careerFilter = document.getElementById('filter-career') as HTMLSelectElement;
+    if (careerFilter) {
+      careerFilter.innerHTML = '<option value="">All Careers</option>';
+      careers.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id; opt.textContent = c.name;
+        careerFilter.appendChild(opt);
+      });
+    }
 
-    const careerSel = document.getElementById('enrolment-career');
-    careerSel.innerHTML = '<option value="">Select career...</option>';
-    careers.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c.id; opt.textContent = c.name;
-      careerSel.appendChild(opt);
-    });
+    const careerSel = document.getElementById('enrolment-career') as HTMLSelectElement;
+    if (careerSel) {
+      careerSel.innerHTML = '<option value="">Select career...</option>';
+      careers.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id; opt.textContent = c.name;
+        careerSel.appendChild(opt);
+      });
+    }
 
-    const periodSel = document.getElementById('enrolment-period');
-    periodSel.innerHTML = '<option value="">Select period...</option>';
-    periods.forEach(p => {
-      const opt = document.createElement('option');
-      opt.value = p.id; opt.textContent = p.name;
-      periodSel.appendChild(opt);
-    });
+    const periodSel = document.getElementById('enrolment-period') as HTMLSelectElement;
+    if (periodSel) {
+      periodSel.innerHTML = '<option value="">Select period...</option>';
+      periods.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id; opt.textContent = p.name;
+        periodSel.appendChild(opt);
+      });
+    }
 
     renderTable();
     document.getElementById('page-loading')?.classList.add('hidden');
     document.getElementById('page-content')?.classList.remove('hidden');
   }
 
-  function openPanel(enrolment = null) {
+  function openPanel(enrolment: any = null) {
     document.getElementById('form-error')?.classList.add('hidden');
     const title = document.getElementById('panel-title');
     if (enrolment) {
       if (title) title.textContent = 'Edit Enrolment';
       (document.getElementById('edit-id') as HTMLInputElement).value = enrolment.id;
-      (document.getElementById('enrolment-student') as HTMLSelectElement).value = String(enrolment.student);
-      (document.getElementById('enrolment-career') as HTMLSelectElement).value = String(enrolment.career ?? enrolment.career_id);
-      (document.getElementById('enrolment-period') as HTMLSelectElement).value = String(enrolment.period ?? enrolment.period_id);
+      (document.getElementById('enrolment-student') as HTMLSelectElement).value = String(enrolment.student?.id ?? enrolment.student);
+      const careerId = careers.find(c => c.name === enrolment.career_name)?.id ?? '';
+      (document.getElementById('enrolment-career') as HTMLSelectElement).value = String(careerId);
+      const periodId = periods.find(p => p.name === enrolment.period_name)?.id ?? '';
+      (document.getElementById('enrolment-period') as HTMLSelectElement).value = String(periodId);
       (document.getElementById('enrolment-status') as HTMLSelectElement).value = enrolment.status;
     } else {
       if (title) title.textContent = 'New Enrolment';
@@ -261,13 +272,15 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     if (students.length === 0) {
       const sData = await apiFetch('/users/students/');
       students = Array.isArray(sData) ? sData : (sData?.results ?? []);
-      const sel = document.getElementById('enrolment-student');
-      sel.innerHTML = '<option value="">Select student...</option>';
-      students.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s.id; opt.textContent = `${s.first_name} ${s.last_name}`;
-        sel.appendChild(opt);
-      });
+      const sel = document.getElementById('enrolment-student') as HTMLSelectElement;
+      if (sel) {
+        sel.innerHTML = '<option value="">Select student...</option>';
+        students.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.id; opt.textContent = `${s.first_name} ${s.last_name}`;
+          sel.appendChild(opt);
+        });
+      }
     }
     openPanel();
   });
@@ -282,9 +295,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const errEl = document.getElementById('form-error');
     const id = (document.getElementById('edit-id') as HTMLInputElement).value;
     const body = {
-      student: parseInt((document.getElementById('enrolment-student') as HTMLSelectElement).value),
-      career: parseInt((document.getElementById('enrolment-career') as HTMLSelectElement).value),
-      period: parseInt((document.getElementById('enrolment-period') as HTMLSelectElement).value),
+      student_id: parseInt((document.getElementById('enrolment-student') as HTMLSelectElement).value),
+      career_id: parseInt((document.getElementById('enrolment-career') as HTMLSelectElement).value),
+      period_id: parseInt((document.getElementById('enrolment-period') as HTMLSelectElement).value),
       status: (document.getElementById('enrolment-status') as HTMLSelectElement).value,
     };
     try {

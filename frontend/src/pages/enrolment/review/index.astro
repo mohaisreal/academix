@@ -48,7 +48,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 <script>
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
-  const API_URL = "http://localhost:8000/api";
+  const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
 
   function getUser() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
@@ -84,7 +84,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     dropped: 'bg-red-500/15 text-red-400',
   };
 
-  let enrolments = [];
+  let enrolments: any[] = [];
   let currentTab = 'pending';
 
   function renderTable() {
@@ -110,9 +110,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       const colorClass = STATUS_COLORS[e.status] ?? 'bg-muted text-muted-foreground';
       const isPending = e.status === 'pending';
       return `<tr class="border-b border-border hover:bg-muted/40 transition-colors">
-        <td class="px-4 py-3 text-sm font-medium text-foreground">${escHtml(e.student_name ?? `#${e.student}`)}</td>
-        <td class="px-4 py-3 text-sm text-muted-foreground">${escHtml(e.career_name ?? `Career #${e.career}`)}</td>
-        <td class="px-4 py-3 text-sm text-muted-foreground">${escHtml(e.period_name ?? `Period #${e.period}`)}</td>
+        <td class="px-4 py-3 text-sm font-medium text-foreground">${escHtml(e.student?.full_name ?? (`${e.student?.first_name ?? ''} ${e.student?.last_name ?? ''}`.trim() || `Student #${e.student?.id ?? '?'}`))}</td>
+        <td class="px-4 py-3 text-sm text-muted-foreground">${escHtml(e.career_name ?? 'Career ?')}</td>
+        <td class="px-4 py-3 text-sm text-muted-foreground">${escHtml(e.period_name ?? 'Period ?')}</td>
         <td class="px-4 py-3">
           <span class="inline-flex items-center rounded-full ${colorClass} px-2 py-0.5 text-xs font-medium capitalize">${e.status}</span>
         </td>

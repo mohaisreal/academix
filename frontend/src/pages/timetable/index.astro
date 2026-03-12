@@ -142,7 +142,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 <script>
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
-  const API_URL = "http://localhost:8000/api";
+  const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
 
   function getUser() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
@@ -156,6 +156,18 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   const role = user?.role ?? '';
 
   if (role !== 's' && role !== 't') window.location.replace('/');
+
+  // Map student subject enrollment data into the same shape as class data
+  function normalizeStudentSubjects(subjects) {
+    return subjects.map(s => ({
+      id: s.class_id || s.id,
+      subject_name: s.subject_name || s.name,
+      classroom_name: s.classroom_name || s.classroom,
+      period_name: s.period_name,
+      schedules: s.schedules || s.schedule || [],
+      color: null,
+    }));
+  }
 
   async function apiFetch(path, options = {}) {
     const res = await fetch(`${API_URL}${path}`, {
@@ -281,8 +293,15 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   (async () => {
     try {
-      const data = await apiFetch('/academic/classes/my-schedule/');
-      const classes = Array.isArray(data) ? data : (data.results || []);
+      let classes = [];
+      if (role === 's') {
+        const data = await apiFetch('/enrollment/my-subjects/');
+        const raw = Array.isArray(data) ? data : (data.results || []);
+        classes = normalizeStudentSubjects(raw);
+      } else if (role === 't') {
+        const data = await apiFetch('/academic/classes/my-classes/');
+        classes = Array.isArray(data) ? data : (data.results || []);
+      }
 
       // Determine current period label
       const periodName = classes[0]?.period_name || classes[0]?.period?.name || '';

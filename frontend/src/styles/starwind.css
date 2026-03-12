@@ -164,4 +164,14 @@
   button {
     @apply cursor-pointer;
   }
+
+  /* Native <select> options can't inherit alpha-transparent backgrounds.
+     Force opaque popover colors so options are always visible. */
+  select {
+    color-scheme: light dark;
+  }
+  select option {
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+  }
 }

@@ -89,7 +89,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 <script>
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
-  const API_URL = "http://localhost:8000/api";
+  const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
 
   function getUser() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
@@ -184,7 +184,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         if (!confirm('Delete this period?')) return;
         const id = (btn as HTMLElement).dataset.id;
         try {
-          await fetch(`${API_URL}/academic/periods/${id}/`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+          await apiFetch(`/academic/periods/${id}/`, { method: 'DELETE' });
           await loadPeriods();
         } catch { alert('Failed to delete period'); }
       });

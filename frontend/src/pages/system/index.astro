@@ -124,7 +124,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 <script>
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
-  const API_URL = "http://localhost:8000/api";
+  const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
 
   function getUser() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
@@ -315,23 +315,13 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     try {
       const url = id ? `/users/${id}/` : '/users/';
       const method = id ? 'PATCH' : 'POST';
-      const res = await fetch(`${API_URL}${url}`, {
-        method,
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        const msg = Object.values(errData).flat().join(', ') || 'Failed to save user';
-        errEl?.classList.remove('hidden');
-        if (errEl) errEl.textContent = String(msg);
-        return;
-      }
+      await apiFetch(url, { method, body: JSON.stringify(body) });
       closePanel();
       await loadUsers();
-    } catch {
+    } catch (err: any) {
       errEl?.classList.remove('hidden');
-      if (errEl) errEl.textContent = 'Network error. Please try again.';
+      const msg = err?.message || 'Failed to save user';
+      if (errEl) errEl.textContent = String(msg);
     }
   });
 

@@ -97,7 +97,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 <script>
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
-  const API_URL = "http://localhost:8000/api";
+  const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
 
   function getUser() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
@@ -112,12 +112,24 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   if (role !== 't') window.location.replace('/');
 
-  async function apiFetch(path, options = {}) {
+  async function apiFetch(path, options: any = {}) {
     const res = await fetch(`${API_URL}${path}`, {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       ...options,
     });
     if (res.status === 401) window.location.replace('/login');
+    if (res.status === 204) return {};
+    return res.json();
+  }
+
+  async function apiUpload(path: string, formData: FormData) {
+    const res = await fetch(`${API_URL}${path}`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData,
+    });
+    if (res.status === 401) window.location.replace('/login');
+    if (res.status === 204) return {};
     return res.json();
   }
 
@@ -200,10 +212,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         if (!confirm('Delete this material?')) return;
         const id = (btn as HTMLElement).dataset.id;
         try {
-          await fetch(`${API_URL}/material/${id}/`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` },
-          });
+          await apiFetch(`/material/${id}/`, { method: 'DELETE' });
           allMaterials = allMaterials.filter(m => m.id != id);
           filterAndRender();
         } catch { alert('Failed to delete material'); }
@@ -271,13 +280,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         formData.append('cls', cls);
         formData.append('material_type', type);
         if (fileInput.files?.[0]) formData.append('file', fileInput.files[0]);
-
-        const res = await fetch(`${API_URL}/material/`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` },
-          body: formData,
-        });
-        if (res.status === 401) window.location.replace('/login');
+        await apiUpload('/material/', formData);
       }
 
       successEl?.classList.remove('hidden');
