@@ -130,6 +130,32 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         return value
 
 
+class StudentListSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the student list endpoint.
+    Includes annotated career and GPA fields.
+    """
+    career_id = serializers.IntegerField(source='career_id_ann', default=None)
+    career_name = serializers.CharField(source='career_name_ann', default=None)
+    gpa = serializers.DecimalField(max_digits=6, decimal_places=2, default=None)
+
+    class Meta:
+        model = User
+        fields = ['id', 'first_name', 'last_name', 'email', 'is_active', 'career_id', 'career_name', 'gpa']
+
+
+class TeacherListSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the teacher list endpoint.
+    Includes annotated active_classes_count field.
+    """
+    active_classes_count = serializers.IntegerField(default=0)
+
+    class Meta:
+        model = User
+        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'is_active', 'active_classes_count']
+
+
 class ChangePasswordSerializer(serializers.Serializer):
     """
     Serializer for password change endpoint.

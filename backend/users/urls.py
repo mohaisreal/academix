@@ -9,6 +9,8 @@ from .views import (
     UserListView,
     UserDetailView,
     CustomTokenObtainPairView,
+    StudentListView,
+    TeacherListView,
 )
 
 app_name = 'users'
@@ -29,5 +31,10 @@ urlpatterns = [
 
     # User management endpoints (admin)
     path('', UserListView.as_view(), name='user_list'),
+
+    # Role-specific list endpoints
+    path('students/', StudentListView.as_view(), name='student_list'),
+    path('teachers/', TeacherListView.as_view(), name='teacher_list'),
+
     path('<int:pk>/', UserDetailView.as_view(), name='user_detail'),
 ]

@@ -6,13 +6,31 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import authenticate
+from django.db.models import Avg, Count, OuterRef, Q, Subquery
+from enrollment.models import CareerEnrollment
 from .models import User
 from .serializers import (
     UserSerializer,
     UserRegistrationSerializer,
     UserUpdateSerializer,
-    ChangePasswordSerializer
+    ChangePasswordSerializer,
+    StudentListSerializer,
+    TeacherListSerializer,
 )
+
+
+class IsManagementOrAdmin(permissions.BasePermission):
+    """Allow access only to users with role 'm' (management) or 'a' (administration)."""
+
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role in ['m', 'a']
+
+
+class IsManagementAdminOrTeacher(permissions.BasePermission):
+    """Allow access only to users with role 'm', 'a', or 't'."""
+
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role in ['m', 'a', 't']
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -213,6 +231,49 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
                 request,
                 message='You do not have permission to access this user.'
             )
+
+
+class StudentListView(generics.ListAPIView):
+    """
+    API endpoint to list all students with career and GPA data.
+    GET /api/users/students/
+    Accessible by management, administration, and teachers.
+    """
+    serializer_class = StudentListSerializer
+    permission_classes = [permissions.IsAuthenticated, IsManagementAdminOrTeacher]
+
+    def get_queryset(self):
+        latest_career_id = CareerEnrollment.objects.filter(
+            student=OuterRef('pk'), status='active'
+        ).order_by('-enrolled_at').values('career__id')[:1]
+
+        latest_career_name = CareerEnrollment.objects.filter(
+            student=OuterRef('pk'), status='active'
+        ).order_by('-enrolled_at').values('career__name')[:1]
+
+        return User.objects.filter(role='s').annotate(
+            career_id_ann=Subquery(latest_career_id),
+            career_name_ann=Subquery(latest_career_name),
+            gpa=Avg('grades__score'),
+        )
+
+
+class TeacherListView(generics.ListAPIView):
+    """
+    API endpoint to list all teachers with their active class count.
+    GET /api/users/teachers/
+    Accessible by management and administration only.
+    """
+    serializer_class = TeacherListSerializer
+    permission_classes = [permissions.IsAuthenticated, IsManagementOrAdmin]
+
+    def get_queryset(self):
+        return User.objects.filter(role='t').annotate(
+            active_classes_count=Count(
+                'teaching_classes',
+                filter=Q(teaching_classes__period__is_active=True)
+            )
+        )
 
 
 @api_view(['GET'])
