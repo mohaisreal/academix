@@ -9,9 +9,15 @@ services:
       - .env.dev
     ports:
       - "8000:8000"
+    # Volume mounts for hot-reload development
     volumes:
+      # Mount entire backend source directory
       - ./backend:/app
+      # Prevent Python cache from being synced to host
       - /app/__pycache__
+      # Exclude .pyc files and egg-info
+      - /app/.pytest_cache
+      - /app/*.egg-info
     networks:
       - academix-network
     restart: unless-stopped
@@ -24,16 +30,16 @@ services:
     container_name: academix-frontend-dev
     ports:
       - "4321:4321"
+    # Volume mounts for hot-reload development
     volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
-      - ./frontend/astro.config.mjs:/app/astro.config.mjs
-      - ./frontend/package.json:/app/package.json
-      - ./frontend/package-lock.json:/app/package-lock.json
-      - ./frontend/tsconfig.json:/app/tsconfig.json
-      - ./frontend/starwind.config.json:/app/starwind.config.json
-      - ./frontend/vitest.config.ts:/app/vitest.config.ts
+      # Mount entire frontend source directory for watch mode
+      - ./frontend:/app
+      # Anonymous volume to prevent node_modules from being synced with host
+      # This ensures dependencies installed in container are used
       - /app/node_modules
+      # Exclude build artifacts and cache directories
+      - /app/.astro
+      - /app/dist
     depends_on:
       - backend
     networks:

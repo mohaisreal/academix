@@ -26,8 +26,8 @@ FROM base AS development
 
 ENV DJANGO_ENV=development
 
-COPY . .
-
+# Source code will be mounted as a volume for hot-reloading
+# Only copy entrypoint script which is already in base stage
 EXPOSE 8000
 ENTRYPOINT ["/entrypoint.sh"]
 
