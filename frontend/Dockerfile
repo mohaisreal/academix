@@ -22,7 +22,7 @@ FROM node:20-alpine as development
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files only (source will be mounted as volume)
 COPY package*.json ./
 
 # Install dependencies
@@ -32,6 +32,7 @@ RUN npm ci
 EXPOSE 4321
 
 # Start Astro dev server with --host to listen on all interfaces
+# Source code will be mounted as a volume for hot-reloading
 CMD ["npm", "run", "dev", "--", "--host"]
 
 # Stage 3: Production stage (Nginx)
