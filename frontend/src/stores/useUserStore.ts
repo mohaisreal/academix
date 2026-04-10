@@ -6,7 +6,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { api, ApiErrorClass } from '@/utils/apiClient';
-import { setTokens, clearTokens } from '@/utils/tokenManager';
+import { setTokens, clearTokens, isAuthenticated as isTokenValid } from '@/utils/tokenManager';
 import type {
   User,
   UserLoginData,
@@ -86,7 +86,7 @@ export const useUserStore = create<UserState>()(
 
           // Call login API endpoint
           const response = await api.post<LoginResponse>(
-            '/auth/login/',
+            '/users/login/',
             loginData,
             { skipAuth: true }
           );
@@ -193,7 +193,7 @@ export const useUserStore = create<UserState>()(
         // Optional: Call logout endpoint to invalidate token on server
         // This is a fire-and-forget request, we don't wait for it
         try {
-          api.post('/auth/logout/', {}).catch(() => {
+          api.post('/users/logout/', {}).catch(() => {
             // Ignore errors on logout endpoint
           });
         } catch {
@@ -230,4 +230,4 @@ export const useUserStore = create<UserState>()(
 export const useUser = () => useUserStore((state) => state.user);
 export const useIsLoading = () => useUserStore((state) => state.isLoading);
 export const useError = () => useUserStore((state) => state.error);
-export const useIsAuthenticated = () => useUserStore((state) => !!state.user);
+export const useIsAuthenticated = () => useUserStore((state) => !!state.user && isTokenValid());

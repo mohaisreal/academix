@@ -58,10 +58,17 @@ export function clearTokens(): void {
 }
 
 /**
- * Check if user is authenticated by verifying token existence
+ * Check if user is authenticated by verifying token existence and validity
  */
 export function isAuthenticated(): boolean {
-  return !!getAccessToken();
+  const token = getAccessToken();
+  if (!token) return false;
+
+  // Check if the token is expired (without the 60s refresh buffer)
+  const expiration = getTokenExpiration(token);
+  if (!expiration) return false;
+
+  return Date.now() < expiration;
 }
 
 /**
