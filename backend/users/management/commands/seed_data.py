@@ -64,7 +64,7 @@ def _name_for_index(index):
 # ---------------------------------------------------------------------------
 CAREERS_DATA = [
     ("Computer Science",        "CS",  4, "Bachelor's degree in Computer Science and Software Engineering."),
-    ("Business Administration",  "BA",  3, "Bachelor's degree in Business Administration and Management."),
+    ("Business Administration",  "BA",  3, "Bachelor's degree in Business Administration and Gestión."),
     ("Engineering",              "ENG", 5, "Bachelor's degree in Mechanical and Civil Engineering."),
     ("Medicine",                 "MED", 6, "Doctor of Medicine degree program."),
     ("Law",                      "LAW", 5, "Bachelor's degree in Law and Legal Studies."),
@@ -83,7 +83,7 @@ SUBJECTS_DATA = {
         ("Marketing Principles", "BA102", 3, 4),
         ("Accounting I",         "BA103", 4, 5),
         ("Business Law",         "BA104", 3, 4),
-        ("Strategic Management", "BA105", 3, 4),
+        ("Strategic Gestión", "BA105", 3, 4),
     ],
     "ENG": [
         ("Engineering Maths",    "ENG101", 4, 6),
@@ -141,7 +141,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("\nSeed completed successfully."))
 
     # ------------------------------------------------------------------
-    # Users
+    # Usuarios
     # ------------------------------------------------------------------
     def _get_or_create_user(self, username, email, password, role, first_name, last_name):
         user = User.objects.filter(username=username).first()
@@ -168,7 +168,7 @@ class Command(BaseCommand):
         if c:
             created_count += 1
 
-        # Management
+        # Gestión
         for i, uname in enumerate(["mgmt1", "mgmt2"]):
             first, last = _name_for_index(i)
             _, c = self._get_or_create_user(
@@ -265,8 +265,8 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"  AcademicPeriods: {len(self._periods)} seeded."))
 
         # --- Classrooms ---
-        # Rooms 101-105 in Main Building (lecture, capacity 40)
-        # Labs 201-205 in Tech Building (lab, capacity 25)
+        # Aulas 101-105 en el edificio principal (teoría, capacidad 40)
+        # Laboratorios 201-205 en el edificio técnico (laboratorio, capacidad 25)
         self._classrooms = []
         for i in range(1, 6):
             room, _ = Classroom.objects.get_or_create(
@@ -284,8 +284,8 @@ class Command(BaseCommand):
             self._classrooms.append(lab)
         self.stdout.write(self.style.SUCCESS(f"  Classrooms: {len(self._classrooms)} seeded."))
 
-        # --- Classes: 25 per period (one per subject per period) ---
-        # self._classes[period_code] = [Class, ...] ordered by subject index
+        # --- Clases: 25 por periodo (una por asignatura y periodo) ---
+        # self._classes[period_code] = [Class, ...] ordenadas por índice de asignatura
         self._classes = {}
         all_subjects_ordered = []
         for _, career_code, *_ in CAREERS_DATA:
@@ -319,7 +319,7 @@ class Command(BaseCommand):
         total_classes = sum(len(v) for v in self._classes.values())
         self.stdout.write(self.style.SUCCESS(f"  Classes: {total_classes} seeded."))
 
-        # --- ClassSchedules: 2 slots per class ---
+        # --- ClassSchedules: 2 franjas por clase ---
         sched_created = 0
         for period_code, period_classes in self._classes.items():
             for cls_idx, cls in enumerate(period_classes):
@@ -340,7 +340,7 @@ class Command(BaseCommand):
                 slot2_idx = (cls_idx + 2) % len(TIME_SLOTS)
                 day2 = DAYS[(cls_idx + 2) % len(DAYS)]
                 start2, end2 = TIME_SLOTS[slot2_idx]
-                # Avoid duplicate (same class + day + start_time)
+                # Evita duplicados (misma clase + día + start_time)
                 if day2 != day1 or start2 != start1:
                     _, c = ClassSchedule.objects.get_or_create(
                         cls=cls,
@@ -363,24 +363,24 @@ class Command(BaseCommand):
         period_fa = self._periods["FA2025"]
         career_codes = [c[1] for c in CAREERS_DATA]  # ["CS","BA","ENG","MED","LAW"]
 
-        # Build career -> classes map for both periods
+        # Construye el mapa titulación -> clases para ambos periodos
         all_subjects_ordered = []
         for _, career_code, *_ in CAREERS_DATA:
             all_subjects_ordered.extend(self._career_subjects[career_code])
 
-        # Map subject -> class per period
+        # Mapea asignatura -> clase por periodo
         subj_to_class = {}  # (subj_id, period_code) -> Class
         for period_code, period_classes in self._classes.items():
             for cls in period_classes:
                 subj_to_class[(cls.subject_id, period_code)] = cls
 
-        # Career -> list of subjects
+        # Titulación -> lista de asignaturas
         career_subj_map = {code: self._career_subjects[code] for code in career_codes}
 
         # --- CareerEnrollments ---
-        # 500 students, 100 per career
-        # Period: SP2026 for students 0-399 (index), FA2025 for 400-499
-        # Status: 80% active, 10% completed, 10% pending
+        # 500 estudiantes, 100 por titulación
+        # Periodo: SP2026 para estudiantes 0-399 (índice), FA2025 para 400-499
+        # Estado: 80% activo, 10% completado, 10% pendiente
         ce_to_create = []
         ce_existing = 0
 
@@ -423,9 +423,9 @@ class Command(BaseCommand):
         ))
 
         # --- ClassEnrollments ---
-        # Each student enrolled in 4-6 classes from their career's subjects
-        # SP2026 students use SP2026 classes; FA2025 students use FA2025 classes
-        # Status: 85% enrolled, 10% dropped, 5% waitlisted
+        # Cada estudiante matriculado en 4-6 clases de las asignaturas de su titulación
+        # Los estudiantes de SP2026 usan clases de SP2026; los de FA2025 usan clases de FA2025
+        # Estado: 85% matriculado, 10% dado de baja, 5% en lista de espera
         def class_enroll_status(student_idx, cls_slot):
             r = (student_idx * 7 + cls_slot) % 20
             if r < 17:
@@ -435,7 +435,7 @@ class Command(BaseCommand):
             else:
                 return "waitlisted"
 
-        # Gather existing (student_id, cls_id) pairs to skip
+        # Recoge pares existentes (student_id, cls_id) para omitirlos
         existing_class_enroll_set = set(
             ClassEnrollment.objects.values_list("student_id", "cls_id")
         )
@@ -446,9 +446,9 @@ class Command(BaseCommand):
             period_code = "SP2026" if i < 400 else "FA2025"
             subjects_for_career = career_subj_map[career_code]  # 5 subjects
 
-            # Number of classes: 4, 5, or 6 cycling
+            # Número de clases: 4, 5 o 6 de forma cíclica
             num_classes = 4 + (i % 3)  # 4, 5, 6, 4, 5, 6, ...
-            # Take up to num_classes from the 5 available subjects
+            # Toma hasta num_classes de las 5 asignaturas disponibles
             selected_subjects = subjects_for_career[:num_classes]
 
             for slot, subj in enumerate(selected_subjects):
@@ -465,7 +465,7 @@ class Command(BaseCommand):
                     existing_class_enroll_set.add((student.id, cls.id))
 
         if new_class_enrollments:
-            # bulk_create in batches of 1000
+            # bulk_create en lotes de 1000
             batch_size = 1000
             for start in range(0, len(new_class_enrollments), batch_size):
                 ClassEnrollment.objects.bulk_create(
@@ -479,7 +479,7 @@ class Command(BaseCommand):
             f"(total in DB: {ce2_total})."
         ))
 
-        # Store enrolled class enrollments for grade seeding
+        # Guarda matrículas de clase activas para sembrar notas
         self._enrolled_class_enrollments = list(
             ClassEnrollment.objects.filter(status="enrolled").select_related(
                 "student", "cls", "cls__teacher", "cls__subject"
@@ -492,7 +492,7 @@ class Command(BaseCommand):
     def _seed_grades(self):
         self.stdout.write("Seeding evaluations and grades...")
 
-        # --- Evaluations: 3 per class ---
+        # --- Evaluaciones: 3 por clase ---
         # Key: (name, cls_id)
         eval_defs = [
             ("Midterm Exam",    "exam",       100),
@@ -500,12 +500,12 @@ class Command(BaseCommand):
             ("Quiz 1",          "quiz",       30),
         ]
 
-        # Gather all classes
+        # Recoge todas las clases
         all_classes = []
         for period_classes in self._classes.values():
             all_classes.extend(period_classes)
 
-        # Build evaluation lookup: cls_id -> {type -> Evaluation}
+        # Construye búsqueda de evaluaciones: cls_id -> {type -> Evaluation}
         self._evaluations = {}  # cls_id -> [Evaluation, Evaluation, Evaluation]
 
         evals_to_create = []
@@ -536,10 +536,10 @@ class Command(BaseCommand):
 
         if evals_to_create:
             EvalModel.objects.bulk_create(evals_to_create, ignore_conflicts=True)
-            # Re-fetch to get ids for newly created evals
+            # Vuelve a consultar para obtener los ID de evaluaciones recién creadas
             for ev in EvalModel.objects.filter(cls__in=all_classes):
                 existing_eval_map[(ev.name, ev.cls_id)] = ev
-            # Rebuild with real objects
+            # Reconstruye con objetos reales
             for cls in all_classes:
                 cls_evals = []
                 for eval_name, _, _ in eval_defs:
@@ -554,9 +554,9 @@ class Command(BaseCommand):
         ))
 
         # --- Grades ---
-        # For each ClassEnrollment with status=enrolled, grade all 3 evals
-        # Score: normal distribution centered on 70% of max_score, std=15%
-        # Use class teacher as graded_by
+        # Para cada ClassEnrollment con status=enrolled, califica las 3 evaluaciones
+        # Puntuación: distribución normal centrada en el 70% de max_score, desv.=15%
+        # Usa el profesor de la clase como graded_by
 
         from grades.models import Grade as GradeModel
 
@@ -565,7 +565,7 @@ class Command(BaseCommand):
             GradeModel.objects.values_list("student_id", "evaluation_id")
         )
 
-        rng = random.Random(42)  # deterministic seed for reproducibility
+        rng = random.Random(42)  # semilla determinista para reproducibilidad
 
         new_grades = []
         for enrollment in self._enrolled_class_enrollments:
@@ -614,7 +614,7 @@ class Command(BaseCommand):
 
         all_users = list(User.objects.all())
 
-        # Welcome notifications - use (user_id, title) as uniqueness key
+        # Notificaciones de bienvenida: usa (user_id, title) como clave de unicidad
         existing_welcome = set(
             Notification.objects.filter(title="Welcome to Academix").values_list("user_id", flat=True)
         )
@@ -637,12 +637,12 @@ class Command(BaseCommand):
             Notification.objects.bulk_create(welcome_notifs, ignore_conflicts=True)
 
         self.stdout.write(self.style.SUCCESS(
-            f"  Welcome notifications: {len(welcome_notifs)} new."
+            f"  Notificaciones de bienvenida: {len(welcome_notifs)} nuevas."
         ))
 
-        # Grade notifications - 1 per student per enrolled class
-        # "Grades available for [subject name]", type=info, is_read: 50% True
-        # Key by (user_id, title) - title includes subject name
+        # Notificaciones de notas: 1 por estudiante y clase matriculada
+        # "Notas disponibles para [nombre de asignatura]", type=info, is_read: 50% True
+        # Clave por (user_id, title); title incluye el nombre de la asignatura
         rng = random.Random(99)
 
         existing_grade_notif_pairs = set(
@@ -682,14 +682,14 @@ class Command(BaseCommand):
         ))
 
     # ------------------------------------------------------------------
-    # Messages
+    # Mensajes
     # ------------------------------------------------------------------
     def _seed_messages(self):
         self.stdout.write("Seeding messages (capped at 100)...")
 
-        # Build ordered list of (teacher, student) pairs, cap at 100
-        # Also need subject name for message body
-        # Build a map: (teacher_id, student_id) -> subject_name (first found)
+        # Construye lista ordenada de pares (profesor, estudiante), límite 100
+        # También se necesita el nombre de la asignatura para el cuerpo del mensaje
+        # Construye un mapa: (teacher_id, student_id) -> subject_name (primero encontrado)
         pair_subject = {}
         for enrollment in self._enrolled_class_enrollments:
             teacher = enrollment.cls.teacher
@@ -699,16 +699,16 @@ class Command(BaseCommand):
             if key not in pair_subject:
                 pair_subject[key] = enrollment.cls.subject.name
 
-        # Deterministic ordering: sort by teacher username then student username
+        # Orden determinista: ordenar por username del profesor y luego username del estudiante
         all_pairs = sorted(pair_subject.keys())[:100]
 
-        # Fetch existing messages by (sender_id, recipient_id, subject)
+        # Obtén mensajes existentes por (sender_id, recipient_id, subject)
         msg_subject_str = "Course Update"
         existing_msg_pairs = set(
             Message.objects.filter(subject=msg_subject_str).values_list("sender_id", "recipient_id")
         )
 
-        # Build user id -> User object map for efficiency
+        # Construye mapa ID de usuario -> objeto User por eficiencia
         user_ids_needed = set()
         for t_id, s_id in all_pairs:
             user_ids_needed.add(t_id)
