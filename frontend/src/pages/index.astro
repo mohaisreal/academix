@@ -1,85 +1,157 @@
 ---
 import DashboardLayout from "@/layouts/DashboardLayout.astro";
-import Badge from "@/components/starwind/badge/Badge.astro";
 import Button from "@/components/starwind/button/Button.astro";
-import Progress from "@/components/starwind/progress/Progress.astro";
 ---
 
 <DashboardLayout title="Dashboard — Academix" currentPath="/">
 
-    <!-- ─── STUDENT DASHBOARD ─────────────────────────────────────────── -->
+    <!-- ─── PANEL DE ESTUDIANTE ─────────────────────────────────────────── -->
     <div id="dashboard-student" class="hidden">
         <div class="flex items-center justify-between border-b border-border px-6 py-4">
             <div>
                 <h1 class="text-xl font-semibold text-foreground">Student Dashboard</h1>
-                <p class="text-sm text-muted-foreground">Welcome back. Here is your learning overview.</p>
+                <p id="stu-subtitle" class="text-sm text-muted-foreground">Welcome back. Here is your learning overview.</p>
             </div>
-            <Button variant="primary" size="sm">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Join Course
-            </Button>
         </div>
         <div class="p-6 space-y-6">
-            <div class="grid grid-cols-4 gap-4">
-                <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
-                    <div class="flex items-center justify-between">
-                        <p class="text-sm text-muted-foreground">Active Courses</p>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground/50"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 6 3 6 3s3 0 6-3v-5"/></svg>
+
+            <!-- Estado: sin matrícula activa -->
+            <div id="stu-no-enrollment" class="hidden">
+                <div class="rounded-xl border border-border bg-card p-8 flex flex-col items-center text-center gap-4">
+                    <div class="flex size-14 items-center justify-center rounded-full bg-primary/10">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 6 3 6 3s3 0 6-3v-5"/></svg>
                     </div>
-                    <p id="stu-active-courses" class="text-3xl font-bold text-foreground mt-2">—</p>
-                    <p class="text-xs text-success mt-1">Current period</p>
+                    <div>
+                        <h2 class="text-base font-semibold text-foreground">You are not enrolled yet</h2>
+                        <p class="text-sm text-muted-foreground mt-1">Apply to a career to get started with your academic journey.</p>
+                    </div>
+                    <div class="flex gap-3 mt-2">
+                        <a href="/admissions" class="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                            Browse Careers
+                        </a>
+                        <a href="/admissions/my-applications" class="inline-flex items-center gap-1.5 rounded-md border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                            My Applications
+                        </a>
+                    </div>
                 </div>
-                <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
-                    <div class="flex items-center justify-between">
-                        <p class="text-sm text-muted-foreground">Assignments Due</p>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground/50"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+
+                <!-- Admissions quick summary (always useful even sin matrícula) -->
+                <div class="mt-6 bg-card text-card-foreground rounded-xl border border-border p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-base font-semibold text-foreground">Admission Applications</h2>
+                        <a href="/admissions/my-applications" class="text-sm text-primary hover:underline">View all →</a>
                     </div>
-                    <p id="stu-pending-evals" class="text-3xl font-bold text-foreground mt-2">—</p>
-                    <p class="text-xs text-warning mt-1">Pending evaluations</p>
-                </div>
-                <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
-                    <div class="flex items-center justify-between">
-                        <p class="text-sm text-muted-foreground">Average Grade</p>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground/50"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    <div id="stu-admissions-summary-pre" class="space-y-2 text-sm">
+                        <div class="h-6 bg-muted animate-pulse rounded"></div>
                     </div>
-                    <p id="stu-avg-grade" class="text-3xl font-bold text-foreground mt-2">—</p>
-                    <p class="text-xs text-success mt-1">Current period</p>
-                </div>
-                <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
-                    <div class="flex items-center justify-between">
-                        <p class="text-sm text-muted-foreground">Teachers</p>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground/50"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                    </div>
-                    <p id="stu-teachers-count" class="text-3xl font-bold text-foreground mt-2">—</p>
-                    <p class="text-xs text-muted-foreground mt-1">This period</p>
                 </div>
             </div>
 
-            <!-- My Subjects -->
-            <div>
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold text-foreground">My Subjects</h2>
-                    <a href="/my-subjects" class="text-sm text-primary hover:underline">View all →</a>
+            <!-- Estado: con matricula activa -->
+            <div id="stu-enrolled" class="hidden space-y-6">
+                <div class="grid grid-cols-4 gap-4">
+                    <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
+                        <div class="flex items-center justify-between">
+                            <p class="text-sm text-muted-foreground">Active Courses</p>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground/50"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 6 3 6 3s3 0 6-3v-5"/></svg>
+                        </div>
+                        <p id="stu-active-courses" class="text-3xl font-bold text-foreground mt-2">—</p>
+                        <p class="text-xs text-success mt-1">Current period</p>
+                    </div>
+                    <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
+                        <div class="flex items-center justify-between">
+                            <p class="text-sm text-muted-foreground">Assignments Due</p>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground/50"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        </div>
+                        <p id="stu-pending-evals" class="text-3xl font-bold text-foreground mt-2">—</p>
+                        <p class="text-xs text-warning mt-1">Pending evaluations</p>
+                    </div>
+                    <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
+                        <div class="flex items-center justify-between">
+                            <p class="text-sm text-muted-foreground">Average Grade</p>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground/50"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        </div>
+                        <p id="stu-avg-grade" class="text-3xl font-bold text-foreground mt-2">—</p>
+                        <p class="text-xs text-success mt-1">Current period</p>
+                    </div>
+                    <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
+                        <div class="flex items-center justify-between">
+                            <p class="text-sm text-muted-foreground">Teachers</p>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground/50"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                        </div>
+                        <p id="stu-teachers-count" class="text-3xl font-bold text-foreground mt-2">—</p>
+                        <p class="text-xs text-muted-foreground mt-1">This period</p>
+                    </div>
                 </div>
-                <div id="stu-subjects-grid" class="grid grid-cols-3 gap-4">
-                    <div class="bg-card rounded-xl border border-border p-5 h-32 animate-pulse"></div>
-                    <div class="bg-card rounded-xl border border-border p-5 h-32 animate-pulse"></div>
-                    <div class="bg-card rounded-xl border border-border p-5 h-32 animate-pulse"></div>
+
+                <!-- Clase actual -->
+                <div id="stu-current-class" class="hidden"></div>
+
+                <!-- My Subjects -->
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-foreground">My Subjects</h2>
+                        <a href="/my-subjects" class="text-sm text-primary hover:underline">View all →</a>
+                    </div>
+                    <div id="stu-subjects-grid" class="grid grid-cols-3 gap-4">
+                        <div class="bg-card rounded-xl border border-border p-5 h-32 animate-pulse"></div>
+                        <div class="bg-card rounded-xl border border-border p-5 h-32 animate-pulse"></div>
+                        <div class="bg-card rounded-xl border border-border p-5 h-32 animate-pulse"></div>
+                    </div>
+                </div>
+
+                <!-- Recent Grades -->
+                <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-foreground">Recent Grades</h2>
+                        <a href="/grades" class="text-sm text-primary hover:underline">View all →</a>
+                    </div>
+                    <div id="stu-recent-grades" class="flex gap-3 overflow-x-auto pb-1 min-h-[112px]">
+                        <div class="h-28 min-w-[220px] bg-muted animate-pulse rounded-lg"></div>
+                        <div class="h-28 min-w-[220px] bg-muted animate-pulse rounded-lg"></div>
+                        <div class="h-28 min-w-[220px] bg-muted animate-pulse rounded-lg"></div>
+                    </div>
+                </div>
+
+                <!-- Acceso rápido a admisiones y matrícula -->
+                <div id="stu-academic-actions" class="grid grid-cols-2 gap-4">
+                    <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <h2 class="text-base font-semibold text-foreground">Admissions</h2>
+                            <a href="/admissions/my-applications" class="text-sm text-primary hover:underline">View all →</a>
+                        </div>
+                        <div id="stu-admissions-summary" class="space-y-2 text-sm">
+                            <div class="h-6 bg-muted animate-pulse rounded"></div>
+                        </div>
+                        <div class="mt-4 flex gap-2">
+                            <a href="/admissions/my-applications" class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                                My Applications
+                            </a>
+                            <a href="/admissions" class="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
+                                Browse Careers
+                            </a>
+                        </div>
+                    </div>
+                    <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <h2 class="text-base font-semibold text-foreground">Enrollment</h2>
+                            <a href="/enrollment" class="text-sm text-primary hover:underline">Manage →</a>
+                        </div>
+                        <div id="stu-enrollment-summary" class="space-y-2 text-sm">
+                            <div class="h-6 bg-muted animate-pulse rounded"></div>
+                        </div>
+                        <div class="mt-4 flex gap-2">
+                            <a href="/enrollment" class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                                Enrollment
+                            </a>
+                            <a href="/enrollment/classes" class="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
+                                Select Subjects
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Recent Grades -->
-            <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold text-foreground">Recent Grades</h2>
-                    <a href="/grades" class="text-sm text-primary hover:underline">View all →</a>
-                </div>
-                <div id="stu-recent-grades" class="space-y-3">
-                    <div class="h-8 bg-muted animate-pulse rounded"></div>
-                    <div class="h-8 bg-muted animate-pulse rounded"></div>
-                    <div class="h-8 bg-muted animate-pulse rounded"></div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -289,77 +361,385 @@ import Progress from "@/components/starwind/progress/Progress.astro";
         } catch { return null; }
     }
 
-    // Load data by role
+    const RECENT_SUBJECTS_KEY = "academix:recent-subject-visits";
+
+    function listFromApi(data: any): any[] {
+        if (Array.isArray(data)) return data;
+        return data?.results ?? [];
+    }
+
+    function escHtml(value: unknown): string {
+        const div = document.createElement("div");
+        div.textContent = String(value ?? "");
+        return div.innerHTML;
+    }
+
+    function getClassId(item: any): string {
+        return String(item?.class_id ?? item?.class?.id ?? item?.cls?.id ?? item?.id ?? "");
+    }
+
+    function getPeriodId(enrollment: any): string {
+        return String(
+            enrollment?.period_id_ro
+            ?? enrollment?.period?.id
+            ?? enrollment?.academic_period?.id
+            ?? enrollment?.period_id
+            ?? "",
+        );
+    }
+
+    function getRecentSubjectIds(): string[] {
+        try {
+            const parsed = JSON.parse(localStorage.getItem(RECENT_SUBJECTS_KEY) ?? "[]");
+            if (!Array.isArray(parsed)) return [];
+            return parsed
+                .map((entry: any) => String(entry?.classId ?? entry?.id ?? entry ?? ""))
+                .filter(Boolean);
+        } catch {
+            return [];
+        }
+    }
+
+    function rememberSubjectVisit(classId: string) {
+        if (!classId) return;
+        const next = [
+            { classId, visitedAt: new Date().toISOString() },
+            ...getRecentSubjectIds()
+                .filter((id) => id !== classId)
+                .map((id) => ({ classId: id, visitedAt: null })),
+        ].slice(0, 20);
+        try { localStorage.setItem(RECENT_SUBJECTS_KEY, JSON.stringify(next)); } catch {}
+    }
+
+    function orderSubjectsByRecentVisit(subjects: any[]): any[] {
+        const recentIds = getRecentSubjectIds();
+        return [...subjects].sort((a, b) => {
+            const aIdx = recentIds.indexOf(getClassId(a));
+            const bIdx = recentIds.indexOf(getClassId(b));
+            if (aIdx !== -1 || bIdx !== -1) {
+                if (aIdx === -1) return 1;
+                if (bIdx === -1) return -1;
+                return aIdx - bIdx;
+            }
+
+            const aDate = Date.parse(a?.last_visited_at ?? a?.enrolled_at ?? "") || 0;
+            const bDate = Date.parse(b?.last_visited_at ?? b?.enrolled_at ?? "") || 0;
+            return bDate - aDate;
+        });
+    }
+
+    function toPercentage(evaluation: any): number | null {
+        const pct = evaluation?.percentage;
+        if (pct !== null && pct !== undefined) return Number(pct);
+        const score = evaluation?.score;
+        const maxScore = evaluation?.max_score;
+        if (score !== null && score !== undefined && maxScore) {
+            return Number(score) / Number(maxScore) * 100;
+        }
+        return score !== null && score !== undefined ? Number(score) : null;
+    }
+
+    function formatGrade(value: number | null | undefined): string {
+        if (value === null || value === undefined || Number.isNaN(Number(value))) return "Not graded yet";
+        return `${Number(value).toFixed(1)}%`;
+    }
+
+    function gradeColor(value: number | null | undefined): string {
+        if (value === null || value === undefined || Number.isNaN(Number(value))) return "text-muted-foreground";
+        if (value >= 75) return "text-success";
+        if (value >= 50) return "text-warning";
+        return "text-error";
+    }
+
+    function parseTimeToMinutes(value: string | null | undefined): number | null {
+        if (!value) return null;
+        const [hours, minutes] = value.split(":").map(Number);
+        if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+        return hours * 60 + minutes;
+    }
+
+    function formatDuration(start: number, end: number): string {
+        const total = Math.max(0, end - start);
+        const hours = Math.floor(total / 60);
+        const minutes = total % 60;
+        if (hours && minutes) return `${hours}h ${minutes}m`;
+        if (hours) return `${hours}h`;
+        return `${minutes}m`;
+    }
+
+    function renderCurrentClass(subjects: any[]) {
+        const currentEl = document.getElementById("stu-current-class");
+        if (!currentEl) return;
+
+        const now = new Date();
+        const today = (now.getDay() + 6) % 7; // JS usa domingo=0; el backend usa lunes=0.
+        const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+        let current: { subject: any; schedule: any; start: number; end: number } | null = null;
+        for (const subject of subjects) {
+            for (const schedule of subject?.schedules ?? []) {
+                const start = parseTimeToMinutes(schedule?.start_time);
+                const end = parseTimeToMinutes(schedule?.end_time);
+                if (Number(schedule?.day_of_week) === today && start !== null && end !== null && nowMinutes >= start && nowMinutes < end) {
+                    current = { subject, schedule, start, end };
+                    break;
+                }
+            }
+            if (current) break;
+        }
+
+        if (!current) {
+            currentEl.classList.add("hidden");
+            currentEl.innerHTML = "";
+            return;
+        }
+
+        const subjectName = current.subject.subject_name ?? current.subject.subject?.name ?? "Subject";
+        const teacher = current.subject.teacher_name ?? current.subject.teacher?.full_name ?? current.subject.teacher?.username ?? "Teacher pending";
+        const classroom = current.subject.classroom ?? current.subject.classroom_name ?? "Classroom pending";
+        currentEl.innerHTML = `
+            <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div class="flex items-start gap-4">
+                        <div class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-primary">Clase actual</p>
+                            <h2 class="mt-1 text-base font-semibold text-foreground">Actualmente tienes clase de: “${escHtml(subjectName)}”</h2>
+                            <p class="mt-1 text-sm text-muted-foreground">${escHtml(teacher)} · ${escHtml(classroom)}</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 gap-3 text-sm sm:min-w-[480px] sm:grid-cols-3">
+                        <div class="rounded-lg border border-border bg-muted/30 px-3 py-2">
+                            <p class="text-xs text-muted-foreground">Aula</p>
+                            <p class="font-medium text-foreground">${escHtml(classroom)}</p>
+                        </div>
+                        <div class="rounded-lg border border-border bg-muted/30 px-3 py-2">
+                            <p class="text-xs text-muted-foreground">Horario</p>
+                            <p class="font-medium text-foreground">${escHtml(current.schedule.start_time)} – ${escHtml(current.schedule.end_time)}</p>
+                        </div>
+                        <div class="rounded-lg border border-border bg-muted/30 px-3 py-2">
+                            <p class="text-xs text-muted-foreground">Duración</p>
+                            <p class="font-medium text-foreground">${formatDuration(current.start, current.end)}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        currentEl.classList.remove("hidden");
+    }
+
+    // Carga datos por rol
     if (role === "s") {
         (async () => {
-            const [subjects, grades] = await Promise.all([
+            const STATUS_LABELS: Record<string, string> = {
+                draft: "Draft", submitted: "Submitted", under_review: "Under Review",
+                admitted: "Admitted", waitlisted: "Waitlisted", rejected: "Rejected",
+                confirmed: "Confirmed", completed: "Completed", withdrawn: "Withdrawn", expired: "Expired",
+            };
+            const STATUS_BADGES: Record<string, string> = {
+                draft: "bg-gray-500/20 text-gray-300",
+                submitted: "bg-blue-500/20 text-blue-300",
+                under_review: "bg-yellow-500/20 text-yellow-300",
+                admitted: "bg-green-500/20 text-green-300",
+                waitlisted: "bg-orange-500/20 text-orange-300",
+                rejected: "bg-red-500/20 text-red-300",
+                confirmed: "bg-emerald-500/20 text-emerald-300",
+                completed: "bg-emerald-500/20 text-emerald-300",
+                withdrawn: "bg-gray-500/20 text-gray-400",
+                expired: "bg-red-500/20 text-red-300",
+            };
+
+            // Puerta: comprueba primero si hay matrícula activa en el periodo académico actual.
+            const [enrollmentData, periodsData] = await Promise.all([
+                apiFetch("/enrollment/career-enrollments/"),
+                apiFetch("/academic/periods/?is_active=true"),
+            ]);
+            const enrollments = listFromApi(enrollmentData);
+            const periods = listFromApi(periodsData);
+            const activePeriod = periods.find((p: any) => p?.is_active) ?? null;
+            const isCurrentPeriod = (e: any) => !activePeriod || getPeriodId(e) === String(activePeriod.id);
+            const activeEnroll = enrollments.find((e: any) => ["active", "completed"].includes(e.status) && isCurrentPeriod(e))
+                ?? (!activePeriod ? enrollments.find((e: any) => ["active", "completed"].includes(e.status)) : null)
+                ?? null;
+            const hasActive = activeEnroll !== null;
+
+            if (!hasActive) {
+                // ── Sin matrícula activa: mostrar panel de bienvenida + admissions ──
+                document.getElementById("stu-no-enrollment")?.classList.remove("hidden");
+                const subtitle = document.getElementById("stu-subtitle");
+                if (subtitle) subtitle.textContent = "Complete your admission process to get started.";
+
+                const admissions = await apiFetch("/admissions/applications/");
+                const preSummaryEl = document.getElementById("stu-admissions-summary-pre")!;
+                if (admissions) {
+                    const apps = listFromApi(admissions);
+                    if (apps.length === 0) {
+                        preSummaryEl.innerHTML = `<p class="text-sm text-muted-foreground">No applications yet. Browse careers to apply.</p>`;
+                    } else {
+                        preSummaryEl.innerHTML = apps.slice(0, 4).map((app: any) => `
+                            <div class="flex items-center justify-between py-1.5 border-b border-border last:border-0">
+                                <span class="text-sm text-foreground truncate max-w-[180px]">${escHtml(app.career_name ?? app.career?.name ?? "Career")}</span>
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGES[app.status] ?? "bg-gray-500/20 text-gray-300"}">${STATUS_LABELS[app.status] ?? app.status}</span>
+                            </div>`).join("");
+                    }
+                } else {
+                    preSummaryEl.innerHTML = `<p class="text-sm text-muted-foreground">Unable to load applications.</p>`;
+                }
+                return;
+            }
+
+            // ── Con matrícula activa: mostrar dashboard completo ──
+            document.getElementById("stu-enrolled")?.classList.remove("hidden");
+            if (activeEnroll.status === "completed" && isCurrentPeriod(activeEnroll)) {
+                document.getElementById("stu-academic-actions")?.classList.add("hidden");
+            }
+
+            const [subjects, grades, teachers, admissions] = await Promise.all([
                 apiFetch("/enrollment/my-subjects/"),
                 apiFetch("/grades/my-grades/"),
+                apiFetch("/enrollment/my-teachers/"),
+                apiFetch("/admissions/applications/"),
             ]);
+
+            // KPI: active courses
+            const subjectList = listFromApi(subjects);
+            const gradeList = listFromApi(grades);
+            const teachersList = listFromApi(teachers);
+            const gradeByClass = new Map<string, number>();
+
+            gradeList.forEach((cls: any) => {
+                const percentages = (cls.evaluations ?? [])
+                    .map((ev: any) => toPercentage(ev))
+                    .filter((score: number | null) => score !== null) as number[];
+                if (percentages.length > 0) {
+                    gradeByClass.set(
+                        getClassId(cls),
+                        percentages.reduce((a: number, b: number) => a + b, 0) / percentages.length,
+                    );
+                }
+            });
+
             if (subjects) {
-                document.getElementById("stu-active-courses")!.textContent = String(subjects.length ?? 0);
-                // Build subject cards
+                document.getElementById("stu-active-courses")!.textContent = String(subjectList.length ?? 0);
                 const grid = document.getElementById("stu-subjects-grid")!;
-                if (subjects.length === 0) {
+                const orderedSubjects = orderSubjectsByRecentVisit(subjectList);
+                renderCurrentClass(orderedSubjects);
+
+                if (orderedSubjects.length === 0) {
                     grid.innerHTML = `<p class="col-span-3 text-sm text-muted-foreground py-4">No subjects enrolled.</p>`;
                 } else {
-                    grid.innerHTML = subjects.slice(0, 3).map((s: any) => `
-                        <div class="bg-card text-card-foreground rounded-xl border border-border p-5 space-y-3">
+                    grid.innerHTML = orderedSubjects.slice(0, 3).map((s: any) => {
+                        const classId = getClassId(s);
+                        const name = s.subject_name ?? s.subject?.name ?? s.name ?? "Subject";
+                        const code = s.subject_code ?? s.subject?.code ?? s.code ?? "";
+                        const teacher = s.teacher_name ?? s.teacher?.full_name ?? s.teacher?.username ?? "Teacher pending";
+                        const credits = s.credits ?? s.subject?.credits ?? 0;
+                        const classroom = s.classroom ?? s.classroom_name ?? "Classroom pending";
+                        const grade = s.current_grade ?? gradeByClass.get(classId) ?? null;
+                        const gradeProgress = grade !== null ? Math.max(0, Math.min(100, Number(grade))) : 0;
+                        return `
+                        <a href="/grades${classId ? `?class=${encodeURIComponent(classId)}` : ""}" data-subject-class-id="${escHtml(classId)}" class="bg-card text-card-foreground rounded-xl border border-border p-5 space-y-3 hover:border-primary/50 hover:bg-muted/30 transition-colors">
                             <div>
-                                <h3 class="text-sm font-semibold text-foreground">${s.subject?.name ?? ''}</h3>
-                                <p class="text-xs text-muted-foreground mt-0.5">${s.teacher?.full_name ?? 'No teacher'}</p>
+                                <h3 class="text-sm font-semibold text-foreground truncate">${escHtml(name)}</h3>
+                                <p class="text-xs text-muted-foreground mt-0.5 truncate">${escHtml(code ? `${code} · ${teacher}` : teacher)}</p>
                             </div>
                             <div>
                                 <div class="flex justify-between text-xs text-muted-foreground mb-1">
-                                    <span>Grade</span><span>${s.current_grade !== null ? s.current_grade + '%' : 'N/A'}</span>
+                                    <span>Grade</span><span class="${gradeColor(grade)}">${formatGrade(grade)}</span>
                                 </div>
                                 <div class="h-1.5 bg-muted rounded-full overflow-hidden">
-                                    <div class="h-full bg-primary rounded-full transition-all" style="width:${s.current_grade ?? 0}%"></div>
+                                    <div class="h-full bg-primary rounded-full transition-all" style="width:${gradeProgress}%"></div>
                                 </div>
                             </div>
-                            <p class="text-xs text-muted-foreground">${s.subject?.credits ?? 0} credits · ${s.classroom ?? ''}</p>
-                        </div>
-                    `).join('');
+                            <p class="text-xs text-muted-foreground truncate">${escHtml(credits)} credits · ${escHtml(classroom)}</p>
+                        </a>`;
+                    }).join('');
+                    grid.querySelectorAll("[data-subject-class-id]").forEach((el) => {
+                        el.addEventListener("click", () => rememberSubjectVisit((el as HTMLElement).dataset.subjectClassId ?? ""));
+                    });
                 }
             }
+
+            // KPI: grades + pending
             if (grades) {
                 const allScores: number[] = [];
                 let pending = 0;
-                grades.forEach((cls: any) => {
+                gradeList.forEach((cls: any) => {
                     cls.evaluations?.forEach((ev: any) => {
-                        if (ev.score !== null) allScores.push(ev.score);
+                        const pct = toPercentage(ev);
+                        if (pct !== null) allScores.push(pct);
                         else pending++;
                     });
                 });
                 const avg = allScores.length > 0 ? (allScores.reduce((a: number, b: number) => a + b, 0) / allScores.length).toFixed(1) : '—';
                 document.getElementById("stu-avg-grade")!.textContent = avg !== '—' ? avg + '%' : '—';
                 document.getElementById("stu-pending-evals")!.textContent = String(pending);
-                // Recent grades
                 const recents: any[] = [];
-                grades.forEach((cls: any) => {
-                    cls.evaluations?.filter((ev: any) => ev.score !== null).forEach((ev: any) => {
-                        recents.push({ name: ev.name, subject: cls.subject_name, score: ev.percentage });
+                gradeList.forEach((cls: any) => {
+                    cls.evaluations?.filter((ev: any) => ev.score !== null && ev.score !== undefined).forEach((ev: any) => {
+                        recents.push({
+                            name: ev.name,
+                            subject: cls.subject_name,
+                            score: toPercentage(ev),
+                            gradedAt: ev.graded_at,
+                        });
                     });
                 });
+                recents.sort((a, b) => (Date.parse(b.gradedAt ?? "") || 0) - (Date.parse(a.gradedAt ?? "") || 0));
                 const recentEl = document.getElementById("stu-recent-grades")!;
                 if (recents.length === 0) {
-                    recentEl.innerHTML = `<p class="text-sm text-muted-foreground py-2">No grades yet.</p>`;
+                    recentEl.innerHTML = `<div class="flex min-h-[112px] items-center text-sm text-muted-foreground">No grades yet.</div>`;
                 } else {
                     recentEl.innerHTML = recents.slice(0, 5).map((g: any) => `
-                        <div class="flex items-center justify-between py-2 border-b border-border last:border-0">
+                        <div class="min-w-[220px] h-28 rounded-lg border border-border bg-muted/30 p-4 flex flex-col justify-between">
                             <div>
-                                <p class="text-sm text-foreground">${g.name}</p>
-                                <p class="text-xs text-muted-foreground">${g.subject}</p>
+                                <p class="text-sm font-medium text-foreground truncate">${escHtml(g.name)}</p>
+                                <p class="text-xs text-muted-foreground truncate mt-1">${escHtml(g.subject)}</p>
                             </div>
-                            <span class="text-sm font-semibold ${g.score >= 75 ? 'text-success' : g.score >= 50 ? 'text-warning' : 'text-error'}">${g.score}%</span>
+                            <div class="flex items-end justify-between gap-3">
+                                <span class="text-xs text-muted-foreground">Grade</span>
+                                <span class="text-2xl font-bold ${gradeColor(g.score)}">${formatGrade(g.score)}</span>
+                            </div>
                         </div>
                     `).join('');
                 }
             }
-            const teachers = await apiFetch("/enrollment/my-teachers/");
+
+            // KPI: teachers
             if (teachers) {
-                document.getElementById("stu-teachers-count")!.textContent = String(teachers.length ?? 0);
+                document.getElementById("stu-teachers-count")!.textContent = String(teachersList.length ?? 0);
             }
+
+            // Admissions summary
+            const admissionsEl = document.getElementById("stu-admissions-summary")!;
+            if (admissions) {
+                const apps = listFromApi(admissions);
+                if (apps.length === 0) {
+                    admissionsEl.innerHTML = `<p class="text-sm text-muted-foreground">No applications yet.</p>`;
+                } else {
+                    admissionsEl.innerHTML = apps.slice(0, 3).map((app: any) => `
+                        <div class="flex items-center justify-between py-1">
+                            <span class="text-foreground truncate max-w-[160px]">${escHtml(app.career_name ?? app.career?.name ?? "Career")}</span>
+                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGES[app.status] ?? "bg-gray-500/20 text-gray-300"}">${STATUS_LABELS[app.status] ?? app.status}</span>
+                        </div>`).join("");
+                }
+            } else {
+                admissionsEl.innerHTML = `<p class="text-muted-foreground text-xs">Unable to load.</p>`;
+            }
+
+            // Resumen de matrícula
+            const enrollmentEl = document.getElementById("stu-enrollment-summary")!;
+            const career = activeEnroll.career_name ?? activeEnroll.career?.name ?? "Career";
+            const period = activeEnroll.period_name ?? activeEnroll.period?.name ?? activeEnroll.academic_period?.name ?? "Period";
+            const enrollStatus = (activeEnroll.status ?? "pending").charAt(0).toUpperCase() + (activeEnroll.status ?? "pending").slice(1);
+            const statusClass = ["active", "completed"].includes(activeEnroll.status) ? "text-emerald-400" : "text-yellow-400";
+            enrollmentEl.innerHTML = `
+                <div>
+                    <p class="font-medium text-foreground">${career}</p>
+                    <p class="text-xs text-muted-foreground">${period}</p>
+                </div>
+                <p class="text-xs font-medium ${statusClass}">${enrollStatus}</p>`;
         })();
     } else if (role === "t") {
         (async () => {
@@ -395,6 +775,9 @@ import Progress from "@/components/starwind/progress/Progress.astro";
             }
         })();
     } else if (role === "m" || role === "a") {
+        if (role !== "a") {
+            document.getElementById("quick-users-card")?.classList.add("hidden");
+        }
         (async () => {
             const stats = await apiFetch("/grades/statistics/");
             if (stats) {

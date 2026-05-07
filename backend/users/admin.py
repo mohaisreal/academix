@@ -71,6 +71,7 @@ class UserAdmin(BaseUserAdmin):
                 'last_name',
                 'email',
                 'phone',
+                'dni', 
                 'address',
                 'date_of_birth',
                 'profile_image'

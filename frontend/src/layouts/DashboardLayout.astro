@@ -2,6 +2,7 @@
 import "@/styles/starwind.css";
 import Avatar from "@/components/starwind/avatar/Avatar.astro";
 import AvatarFallback from "@/components/starwind/avatar/AvatarFallback.astro";
+import { Toaster } from "@/components/starwind/toast";
 
 interface Props {
     title: string;
@@ -35,163 +36,254 @@ const { title, currentPath } = Astro.props;
             @media (prefers-reduced-motion: reduce) { .kpi-card { opacity: 1; transform: none; animation: none; } }
             .nav-active { background-color: var(--color-muted) !important; color: var(--color-foreground) !important; }
         </style>
+        <!-- Arranque del tema: por defecto es oscuro, pero respeta la preferencia guardada en el perfil antes de pintar. -->
+        <script>
+            (function () {
+                try {
+                    var theme = localStorage.getItem("academix-theme") || "dark";
+                    document.documentElement.classList.toggle("dark", theme !== "light");
+                    document.documentElement.setAttribute("data-theme", theme === "light" ? "light" : "dark");
+                } catch (_) {
+                    document.documentElement.classList.add("dark");
+                    document.documentElement.setAttribute("data-theme", "dark");
+                }
+            })();
+        </script>
+        <!-- Guarda de autenticación: se ejecuta síncronamente ANTES de pintar el cuerpo para evitar parpadeos -->
+        <script>
+            (function () {
+                try {
+                    var token = localStorage.getItem("access_token");
+                    if (!token) { window.location.replace("/login"); return; }
+                    try {
+                        var payload = JSON.parse(atob(token.split('.')[1]));
+                        if (payload.exp && Date.now() >= payload.exp * 1000) {
+                            localStorage.removeItem("access_token");
+                            localStorage.removeItem("refresh_token");
+                            localStorage.removeItem("user-storage");
+                            window.location.replace("/login");
+                            return;
+                        }
+                    } catch (decodeErr) {
+                        localStorage.removeItem("access_token");
+                        localStorage.removeItem("refresh_token");
+                        localStorage.removeItem("user-storage");
+                        window.location.replace("/login");
+                        return;
+                    }
+                    var stored = localStorage.getItem("user-storage");
+                    var user = stored ? (JSON.parse(stored)?.state?.user ?? null) : null;
+                    if (!user) { window.location.replace("/login"); return; }
+                    document.documentElement.setAttribute("data-auth-ok", "1");
+                } catch (e) {
+                    window.location.replace("/login");
+                }
+            })();
+        </script>
     </head>
-    <body class="bg-background text-foreground" data-current-path={currentPath}>
-        <div class="flex min-h-svh">
+    <body class="bg-background text-foreground" style="display:none" data-current-path={currentPath}>
+        <div class="min-h-svh">
 
-            <!-- SIDEBAR -->
-            <aside class="fixed inset-y-0 left-0 z-40 flex w-56 flex-col border-r border-border bg-background">
+            <!-- ═══ TOP BAR ═══════════════════════════════════════════════════════ -->
+            <header class="fixed top-0 inset-x-0 z-40 h-14 flex items-center border-b border-border bg-background/95 backdrop-blur-sm px-4">
+
+                <!-- Mobile: hamburger -->
+                <button id="sidebar-open-btn" type="button" aria-label="Abrir menú" class="lg:hidden mr-2 rounded-md p-2 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+                </button>
+
                 <!-- Logo -->
-                <div class="flex items-center gap-2.5 px-5 py-5">
-                    <div class="flex size-8 items-center justify-center rounded-lg bg-primary/10">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary">
+                <a href="/" class="flex items-center gap-2">
+                    <div class="flex size-7 items-center justify-center rounded-md bg-primary/10">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-primary">
                             <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
                             <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
                         </svg>
                     </div>
-                    <span class="text-lg font-bold tracking-tight text-foreground">academix</span>
+                    <span class="text-base font-bold tracking-tight text-foreground">academix</span>
+                </a>
+
+                <!-- Right side -->
+                <div class="ml-auto flex items-center gap-1">
+                    <a href="/notifications" class="relative rounded-md p-2 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        <span id="notif-badge" class="hidden absolute top-0.5 right-0.5 text-[10px] bg-primary text-primary-foreground rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center leading-none font-medium">0</span>
+                    </a>
                 </div>
+            </header>
 
-                <!-- Navigation -->
-                <nav class="sidebar-nav flex-1 overflow-y-auto px-3 py-2">
+            <!-- ═══ FONDO DE LA BARRA LATERAL (solo móvil) ════════════════════════════════ -->
+            <div id="sidebar-backdrop" class="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm hidden lg:hidden" aria-hidden="true"></div>
 
-                    <!-- HOME — visible to all roles -->
-                    <p class="px-3 mb-1 mt-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Home</p>
+            <!-- ═══ SIDEBAR ════════════════════════════════════════════════════════ -->
+            <aside id="sidebar"
+                class="fixed top-14 bottom-0 left-0 z-30 w-60 flex flex-col border-r border-border bg-background
+                       -translate-x-full transition-transform duration-200 ease-in-out
+                       lg:translate-x-0">
+
+                <!-- Nav links -->
+                <nav class="sidebar-nav flex-1 overflow-y-auto px-3 py-3">
+
+                    <!-- HOME -->
+                    <p class="px-3 mb-1 mt-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Inicio</p>
                     <a href="/" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
                         Dashboard
                     </a>
                     <a href="/notifications" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                        Notifications
-                        <span id="notif-badge" class="ml-auto hidden text-xs bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 leading-none">0</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        Notificaciones
+                        <span id="notif-badge-sidebar" class="ml-auto hidden text-xs bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 leading-none">0</span>
+                    </a>
+                    <a href="/notifications/preferences" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 0 1 7.04 4.3l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.31.48.51.82.51H21a2 2 0 0 1 0 4h-.78c-.34 0-.68.2-.82.49Z"/></svg>
+                        Perfil
                     </a>
 
-                    <!-- STUDENT GROUP -->
+                    <!-- GRUPO DE ESTUDIANTE -->
                     <div id="nav-student" class="hidden">
-                        <p class="px-3 mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Academic</p>
-                        <a href="/my-subjects" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 6 3 6 3s3 0 6-3v-5"/></svg>
-                            My Subjects
-                        </a>
-                        <a href="/my-teachers" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                            My Teachers
-                        </a>
-                        <a href="/timetable" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                            Timetable
-                        </a>
-                        <a href="/grades" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                            Grades
-                        </a>
-                        <p class="px-3 mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Management</p>
-                        <a href="/my-enrolment" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                            My Enrolment
-                        </a>
+                        <div id="nav-student-academic" class="hidden">
+                            <p class="px-3 mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Academico</p>
+                            <a href="/my-subjects" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 6 3 6 3s3 0 6-3v-5"/></svg>
+                                Asignaturas
+                            </a>
+                            <a href="/my-teachers" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                Profesores
+                            </a>
+                            <a href="/timetable" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                Horario
+                            </a>
+                            <a href="/grades" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                                Notas
+                            </a>
+                            <a href="/my-materials" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                                Materiales
+                            </a>
+                        </div>
+                        <div id="nav-student-enrolment-actions">
+                            <p class="px-3 mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Admision</p>
+                            <a href="/admissions" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                                Admisión
+                            </a>
+                            <a href="/admissions/my-applications" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                                Mis Admisiones
+                            </a>
+                            <a href="/my-enrolment" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                                Mis Matriculaciones
+                            </a>
+                        </div>
                         <a href="/my-file" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                            Academic File
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                            Expediente
                         </a>
                     </div>
 
                     <!-- TEACHER GROUP -->
                     <div id="nav-teacher" class="hidden">
-                        <p class="px-3 mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Teaching</p>
+                        <p class="px-3 mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Profesorado</p>
                         <a href="/my-classes" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 6 3 6 3s3 0 6-3v-5"/></svg>
-                            My Classes
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 6 3 6 3s3 0 6-3v-5"/></svg>
+                            Clases
                         </a>
                         <a href="/my-students" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                            My Students
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            Estudiantes
                         </a>
                         <a href="/timetable" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                            Timetable
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            Horario
                         </a>
                         <a href="/marking" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                            Marking
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            Calificar
                         </a>
                         <p class="px-3 mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Resources</p>
                         <a href="/files" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                            Student Files
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                            Expedientes
                         </a>
                         <a href="/material" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                            Materials
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            Materiales
                         </a>
                         <a href="/reports" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                            Reports
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                            Informes
                         </a>
                         <a href="/messages" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                            Messages
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            Mensajes
                         </a>
                     </div>
 
                     <!-- ADMIN/MANAGEMENT GROUP -->
                     <div id="nav-admin" class="hidden">
-                        <p class="px-3 mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Academic</p>
+                        <p class="px-3 mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Académico</p>
                         <a href="/careers" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 6 3 6 3s3 0 6-3v-5"/></svg>
-                            Careers
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 6 3 6 3s3 0 6-3v-5"/></svg>
+                            Carreras
                         </a>
                         <a href="/subject" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                            Subjects
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                            Asignaturas
                         </a>
                         <a href="/periods" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                            Periods
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            Periodos
                         </a>
                         <a href="/classrooms" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-                            Classrooms
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                            Asignaturas
                         </a>
-                        <p class="px-3 mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Enrolment</p>
+                        <p class="px-3 mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Admisiones</p>
+                        <a href="/management/admissions" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                            Admisiones
+                        </a>
+                        <a href="/management/identity-verifications" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z"/><path d="M9 12l2 2 4-4"/></svg>
+                            Verificación
+                        </a>
+                        <a href="/management/questionnaires" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="12" y2="16"/></svg>
+                            Cuestionarios
+                        </a>
                         <a href="/enrolment/management" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
-                            Management
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+                            Matriculación
                         </a>
-                        <a href="/enrolment/review" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-                            Review
-                        </a>
-                        <p class="px-3 mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">People</p>
-                        <a href="/teachers" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                            Teachers
-                        </a>
-                        <a href="/students" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                            Students
+                        <p class="px-3 mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Analíticas</p>
+                        <a href="/statistics" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                            Estadísticas
                         </a>
                         <a href="/files" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                            Student Files
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                            Expedientes
                         </a>
-                        <p class="px-3 mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Analytics</p>
-                        <a href="/statistics" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                            Statistics
+                        <p id="nav-config-label" class="hidden px-3 mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Configuración</p>
+                        <a id="nav-email-settings" href="/management/system" class="hidden nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                            Configuración de correo
                         </a>
-                        <p id="nav-config-label" class="hidden px-3 mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Configuration</p>
                         <a id="nav-system" href="/system" class="hidden nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                            System
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                            Sistema
                         </a>
                     </div>
 
                 </nav>
 
-                <!-- User section at bottom -->
-                <div class="border-t border-border px-4 py-3">
+                <!-- Sección de usuario al final de la barra lateral -->
+                <div class="border-t border-border px-4 py-3 shrink-0">
                     <div class="flex items-center gap-3">
                         <Avatar size="sm">
                             <AvatarFallback class="bg-primary/20 text-primary text-xs">
@@ -202,18 +294,36 @@ const { title, currentPath } = Astro.props;
                             <p id="sidebar-user-name" class="truncate text-sm font-medium text-foreground">Loading...</p>
                             <p id="sidebar-user-role" class="text-xs text-muted-foreground capitalize">--</p>
                         </div>
-                        <button id="logout-btn" type="button" aria-label="Sign out" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        <button id="logout-btn" type="button" aria-label="Cerrar sesión" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0" title="Cerrar sesión">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                         </button>
                     </div>
                 </div>
             </aside>
 
-            <!-- MAIN CONTENT -->
-            <main class="ml-56 flex-1 bg-muted/20">
+            <!-- ═══ MAIN CONTENT ══════════════════════════════════════════════════ -->
+            <main class="mt-14 lg:pl-60 flex-1 bg-muted/20 min-h-[calc(100svh-3.5rem)]">
                 <slot />
             </main>
+
         </div>
+
+        <!-- Global Confirm Dialog -->
+        <div id="global-confirm-dialog">
+            <div id="confirm-backdrop" class="fixed inset-0 z-50 hidden bg-black/50 data-[state=open]:animate-in data-[state=open]:fade-in data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:fill-mode-forwards" data-state="closed" style="animation-duration:200ms"></div>
+            <dialog id="confirm-dialog" class="fixed top-[50%] left-[50%] z-50 w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] rounded-lg border bg-background p-6 shadow-lg sm:max-w-md data-[state=open]:animate-in data-[state=open]:fade-in data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95 data-[state=closed]:fill-mode-forwards" data-state="closed" role="alertdialog" style="animation-duration:200ms">
+                <div class="space-y-2">
+                    <h2 id="confirm-dialog-title" class="text-lg font-semibold text-foreground">Confirm</h2>
+                    <p id="confirm-dialog-description" class="text-sm text-muted-foreground">Are you sure?</p>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button id="confirm-dialog-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors">Cancel</button>
+                    <button id="confirm-dialog-action" type="button" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors">Confirm</button>
+                </div>
+            </dialog>
+        </div>
+
+        <Toaster position="bottom-right" />
     </body>
 </html>
 
@@ -227,37 +337,182 @@ const { title, currentPath } = Astro.props;
             const stored = localStorage.getItem(STORAGE_KEY);
             if (!stored) return null;
             return JSON.parse(stored)?.state?.user ?? null;
-        } catch {
-            return null;
-        }
+        } catch { return null; }
     }
 
-    // Auth guard
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) { window.location.replace("/login"); }
-    const user = getUser();
-    if (!user) { window.location.replace("/login"); }
+    function clearAuth() {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem(STORAGE_KEY);
+    }
 
-    // Role: 's' | 't' | 'm' | 'a'
+    const THEME_STORAGE_KEY = "academix-theme";
+
+    function applyTheme(theme: string) {
+        const normalized = theme === "light" ? "light" : "dark";
+        document.documentElement.classList.toggle("dark", normalized !== "light");
+        document.documentElement.setAttribute("data-theme", normalized);
+        try { localStorage.setItem(THEME_STORAGE_KEY, normalized); } catch {}
+    }
+
+    function isJwtExpired(jwt: string): boolean {
+        try {
+            const payload = JSON.parse(atob(jwt.split('.')[1]));
+            return payload.exp ? Date.now() >= payload.exp * 1000 : true;
+        } catch { return true; }
+    }
+
+    async function tryRefreshToken(): Promise<string | null> {
+        const refresh = localStorage.getItem("refresh_token");
+        if (!refresh) return null;
+        try {
+            const res = await fetch(`${API_URL}/users/token/refresh/`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ refresh }),
+            });
+            if (!res.ok) return null;
+            const data = await res.json();
+            if (data.access) {
+                localStorage.setItem(TOKEN_KEY, data.access);
+                if (data.refresh) localStorage.setItem("refresh_token", data.refresh);
+                return data.access;
+            }
+            return null;
+        } catch { return null; }
+    }
+
+    let token = localStorage.getItem(TOKEN_KEY);
+    if (!token) { clearAuth(); window.location.replace("/login"); throw new Error("No token"); }
+
+    if (isJwtExpired(token)) {
+        const newToken = await tryRefreshToken();
+        if (!newToken) { clearAuth(); window.location.replace("/login"); throw new Error("Token expired"); }
+        token = newToken;
+    }
+
+    const user = getUser();
+    if (!user) { clearAuth(); window.location.replace("/login"); throw new Error("No user"); }
+
+    try {
+        applyTheme(localStorage.getItem(THEME_STORAGE_KEY) || "dark");
+        const prefRes = await fetch(`${API_URL}/notifications/preferences/`, {
+            headers: { "Authorization": `Bearer ${token}` },
+        });
+        if (prefRes.ok) {
+            const prefData = await prefRes.json();
+            applyTheme(prefData?.theme || "dark");
+        }
+    } catch {
+        applyTheme(localStorage.getItem(THEME_STORAGE_KEY) || "dark");
+    }
+
+    document.body.style.display = "";
+
     const role: string = user?.role ?? "";
 
-    // Show nav group
+    // Muestra el grupo de navegación según el rol
     const navStudent = document.getElementById("nav-student") as HTMLElement;
     const navTeacher = document.getElementById("nav-teacher") as HTMLElement;
     const navAdmin = document.getElementById("nav-admin") as HTMLElement;
     const navSystem = document.getElementById("nav-system") as HTMLElement;
+    const navEmailSettings = document.getElementById("nav-email-settings") as HTMLElement;
     const navConfigLabel = document.getElementById("nav-config-label") as HTMLElement;
+
+    const ACTIVE_ADMISSION_STATUSES = new Set([
+        "submitted", "under_review", "provisional_admitted",
+        "provisional_waitlisted", "admitted", "waitlisted", "confirmed", "completed",
+    ]);
 
     if (role === "s") {
         navStudent?.classList.remove("hidden");
+        // Restauración inmediata desde caché para evitar parpadeos entre navegaciones
+        try {
+            if (localStorage.getItem("enrollment-academic-visible") === "1") {
+                document.getElementById("nav-student-academic")?.classList.remove("hidden");
+            }
+            if (localStorage.getItem("student-enrolment-actions-hidden") === "1") {
+                document.getElementById("nav-student-enrolment-actions")?.classList.add("hidden");
+            }
+        } catch {}
+        (async () => {
+            try {
+                const [enrollRes, admissionsRes, periodsRes] = await Promise.allSettled([
+                    fetch(`${API_URL}/enrollment/career-enrollments/`, {
+                        headers: { "Authorization": `Bearer ${token}` },
+                    }),
+                    fetch(`${API_URL}/admissions/applications/`, {
+                        headers: { "Authorization": `Bearer ${token}` },
+                    }),
+                    fetch(`${API_URL}/academic/periods/?is_active=true`, {
+                        headers: { "Authorization": `Bearer ${token}` },
+                    }),
+                ]);
+
+                let enrollments: any[] = [];
+                if (enrollRes.status === "fulfilled" && enrollRes.value.ok) {
+                    const data = await enrollRes.value.json();
+                    enrollments = Array.isArray(data) ? data : (data.results ?? []);
+                }
+
+                let applications: any[] = [];
+                if (admissionsRes.status === "fulfilled" && admissionsRes.value.ok) {
+                    const data = await admissionsRes.value.json();
+                    applications = Array.isArray(data) ? data : (data.results ?? []);
+                }
+
+                let periods: any[] = [];
+                if (periodsRes.status === "fulfilled" && periodsRes.value.ok) {
+                    const data = await periodsRes.value.json();
+                    periods = Array.isArray(data) ? data : (data.results ?? []);
+                }
+                const activePeriod = periods.find((p: any) => p?.is_active) ?? null;
+                const getPeriodId = (enrollment: any) => String(
+                    enrollment?.period_id_ro
+                    ?? enrollment?.period?.id
+                    ?? enrollment?.academic_period?.id
+                    ?? enrollment?.period_id
+                    ?? "",
+                );
+                const isCurrentPeriod = (enrollment: any) => !activePeriod || getPeriodId(enrollment) === String(activePeriod.id);
+                const hasCompletedCurrentEnrollment = enrollments.some((e: any) => e.status === "completed" && isCurrentPeriod(e));
+
+                if (enrollments.some((e: any) => ["active", "completed"].includes(e.status))) {
+                    document.getElementById("nav-student-academic")?.classList.remove("hidden");
+                    try { localStorage.setItem("enrollment-academic-visible", "1"); } catch {}
+                } else {
+                    document.getElementById("nav-student-academic")?.classList.add("hidden");
+                    try { localStorage.removeItem("enrollment-academic-visible"); } catch {}
+                }
+
+                if (hasCompletedCurrentEnrollment) {
+                    document.getElementById("nav-student-enrolment-actions")?.classList.add("hidden");
+                    try { localStorage.setItem("student-enrolment-actions-hidden", "1"); } catch {}
+                } else {
+                    document.getElementById("nav-student-enrolment-actions")?.classList.remove("hidden");
+                    try { localStorage.removeItem("student-enrolment-actions-hidden"); } catch {}
+                }
+
+                const hasActiveAdmission = applications.some((a: any) => ACTIVE_ADMISSION_STATUSES.has(a.status));
+                const hasActiveEnrollment = enrollments.some((e: any) => ["active", "completed"].includes(e.status));
+                if (hasActiveAdmission || hasActiveEnrollment) {
+                    const applyLink = document.querySelector("a[href='/admissions']") as HTMLElement | null;
+                    applyLink?.style.setProperty("display", "none");
+                }
+            } catch { /* non-critical — sidebar remains fully visible */
+ }
+        })();
     } else if (role === "t") {
         navTeacher?.classList.remove("hidden");
     } else if (role === "a") {
         navAdmin?.classList.remove("hidden");
         navSystem?.classList.remove("hidden");
+        navEmailSettings?.classList.remove("hidden");
         navConfigLabel?.classList.remove("hidden");
     } else if (role === "m") {
         navAdmin?.classList.remove("hidden");
+        navEmailSettings?.classList.remove("hidden");
+        navConfigLabel?.classList.remove("hidden");
     }
 
     // Active link highlight
@@ -270,21 +525,17 @@ const { title, currentPath } = Astro.props;
         }
     });
 
-    // Populate user section
+    // Rellena la sección de usuario
     if (user) {
         const firstName: string = user.first_name ?? "";
         const lastName: string = user.last_name ?? "";
         const username: string = user.username ?? "User";
         let initials = "";
-        if (firstName && lastName) {
-            initials = (firstName[0] + lastName[0]).toUpperCase();
-        } else if (firstName) {
-            initials = firstName.substring(0, 2).toUpperCase();
-        } else {
-            initials = username.substring(0, 2).toUpperCase();
-        }
+        if (firstName && lastName) initials = (firstName[0] + lastName[0]).toUpperCase();
+        else if (firstName) initials = firstName.substring(0, 2).toUpperCase();
+        else initials = username.substring(0, 2).toUpperCase();
         const displayName = firstName && lastName ? `${firstName} ${lastName}` : username;
-        const roleLabels: Record<string,string> = { s: "Student", t: "Teacher", m: "Management", a: "Administration" };
+        const roleLabels: Record<string, string> = { s: "Estudiante", t: "Profesor", m: "Gestión", a: "Administración" };
         const avatarEl = document.getElementById("sidebar-avatar-initials");
         const nameEl = document.getElementById("sidebar-user-name");
         const roleEl = document.getElementById("sidebar-user-role");
@@ -293,15 +544,13 @@ const { title, currentPath } = Astro.props;
         if (roleEl) roleEl.textContent = roleLabels[role] ?? role;
     }
 
-    // Logout
+    // Cerrar sesión
     document.getElementById("logout-btn")?.addEventListener("click", () => {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem("refresh_token");
-        localStorage.removeItem(STORAGE_KEY);
+        clearAuth();
         window.location.replace("/login");
     });
 
-    // Fetch unread notification count
+    // Recuento de notificaciones
     (async () => {
         try {
             const res = await fetch(`${API_URL}/notifications/unread-count/`, {
@@ -310,15 +559,100 @@ const { title, currentPath } = Astro.props;
             if (res.ok) {
                 const data = await res.json();
                 if (data.count > 0) {
+                    const countStr = data.count > 99 ? "99+" : String(data.count);
                     const badge = document.getElementById("notif-badge");
-                    if (badge) {
-                        badge.textContent = data.count > 99 ? "99+" : String(data.count);
-                        badge.classList.remove("hidden");
-                    }
+                    const badgeSidebar = document.getElementById("notif-badge-sidebar");
+                    if (badge) { badge.textContent = countStr; badge.classList.remove("hidden"); }
+                    if (badgeSidebar) { badgeSidebar.textContent = countStr; badgeSidebar.classList.remove("hidden"); }
                 }
             }
-        } catch {
-            // Silently fail — notification count is non-critical
-        }
+        } catch { /* non-critical */
+ }
     })();
+
+    // ─── Sidebar toggle (mobile) ──────────────────────────────────────────────
+    const sidebar = document.getElementById("sidebar") as HTMLElement;
+    const sidebarBackdrop = document.getElementById("sidebar-backdrop") as HTMLElement;
+    const sidebarOpenBtn = document.getElementById("sidebar-open-btn") as HTMLElement;
+
+    function openSidebar() {
+        sidebar.classList.remove("-translate-x-full");
+        sidebar.classList.add("translate-x-0");
+        sidebarBackdrop.classList.remove("hidden");
+        document.body.classList.add("overflow-hidden", "lg:overflow-auto");
+    }
+
+    function closeSidebar() {
+        sidebar.classList.add("-translate-x-full");
+        sidebar.classList.remove("translate-x-0");
+        sidebarBackdrop.classList.add("hidden");
+        document.body.classList.remove("overflow-hidden", "lg:overflow-auto");
+    }
+
+    sidebarOpenBtn?.addEventListener("click", openSidebar);
+    sidebarBackdrop?.addEventListener("click", closeSidebar);
+
+    // Cierra la barra lateral al hacer clic en un enlace de navegación (móvil)
+    sidebar?.querySelectorAll(".nav-link").forEach((link) => {
+        link.addEventListener("click", () => {
+            if (window.innerWidth < 1024) closeSidebar();
+        });
+    });
+
+    // ─── Global Confirm Dialog ────────────────────────────────────────────────
+    const confirmDialog = document.getElementById("confirm-dialog") as HTMLDialogElement;
+    const confirmBackdrop = document.getElementById("confirm-backdrop") as HTMLElement;
+    const confirmTitle = document.getElementById("confirm-dialog-title") as HTMLElement;
+    const confirmDesc = document.getElementById("confirm-dialog-description") as HTMLElement;
+    const confirmAction = document.getElementById("confirm-dialog-action") as HTMLButtonElement;
+    const confirmCancel = document.getElementById("confirm-dialog-cancel") as HTMLButtonElement;
+    const CONFIRM_ANIM = 200;
+
+    let _onConfirm: (() => void) | null = null;
+
+    function closeConfirmDialog() {
+        confirmDialog?.setAttribute("data-state", "closed");
+        confirmBackdrop?.setAttribute("data-state", "closed");
+        setTimeout(() => {
+            confirmDialog?.close();
+            confirmBackdrop?.classList.add("hidden");
+            document.body.classList.remove("overflow-hidden");
+        }, CONFIRM_ANIM);
+        _onConfirm = null;
+    }
+
+    confirmCancel?.addEventListener("click", closeConfirmDialog);
+    confirmBackdrop?.addEventListener("click", closeConfirmDialog);
+    confirmDialog?.addEventListener("keydown", (e: KeyboardEvent) => {
+        if (e.key === "Escape") { e.preventDefault(); closeConfirmDialog(); }
+    });
+    confirmAction?.addEventListener("click", () => { _onConfirm?.(); closeConfirmDialog(); });
+
+    // ─── Global Toast Helper ──────────────────────────────────────────────────
+    (window as any).showToast = function (variant: string, title: string, description?: string) {
+        const manager = (window as any).__starwind__?.toast;
+        if (!manager) return;
+        manager.add({ title, description: description ?? '', variant });
+    };
+
+    (window as any).confirmAction = function (opts: { title: string; description: string; onConfirm: () => void; confirmLabel?: string; cancelLabel?: string; variant?: string }) {
+        if (!confirmDialog || !confirmBackdrop) return;
+        confirmTitle.textContent = opts.title;
+        confirmDesc.textContent = opts.description;
+        confirmAction.textContent = opts.confirmLabel ?? "Confirm";
+        confirmCancel.textContent = opts.cancelLabel ?? "Cancel";
+        if (opts.variant === "destructive") {
+            confirmAction.className = "inline-flex items-center justify-center rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground shadow-sm hover:bg-destructive/90 transition-colors";
+        } else {
+            confirmAction.className = "inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors";
+        }
+        _onConfirm = opts.onConfirm;
+        confirmBackdrop.classList.remove("hidden");
+        confirmDialog.showModal();
+        document.body.classList.add("overflow-hidden");
+        requestAnimationFrame(() => {
+            confirmBackdrop.setAttribute("data-state", "open");
+            confirmDialog.setAttribute("data-state", "open");
+        });
+    };
 </script>

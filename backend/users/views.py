@@ -1,21 +1,31 @@
 from rest_framework import status, generics, permissions
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from django.contrib.auth import authenticate
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils import timezone
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.conf import settings as django_settings
 from django.db.models import Avg, Count, OuterRef, Q, Subquery
+from admissions.permissions import IsManagement
 from enrollment.models import CareerEnrollment
-from .models import User
+from .models import IdentityVerificationDocument, User
 from .serializers import (
     UserSerializer,
     UserRegistrationSerializer,
     UserUpdateSerializer,
+    AdminUserWriteSerializer,
     ChangePasswordSerializer,
     StudentListSerializer,
     TeacherListSerializer,
+    IdentityVerificationUserSerializer,
+    IdentityVerificationDocumentSerializer,
 )
 
 
@@ -33,12 +43,86 @@ class IsManagementAdminOrTeacher(permissions.BasePermission):
         return request.user.is_authenticated and request.user.role in ['m', 'a', 't']
 
 
+def _resolve_user_from_email_token(uid, token):
+    """Resolve and validate the same signed token used by the email verification link."""
+    if not uid or not token:
+        return None
+    try:
+        user_pk = force_str(urlsafe_base64_decode(uid))
+        user = User.objects.get(pk=user_pk)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        return None
+
+    token_generator = PasswordResetTokenGenerator()
+    if not token_generator.check_token(user, token):
+        return None
+    return user
+
+
+def _student_access_denial(user):
+    """
+    Return a user-facing reason when a student cannot access the platform yet.
+    This is intentionally explicit: a security gate must teach the user what is missing.
+    """
+    if user.role != 's':
+        return None
+    if not user.email_verified:
+        return 'Tienes que verificar tu correo electrónico antes de iniciar sesión.'
+    if user.identity_verification_status == 'unsubmitted':
+        return 'Tu correo electrónico está verificado, pero todavía tienes que subir las pruebas de identidad.'
+    if user.identity_verification_status == 'pending':
+        return 'Tus pruebas de identidad están pendientes de revisión por Gestión.'
+    if user.identity_verification_status == 'rejected':
+        return 'Gestión rechazó la verificación de identidad. Sube documentación corregida o contacta con soporte.'
+    if user.identity_verification_status != 'approved':
+        return 'Tu cuenta todavía no está autorizada por Gestión.'
+    if not user.is_active:
+        return 'Tu cuenta todavía no está activa.'
+    return None
+
+
+def _send_email_verification(user):
+    token_generator = PasswordResetTokenGenerator()
+    token = token_generator.make_token(user)
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    verify_url = f"{django_settings.FRONTEND_URL}/verify-email?uid={uid}&token={token}"
+
+    from notifications.utils import create_notification
+    create_notification(
+        user=user,
+        title='Verifica tu cuenta en Academix',
+        message=f'Hola {user.first_name},\n\nVerifica tu correo electrónico con este enlace:\n{verify_url}\n\nDespués tendrás que subir pruebas de identidad para que Gestión autorice tu cuenta.',
+        notif_type='info',
+        event_type='email_verification',
+        template_name='email_verification',
+        context={'verification_url': verify_url},
+    )
+    return verify_url
+
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
     Custom JWT serializer to include user data in the token response
     """
     def validate(self, attrs):
+        identifier = attrs.get(self.username_field)
+        password = attrs.get('password')
+        if identifier and password:
+            candidate = User.objects.filter(
+                Q(username=identifier) | Q(email=identifier)
+            ).first()
+            if candidate and candidate.check_password(password):
+                denial = _student_access_denial(candidate)
+                if denial:
+                    from rest_framework_simplejwt.exceptions import AuthenticationFailed
+                    raise AuthenticationFailed(denial, code='account_not_ready')
+
         data = super().validate(attrs)
+
+        denial = _student_access_denial(self.user)
+        if denial:
+            from rest_framework_simplejwt.exceptions import AuthenticationFailed
+            raise AuthenticationFailed(denial, code='account_not_ready')
 
         # Add custom claims
         data['user'] = UserSerializer(self.user).data
@@ -66,17 +150,27 @@ class UserRegistrationView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-
-        # Generate JWT tokens for the new user
-        refresh = RefreshToken.for_user(user)
+        user.role = 's'
+        user.is_active = False
+        user.email_verified = False
+        user.identity_verification_status = 'unsubmitted'
+        user.identity_verification_notes = ''
+        user.identity_reviewed_by = None
+        user.identity_reviewed_at = None
+        user.save(update_fields=[
+            'role',
+            'is_active',
+            'email_verified',
+            'identity_verification_status',
+            'identity_verification_notes',
+            'identity_reviewed_by',
+            'identity_reviewed_at',
+        ])
+        _send_email_verification(user)
 
         return Response({
             'user': UserSerializer(user).data,
-            'tokens': {
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            },
-            'message': 'User registered successfully.'
+            'message': 'Registro exitoso. Revisa tu correo electrónico; después Gestión deberá validar tu identidad.'
         }, status=status.HTTP_201_CREATED)
 
 
@@ -96,12 +190,20 @@ class UserLoginView(APIView):
                 'error': 'Please provide both username and password.'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        user = authenticate(username=username, password=password)
+        user = User.objects.filter(Q(username=username) | Q(email=username)).first()
 
-        if not user:
+        if not user or not user.check_password(password):
             return Response({
                 'error': 'Invalid credentials.'
             }, status=status.HTTP_401_UNAUTHORIZED)
+
+        denial = _student_access_denial(user)
+        if denial:
+            return Response({
+                'error': denial,
+                'identity_verification_status': user.identity_verification_status,
+                'email_verified': user.email_verified,
+            }, status=status.HTTP_403_FORBIDDEN)
 
         if not user.is_active:
             return Response({
@@ -181,18 +283,30 @@ class ChangePasswordView(generics.UpdateAPIView):
         serializer.save()
 
         return Response({
-            'message': 'Password changed successfully.'
+            'message': 'Contraseña changed successfully.'
         }, status=status.HTTP_200_OK)
 
 
-class UserListView(generics.ListAPIView):
+class UserListView(generics.ListCreateAPIView):
     """
-    API endpoint to list all users (admin only).
-    GET /api/users/
+    API endpoint to list/create users (management / admin only).
+    GET  /api/users/
+    POST /api/users/
     """
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    permission_classes = [IsManagement]
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return AdminUserWriteSerializer
+        return UserSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
 
 class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -208,15 +322,17 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_serializer_class(self):
         if self.request.method in ['PUT', 'PATCH']:
+            if self.request.user.role in ('m', 'a'):
+                return AdminUserWriteSerializer
             return UserUpdateSerializer
         return UserSerializer
 
     def get_permissions(self):
         """
-        Admin can access all users, regular users can only access themselves
+        Gestión/admin can access all users, regular users can only access themselves
         """
         if self.request.method == 'DELETE':
-            return [permissions.IsAdminUser()]
+            return [IsManagement()]
         return [permissions.IsAuthenticated()]
 
     def check_object_permissions(self, request, obj):
@@ -288,3 +404,206 @@ def health_check(request):
         'user': request.user.username,
         'message': 'API is running successfully.'
     })
+
+
+class RegisterView(generics.CreateAPIView):
+    """
+    POST /api/auth/register/
+    Registro de estudiante con verificación de email.
+    """
+    permission_classes = [AllowAny]
+    serializer_class = UserRegistrationSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Crear usuario inactivo
+        user = serializer.save()
+        user.role = 's'
+        user.is_active = False
+        user.email_verified = False
+        user.identity_verification_status = 'unsubmitted'
+        user.identity_verification_notes = ''
+        user.identity_reviewed_by = None
+        user.identity_reviewed_at = None
+        user.save(update_fields=[
+            'role',
+            'is_active',
+            'email_verified',
+            'identity_verification_status',
+            'identity_verification_notes',
+            'identity_reviewed_by',
+            'identity_reviewed_at',
+        ])
+
+        _send_email_verification(user)
+
+        return Response(
+            {"detail": "Registro exitoso. Revisa tu correo electrónico y después sube las pruebas de identidad para que Gestión autorice tu cuenta."},
+            status=status.HTTP_201_CREATED
+        )
+
+
+class VerifyEmailView(generics.GenericAPIView):
+    """
+    GET /api/auth/verify-email/?uid=<uid_b64>&token=<token>
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        uid = request.query_params.get('uid')
+        token = request.query_params.get('token')
+
+        user = _resolve_user_from_email_token(uid, token)
+        if not user:
+            return Response({"detail": "Enlace inválido o expirado."}, status=status.HTTP_400_BAD_REQUEST)
+
+        update_fields = []
+        if not user.email_verified:
+            user.email_verified = True
+            update_fields.append('email_verified')
+        if update_fields:
+            user.save(update_fields=update_fields)
+
+        return Response({
+            "detail": "Email verificado correctamente. Ahora sube las pruebas de identidad para revisión de Gestión.",
+            "requires_identity_verification": user.role == 's' and user.identity_verification_status != 'approved',
+            "identity_verification_status": user.identity_verification_status,
+        }, status=status.HTTP_200_OK)
+
+
+class IdentityDocumentUploadView(APIView):
+    """
+    POST /api/auth/identity-documents/?uid=<uid_b64>&token=<token>
+    Upload identity proof files after email verification, before the account is active.
+    """
+    permission_classes = [AllowAny]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        uid = request.query_params.get('uid')
+        token = request.query_params.get('token')
+        user = _resolve_user_from_email_token(uid, token)
+        if not user:
+            return Response({"detail": "Enlace inválido o expirado."}, status=status.HTTP_400_BAD_REQUEST)
+        if not user.email_verified:
+            return Response({"detail": "Primero tienes que verificar el correo electrónico."}, status=status.HTTP_400_BAD_REQUEST)
+        if user.role != 's':
+            return Response({"detail": "Este flujo solo aplica a estudiantes."}, status=status.HTTP_400_BAD_REQUEST)
+        if user.identity_verification_status == 'approved' and user.is_active:
+            return Response({"detail": "La cuenta ya está autorizada."}, status=status.HTTP_400_BAD_REQUEST)
+
+        files = request.FILES.getlist('files') or request.FILES.getlist('file')
+        if not files and request.FILES.get('file'):
+            files = [request.FILES['file']]
+        if not files:
+            return Response({"detail": "Sube al menos un fichero de prueba de identidad."}, status=status.HTTP_400_BAD_REQUEST)
+
+        document_type = request.data.get('document_type', 'identity')
+        valid_document_types = {choice[0] for choice in IdentityVerificationDocument.DOCUMENT_TYPE_CHOICES}
+        if document_type not in valid_document_types:
+            return Response({"detail": "Tipo de documento inválido."}, status=status.HTTP_400_BAD_REQUEST)
+
+        documents = []
+        for uploaded in files:
+            documents.append(IdentityVerificationDocument.objects.create(
+                user=user,
+                file=uploaded,
+                original_filename=getattr(uploaded, 'name', ''),
+                document_type=document_type,
+            ))
+
+        user.identity_verification_status = 'pending'
+        user.identity_verification_notes = ''
+        user.identity_reviewed_by = None
+        user.identity_reviewed_at = None
+        user.is_active = False
+        user.save(update_fields=[
+            'identity_verification_status',
+            'identity_verification_notes',
+            'identity_reviewed_by',
+            'identity_reviewed_at',
+            'is_active',
+            'updated_at',
+        ])
+
+        return Response({
+            "detail": "Pruebas recibidas. Gestión debe revisar y autorizar la cuenta antes de que puedas entrar.",
+            "identity_verification_status": user.identity_verification_status,
+            "documents": IdentityVerificationDocumentSerializer(documents, many=True).data,
+        }, status=status.HTTP_201_CREATED)
+
+
+class IdentityVerificationListView(generics.ListAPIView):
+    """
+    GET /api/users/identity-verifications/?status=pending
+    Gestión queue for student identity checks.
+    """
+    serializer_class = IdentityVerificationUserSerializer
+    permission_classes = [IsManagement]
+
+    def get_queryset(self):
+        status_filter = self.request.query_params.get('status', 'pending')
+        qs = User.objects.filter(role='s').prefetch_related('identity_documents').order_by('created_at')
+        if status_filter and status_filter != 'all':
+            qs = qs.filter(identity_verification_status=status_filter)
+        return qs
+
+
+class IdentityVerificationReviewView(APIView):
+    """
+    POST /api/users/identity-verifications/<user_id>/review/
+    Body: {"status": "approved|rejected", "notes": "..."}
+    """
+    permission_classes = [IsManagement]
+
+    def post(self, request, user_id):
+        decision = request.data.get('status')
+        notes = request.data.get('notes', '')
+        if decision not in ('approved', 'rejected'):
+            return Response({"detail": "status debe ser 'approved' o 'rejected'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(pk=user_id, role='s')
+        except User.DoesNotExist:
+            return Response({"detail": "Estudiante no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        if not user.email_verified:
+            return Response({"detail": "No se puede revisar una cuenta sin email verificado."}, status=status.HTTP_400_BAD_REQUEST)
+        if not user.identity_documents.exists():
+            return Response({"detail": "No hay documentos de identidad para revisar."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.identity_verification_status = decision
+        user.identity_verification_notes = notes
+        user.identity_reviewed_by = request.user
+        user.identity_reviewed_at = timezone.now()
+        user.is_active = decision == 'approved'
+        user.save(update_fields=[
+            'identity_verification_status',
+            'identity_verification_notes',
+            'identity_reviewed_by',
+            'identity_reviewed_at',
+            'is_active',
+            'updated_at',
+        ])
+
+        from notifications.utils import create_notification
+        if decision == 'approved':
+            create_notification(
+                user=user,
+                title='Cuenta autorizada',
+                message='Gestión ha verificado tu identidad. Ya puedes iniciar sesión en Academix.',
+                notif_type='success',
+                event_type='identity_verification_approved',
+            )
+        else:
+            create_notification(
+                user=user,
+                title='Verificación de identidad rechazada',
+                message=notes or 'Gestión necesita documentación corregida antes de autorizar tu cuenta.',
+                notif_type='warning',
+                event_type='identity_verification_rejected',
+            )
+
+        return Response(IdentityVerificationUserSerializer(user).data, status=status.HTTP_200_OK)

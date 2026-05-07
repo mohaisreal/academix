@@ -34,25 +34,25 @@ interface UserState {
 export const useUserStore = create<UserState>()(
   persist(
     (set) => ({
-      // Initial state
+      // Estado inicial
       user: null,
       isLoading: false,
       error: null,
 
       /**
-       * Fetch user by ID from the API
+       * Obtiene el usuario por ID desde la API
        */
       fetchUser: async (userId: number) => {
         set({ isLoading: true, error: null });
 
         try {
-          const response = await api.get<UserResponse>(`/users/${userId}/`);
-          set({ user: response.user, isLoading: false, error: null });
+          const response = await api.get<User>(`/users/${userId}/`);
+          set({ user: response, isLoading: false, error: null });
         } catch (err) {
           const errorMessage =
             err instanceof ApiErrorClass
               ? err.message
-              : 'Failed to fetch user data';
+              : 'No se han podido obtener los datos de usuario';
 
           set({
             error: errorMessage,
@@ -70,34 +70,34 @@ export const useUserStore = create<UserState>()(
       },
 
       /**
-       * Login user with email and password
-       * Stores JWT tokens and user data on success
+       * Inicia sesión con nombre de usuario y contraseña
+       * Guarda los tokens JWT y los datos de usuario si tiene éxito
        */
-      login: async (email: string, password: string) => {
+      login: async (username: string, password: string) => {
         set({ isLoading: true, error: null });
 
         try {
-          // Validate inputs
-          if (!email || !password) {
-            throw new ApiErrorClass('Email and password are required');
+          // Valida las entradas
+          if (!username || !password) {
+            throw new ApiErrorClass('El nombre de usuario y la contraseña son obligatorios');
           }
 
-          const loginData: UserLoginData = { email, password };
+          const loginData: UserLoginData = { username, password };
 
-          // Call login API endpoint
+          // Llama al endpoint de API de inicio de sesión
           const response = await api.post<LoginResponse>(
             '/users/login/',
             loginData,
             { skipAuth: true }
           );
 
-          // Store tokens
+          // Guarda los tokens
           setTokens({
-            access: response.access,
-            refresh: response.refresh,
+            access: response.tokens.access,
+            refresh: response.tokens.refresh,
           });
 
-          // Update user state
+          // Actualiza el estado de usuario
           set({
             user: response.user,
             isLoading: false,
@@ -123,36 +123,36 @@ export const useUserStore = create<UserState>()(
       },
 
       /**
-       * Register a new user
-       * Automatically logs in the user on successful registration
+       * Registra un usuario nuevo
+       * Inicia sesión automáticamente tras registrar correctamente al usuario
        */
       register: async (userData: UserRegisterData) => {
         set({ isLoading: true, error: null });
 
         try {
-          // Validate required fields
-          if (!userData.username || !userData.email || !userData.password) {
+          // Valida los campos obligatorios
+          if (!userData.email || !userData.password) {
             throw new ApiErrorClass(
-              'Username, email, and password are required'
+              'El correo electrónico y la contraseña son obligatorios'
             );
           }
 
-          // Call register API endpoint
-          const response = await api.post<RegisterResponse>(
+          const payload = {
+            ...userData,
+            password2: userData.password2 || userData.password,
+          };
+
+          // Llama al endpoint de API de registro
+          await api.post<RegisterResponse>(
             '/auth/register/',
-            userData,
+            payload,
             { skipAuth: true }
           );
 
-          // Store tokens
-          setTokens({
-            access: response.access,
-            refresh: response.refresh,
-          });
-
-          // Update user state
+          // El registro con verificación de correo no inicia sesión al usuario.
+          clearTokens();
           set({
-            user: response.user,
+            user: null,
             isLoading: false,
             error: null,
           });

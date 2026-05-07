@@ -24,6 +24,24 @@ class CareerViewSet(viewsets.ModelViewSet):
             return [IsAuthenticated()]
         return [IsAdminOrManagement()]
 
+    @action(detail=True, methods=['get'], url_path='classes')
+    def classes_by_career(self, request, pk=None):
+        """GET /api/academic/careers/<id>/classes/?period=<period_id>"""
+        career = self.get_object()
+        period_id = request.query_params.get('period')
+
+        qs = Class.objects.filter(
+            subject__career=career
+        ).select_related(
+            'subject', 'teacher', 'period', 'classroom'
+        ).prefetch_related('schedules')
+
+        if period_id:
+            qs = qs.filter(period_id=period_id)
+
+        serializer = ClassSerializer(qs, many=True)
+        return Response(serializer.data)
+
 
 class SubjectViewSet(viewsets.ModelViewSet):
     serializer_class = SubjectSerializer
@@ -50,9 +68,16 @@ class AcademicPeriodViewSet(viewsets.ModelViewSet):
             return [IsAuthenticated()]
         return [IsAdminOrManagement()]
 
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        # Solo puede haber un periodo activo a la vez, incluidos los periodos recién creados
+        # La interfaz avisa de esto; el backend también debe imponerlo.
+        if instance.is_active:
+            AcademicPeriod.objects.exclude(pk=instance.pk).update(is_active=False)
+
     def perform_update(self, serializer):
         instance = serializer.save()
-        # Only one period can be active at a time
+        # Solo puede haber un periodo activo a la vez
         if instance.is_active:
             AcademicPeriod.objects.exclude(pk=instance.pk).update(is_active=False)
 

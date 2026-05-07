@@ -11,6 +11,11 @@ export interface User {
   last_name: string;
   email: string;
   role: UserRole;
+  dni?: string | null;
+  email_verified?: boolean;
+  identity_verification_status?: 'unsubmitted' | 'pending' | 'approved' | 'rejected';
+  identity_verification_notes?: string | null;
+  is_active?: boolean;
   phone: string;
   address: string | null;
   date_of_birth: string | null;
@@ -20,19 +25,20 @@ export interface User {
 }
 
 export interface UserRegisterData {
-  username: string;
   email: string;
   password: string;
+  password2?: string;
   first_name: string;
   last_name: string;
   role?: UserRole;
+  dni?: string;
   phone?: string;
   address?: string;
   date_of_birth?: string;
 }
 
 export interface UserLoginData {
-  email: string;
+  username: string;
   password: string;
 }
 
@@ -42,15 +48,13 @@ export interface AuthTokens {
 }
 
 export interface LoginResponse {
-  access: string;
-  refresh: string;
   user: User;
+  tokens: AuthTokens;
+  message?: string;
 }
 
 export interface RegisterResponse {
-  user: User;
-  access: string;
-  refresh: string;
+  detail: string;
 }
 
 export interface UserResponse {

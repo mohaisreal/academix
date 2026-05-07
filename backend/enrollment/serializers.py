@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import CareerEnrollment, ClassEnrollment
+from .models import CareerEnrollment, ClassEnrollment, EnrollmentFee
 from academic.models import Career, AcademicPeriod, Class
 
 User = get_user_model()
@@ -27,18 +27,31 @@ class CareerEnrollmentSerializer(serializers.ModelSerializer):
     career_id = serializers.PrimaryKeyRelatedField(
         queryset=Career.objects.all(), source='career', write_only=True
     )
+    career_id_ro = serializers.IntegerField(source='career.id', read_only=True)
     period_name = serializers.CharField(source='period.name', read_only=True)
     period_id = serializers.PrimaryKeyRelatedField(
         queryset=AcademicPeriod.objects.all(), source='period', write_only=True
     )
+    period_id_ro = serializers.IntegerField(source='period.id', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    fee_status = serializers.SerializerMethodField()
+    fee_paid = serializers.SerializerMethodField()
+
+    def get_fee_status(self, obj):
+        try:
+            return obj.fee.status
+        except EnrollmentFee.DoesNotExist:
+            return None
+
+    def get_fee_paid(self, obj):
+        return self.get_fee_status(obj) in ('paid', 'exempted')
 
     class Meta:
         model = CareerEnrollment
         fields = [
-            'id', 'student', 'student_id', 'career_name', 'career_id',
-            'period_name', 'period_id', 'status', 'status_display',
-            'enrolled_at', 'updated_at',
+            'id', 'student', 'student_id', 'career_name', 'career_id', 'career_id_ro',
+            'period_name', 'period_id', 'period_id_ro', 'status', 'status_display',
+            'fee_status', 'fee_paid', 'enrolled_at', 'updated_at',
         ]
 
 
@@ -46,6 +59,7 @@ class ClassEnrollmentSerializer(serializers.ModelSerializer):
     cls_id = serializers.PrimaryKeyRelatedField(
         queryset=Class.objects.all(), source='cls', write_only=True
     )
+    class_id = serializers.IntegerField(source='cls.id', read_only=True)
     subject_name = serializers.CharField(source='cls.subject.name', read_only=True)
     subject_code = serializers.CharField(source='cls.subject.code', read_only=True)
     credits = serializers.IntegerField(source='cls.subject.credits', read_only=True)
@@ -77,7 +91,20 @@ class ClassEnrollmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClassEnrollment
         fields = [
-            'id', 'cls_id', 'subject_name', 'subject_code', 'credits',
+            'id', 'cls_id', 'class_id', 'subject_name', 'subject_code', 'credits',
             'teacher_name', 'classroom', 'period_name', 'schedules',
             'status', 'status_display', 'enrolled_at',
         ]
+
+
+class EnrollmentFeeSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+
+    class Meta:
+        model = EnrollmentFee
+        fields = [
+            'id', 'base_amount', 'discount_amount', 'discount_reason',
+            'final_amount', 'line_items', 'status', 'status_display', 'paid_at',
+            'stripe_payment_intent_id', 'stripe_payment_status',
+        ]
+        read_only_fields = ['id', 'paid_at', 'status_display', 'stripe_payment_intent_id', 'stripe_payment_status']

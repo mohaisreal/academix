@@ -18,26 +18,32 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from users.views import health_check
+from users.views import health_check, RegisterView, VerifyEmailView, IdentityDocumentUploadView
 
 urlpatterns = [
-    # Admin interface
+    # Interfaz de administración
     path('admin/', admin.site.urls),
 
-    # API endpoints
+    # Endpoints de API
     path('api/users/', include('users.urls')),
+    # Endpoints de autenticación con verificación de correo (duplicados aquí para el prefijo /api/auth/)
+    path('api/auth/register/', RegisterView.as_view(), name='api-auth-register'),
+    path('api/auth/verify-email/', VerifyEmailView.as_view(), name='api-auth-verify-email'),
+    path('api/auth/identity-documents/', IdentityDocumentUploadView.as_view(), name='api-auth-identity-documents'),
     path('api/health/', health_check, name='health_check'),
 
-    # Academic management
+    # Gestión académica
     path('api/academic/', include('academic.urls')),
     path('api/enrollment/', include('enrollment.urls')),
     path('api/grades/', include('grades.urls')),
     path('api/notifications/', include('notifications.urls')),
     path('api/messaging/', include('messaging.urls')),
     path('api/material/', include('material.urls')),
+    path('api/admissions/', include('admissions.urls')),
+    path('api/questionnaire/', include('questionnaire.urls')),
 ]
 
-# Serve media files in development
+# Sirve ficheros multimedia en desarrollo
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

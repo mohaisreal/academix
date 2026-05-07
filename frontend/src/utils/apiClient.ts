@@ -56,7 +56,7 @@ async function refreshAccessToken(): Promise<string | null> {
     if (data.access) {
       setTokens({
         access: data.access,
-        refresh: refreshToken,
+        refresh: data.refresh || refreshToken,
       });
       return data.access;
     }
@@ -87,7 +87,7 @@ async function parseErrorResponse(response: Response): Promise<ApiError> {
   }
 
   return {
-    message: errorData.message || errorData.detail || 'An error occurred',
+    message: errorData.message || errorData.detail || errorData.error || 'An error occurred',
     errors: errorData.errors || errorData,
     status: response.status,
   };
@@ -103,12 +103,12 @@ export async function apiRequest<T>(
   const { skipAuth, skipRefresh, ...fetchOptions } = options;
 
   // Prepare headers
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...fetchOptions.headers,
+    ...(fetchOptions.headers as Record<string, string> | undefined),
   };
 
-  // Add authorization header if not skipped
+  // Añade la cabecera de autorización si no se omite
   if (!skipAuth) {
     // Check if token needs refresh
     if (!skipRefresh && needsTokenRefresh()) {

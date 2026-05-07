@@ -19,14 +19,29 @@ class TeacherBasicSerializer(serializers.ModelSerializer):
 
 class CareerSerializer(serializers.ModelSerializer):
     subjects_count = serializers.SerializerMethodField()
+    available_spots = serializers.SerializerMethodField()
 
     def get_subjects_count(self, obj):
         return obj.subjects.filter(is_active=True).count()
 
+    def get_available_spots(self, obj):
+        from enrollment.models import CareerEnrollment
+        from academic.models import AcademicPeriod
+        active_period = AcademicPeriod.objects.filter(is_active=True).order_by('-start_date').first()
+        if not active_period:
+            return obj.total_spots
+        enrolled = CareerEnrollment.objects.filter(
+            career=obj,
+            period=active_period,
+            status='active',
+        ).count()
+        return max(0, obj.total_spots - enrolled)
+
     class Meta:
         model = Career
         fields = ['id', 'name', 'code', 'description', 'duration_years',
-                  'is_active', 'subjects_count', 'created_at', 'updated_at']
+                  'total_spots', 'available_spots', 'is_active', 'subjects_count',
+                  'created_at', 'updated_at']
 
 
 class SubjectSerializer(serializers.ModelSerializer):
@@ -35,13 +50,29 @@ class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
         fields = ['id', 'name', 'code', 'career', 'career_name', 'credits',
-                  'description', 'hours_per_week', 'is_active']
+                  'credit_price_first_enrollment',
+                  'credit_price_second_enrollment',
+                  'credit_price_third_enrollment',
+                  'credit_price_fourth_or_more_enrollment',
+                  'subject_type', 'description', 'hours_per_week', 'is_active']
 
 
 class AcademicPeriodSerializer(serializers.ModelSerializer):
     class Meta:
         model = AcademicPeriod
-        fields = ['id', 'name', 'code', 'start_date', 'end_date', 'is_active']
+        fields = ['id', 'name', 'code', 'start_date', 'end_date',
+                  'enrollment_modification_deadline',
+                  'admission_open_date', 'admission_close_date',
+                  'is_active']
+
+    def validate(self, attrs):
+        start = attrs.get('admission_open_date', getattr(self.instance, 'admission_open_date', None))
+        end = attrs.get('admission_close_date', getattr(self.instance, 'admission_close_date', None))
+        if start and end and start >= end:
+            raise serializers.ValidationError({
+                'admission_close_date': 'Admission close date must be after admission open date.'
+            })
+        return attrs
 
 
 class ClassroomSerializer(serializers.ModelSerializer):
@@ -54,10 +85,26 @@ class ClassroomSerializer(serializers.ModelSerializer):
 
 class ClassScheduleSerializer(serializers.ModelSerializer):
     day_name = serializers.CharField(source='get_day_of_week_display', read_only=True)
+    cls_id = serializers.PrimaryKeyRelatedField(
+        queryset=Class.objects.all(),
+        source='cls',
+        write_only=True,
+        required=False,
+    )
+    class_id = serializers.IntegerField(source='cls.id', read_only=True)
 
     class Meta:
         model = ClassSchedule
-        fields = ['id', 'day_of_week', 'day_name', 'start_time', 'end_time']
+        fields = ['id', 'cls_id', 'class_id', 'day_of_week', 'day_name', 'start_time', 'end_time']
+
+    def validate(self, attrs):
+        if self.instance is None and not attrs.get('cls'):
+            raise serializers.ValidationError({'cls_id': 'Class is required when creating a schedule.'})
+        start = attrs.get('start_time', getattr(self.instance, 'start_time', None))
+        end = attrs.get('end_time', getattr(self.instance, 'end_time', None))
+        if start and end and start >= end:
+            raise serializers.ValidationError({'end_time': 'End time must be after start time.'})
+        return attrs
 
 
 class ClassSerializer(serializers.ModelSerializer):
@@ -81,14 +128,26 @@ class ClassSerializer(serializers.ModelSerializer):
     )
     schedules = ClassScheduleSerializer(many=True, read_only=True)
     enrolled_count = serializers.SerializerMethodField()
+    available_spots = serializers.SerializerMethodField()
 
     def get_enrolled_count(self, obj):
         return obj.enrollments.filter(status='enrolled').count() if hasattr(obj, 'enrollments') else 0
+
+    def get_available_spots(self, obj):
+        from enrollment.models import ClassEnrollment
+        enrolled = ClassEnrollment.objects.filter(cls=obj, status='enrolled').count()
+        # Usa la capacidad más restrictiva: la capacidad del aula si está asignada,
+        # en caso contrario, usa max_students como respaldo (siempre tiene default=30).
+        if obj.classroom and obj.classroom.capacity:
+            capacity = min(obj.classroom.capacity, obj.max_students)
+        else:
+            capacity = obj.max_students or 30
+        return max(0, capacity - enrolled)
 
     class Meta:
         model = Class
         fields = [
             'id', 'subject', 'subject_id', 'teacher', 'teacher_id',
             'period', 'period_id', 'classroom', 'classroom_id',
-            'max_students', 'schedules', 'enrolled_count', 'created_at',
+            'max_students', 'passing_grade', 'schedules', 'enrolled_count', 'available_spots', 'created_at',
         ]
