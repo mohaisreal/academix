@@ -6,6 +6,8 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from .models import Material
 from .serializers import MaterialSerializer
+from enrollment.models import ClassEnrollment
+from notifications.utils import create_notification
 from shared.permissions import IsTeacher
 
 
@@ -31,7 +33,30 @@ class MaterialViewSet(viewsets.ModelViewSet):
         return Material.objects.select_related('cls', 'uploaded_by').all()
 
     def perform_create(self, serializer):
-        serializer.save(uploaded_by=self.request.user)
+        material = serializer.save(uploaded_by=self.request.user)
+        subject_name = material.cls.subject.name
+        uploaded_by = self.request.user.get_full_name() or self.request.user.username
+        enrollments = (
+            ClassEnrollment.objects
+            .filter(cls=material.cls, status='enrolled')
+            .select_related('student')
+        )
+        for enrollment in enrollments:
+            if enrollment.student_id == self.request.user.id:
+                continue
+            create_notification(
+                user=enrollment.student,
+                title='Nuevo material disponible',
+                message=f'Se ha añadido "{material.title}" a la clase de {subject_name}.',
+                notif_type='info',
+                event_type='material_added',
+                context={
+                    'subject_name': subject_name,
+                    'material_title': material.title,
+                    'uploaded_by': uploaded_by,
+                    'class_name': str(material.cls),
+                },
+            )
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

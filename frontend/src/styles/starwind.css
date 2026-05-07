@@ -155,8 +155,7 @@
 }
 
 @layer base {
-  * {
-    @apply border-border outline-outline/50;
+  * {    @apply border-border outline-outline/50;
   }
   body {
     @apply bg-background text-foreground scheme-light dark:scheme-dark;
@@ -165,8 +164,10 @@
     @apply cursor-pointer;
   }
 
-  /* Native <select> options can't inherit alpha-transparent backgrounds.
-     Force opaque popover colors so options are always visible. */
+    /*
+   * Native <select> options can't inherit alpha-transparent backgrounds.
+   * Force opaque popover colors so options are always visible.
+   */
   select {
     color-scheme: light dark;
   }

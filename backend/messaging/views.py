@@ -1,8 +1,12 @@
+from django.contrib.auth import get_user_model
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Message
 from .serializers import MessageSerializer
+from notifications.utils import create_notification
+
+User = get_user_model()
 
 
 class InboxView(APIView):
@@ -29,9 +33,47 @@ class ComposeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        serializer = MessageSerializer(data=request.data)
+        data = request.data.copy()
+        recipient_lookup = data.get('recipient')
+
+        # Entrada retrocompatible: permite que la interfaz envíe un valor numérico
+        # ID de usuario o nombre de usuario/correo en "recipient". El contrato del serializador es
+        # sigue siendo recipient_id; este mapeo mantiene la API explícita internamente.
+        if not data.get('recipient_id') and recipient_lookup:
+            recipient_lookup = str(recipient_lookup).strip()
+            if recipient_lookup.isdigit():
+                data['recipient_id'] = int(recipient_lookup)
+            else:
+                recipient = (
+                    User.objects
+                    .filter(username__iexact=recipient_lookup)
+                    .first()
+                    or User.objects.filter(email__iexact=recipient_lookup).first()
+                )
+                if not recipient:
+                    return Response(
+                        {'recipient': 'Recipient user was not found.'},
+                        status=400,
+                    )
+                data['recipient_id'] = recipient.pk
+
+        serializer = MessageSerializer(data=data)
         if serializer.is_valid():
-            serializer.save(sender=request.user)
+            msg = serializer.save(sender=request.user)
+            if msg.recipient != request.user:
+                sender_name = request.user.get_full_name() or request.user.username
+                create_notification(
+                    user=msg.recipient,
+                    title='Nuevo mensaje recibido',
+                    message=f'Has recibido un mensaje de {sender_name}: {msg.subject}',
+                    notif_type='info',
+                    event_type='message_received',
+                    context={
+                        'sender_name': sender_name,
+                        'message_subject': msg.subject,
+                        'message_preview': msg.body[:240],
+                    },
+                )
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
@@ -78,14 +120,36 @@ class ReplyView(APIView):
             parent = Message.objects.get(pk=pk)
         except Message.DoesNotExist:
             return Response({'error': 'Not found'}, status=404)
+
+        if parent.sender != request.user and parent.recipient != request.user:
+            return Response({'error': 'Forbidden'}, status=403)
+
+        body = str(request.data.get('body', '')).strip()
+        if not body:
+            return Response({'body': 'Reply body is required.'}, status=400)
+
         recipient = parent.sender if parent.recipient == request.user else parent.recipient
         msg = Message.objects.create(
             sender=request.user,
             recipient=recipient,
             subject=f"Re: {parent.subject}",
-            body=request.data.get('body', ''),
+            body=body,
             parent=parent,
         )
+        if recipient != request.user:
+            sender_name = request.user.get_full_name() or request.user.username
+            create_notification(
+                user=recipient,
+                title='Nueva respuesta recibida',
+                message=f'Has recibido una respuesta de {sender_name}: {parent.subject}',
+                notif_type='info',
+                event_type='message_received',
+                context={
+                    'sender_name': sender_name,
+                    'message_subject': msg.subject,
+                    'message_preview': msg.body[:240],
+                },
+            )
         return Response(MessageSerializer(msg).data, status=201)
 
 

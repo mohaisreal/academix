@@ -27,7 +27,7 @@ class UserAdmin(BaseUserAdmin):
     form = CustomUserChangeForm
     add_form = CustomUserCreationForm
 
-    # Display fields in list view
+    # Campos mostrados en la vista de lista
     list_display = [
         'username',
         'email',
@@ -48,19 +48,20 @@ class UserAdmin(BaseUserAdmin):
         'created_at'
     ]
 
-    # Search fields
+    # Campos de búsqueda
     search_fields = [
         'username',
         'email',
         'first_name',
         'last_name',
-        'phone'
+        'phone',
+        'dni'
     ]
 
     # Ordering
     ordering = ['-created_at']
 
-    # Fieldsets for editing existing users
+    # Grupos de campos para editar usuarios existentes
     fieldsets = (
         (None, {
             'fields': ('username', 'password')
@@ -92,7 +93,7 @@ class UserAdmin(BaseUserAdmin):
         }),
     )
 
-    # Fieldsets for creating new users
+    # Grupos de campos para crear usuarios nuevos
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
@@ -108,10 +109,10 @@ class UserAdmin(BaseUserAdmin):
         }),
     )
 
-    # Read-only fields
+    # Campos de solo lectura
     readonly_fields = ('last_login', 'date_joined', 'created_at', 'updated_at')
 
-    # Fields to display when viewing user details
+    # Campos que se muestran al ver detalles de usuario
     def get_readonly_fields(self, request, obj=None):
         """Make created_at and updated_at readonly"""
         if obj:  # Editing an existing object

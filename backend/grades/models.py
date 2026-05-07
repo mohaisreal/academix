@@ -14,6 +14,12 @@ class Evaluation(models.Model):
     cls = models.ForeignKey('academic.Class', on_delete=models.CASCADE, related_name='evaluations')
     type = models.CharField(max_length=15, choices=TYPE_CHOICES, default='assignment')
     max_score = models.DecimalField(max_digits=6, decimal_places=2, default=100)
+    weight = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=100,
+        help_text='Peso porcentual en la nota final (0–100). La suma de todos los pesos de una clase debe ser 100.',
+    )
     due_date = models.DateField(null=True, blank=True)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

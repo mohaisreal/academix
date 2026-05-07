@@ -3,12 +3,13 @@ from rest_framework.generics import ListCreateAPIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import get_user_model
-from django.db.models import Avg
+from django.db.models import Avg, Count
 
 from .models import Evaluation, Grade
 from .serializers import EvaluationSerializer, GradeSerializer
 from academic.models import Class, AcademicPeriod
 from enrollment.models import ClassEnrollment, CareerEnrollment
+from notifications.utils import create_notification
 from shared.permissions import IsStudent, IsTeacher, IsTeacherOrAdmin, IsAdminOrManagement
 
 User = get_user_model()
@@ -291,10 +292,41 @@ class MarkingView(APIView):
         except User.DoesNotExist:
             return Response({'error': 'Student not found'}, status=404)
 
+        previous_grade = Grade.objects.filter(student=student, evaluation=evaluation).first()
+        previous_score = previous_grade.score if previous_grade else None
+        previous_feedback = previous_grade.feedback if previous_grade else ''
+
         grade, created = Grade.objects.update_or_create(
             student=student, evaluation=evaluation,
             defaults={'score': score, 'feedback': feedback, 'graded_by': request.user},
         )
+
+        should_notify = (
+            created
+            or str(previous_score) != str(grade.score)
+            or previous_feedback != grade.feedback
+        )
+        if should_notify:
+            subject_name = evaluation.cls.subject.name
+            teacher_name = request.user.get_full_name() or request.user.username
+            create_notification(
+                user=student,
+                title='Nueva calificación disponible' if created else 'Calificación actualizada',
+                message=(
+                    f'Se ha {"registrado" if created else "actualizado"} tu calificación '
+                    f'en {evaluation.name} ({subject_name}): {grade.score}/{evaluation.max_score}.'
+                ),
+                notif_type='success',
+                event_type='grade_recorded',
+                context={
+                    'subject_name': subject_name,
+                    'evaluation_name': evaluation.name,
+                    'score': str(grade.score),
+                    'max_score': str(evaluation.max_score),
+                    'feedback': grade.feedback or '',
+                    'teacher_name': teacher_name,
+                },
+            )
         return Response(GradeSerializer(grade).data, status=201 if created else 200)
 
 
@@ -355,13 +387,18 @@ class ClassReportView(APIView):
             ev_avg = ev_grades.aggregate(a=Avg('score'))['a']
             eval_stats.append({
                 'name': ev.name,
-                'type': ev.get_type_display(),
+                'type': ev.type,
+                'type_display': ev.get_type_display(),
                 'avg_score': round(float(ev_avg), 1) if ev_avg is not None else None,
+                'average_score': round(float(ev_avg), 1) if ev_avg is not None else None,
                 'submission_rate': round(ev_grades.count() / total * 100, 1) if total > 0 else 0,
                 'max_score': float(ev.max_score),
             })
 
         global_avg = all_grades.aggregate(a=Avg('score'))['a']
+        mean = round(float(global_avg), 1) if global_avg is not None else None
+        pass_rate = round(pass_count / total * 100, 1) if total > 0 else 0
+        student_scores = [round(sa, 1) for _, sa in student_avgs]
         return Response({
             'class': {
                 'id': cls.id,
@@ -370,14 +407,24 @@ class ClassReportView(APIView):
             },
             'stats': {
                 'total_students': total,
-                'mean': round(float(global_avg), 1) if global_avg is not None else None,
+                'mean': mean,
                 'pass_count': pass_count,
                 'fail_count': fail_count,
-                'pass_rate': round(pass_count / total * 100, 1) if total > 0 else 0,
+                'pass_rate': pass_rate,
             },
+            # Campos de compatibilidad consumidos por la página actual de informes de Astro.
+            'total_students': total,
+            'mean_score': mean,
+            'pass_count': pass_count,
+            'fail_count': fail_count,
+            'failed_count': fail_count,
+            'pass_rate': pass_rate,
+            'student_scores': student_scores,
             'top_students': top5,
             'bottom_students': bottom5,
             'evaluations': eval_stats,
+            'evaluation_stats': eval_stats,
+            'evaluations_performance': eval_stats,
         })
 
 
@@ -391,11 +438,13 @@ class StatisticsView(APIView):
         total_teachers = User.objects.filter(role='t', is_active=True).count()
         active_period = AcademicPeriod.objects.filter(is_active=True).first()
         active_classes = Class.objects.filter(period=active_period).count() if active_period else 0
+        active_enrolments = CareerEnrollment.objects.filter(status='active').count()
 
         all_grades = Grade.objects.all()
         total_grades = all_grades.count()
         pass_grades = sum(1 for g in all_grades if g.score >= 50)
         pass_rate = round(pass_grades / total_grades * 100, 1) if total_grades > 0 else 0
+        platform_gpa = round(float(all_grades.aggregate(a=Avg('score'))['a']), 1) if total_grades > 0 else None
 
         career_stats = []
         for c in Career.objects.filter(is_active=True):
@@ -404,19 +453,46 @@ class StatisticsView(APIView):
             ).values_list('student_id', flat=True)
             grades = Grade.objects.filter(student__in=student_ids)
             avg = grades.aggregate(a=Avg('score'))['a']
+            career_total_grades = grades.count()
+            career_pass_grades = sum(1 for g in grades if g.score >= 50)
+            career_pass_rate = (
+                round(career_pass_grades / career_total_grades * 100, 1)
+                if career_total_grades > 0 else 0
+            )
+            career_class_count = Class.objects.filter(subject__career=c).count()
             career_stats.append({
                 'career_name': c.name,
                 'students': student_ids.count(),
                 'avg_gpa': round(float(avg), 1) if avg is not None else None,
-                'classes': Class.objects.filter(subject__career=c).count(),
+                'classes': career_class_count,
+                # Campos de compatibilidad consumidos por la página actual de Astro.
+                'name': c.name,
+                'student_count': student_ids.count(),
+                'active_classes': career_class_count,
+                'pass_rate': career_pass_rate,
             })
+
+        enrolment_by_status = {
+            row['status']: row['count']
+            for row in CareerEnrollment.objects.values('status').annotate(count=Count('id'))
+        }
 
         return Response({
             'kpis': {
                 'total_students': total_students,
                 'total_teachers': total_teachers,
                 'active_classes': active_classes,
+                'active_enrolments': active_enrolments,
                 'pass_rate': pass_rate,
+                'platform_gpa': platform_gpa,
             },
+            # Campos de compatibilidad consumidos por la página actual de estadísticas de Astro.
+            'total_students': total_students,
+            'total_teachers': total_teachers,
+            'active_classes': active_classes,
+            'active_enrolments': active_enrolments,
+            'pass_rate': pass_rate,
+            'platform_gpa': platform_gpa,
+            'enrolment_by_status': enrolment_by_status,
             'career_stats': career_stats,
         })

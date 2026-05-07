@@ -1,0 +1,597 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+---
+<DashboardLayout title="System Settings — Academix" currentPath="/management/system">
+  <!-- Esqueleto de carga -->
+  <div id="page-loading" class="p-6 space-y-4">
+    <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
+    <div class="h-32 bg-card rounded-xl border border-border animate-pulse"></div>
+    <div class="h-64 bg-card rounded-xl border border-border animate-pulse"></div>
+  </div>
+
+  <!-- Actual content -->
+  <div id="page-content" class="hidden">
+    <!-- Top bar -->
+    <div class="border-b border-border px-6 py-4">
+      <h1 class="text-xl font-semibold text-foreground">System Settings</h1>
+      <p class="text-sm text-muted-foreground">Gestiona notificaciones por correo, marca y plantillas</p>
+    </div>
+
+    <div class="p-6 space-y-6 max-w-5xl">
+
+      <!-- Sección 1: ajustes globales -->
+      <div class="bg-card border border-border rounded-xl p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="flex size-10 items-center justify-center rounded-lg bg-primary/10">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <div>
+            <h3 class="text-base font-medium text-foreground">Sistema de notificaciones por correo</h3>
+            <p class="text-sm text-muted-foreground">Interruptor global para todas las notificaciones por correo</p>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+          <div>
+            <p class="text-sm font-medium text-foreground">Enviar notificaciones por correo</p>
+            <p class="text-xs text-muted-foreground mt-0.5">Si se desactiva, no se envían correos a ningún usuario independientemente de sus preferencias individuales</p>
+          </div>
+          <button
+            id="system-email-toggle"
+            role="switch"
+            aria-checked="true"
+            class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <span class="pointer-events-none inline-block h-5 w-5 translate-x-5 rounded-full bg-background shadow-lg ring-0 transition-transform"></span>
+          </button>
+        </div>
+
+        <!-- Mensaje de estado -->
+        <div id="status-msg" class="hidden mt-4 text-sm rounded-lg px-3 py-2"></div>
+      </div>
+
+      <!-- Access denied -->
+      <div id="access-denied" class="hidden flex flex-col items-center justify-center py-16 text-center">
+        <div class="flex size-16 items-center justify-center rounded-full bg-destructive/10 mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-destructive"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+        </div>
+        <p class="text-lg font-medium text-foreground">Access Denied</p>
+        <p class="text-sm text-muted-foreground mt-1">Only administrators and management can access system settings.</p>
+      </div>
+
+      <!-- Sección 2: plantillas de correo -->
+      <section id="templates-section" class="bg-card text-card-foreground rounded-xl border border-border overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-border">
+          <div>
+            <h2 class="text-sm font-semibold text-foreground">Plantillas de correo</h2>
+            <p class="text-xs text-muted-foreground mt-0.5">Gestiona plantillas HTML de correo reutilizables con soporte de marcadores</p>
+          </div>
+          <button id="new-template-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New Template
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border bg-muted/50">
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Name</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Description</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Status</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Last Updated</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="templates-table"></tbody>
+          </table>
+        </div>
+        <div id="templates-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No se han encontrado plantillas de correo</div>
+        <div id="templates-loading" class="py-10 text-center text-sm text-muted-foreground">Loading templates...</div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Modal centrado — max-w-3xl para contenido grande de textarea -->
+  <div id="modal-backdrop" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-3xl rounded-xl border border-border bg-background shadow-2xl max-h-[90vh] flex flex-col">
+      <!-- Cabecera -->
+      <div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+        <h2 id="template-panel-title" class="text-base font-semibold text-foreground">New Template</h2>
+        <button id="close-template-panel-btn" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <!-- Scrollable body -->
+      <div class="overflow-y-auto flex-1 px-5 py-4">
+        <form id="template-form" class="space-y-5">
+          <input id="tpl-id" type="hidden" value="" />
+
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Name *</label>
+            <input id="tpl-name" type="text" required placeholder="p. ej. correo de bienvenida" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
+
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Description</label>
+            <input id="tpl-description" type="text" placeholder="Short description of when this template is used" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
+
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Subject Template *</label>
+            <input id="tpl-subject" type="text" required placeholder="p. ej. Bienvenido a {{app_name}}, {{user_name}}" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary font-mono" />
+            <p class="mt-1 text-xs text-muted-foreground">Use <code class="bg-muted px-1 rounded text-xs">&#123;&#123;placeholder&#125;&#125;</code> syntax for dynamic values</p>
+          </div>
+
+          <!-- Plantilla de cuerpo con barra de herramientas -->
+          <div>
+            <label class="text-xs font-medium text-muted-foreground mb-1 block">Body Template *</label>
+
+            <!-- Placeholder toolbar -->
+            <div class="flex flex-wrap items-center gap-1.5 p-2 bg-muted/60 border border-border border-b-0 rounded-t-lg">
+              <span class="text-xs text-muted-foreground mr-1">Insert:</span>
+              <button type="button" class="insert-placeholder-btn rounded px-2 py-0.5 text-xs font-mono bg-card border border-border text-foreground hover:bg-muted hover:border-primary/50 transition-colors" data-value="{{user_name}}">{"{{user_name}}"}</button>
+              <button type="button" class="insert-placeholder-btn rounded px-2 py-0.5 text-xs font-mono bg-card border border-border text-foreground hover:bg-muted hover:border-primary/50 transition-colors" data-value="{{user_email}}">{"{{user_email}}"}</button>
+              <button type="button" class="insert-placeholder-btn rounded px-2 py-0.5 text-xs font-mono bg-card border border-border text-foreground hover:bg-muted hover:border-primary/50 transition-colors" data-value="{{app_name}}">{"{{app_name}}"}</button>
+              <button type="button" class="insert-placeholder-btn rounded px-2 py-0.5 text-xs font-mono bg-card border border-border text-foreground hover:bg-muted hover:border-primary/50 transition-colors" data-value="{{title}}">{"{{title}}"}</button>
+              <button type="button" class="insert-placeholder-btn rounded px-2 py-0.5 text-xs font-mono bg-card border border-border text-foreground hover:bg-muted hover:border-primary/50 transition-colors" data-value="{{message}}">{"{{message}}"}</button>
+              <button type="button" class="insert-placeholder-btn rounded px-2 py-0.5 text-xs font-mono bg-card border border-border text-foreground hover:bg-muted hover:border-primary/50 transition-colors" data-value="{{subject_name}}">{"{{subject_name}}"}</button>
+              <button type="button" class="insert-placeholder-btn rounded px-2 py-0.5 text-xs font-mono bg-card border border-border text-foreground hover:bg-muted hover:border-primary/50 transition-colors" data-value='<img src="" alt="">'>
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-1"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                img
+              </button>
+              <div class="ml-auto flex items-center gap-1.5">
+                <span class="text-xs text-muted-foreground/60">Supports full HTML</span>
+              </div>
+            </div>
+
+            <textarea
+              id="tpl-body"
+              required
+              rows="16"
+              placeholder="Escribe aquí el cuerpo HTML completo del correo..."
+              class="w-full bg-input border border-border rounded-b-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary font-mono resize-y leading-relaxed"
+              style="min-height: 300px;"
+            ></textarea>
+            <p class="mt-1 text-xs text-muted-foreground">Write a complete HTML document or just the body content. Placeholders like <code class="bg-muted px-1 rounded text-xs">&#123;&#123;user_name&#125;&#125;</code> will be substituted at send time.</p>
+          </div>
+
+          <!-- Active toggle -->
+          <div class="flex items-center gap-3 py-1">
+            <button
+              type="button"
+              id="tpl-active-toggle"
+              role="switch"
+              aria-checked="true"
+              class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <span class="pointer-events-none inline-block h-5 w-5 translate-x-5 rounded-full bg-background shadow-lg ring-0 transition-transform"></span>
+            </button>
+            <label class="text-sm text-foreground">Active</label>
+          </div>
+
+          <!-- Acciones de previsualización / envío de prueba (dentro del cuerpo, encima del error) -->
+          <div class="flex flex-wrap gap-2">
+            <button type="button" id="tpl-preview-btn" class="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Preview
+            </button>
+            <button type="button" id="tpl-send-test-btn" class="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Send Test
+            </button>
+          </div>
+
+          <!-- Error del formulario -->
+          <div id="template-form-error" class="hidden text-xs text-red-400 bg-red-500/10 rounded-lg p-3"></div>
+        </form>
+      </div>
+      <!-- Pie fijo -->
+      <div class="flex items-center justify-end gap-3 px-5 py-4 border-t border-border shrink-0">
+        <button type="button" id="cancel-template-btn" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
+        <button type="button" id="save-template-btn" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de previsualización — mantenido en z-[60] sobre el modal de plantilla -->
+  <div id="preview-modal" class="hidden fixed inset-0 z-[60] flex flex-col bg-background/95 backdrop-blur-sm">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0 bg-card">
+      <div>
+        <h3 class="text-base font-semibold text-foreground">Previsualización del correo</h3>
+        <p id="preview-subject" class="text-xs text-muted-foreground mt-0.5"></p>
+      </div>
+      <button id="close-preview-btn" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="flex-1 overflow-hidden p-4">
+      <iframe id="preview-iframe" class="w-full h-full rounded-xl border border-border bg-white" title="Previsualización del correo"></iframe>
+    </div>
+  </div>
+
+  <script>
+    import { toast } from "@/components/starwind/toast";
+    const API_URL = (import.meta as any).env?.PUBLIC_API_URL || "http://localhost:8000/api";
+    const token = localStorage.getItem("access_token");
+
+    if (!token) window.location.href = "/login";
+
+    // ─── Utilidades ────────────────────────────────────────────────────────────────
+
+    async function apiFetch(path: string, options: RequestInit = {}) {
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${token}`,
+        ...(options.body ? { "Content-Type": "application/json" } : {}),
+      };
+      const res = await fetch(`${API_URL}${path}`, { ...options, headers: { ...headers, ...(options.headers as Record<string,string> ?? {}) } });
+      if (res.status === 401) { window.location.href = "/login"; throw new Error("Unauthorized"); }
+      if (res.status === 204) return {};
+      if (!res.ok) {
+        let msg = `Request failed (${res.status})`;
+        try { const j = await res.json(); msg = j.detail || JSON.stringify(j) || msg; } catch {}
+        throw new Error(msg);
+      }
+      return res.json();
+    }
+
+    function escHtml(str: unknown) {
+      const d = document.createElement("div");
+      d.textContent = String(str ?? "");
+      return d.innerHTML;
+    }
+
+    function formatDate(iso: string) {
+      if (!iso) return "—";
+      return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    }
+
+    function showStatus(msg: string, isError: boolean) {
+      const el = document.getElementById("status-msg") as HTMLElement;
+      el.textContent = msg;
+      el.className = `mt-4 text-sm rounded-lg px-3 py-2 ${isError ? "bg-destructive/10 text-destructive" : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"}`;
+      el.classList.remove("hidden");
+      setTimeout(() => el.classList.add("hidden"), 3000);
+    }
+
+    function showTemplateError(msg: string) {
+      const el = document.getElementById("template-form-error") as HTMLElement;
+      el.textContent = msg;
+      el.classList.remove("hidden");
+    }
+
+    function hideTemplateError() {
+      document.getElementById("template-form-error")?.classList.add("hidden");
+    }
+
+    // ─── Sección 1: interruptor de correo ─────────────────────────────────────────────────
+
+    const toggle = document.getElementById("system-email-toggle") as HTMLButtonElement;
+    let systemEnabled = true;
+
+    function updateToggleUI(enabled: boolean, toggleEl: HTMLButtonElement) {
+      const knob = toggleEl.querySelector("span") as HTMLElement;
+      if (enabled) {
+        toggleEl.classList.add("bg-primary");
+        toggleEl.classList.remove("bg-muted");
+        toggleEl.setAttribute("aria-checked", "true");
+        knob.classList.add("translate-x-5");
+        knob.classList.remove("translate-x-0");
+      } else {
+        toggleEl.classList.remove("bg-primary");
+        toggleEl.classList.add("bg-muted");
+        toggleEl.setAttribute("aria-checked", "false");
+        knob.classList.remove("translate-x-5");
+        knob.classList.add("translate-x-0");
+      }
+    }
+
+    async function loadSettings() {
+      try {
+        const res = await fetch(`${API_URL}/notifications/system-settings/`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.status === 403) {
+          document.getElementById("page-loading")?.classList.add("hidden");
+          document.getElementById("page-content")?.classList.remove("hidden");
+          // Oculta tanto la tarjeta del interruptor como la sección de plantillas
+          toggle.closest(".bg-card")?.classList.add("hidden");
+          document.getElementById("templates-section")?.classList.add("hidden");
+          document.getElementById("access-denied")?.classList.remove("hidden");
+          return;
+        }
+        if (!res.ok) throw new Error("Failed to load settings");
+        const data = await res.json();
+        systemEnabled = data.email_notifications_enabled;
+        updateToggleUI(systemEnabled, toggle);
+      } catch {
+        showStatus("Failed to load system settings", true);
+      } finally {
+        document.getElementById("page-loading")?.classList.add("hidden");
+        document.getElementById("page-content")?.classList.remove("hidden");
+      }
+    }
+
+    toggle.addEventListener("click", async () => {
+      const newValue = !systemEnabled;
+      toggle.disabled = true;
+      try {
+        const res = await fetch(`${API_URL}/notifications/system-settings/`, {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ email_notifications_enabled: newValue }),
+        });
+        if (!res.ok) throw new Error("Failed to update");
+        const data = await res.json();
+        systemEnabled = data.email_notifications_enabled;
+        updateToggleUI(systemEnabled, toggle);
+        showStatus(
+          systemEnabled
+            ? "Notificaciones por correo activadas en todo el sistema"
+            : "Notificaciones por correo desactivadas en todo el sistema — no se enviarán correos",
+          false
+        );
+      } catch {
+        showStatus("Failed to update system settings", true);
+      } finally {
+        toggle.disabled = false;
+      }
+    });
+
+    // ─── Sección 2: plantillas de correo ──────────────────────────────────────────────
+
+    let allTemplates: any[] = [];
+
+    function renderTemplates() {
+      const tbody = document.getElementById("templates-table") as HTMLElement;
+      const empty = document.getElementById("templates-empty") as HTMLElement;
+      const loadingEl = document.getElementById("templates-loading") as HTMLElement;
+
+      loadingEl.classList.add("hidden");
+
+      if (allTemplates.length === 0) {
+        tbody.innerHTML = "";
+        empty.classList.remove("hidden");
+        return;
+      }
+      empty.classList.add("hidden");
+
+      tbody.innerHTML = allTemplates.map(t => {
+        const active = t.is_active !== false;
+        return `<tr class="border-b border-border hover:bg-muted/40 transition-colors" data-id="${t.id}">
+          <td class="px-5 py-3">
+            <p class="text-sm font-medium text-foreground">${escHtml(t.name)}</p>
+          </td>
+          <td class="px-5 py-3 text-sm text-muted-foreground max-w-xs truncate">${escHtml(t.description || "—")}</td>
+          <td class="px-5 py-3">
+            <span class="inline-flex items-center rounded-full ${active ? "bg-green-500/15 text-green-400" : "bg-muted text-muted-foreground"} px-2 py-0.5 text-xs font-medium">
+              ${active ? "Active" : "Inactive"}
+            </span>
+          </td>
+          <td class="px-5 py-3 text-sm text-muted-foreground">${formatDate(t.updated_at)}</td>
+          <td class="px-5 py-3">
+            <div class="flex items-center gap-2">
+              <button class="tpl-edit-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors" data-id="${t.id}">Edit</button>
+              <button class="tpl-delete-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-colors" data-id="${t.id}">Delete</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join("");
+
+      tbody.querySelectorAll<HTMLElement>(".tpl-edit-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const tpl = allTemplates.find(x => String(x.id) === btn.dataset.id);
+          if (tpl) openTemplatePanel(tpl);
+        });
+      });
+
+      tbody.querySelectorAll<HTMLElement>(".tpl-delete-btn").forEach(btn => {
+        btn.addEventListener("click", () => deleteTemplate(btn.dataset.id!));
+      });
+    }
+
+    async function loadTemplates() {
+      try {
+        const data = await apiFetch("/notifications/email-templates/");
+        allTemplates = Array.isArray(data) ? data : (data?.results ?? []);
+        renderTemplates();
+      } catch (err) {
+        console.error("Failed to load templates:", err);
+        const loadingEl = document.getElementById("templates-loading") as HTMLElement;
+        loadingEl.textContent = "Failed to load templates.";
+      }
+    }
+
+    async function deleteTemplate(id: string) {
+      const tpl = allTemplates.find(x => String(x.id) === id);
+      if (!tpl) return;
+      window.confirmAction({
+        title: `Delete "${tpl.name}"`,
+        description: "This action cannot be undone.",
+        confirmLabel: "Delete",
+        variant: "destructive",
+        onConfirm: async () => {
+          try {
+            await apiFetch(`/notifications/email-templates/${id}/`, { method: "DELETE" });
+            await loadTemplates();
+          } catch (err: any) {
+            toast.error(`Failed to delete template: ${err.message}`);
+          }
+        },
+      });
+    }
+
+    // ─── Modal de plantilla ───────────────────────────────────────────────────────────
+
+    let tplActiveState = true;
+    const tplActiveToggle = document.getElementById("tpl-active-toggle") as HTMLButtonElement;
+
+    tplActiveToggle.addEventListener("click", () => {
+      tplActiveState = !tplActiveState;
+      updateToggleUI(tplActiveState, tplActiveToggle);
+    });
+
+    function openTemplatePanel(tpl: any = null) {
+      hideTemplateError();
+      const panelTitle = document.getElementById("template-panel-title") as HTMLElement;
+      const previewBtn = document.getElementById("tpl-preview-btn") as HTMLButtonElement;
+      const sendTestBtn = document.getElementById("tpl-send-test-btn") as HTMLButtonElement;
+
+      if (tpl) {
+        panelTitle.textContent = "Edit Template";
+        (document.getElementById("tpl-id") as HTMLInputElement).value = tpl.id;
+        (document.getElementById("tpl-name") as HTMLInputElement).value = tpl.name ?? "";
+        (document.getElementById("tpl-description") as HTMLInputElement).value = tpl.description ?? "";
+        (document.getElementById("tpl-subject") as HTMLInputElement).value = tpl.subject_template ?? "";
+        (document.getElementById("tpl-body") as HTMLTextAreaElement).value = tpl.body_template ?? "";
+        tplActiveState = tpl.is_active !== false;
+        previewBtn.classList.remove("opacity-40", "pointer-events-none");
+        sendTestBtn.classList.remove("opacity-40", "pointer-events-none");
+      } else {
+        panelTitle.textContent = "New Template";
+        (document.getElementById("tpl-id") as HTMLInputElement).value = "";
+        (document.getElementById("template-form") as HTMLFormElement).reset();
+        tplActiveState = true;
+        previewBtn.classList.add("opacity-40", "pointer-events-none");
+        sendTestBtn.classList.add("opacity-40", "pointer-events-none");
+      }
+      updateToggleUI(tplActiveState, tplActiveToggle);
+
+      document.getElementById("modal-backdrop")?.classList.remove("hidden");
+    }
+
+    function closeTemplatePanel() {
+      document.getElementById("modal-backdrop")?.classList.add("hidden");
+    }
+
+    document.getElementById("new-template-btn")?.addEventListener("click", () => openTemplatePanel());
+    document.getElementById("close-template-panel-btn")?.addEventListener("click", closeTemplatePanel);
+    document.getElementById("cancel-template-btn")?.addEventListener("click", closeTemplatePanel);
+    document.getElementById("modal-backdrop")?.addEventListener("click", e => { if (e.target === e.currentTarget) closeTemplatePanel(); });
+
+    // Placeholder insertion
+    document.querySelectorAll<HTMLElement>(".insert-placeholder-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const textarea = document.getElementById("tpl-body") as HTMLTextAreaElement;
+        const value = btn.dataset.value ?? "";
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const before = textarea.value.substring(0, start);
+        const after = textarea.value.substring(end);
+        textarea.value = before + value + after;
+        const cursor = start + value.length;
+        textarea.setSelectionRange(cursor, cursor);
+        textarea.focus();
+      });
+    });
+
+    // Botón de guardar — type="button" con manejador manual (conserva el enfoque original)
+    document.getElementById("save-template-btn")?.addEventListener("click", async () => {
+      hideTemplateError();
+      const id = (document.getElementById("tpl-id") as HTMLInputElement).value;
+      const body = {
+        name: (document.getElementById("tpl-name") as HTMLInputElement).value.trim(),
+        description: (document.getElementById("tpl-description") as HTMLInputElement).value.trim(),
+        subject_template: (document.getElementById("tpl-subject") as HTMLInputElement).value.trim(),
+        body_template: (document.getElementById("tpl-body") as HTMLTextAreaElement).value,
+        is_active: tplActiveState,
+      };
+
+      const saveBtn = document.getElementById("save-template-btn") as HTMLButtonElement;
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Guardando...";
+
+      try {
+        const url = id ? `/notifications/email-templates/${id}/` : "/notifications/email-templates/";
+        const method = id ? "PATCH" : "POST";
+        await apiFetch(url, { method, body: JSON.stringify(body) });
+        closeTemplatePanel();
+        await loadTemplates();
+      } catch (err: any) {
+        showTemplateError(err.message || "No se ha podido guardar template");
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Save";
+      }
+    });
+
+    // ─── Preview ──────────────────────────────────────────────────────────────────
+
+    document.getElementById("tpl-preview-btn")?.addEventListener("click", async () => {
+      const id = (document.getElementById("tpl-id") as HTMLInputElement).value;
+      if (!id) return;
+
+      const btn = document.getElementById("tpl-preview-btn") as HTMLButtonElement;
+      btn.disabled = true;
+      btn.textContent = "Loading...";
+
+      try {
+        const data = await apiFetch(`/notifications/email-templates/${id}/preview/`, {
+          method: "POST",
+          body: JSON.stringify({ context: { user_name: "John Doe", user_email: "john@example.com", app_name: "Academix" } }),
+        });
+        openPreviewModal(data.subject, data.html);
+      } catch (err: any) {
+        showTemplateError(`Preview failed: ${err.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Preview";
+      }
+    });
+
+    function openPreviewModal(subject: string, bodyHtml: string) {
+      (document.getElementById("preview-subject") as HTMLElement).textContent = `Subject: ${subject}`;
+      const iframe = document.getElementById("preview-iframe") as HTMLIFrameElement;
+      // Escribe HTML en el iframe para renderizado aislado seguro
+      iframe.srcdoc = bodyHtml;
+      document.getElementById("preview-modal")?.classList.remove("hidden");
+    }
+
+    document.getElementById("close-preview-btn")?.addEventListener("click", () => {
+      document.getElementById("preview-modal")?.classList.add("hidden");
+    });
+
+    // Cierra la previsualización con Escape; cierra el modal de plantilla con Escape cuando la previsualización no está abierta
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        const previewOpen = !document.getElementById("preview-modal")?.classList.contains("hidden");
+        if (previewOpen) {
+          document.getElementById("preview-modal")?.classList.add("hidden");
+        } else {
+          closeTemplatePanel();
+        }
+      }
+    });
+
+    // ─── Send Test ────────────────────────────────────────────────────────────────
+
+    document.getElementById("tpl-send-test-btn")?.addEventListener("click", async () => {
+      const id = (document.getElementById("tpl-id") as HTMLInputElement).value;
+      if (!id) return;
+
+      const btn = document.getElementById("tpl-send-test-btn") as HTMLButtonElement;
+      btn.disabled = true;
+      btn.textContent = "Sending...";
+
+      try {
+        await apiFetch(`/notifications/email-templates/${id}/send-test/`, { method: "POST" });
+        showStatus("Correo de prueba enviado a tu bandeja de entrada", false);
+      } catch (err: any) {
+        showTemplateError(`Send test failed: ${err.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Send Test";
+      }
+    });
+
+    // ─── Inicialización ─────────────────────────────────────────────────────────────────────
+
+    async function init() {
+      await loadSettings();
+      await loadTemplates();
+    }
+
+    init();
+  </script>
+</DashboardLayout>

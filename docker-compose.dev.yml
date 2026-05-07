@@ -7,17 +7,27 @@ services:
     container_name: academix-backend-dev
     env_file:
       - .env.dev
+    environment:
+      # SMTP de Mailpit — sobrescribe lo definido en .env.dev para que los correos lleguen siempre a Mailpit en desarrollo
+      EMAIL_BACKEND: django.core.mail.backends.smtp.EmailBackend
+      EMAIL_HOST: mailpit
+      EMAIL_PORT: "1025"
+      EMAIL_USE_TLS: "False"
+      EMAIL_HOST_USER: ""
+      EMAIL_HOST_PASSWORD: ""
     ports:
       - "8000:8000"
-    # Volume mounts for hot-reload development
+    # Montajes de volúmenes para desarrollo con recarga en caliente
     volumes:
-      # Mount entire backend source directory
+      # Monta todo el directorio fuente del backend
       - ./backend:/app
-      # Prevent Python cache from being synced to host
+      # Evita sincronizar la caché de Python con el anfitrión
       - /app/__pycache__
-      # Exclude .pyc files and egg-info
+      # Excluye los ficheros .pyc y egg-info
       - /app/.pytest_cache
       - /app/*.egg-info
+    depends_on:
+      - mailpit
     networks:
       - academix-network
     restart: unless-stopped
@@ -30,18 +40,28 @@ services:
     container_name: academix-frontend-dev
     ports:
       - "4321:4321"
-    # Volume mounts for hot-reload development
+    # Montajes de volúmenes para desarrollo con recarga en caliente
     volumes:
-      # Mount entire frontend source directory for watch mode
+      # Monta todo el directorio fuente del frontend para el modo de vigilancia
       - ./frontend:/app
-      # Anonymous volume to prevent node_modules from being synced with host
-      # This ensures dependencies installed in container are used
+      # Volumen anónimo para evitar sincronizar node_modules con el anfitrión
+      # Esto garantiza que se usen las dependencias instaladas en el contenedor
       - /app/node_modules
-      # Exclude build artifacts and cache directories
+      # Excluye artefactos de compilación y directorios de caché
       - /app/.astro
       - /app/dist
     depends_on:
       - backend
+    networks:
+      - academix-network
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: academix-mailpit-dev
+    ports:
+      - "1025:1025"
+      - "8025:8025"
     networks:
       - academix-network
     restart: unless-stopped
