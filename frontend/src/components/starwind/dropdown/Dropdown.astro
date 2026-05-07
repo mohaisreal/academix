@@ -2,12 +2,12 @@
 import type { HTMLAttributes } from "astro/types";
 
 type Props = HTMLAttributes<"div"> & {
-  /**
-   * When true, the dropdown will open on hover in addition to click
+    /**
+   * Cuando es true, el desplegable se abrirá al pasar el cursor además de con clic
    */
   openOnHover?: boolean;
-  /**
-   * Time in milliseconds to wait before closing when hover open is enabled
+    /**
+   * Tiempo en milisegundos que se espera antes de cerrar cuando la apertura por cursor está activada
    * @default 200
    */
   closeDelay?: number;
@@ -49,10 +49,10 @@ const { class: className, openOnHover = false, closeDelay = 200, ...rest } = Ast
       this.openOnHover = dropdown.getAttribute("data-open-on-hover") === "true";
       this.closeDelay = parseInt(dropdown.getAttribute("data-close-delay") || "200");
 
-      // Get the temporary trigger element
+      // Obtiene el elemento disparador temporal
       const tempTrigger = dropdown.querySelector(".starwind-dropdown-trigger") as HTMLElement;
 
-      // if trigger is set with asChild, use the first child element for trigger button
+      // si trigger se define con asChild, usa el primer elemento hijo como botón disparador
       if (tempTrigger?.hasAttribute("data-as-child")) {
         this.trigger = tempTrigger.firstElementChild as HTMLButtonElement;
       } else {
@@ -63,7 +63,7 @@ const { class: className, openOnHover = false, closeDelay = 200, ...rest } = Ast
 
       if (!this.trigger || !this.content) return;
 
-      // Get animation duration from inline styles if available
+      // Obtiene la duración de la animación desde estilos inline si está disponible
       const animationDurationString = this.content.style.animationDuration;
       if (animationDurationString.endsWith("ms")) {
         this.animationDuration = parseFloat(animationDurationString);
@@ -82,7 +82,7 @@ const { class: className, openOnHover = false, closeDelay = 200, ...rest } = Ast
     private setupAccessibility(dropdownIdx: number) {
       if (!this.trigger || !this.content) return;
 
-      // Generate unique IDs for accessibility
+      // Genera ID únicos para accesibilidad
       this.trigger.id = `starwind-dropdown${dropdownIdx}-trigger`;
       this.content.id = `starwind-dropdown${dropdownIdx}-content`;
 
@@ -94,14 +94,14 @@ const { class: className, openOnHover = false, closeDelay = 200, ...rest } = Ast
     private setupEvents() {
       if (!this.trigger || !this.content) return;
 
-      // Handle trigger click
+      // Gestiona el clic del disparador
       this.trigger.addEventListener("click", (e) => {
         e.preventDefault();
         this.lastOpenSource = e.detail === 0 ? "keyboard" : "mouse";
         this.toggleDropdown();
       });
 
-      // Handle keyboard navigation
+      // Gestiona la navegación por teclado
       this.trigger.addEventListener("keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
@@ -116,26 +116,26 @@ const { class: className, openOnHover = false, closeDelay = 200, ...rest } = Ast
           this.lastOpenSource = "keyboard";
           this.updateDropdownItems();
           if (e.key === "ArrowDown") {
-            this.focusItem(0); // Focus first item when opening with arrow down
+            this.focusItem(0); // Enfoca el primer elemento al abrir con flecha abajo
           } else {
-            this.focusItem(this.items.length - 1); // Focus last item when opening with arrow up
+            this.focusItem(this.items.length - 1); // Enfoca el último elemento al abrir con flecha arriba
           }
         }
       });
 
-      // Close dropdown when clicking outside for mouse
+      // Cierra el desplegable al hacer clic fuera con ratón
       document.addEventListener("pointerdown", (e) => {
         if (this.isOpen && !this.dropdown.contains(e.target as Node)) {
-          // only call handler if it's the left button (mousedown gets triggered by all mouse buttons)
-          // but not when the control key is pressed (avoiding MacOS right click); also not for touch
-          // devices because that would open the menu on scroll. (pen devices behave as touch on iOS).
+          // llama al manejador solo si es el botón izquierdo (mousedown se dispara con todos los botones del ratón)
+          // pero no cuando la tecla Control está pulsada (evita el clic derecho de macOS); tampoco para táctil
+          // porque eso abriría el menú al hacer scroll. (Los dispositivos con lápiz se comportan como táctiles en iOS).
           if (e.button === 0 && e.ctrlKey === false && e.pointerType === "mouse") {
             this.closeDropdown();
           }
         }
       });
 
-      // Handle click outside select content to close for mobile
+      // Gestiona el clic fuera del contenido del selector para cerrar en móvil
       document.addEventListener("click", (e) => {
         if (
           !(this.trigger?.contains(e.target as Node) || this.content?.contains(e.target as Node)) &&
@@ -145,7 +145,7 @@ const { class: className, openOnHover = false, closeDelay = 200, ...rest } = Ast
         }
       });
 
-      // Handle keyboard navigation and item selection within dropdown
+      // Gestiona navegación por teclado y selección de elementos dentro del desplegable
       this.content.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
           e.preventDefault();
@@ -156,29 +156,29 @@ const { class: className, openOnHover = false, closeDelay = 200, ...rest } = Ast
         }
       });
 
-      // Handle item selection
+      // Gestiona la selección de elementos
       this.content.addEventListener("click", (e) => {
         const target = e.target as HTMLElement;
         const item = target.closest('[role="menuitem"]');
         if (item && !(item as HTMLElement).hasAttribute("data-disabled")) {
-          // Close the dropdown after item selection
+          // Cierra el desplegable tras seleccionar un elemento
           this.closeDropdown();
           // console.log("click closing");
         }
       });
 
-      // Handle hover on dropdown items
+      // Gestiona el paso del cursor sobre elementos del desplegable
       this.content.addEventListener("mouseover", (e) => {
         const target = e.target as HTMLElement;
         const menuItem = target.closest('[role="menuitem"]');
         if (menuItem && menuItem instanceof HTMLElement && this.isOpen === true) {
-          // Update items list before focusing to ensure the index is correct
+          // Actualiza la lista de elementos antes de enfocar para asegurar que el índice sea correcto
           this.updateDropdownItems();
 
-          // Focus the item when hovering
+          // Enfoca el elemento al pasar el cursor
           menuItem.focus();
 
-          // Update the current focus index
+          // Actualiza el índice de foco actual
           this.currentFocusIndex = this.items.indexOf(menuItem);
         }
       });
@@ -191,7 +191,7 @@ const { class: className, openOnHover = false, closeDelay = 200, ...rest } = Ast
             this.lastOpenSource = "mouse";
             this.openDropdown();
           } else {
-            // If the dropdown is already open, make sure to clear any close timer
+            // Si el desplegable ya está abierto, asegúrate de limpiar cualquier temporizador de cierre
             this.clearCloseTimer();
           }
         });
@@ -206,7 +206,7 @@ const { class: className, openOnHover = false, closeDelay = 200, ...rest } = Ast
 
         this.content.addEventListener("pointerenter", (e) => {
           if (e.pointerType !== "mouse") return;
-          // If the user moves the mouse to the content, cancel the close timer
+          // Si el usuario mueve el ratón al contenido, cancela el temporizador de cierre
           this.clearCloseTimer();
         });
       }
@@ -257,7 +257,7 @@ const { class: className, openOnHover = false, closeDelay = 200, ...rest } = Ast
     }
 
     private focusItem(idx: number) {
-      // Ensure the index wraps around properly
+      // Asegura que el índice vuelva correctamente al principio/final
       const targetIdx = (idx + this.items.length) % this.items.length;
 
       if (this.items[targetIdx]) {
@@ -283,10 +283,10 @@ const { class: className, openOnHover = false, closeDelay = 200, ...rest } = Ast
       this.trigger.setAttribute("aria-expanded", "true");
       this.content.style.removeProperty("display");
 
-      // Update the list of dropdown items
+      // Actualiza la lista de elementos del desplegable
       this.updateDropdownItems();
 
-      // Reset focus index when opening
+      // Reinicia el índice de foco al abrir
       this.currentFocusIndex = -1;
 
       this.positionContent();
@@ -299,7 +299,7 @@ const { class: className, openOnHover = false, closeDelay = 200, ...rest } = Ast
       this.isOpen = false;
       this.content.setAttribute("data-state", "closed");
 
-      // Set focus back on trigger only if opened or closed by keyboard
+      // Devuelve el foco al disparador solo si se abrió o cerró con teclado
       if (
         !this.openOnHover ||
         this.lastOpenSource === "keyboard" ||
@@ -311,7 +311,7 @@ const { class: className, openOnHover = false, closeDelay = 200, ...rest } = Ast
         });
       }
 
-      // Give the content time to animate before hiding
+      // Da tiempo al contenido para animarse antes de ocultarlo
       setTimeout(() => {
         if (!this.content) return;
         this.content.style.display = "none";
@@ -320,17 +320,17 @@ const { class: className, openOnHover = false, closeDelay = 200, ...rest } = Ast
 
       this.trigger.setAttribute("aria-expanded", "false");
 
-      // Reset focus index when closing
+      // Reinicia el índice de foco al cerrar
       this.currentFocusIndex = -1;
     }
 
     private closeDropdownDelayed() {
       if (!this.content || !this.trigger) return;
 
-      // Clear any existing close timer
+      // Limpia cualquier temporizador de cierre existente
       this.clearCloseTimer();
 
-      // Set a new timer to close the dropdown after the delay
+      // Establece un nuevo temporizador para cerrar el desplegable tras la espera
       this.closeTimerRef = window.setTimeout(() => {
         if (this.isOpen) {
           this.closeDropdown();
@@ -349,7 +349,7 @@ const { class: className, openOnHover = false, closeDelay = 200, ...rest } = Ast
     private positionContent() {
       if (!this.content || !this.trigger) return;
 
-      // Set content width to match trigger width
+      // Ajusta el ancho del contenido al ancho del disparador
       this.content.style.width = "var(--starwind-dropdown-trigger-width)";
       this.content.style.setProperty(
         "--starwind-dropdown-trigger-width",
@@ -358,7 +358,7 @@ const { class: className, openOnHover = false, closeDelay = 200, ...rest } = Ast
     }
   }
 
-  // Store instances in a WeakMap to avoid memory leaks
+  // Guarda instancias en un WeakMap para evitar fugas de memoria
   const dropdownInstances = new WeakMap<HTMLElement, DropdownHandler>();
   let dropdownCounter = 0;
 

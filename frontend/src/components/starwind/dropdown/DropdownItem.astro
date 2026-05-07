@@ -3,12 +3,12 @@ import type { HTMLTag, Polymorphic } from "astro/types";
 import { tv } from "tailwind-variants";
 
 type Props<Tag extends HTMLTag> = Polymorphic<{ as: Tag }> & {
-  /**
-   * Whether the item is inset (has left padding)
+    /**
+   * Indica si el elemento está sangrado (tiene padding izquierdo)
    */
   inset?: boolean;
-  /**
-   * Whether the item is disabled
+    /**
+   * Indica si el elemento está deshabilitado
    */
   disabled?: boolean;
 };

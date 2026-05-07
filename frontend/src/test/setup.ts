@@ -1,11 +1,10 @@
 /**
- * Test setup file for Vitest
- * This file is run before all tests
+ * Fichero de configuración de pruebas para Vitest
+ * Este fichero se ejecuta antes de todas las pruebas
  */
-
 import { beforeAll, afterEach } from 'vitest';
 
-// Mock localStorage
+// Simula localStorage
 const localStorageMock = {
   getItem: (key: string) => null,
   setItem: (key: string, value: string) => {},
@@ -15,7 +14,7 @@ const localStorageMock = {
   length: 0,
 };
 
-// Setup global mocks
+// Configura los mocks globales
 beforeAll(() => {
   Object.defineProperty(global, 'localStorage', {
     value: localStorageMock,
@@ -23,9 +22,9 @@ beforeAll(() => {
   });
 });
 
-// Clean up after each test
+// Limpia después de cada prueba
 afterEach(() => {
-  // Reset localStorage
+  // Reinicia localStorage
   if (global.localStorage) {
     (global.localStorage as any).clear();
   }

@@ -1,9 +1,7 @@
 /**
- * Authentication hook for easy access to auth functionality
+ * Hook de autenticación para acceder fácilmente a la funcionalidad de autenticación
  */
-
 import { useUserStore, useUser, useIsLoading, useError, useIsAuthenticated } from '@/stores/useUserStore';
-import type { UserRegisterData } from '@/types/user';
 
 export function useAuth() {
   const user = useUser();
@@ -14,13 +12,13 @@ export function useAuth() {
   const { login, logout, register, fetchUser, cleanError } = useUserStore();
 
   return {
-    // State
+    // Estado
     user,
     isLoading,
     error,
     isAuthenticated,
 
-    // Actions
+    // Acciones
     login,
     logout,
     register,
@@ -30,8 +28,8 @@ export function useAuth() {
 }
 
 /**
- * Hook to require authentication
- * Redirects to login page if not authenticated
+ * Hook para exigir autenticación
+ * Redirige a la página de inicio de sesión si no hay autenticación
  */
 export function useRequireAuth(redirectUrl: string = '/login') {
   const isAuthenticated = useIsAuthenticated();

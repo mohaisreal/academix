@@ -3,8 +3,8 @@ import type { HTMLAttributes } from "astro/types";
 import { tv } from "tailwind-variants";
 
 type Props = Omit<HTMLAttributes<"button">, "role" | "type"> & {
-  /**
-   * When true, the component will render its child element with a simple wrapper instead of a button component
+    /**
+   * Cuando es true, el componente renderizará su elemento hijo con un envoltorio simple en vez de un componente botón
    */
   asChild?: boolean;
 };
@@ -20,7 +20,7 @@ export const dropdownTrigger = tv({
 
 const { class: className, asChild = false, ...rest } = Astro.props;
 
-// Get the first child element if asChild is true
+// Obtiene el primer elemento hijo si asChild es true
 let hasChildren = false;
 if (Astro.slots.has("default")) {
   hasChildren = true;

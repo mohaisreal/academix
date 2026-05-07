@@ -3,28 +3,28 @@ import type { HTMLAttributes } from "astro/types";
 import { tv } from "tailwind-variants";
 
 type Props = HTMLAttributes<"div"> & {
-  /**
-   * Side of the tooltip
+    /**
+   * Lado del tooltip
    * @default bottom
    */
   side?: "top" | "bottom";
-  /**
-   * Alignment of the dropdown
+    /**
+   * Alineación del desplegable
    * @default start
    */
   align?: "start" | "center" | "end";
-  /**
-   * Offset distance in pixels
+    /**
+   * Distancia de desplazamiento en píxeles
    * @default 4
    */
   sideOffset?: number;
-  /**
-   * Open and close animation duration in milliseconds
+    /**
+   * Duración de las animaciones de apertura y cierre en milisegundos
    * @default 150
    */
   animationDuration?: number;
-  /**
-   * Size of the select content
+    /**
+   * Tamaño del contenido del selector
    * @default md
    */
   size?: "sm" | "md" | "lg";
@@ -80,7 +80,7 @@ const {
   data-slot="select-content"
   tabindex="-1"
   style={{
-    // hide the content initially. Script will remove this
+    // oculta inicialmente el contenido. El script lo eliminará
     display: "none",
     animationDuration: `${animationDuration}ms`,
     marginTop: side === "bottom" ? `${sideOffset}px` : undefined,

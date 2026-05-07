@@ -1,32 +1,30 @@
 /**
- * Authentication Usage Examples
- *
- * This file demonstrates various ways to use the authentication system.
- * Copy these patterns into your own components as needed.
+ * Ejemplos de uso de autenticación
+ * Este fichero muestra distintas formas de usar el sistema de autenticación.
+ * Copia estos patrones en tus propios componentes según sea necesario.
  */
-
 import { useAuth } from '@/hooks/useAuth';
 import { api, ApiErrorClass } from '@/utils/apiClient';
 import { useEffect, useState } from 'react';
 import type { User } from '@/types/user';
 
 // ============================================================================
-// Example 1: Simple Login Component
+// Ejemplo 1: componente simple de inicio de sesión
 // ============================================================================
 
 export function SimpleLoginExample() {
   const { login, isLoading, error } = useAuth();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await login(email, password);
-      // Redirect after successful login
+      await login(username, password);
+      // Redirige tras iniciar sesión correctamente
       window.location.href = '/dashboard';
     } catch (err) {
-      // Error is automatically handled by the store
+      // El error lo gestiona automáticamente el almacén de estado
       console.error('Login failed:', err);
     }
   };
@@ -35,32 +33,32 @@ export function SimpleLoginExample() {
     <form onSubmit={handleLogin}>
       {error && <div className="error">{error}</div>}
       <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="Email"
+        type="text"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        placeholder="Nombre de usuario"
       />
       <input
         type="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        placeholder="Password"
+        placeholder="Contraseña"
       />
       <button type="submit" disabled={isLoading}>
-        {isLoading ? 'Logging in...' : 'Login'}
+        {isLoading ? 'Iniciando sesión...' : 'Login'}
       </button>
     </form>
   );
 }
 
 // ============================================================================
-// Example 2: Protected Route/Component
+// Ejemplo 2: ruta/componente protegido
 // ============================================================================
 
 export function ProtectedDashboard() {
   const { user, isAuthenticated, logout } = useAuth();
 
-  // Redirect if not authenticated
+  // Redirige si no hay autenticación
   useEffect(() => {
     if (!isAuthenticated) {
       window.location.href = '/login';
@@ -68,21 +66,21 @@ export function ProtectedDashboard() {
   }, [isAuthenticated]);
 
   if (!isAuthenticated) {
-    return <div>Loading...</div>;
+    return <div>Cargando...</div>;
   }
 
   return (
     <div>
       <h1>Welcome, {user?.first_name}!</h1>
-      <p>Email: {user?.email}</p>
+      <p>Correo electrónico: {user?.email}</p>
       <p>Role: {user?.role}</p>
-      <button onClick={logout}>Logout</button>
+      <button onClick={logout}>Cerrar sesión</button>
     </div>
   );
 }
 
 // ============================================================================
-// Example 3: User Profile with Updates
+// Ejemplo 3: perfil de usuario con actualizaciones
 // ============================================================================
 
 export function UserProfileExample() {
@@ -98,9 +96,9 @@ export function UserProfileExample() {
 
     try {
       await api.patch(`/users/${user.id}/`, updates);
-      // Refresh user data
+      // Refresca los datos del usuario
       await fetchUser(user.id);
-      alert('Profile updated successfully!');
+      alert('Perfil actualizado correctamente');
     } catch (err) {
       if (err instanceof ApiErrorClass) {
         setUpdateError(err.message);
@@ -126,7 +124,7 @@ export function UserProfileExample() {
         <strong>Name:</strong> {user?.first_name} {user?.last_name}
       </div>
       <div>
-        <strong>Email:</strong> {user?.email}
+        <strong>Correo electrónico:</strong> {user?.email}
       </div>
       <div>
         <strong>Phone:</strong> {user?.phone || 'Not set'}
@@ -140,7 +138,7 @@ export function UserProfileExample() {
 }
 
 // ============================================================================
-// Example 4: Registration Form
+// Ejemplo 4: formulario de registro
 // ============================================================================
 
 export function RegistrationExample() {
@@ -165,13 +163,13 @@ export function RegistrationExample() {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      setLocalError('Passwords do not match');
+      setLocalError('Las contraseñas no coinciden');
       return;
     }
 
     try {
       const { confirmPassword, ...registerData } = formData;
-      await register(registerData);
+      await register({ ...registerData, password2: confirmPassword });
       window.location.href = '/dashboard';
     } catch (err) {
       console.error('Registration failed:', err);
@@ -188,21 +186,21 @@ export function RegistrationExample() {
         name="first_name"
         value={formData.first_name}
         onChange={handleChange}
-        placeholder="First Name"
+        placeholder="Nombre"
         required
       />
       <input
         name="last_name"
         value={formData.last_name}
         onChange={handleChange}
-        placeholder="Last Name"
+        placeholder="Apellidos"
         required
       />
       <input
         name="username"
         value={formData.username}
         onChange={handleChange}
-        placeholder="Username"
+        placeholder="Nombre de usuario"
         required
       />
       <input
@@ -210,7 +208,7 @@ export function RegistrationExample() {
         type="email"
         value={formData.email}
         onChange={handleChange}
-        placeholder="Email"
+        placeholder="Correo electrónico"
         required
       />
       <input
@@ -218,7 +216,7 @@ export function RegistrationExample() {
         type="password"
         value={formData.password}
         onChange={handleChange}
-        placeholder="Password"
+        placeholder="Contraseña"
         required
       />
       <input
@@ -226,19 +224,19 @@ export function RegistrationExample() {
         type="password"
         value={formData.confirmPassword}
         onChange={handleChange}
-        placeholder="Confirm Password"
+        placeholder="Confirmar contraseña"
         required
       />
 
       <button type="submit" disabled={isLoading}>
-        {isLoading ? 'Creating account...' : 'Register'}
+        {isLoading ? 'Creando cuenta...' : 'Register'}
       </button>
     </form>
   );
 }
 
 // ============================================================================
-// Example 5: Using API Client Directly
+// Ejemplo 5: uso directo del cliente de API
 // ============================================================================
 
 export function DirectAPIExample() {
@@ -251,7 +249,7 @@ export function DirectAPIExample() {
     setError(null);
 
     try {
-      // GET request with automatic authentication
+      // Petición GET con autenticación automática
       const response = await api.get<{ users: User[] }>('/users/');
       setUsers(response.users);
     } catch (err) {
@@ -288,7 +286,7 @@ export function DirectAPIExample() {
   return (
     <div>
       <button onClick={fetchUsers} disabled={loading}>
-        {loading ? 'Loading...' : 'Fetch Users'}
+        {loading ? 'Cargando...' : 'Obtener usuarios'}
       </button>
 
       {error && <div className="error">{error}</div>}
@@ -306,7 +304,7 @@ export function DirectAPIExample() {
 }
 
 // ============================================================================
-// Example 6: Conditional Rendering Based on Auth State
+// Ejemplo 6: renderizado condicional según el estado de autenticación
 // ============================================================================
 
 export function ConditionalRenderingExample() {
@@ -316,8 +314,8 @@ export function ConditionalRenderingExample() {
     <div>
       {isAuthenticated ? (
         <div>
-          <p>Logged in as: {user?.email}</p>
-          <button onClick={logout}>Logout</button>
+          <p>Sesión iniciada como: {user?.email}</p>
+          <button onClick={logout}>Cerrar sesión</button>
         </div>
       ) : (
         <div>
@@ -331,7 +329,7 @@ export function ConditionalRenderingExample() {
 }
 
 // ============================================================================
-// Example 7: Role-Based Access Control
+// Ejemplo 7: control de acceso basado en roles
 // ============================================================================
 
 export function RoleBasedExample() {
@@ -349,13 +347,15 @@ export function RoleBasedExample() {
     <div>
       <h1>Dashboard</h1>
 
-      {/* Available to all authenticated users */}
+      {/* Disponible para todos los usuarios autenticados */
+}
       <section>
         <h2>My Profile</h2>
         <p>Name: {user?.first_name} {user?.last_name}</p>
       </section>
 
-      {/* Teacher-only section */}
+      {/* Sección solo para profesores */
+}
       {isTeacher && (
         <section>
           <h2>Teacher Dashboard</h2>
@@ -363,7 +363,8 @@ export function RoleBasedExample() {
         </section>
       )}
 
-      {/* Admin-only section */}
+      {/* Sección solo para administración */
+}
       {isAdmin && (
         <section>
           <h2>Admin Panel</h2>
@@ -371,7 +372,8 @@ export function RoleBasedExample() {
         </section>
       )}
 
-      {/* Student-only section */}
+      {/* Sección solo para estudiantes */
+}
       {isStudent && (
         <section>
           <h2>My Courses</h2>
@@ -383,23 +385,23 @@ export function RoleBasedExample() {
 }
 
 // ============================================================================
-// Example 8: Error Handling Patterns
+// Ejemplo 8: patrones de gestión de errores
 // ============================================================================
 
 export function ErrorHandlingExample() {
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLoginWithDetailedErrors = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
-      await login(email, password);
+      await login(username, password);
       window.location.href = '/dashboard';
     } catch (err) {
       if (err instanceof ApiErrorClass) {
-        // Handle specific status codes
+        // Gestiona códigos de estado concretos
         switch (err.status) {
           case 401:
             alert('Invalid credentials. Please try again.');
@@ -414,7 +416,7 @@ export function ErrorHandlingExample() {
             alert(err.message);
         }
 
-        // Handle field-specific errors
+        // Gestiona errores específicos de campo
         if (err.errors) {
           Object.entries(err.errors).forEach(([field, messages]) => {
             console.error(`${field}: ${messages.join(', ')}`);
@@ -427,9 +429,9 @@ export function ErrorHandlingExample() {
   return (
     <form onSubmit={handleLoginWithDetailedErrors}>
       <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        type="text"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
       />
       <input
         type="password"

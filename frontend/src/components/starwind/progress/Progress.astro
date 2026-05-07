@@ -3,16 +3,16 @@ import type { HTMLAttributes } from "astro/types";
 import { tv } from "tailwind-variants";
 
 type Props = HTMLAttributes<"div"> & {
-  /**
-   * Current value of the progress bar (omit for indeterminate state)
+    /**
+   * Valor actual de la barra de progreso (omitir para estado indeterminado)
    */
   value?: number;
-  /**
-   * Maximum value for the progress bar (default: 100)
+    /**
+   * Valor máximo de la barra de progreso (por defecto: 100)
    */
   max?: number;
-  /**
-   * Color variant for the progress indicator (default: default)
+    /**
+   * Variante de color para el indicador de progreso (por defecto: default)
    */
   variant?: "default" | "primary" | "secondary" | "info" | "success" | "warning" | "error";
 };
@@ -94,11 +94,11 @@ const indicatorStyle = isIndeterminate
     constructor(progressElement: HTMLElement) {
       this.progressElement = progressElement;
       this.setupMutationObserver();
-      this.updateProgress(); // Initial update
+      this.updateProgress(); // Actualización inicial
     }
 
     private setupMutationObserver(): void {
-      // Create a MutationObserver to watch for data-value attribute changes
+      // Crea un MutationObserver para vigilar cambios del atributo data-value
       this.observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
           if (mutation.attributeName === "data-value" || mutation.attributeName === "data-max") {
@@ -118,13 +118,13 @@ const indicatorStyle = isIndeterminate
         ? this.progressElement.getAttribute("data-indeterminate") === "true"
         : value == null;
 
-      // Update ARIA attributes
+      // Actualiza atributos ARIA
       if (!isIndeterminate) {
         const valuePercent = Math.round((value / max) * 100);
         this.progressElement.setAttribute("aria-valuenow", String(value));
         this.progressElement.setAttribute("aria-valuetext", `${valuePercent}%`);
 
-        // Update indicator position
+        // Actualiza la posición del indicador
         const indicator = this.progressElement.querySelector("div");
         if (indicator) {
           indicator.style.transform = `translateX(-${100 - valuePercent}%)`;
@@ -132,13 +132,13 @@ const indicatorStyle = isIndeterminate
       }
     }
 
-    // Clean up method to disconnect observer
+    // Método de limpieza para desconectar el observador
     public destroy(): void {
       this.observer.disconnect();
     }
   }
 
-  // Store instances in a WeakMap to avoid memory leaks
+  // Guarda instancias en un WeakMap para evitar fugas de memoria
   const progressInstances = new WeakMap<HTMLElement, ProgressHandler>();
 
   const setupProgressBars = () => {

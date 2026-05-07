@@ -1,7 +1,6 @@
 /**
- * API client with automatic JWT token handling
+ * Cliente de API con gestión automática de tokens JWT
  */
-
 import API_URL from '@/config/api';
 import { getAccessToken, getRefreshToken, setTokens, clearTokens, needsTokenRefresh } from './tokenManager';
 import type { ApiError, AuthTokens } from '@/types/user';
@@ -12,7 +11,7 @@ interface RequestOptions extends RequestInit {
 }
 
 /**
- * Custom error class for API errors
+ * Clase de error personalizada para errores de API
  */
 export class ApiErrorClass extends Error {
   public status?: number;
@@ -27,7 +26,7 @@ export class ApiErrorClass extends Error {
 }
 
 /**
- * Refresh the access token using the refresh token
+ * Refresca el token de acceso usando el token de refresco
  */
 async function refreshAccessToken(): Promise<string | null> {
   const refreshToken = getRefreshToken();
@@ -70,7 +69,7 @@ async function refreshAccessToken(): Promise<string | null> {
 }
 
 /**
- * Parse error response from API
+ * Analiza la respuesta de error de la API
  */
 async function parseErrorResponse(response: Response): Promise<ApiError> {
   let errorData: any = {};
@@ -124,19 +123,19 @@ export async function apiRequest<T>(
     }
   }
 
-  // Make the request
+  // Realiza la petición
   try {
     const response = await fetch(`${API_URL}${endpoint}`, {
       ...fetchOptions,
       headers,
     });
 
-    // Handle 401 Unauthorized - try to refresh token once
+    // Gestiona 401 Unauthorized: intenta refrescar el token una vez
     if (response.status === 401 && !skipAuth && !skipRefresh) {
       const newToken = await refreshAccessToken();
 
       if (newToken) {
-        // Retry the request with new token
+        // Reintenta la petición con el token nuevo
         headers['Authorization'] = `Bearer ${newToken}`;
         const retryResponse = await fetch(`${API_URL}${endpoint}`, {
           ...fetchOptions,
@@ -154,18 +153,18 @@ export async function apiRequest<T>(
       }
     }
 
-    // Handle other error responses
+    // Gestiona otras respuestas de error
     if (!response.ok) {
       const error = await parseErrorResponse(response);
       throw new ApiErrorClass(error.message, response.status, error.errors);
     }
 
-    // Handle 204 No Content
+    // Gestiona 204 No Content
     if (response.status === 204) {
       return {} as T;
     }
 
-    // Parse and return JSON response
+    // Analiza y devuelve la respuesta JSON
     return await response.json();
   } catch (error) {
     // Re-throw ApiErrorClass instances
@@ -173,12 +172,12 @@ export async function apiRequest<T>(
       throw error;
     }
 
-    // Handle network errors
+    // Gestiona errores de red
     if (error instanceof TypeError) {
       throw new ApiErrorClass('Network error. Please check your connection.');
     }
 
-    // Handle other errors
+    // Gestiona otros errores
     throw new ApiErrorClass(
       error instanceof Error ? error.message : 'An unexpected error occurred'
     );
@@ -186,7 +185,7 @@ export async function apiRequest<T>(
 }
 
 /**
- * Convenience methods for common HTTP methods
+ * Métodos de conveniencia para métodos HTTP comunes
  */
 export const api = {
   get: <T>(endpoint: string, options?: RequestOptions) =>

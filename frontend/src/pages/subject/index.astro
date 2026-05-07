@@ -34,6 +34,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Code</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Career</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Credits</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">€/ECTS</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Hrs/Week</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Status</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Actions</th>
@@ -47,56 +48,88 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     </div>
   </div>
 
-  <div id="panel-backdrop" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50"></div>
-  <div id="subject-panel" class="hidden fixed inset-y-0 right-0 z-50 w-96 bg-card border-l border-border p-6 shadow-xl overflow-y-auto">
-    <div class="flex items-center justify-between mb-6">
-      <h2 id="panel-title" class="text-lg font-semibold text-foreground">New Subject</h2>
-      <button id="close-panel-btn" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+  <!-- Modal centrado -->
+  <div id="modal-backdrop" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-lg rounded-xl border border-border bg-background shadow-2xl max-h-[90vh] flex flex-col">
+      <!-- Cabecera -->
+      <div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+        <h2 id="modal-title" class="text-base font-semibold text-foreground">New Subject</h2>
+        <button id="modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <!-- Scrollable body -->
+      <div class="overflow-y-auto flex-1 px-5 py-4">
+        <form id="subject-form" class="space-y-4">
+          <input id="edit-id" type="hidden" value="" />
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Name *</label>
+            <input id="subject-name" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Calculus I" />
+          </div>
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Code *</label>
+            <input id="subject-code" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="MATH101" />
+          </div>
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Career *</label>
+            <select id="subject-career" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+              <option value="">Select career</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Credits (1–10)</label>
+            <input id="subject-credits" type="number" min="1" max="10" value="3" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
+          <div class="rounded-lg border border-border bg-muted/20 p-3 space-y-3">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Precio por crédito según intento</p>
+              <p class="text-xs text-muted-foreground mt-0.5">La 4ª tarifa se aplica también a cualquier matrícula posterior.</p>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs font-medium text-muted-foreground">1ª matrícula</label>
+                <input id="price-first" type="number" min="0" step="0.01" value="16.00" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+              </div>
+              <div>
+                <label class="text-xs font-medium text-muted-foreground">2ª matrícula</label>
+                <input id="price-second" type="number" min="0" step="0.01" value="28.00" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+              </div>
+              <div>
+                <label class="text-xs font-medium text-muted-foreground">3ª matrícula</label>
+                <input id="price-third" type="number" min="0" step="0.01" value="45.00" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+              </div>
+              <div>
+                <label class="text-xs font-medium text-muted-foreground">4ª o más</label>
+                <input id="price-fourth" type="number" min="0" step="0.01" value="60.00" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+              </div>
+            </div>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Hours/Week (1–20)</label>
+            <input id="subject-hours" type="number" min="1" max="20" value="4" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Description</label>
+            <textarea id="subject-desc" rows="3" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none" placeholder="Brief description..."></textarea>
+          </div>
+          <div class="flex items-center gap-3">
+            <input id="subject-active" type="checkbox" checked class="size-4 rounded border-border" />
+            <label for="subject-active" class="text-sm text-foreground">Active</label>
+          </div>
+          <div id="form-error" class="hidden text-xs text-red-400"></div>
+        </form>
+      </div>
+      <!-- Pie fijo -->
+      <div class="flex items-center justify-end gap-3 px-5 py-4 border-t border-border shrink-0">
+        <button id="modal-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
+        <button id="modal-save" type="submit" form="subject-form" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">Save</button>
+      </div>
     </div>
-    <form id="subject-form" class="space-y-4">
-      <input id="edit-id" type="hidden" value="" />
-      <div>
-        <label class="text-xs font-medium text-muted-foreground">Name *</label>
-        <input id="subject-name" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Calculus I" />
-      </div>
-      <div>
-        <label class="text-xs font-medium text-muted-foreground">Code *</label>
-        <input id="subject-code" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="MATH101" />
-      </div>
-      <div>
-        <label class="text-xs font-medium text-muted-foreground">Career *</label>
-        <select id="subject-career" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="">Select career</option>
-        </select>
-      </div>
-      <div>
-        <label class="text-xs font-medium text-muted-foreground">Credits (1–10)</label>
-        <input id="subject-credits" type="number" min="1" max="10" value="3" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-      </div>
-      <div>
-        <label class="text-xs font-medium text-muted-foreground">Hours/Week (1–20)</label>
-        <input id="subject-hours" type="number" min="1" max="20" value="4" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-      </div>
-      <div>
-        <label class="text-xs font-medium text-muted-foreground">Description</label>
-        <textarea id="subject-desc" rows="3" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none" placeholder="Brief description..."></textarea>
-      </div>
-      <div class="flex items-center gap-3">
-        <input id="subject-active" type="checkbox" checked class="size-4 rounded border-border" />
-        <label for="subject-active" class="text-sm text-foreground">Active</label>
-      </div>
-      <div id="form-error" class="hidden text-xs text-red-400"></div>
-      <div class="flex gap-3 pt-2">
-        <button type="button" id="cancel-form-btn" class="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
-        <button type="submit" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Save</button>
-      </div>
-    </form>
   </div>
 </DashboardLayout>
 
 <script>
+  import { toast } from "@/components/starwind/toast";
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
   const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
@@ -134,6 +167,20 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     return d.innerHTML;
   }
 
+  function formatMoney(value) {
+    const n = Number(value ?? 0);
+    return Number.isFinite(n) ? n.toFixed(2) : '0.00';
+  }
+
+  function formatCreditPrices(subject) {
+    return [
+      `1ª ${formatMoney(subject.credit_price_first_enrollment)}`,
+      `2ª ${formatMoney(subject.credit_price_second_enrollment)}`,
+      `3ª ${formatMoney(subject.credit_price_third_enrollment)}`,
+      `4ª+ ${formatMoney(subject.credit_price_fourth_or_more_enrollment)}`,
+    ].join(' · ');
+  }
+
   let subjects = [];
   let careersList = [];
 
@@ -155,6 +202,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <td class="py-3 pr-4 text-sm text-muted-foreground font-mono">${escHtml(s.code)}</td>
         <td class="py-3 pr-4 text-sm text-muted-foreground">${escHtml(careerName)}</td>
         <td class="py-3 pr-4 text-sm text-muted-foreground">${s.credits || '-'}</td>
+        <td class="py-3 pr-4 text-xs text-muted-foreground">${escHtml(formatCreditPrices(s))}</td>
         <td class="py-3 pr-4 text-sm text-muted-foreground">${s.hours_per_week || s.hours_week || '-'}</td>
         <td class="py-3 pr-4">
           <span class="inline-flex items-center rounded-full ${active ? 'bg-green-500/15 text-green-400' : 'bg-muted text-muted-foreground'} px-2 py-0.5 text-xs font-medium">${active ? 'Active' : 'Inactive'}</span>
@@ -176,13 +224,20 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     });
 
     tbody.querySelectorAll('.delete-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (!confirm('Delete this subject?')) return;
+      btn.addEventListener('click', () => {
         const id = (btn as HTMLElement).dataset.id;
-        try {
-          await apiFetch(`/academic/subjects/${id}/`, { method: 'DELETE' });
-          await loadSubjects((document.getElementById('career-filter') as HTMLSelectElement)?.value || '');
-        } catch { alert('Failed to delete subject'); }
+        (window as any).confirmAction?.({
+          title: 'Delete Subject',
+          description: 'This will permanently delete the subject and all its associated data. This action cannot be undone.',
+          confirmLabel: 'Delete',
+          variant: 'destructive',
+          onConfirm: async () => {
+            try {
+              await apiFetch(`/academic/subjects/${id}/`, { method: 'DELETE' });
+              await loadSubjects((document.getElementById('career-filter') as HTMLSelectElement)?.value || '');
+            } catch { (window as any).showToast?.('error', 'Failed to delete subject'); }
+          },
+        });
       });
     });
   }
@@ -198,7 +253,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   function openPanel(subject = null) {
     document.getElementById('form-error')?.classList.add('hidden');
-    const title = document.getElementById('panel-title');
+    const title = document.getElementById('modal-title');
     const idEl = document.getElementById('edit-id') as HTMLInputElement;
 
     const careerSel = document.getElementById('subject-career') as HTMLSelectElement;
@@ -217,6 +272,10 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       (document.getElementById('subject-code') as HTMLInputElement).value = subject.code || '';
       careerSel.value = subject.career || '';
       (document.getElementById('subject-credits') as HTMLInputElement).value = subject.credits || 3;
+      (document.getElementById('price-first') as HTMLInputElement).value = formatMoney(subject.credit_price_first_enrollment ?? 16);
+      (document.getElementById('price-second') as HTMLInputElement).value = formatMoney(subject.credit_price_second_enrollment ?? 28);
+      (document.getElementById('price-third') as HTMLInputElement).value = formatMoney(subject.credit_price_third_enrollment ?? 45);
+      (document.getElementById('price-fourth') as HTMLInputElement).value = formatMoney(subject.credit_price_fourth_or_more_enrollment ?? 60);
       (document.getElementById('subject-hours') as HTMLInputElement).value = subject.hours_per_week || subject.hours_week || 4;
       (document.getElementById('subject-desc') as HTMLTextAreaElement).value = subject.description || '';
       (document.getElementById('subject-active') as HTMLInputElement).checked = subject.is_active !== false;
@@ -226,19 +285,18 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       (document.getElementById('subject-form') as HTMLFormElement)?.reset();
       (document.getElementById('subject-active') as HTMLInputElement).checked = true;
     }
-    document.getElementById('panel-backdrop')?.classList.remove('hidden');
-    document.getElementById('subject-panel')?.classList.remove('hidden');
+    document.getElementById('modal-backdrop')?.classList.remove('hidden');
   }
 
   function closePanel() {
-    document.getElementById('panel-backdrop')?.classList.add('hidden');
-    document.getElementById('subject-panel')?.classList.add('hidden');
+    document.getElementById('modal-backdrop')?.classList.add('hidden');
   }
 
   document.getElementById('new-subject-btn')?.addEventListener('click', () => openPanel());
-  document.getElementById('close-panel-btn')?.addEventListener('click', closePanel);
-  document.getElementById('cancel-form-btn')?.addEventListener('click', closePanel);
-  document.getElementById('panel-backdrop')?.addEventListener('click', closePanel);
+  document.getElementById('modal-close')?.addEventListener('click', closePanel);
+  document.getElementById('modal-cancel')?.addEventListener('click', closePanel);
+  document.getElementById('modal-backdrop')?.addEventListener('click', e => { if (e.target === e.currentTarget) closePanel(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
 
   document.getElementById('career-filter')?.addEventListener('change', (e) => {
     loadSubjects((e.target as HTMLSelectElement).value);
@@ -252,20 +310,37 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const code = (document.getElementById('subject-code') as HTMLInputElement).value;
     const career = (document.getElementById('subject-career') as HTMLSelectElement).value;
     const credits = parseInt((document.getElementById('subject-credits') as HTMLInputElement).value);
+    const credit_price_first_enrollment = (document.getElementById('price-first') as HTMLInputElement).value;
+    const credit_price_second_enrollment = (document.getElementById('price-second') as HTMLInputElement).value;
+    const credit_price_third_enrollment = (document.getElementById('price-third') as HTMLInputElement).value;
+    const credit_price_fourth_or_more_enrollment = (document.getElementById('price-fourth') as HTMLInputElement).value;
     const hours_per_week = parseInt((document.getElementById('subject-hours') as HTMLInputElement).value);
     const description = (document.getElementById('subject-desc') as HTMLTextAreaElement).value;
     const is_active = (document.getElementById('subject-active') as HTMLInputElement).checked;
+    const payload = {
+      name,
+      code,
+      career,
+      credits,
+      credit_price_first_enrollment,
+      credit_price_second_enrollment,
+      credit_price_third_enrollment,
+      credit_price_fourth_or_more_enrollment,
+      hours_per_week,
+      description,
+      is_active,
+    };
     try {
       if (id) {
-        await apiFetch(`/academic/subjects/${id}/`, { method: 'PATCH', body: JSON.stringify({ name, code, career, credits, hours_per_week, description, is_active }) });
+        await apiFetch(`/academic/subjects/${id}/`, { method: 'PATCH', body: JSON.stringify(payload) });
       } else {
-        await apiFetch('/academic/subjects/', { method: 'POST', body: JSON.stringify({ name, code, career, credits, hours_per_week, description, is_active }) });
+        await apiFetch('/academic/subjects/', { method: 'POST', body: JSON.stringify(payload) });
       }
       closePanel();
       await loadSubjects((document.getElementById('career-filter') as HTMLSelectElement)?.value || '');
     } catch {
       errEl?.classList.remove('hidden');
-      if (errEl) errEl.textContent = 'Failed to save subject';
+      if (errEl) errEl.textContent = 'No se ha podido guardar subject';
     }
   });
 

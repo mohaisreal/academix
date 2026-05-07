@@ -25,7 +25,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     </div>
 
     <div class="p-6 space-y-4">
-      <!-- Class filter tabs -->
+      <!-- Pestañas de filtro de clases -->
       <div id="class-tabs" class="flex gap-1 overflow-x-auto pb-1 border-b border-border">
         <button class="class-tab active-class-tab px-4 py-2 text-sm font-medium text-foreground border-b-2 border-primary -mb-px whitespace-nowrap" data-class="">All Classes</button>
       </div>
@@ -95,6 +95,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 </DashboardLayout>
 
 <script>
+  import { toast } from "@/components/starwind/toast";
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
   const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
@@ -208,14 +209,21 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     }).join('');
 
     grid.querySelectorAll('.delete-mat-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (!confirm('Delete this material?')) return;
+      btn.addEventListener('click', () => {
         const id = (btn as HTMLElement).dataset.id;
-        try {
-          await apiFetch(`/material/${id}/`, { method: 'DELETE' });
-          allMaterials = allMaterials.filter(m => m.id != id);
-          filterAndRender();
-        } catch { alert('Failed to delete material'); }
+        window.confirmAction({
+          title: "Delete Material",
+          description: "This action cannot be undone.",
+          confirmLabel: "Delete",
+          variant: "destructive",
+          onConfirm: async () => {
+            try {
+              await apiFetch(`/material/${id}/`, { method: 'DELETE' });
+              allMaterials = allMaterials.filter(m => m.id != id);
+              filterAndRender();
+            } catch { toast.error('Failed to delete material'); }
+          },
+        });
       });
     });
   }
@@ -238,7 +246,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   document.getElementById('close-upload-btn')?.addEventListener('click', closeUpload);
   document.getElementById('cancel-upload-btn')?.addEventListener('click', closeUpload);
 
-  // Toggle file/url based on type
+  // Alterna fichero/URL según el tipo
   document.getElementById('mat-type')?.addEventListener('change', (e) => {
     const type = (e.target as HTMLSelectElement).value;
     const fileSection = document.getElementById('file-input-section');
@@ -311,7 +319,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       apiFetch('/academic/classes/my-classes/'),
     ]);
 
-    // Build class tabs and filter dropdown
+    // Construye pestañas de clase y desplegable de filtro
     const classes = classData.status === 'fulfilled' ? (Array.isArray(classData.value) ? classData.value : (classData.value.results || [])) : [];
     const tabsEl = document.getElementById('class-tabs');
     const matClassSel = document.getElementById('mat-class') as HTMLSelectElement;

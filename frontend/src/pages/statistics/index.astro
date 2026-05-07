@@ -39,7 +39,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         </div>
       </div>
 
-      <!-- Career Performance Table -->
+      <!-- Tabla de rendimiento de titulaciones -->
       <div class="bg-card text-card-foreground rounded-xl border border-border overflow-hidden">
         <div class="px-5 py-4 border-b border-border">
           <h2 class="text-sm font-semibold text-foreground">Performance by Career</h2>
@@ -61,9 +61,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <div id="stats-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No statistics available</div>
       </div>
 
-      <!-- Enrolment Status Distribution -->
+      <!-- Distribución de estados de matrícula -->
       <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
-        <h2 class="text-sm font-semibold text-foreground mb-4">Enrolment Status Distribution</h2>
+        <h2 class="text-sm font-semibold text-foreground mb-4">Distribución de estados de matrícula</h2>
         <div id="status-bars" class="space-y-3"></div>
       </div>
     </div>
@@ -111,7 +111,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     (document.getElementById('kpi-enrolments') as HTMLElement).textContent = data.active_enrolments ?? '0';
     (document.getElementById('kpi-gpa') as HTMLElement).textContent = data.platform_gpa != null ? Number(data.platform_gpa).toFixed(1) + '%' : '—';
 
-    // Career stats
+    // Estadísticas de titulaciones
     const tbody = document.getElementById('career-stats-table');
     const empty = document.getElementById('stats-empty');
     const careers: any[] = data.career_stats ?? [];
@@ -135,7 +135,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       }
     }
 
-    // Enrolment status distribution
+    // Distribución de estados de matrícula
     const statuses: any = data.enrolment_by_status ?? {};
     const statusLabels: Record<string,string> = { pending: 'Pending', active: 'Active', completed: 'Completed', dropped: 'Dropped' };
     const statusColors: Record<string,string> = { pending: 'bg-yellow-400', active: 'bg-green-400', completed: 'bg-blue-400', dropped: 'bg-red-400' };

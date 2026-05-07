@@ -41,48 +41,54 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     </div>
   </div>
 
-  <!-- Side panel backdrop -->
-  <div id="panel-backdrop" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50"></div>
-  <!-- Side panel -->
-  <div id="career-panel" class="hidden fixed inset-y-0 right-0 z-50 w-96 bg-card border-l border-border p-6 shadow-xl overflow-y-auto">
-    <div class="flex items-center justify-between mb-6">
-      <h2 id="panel-title" class="text-lg font-semibold text-foreground">New Career</h2>
-      <button id="close-panel-btn" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+  <!-- Modal centrado -->
+  <div id="modal-backdrop" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-lg rounded-xl border border-border bg-background shadow-2xl max-h-[90vh] flex flex-col">
+      <!-- Cabecera -->
+      <div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+        <h2 id="modal-title" class="text-base font-semibold text-foreground">New Career</h2>
+        <button id="modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <!-- Scrollable body -->
+      <div class="overflow-y-auto flex-1 px-5 py-4">
+        <form id="career-form" class="space-y-4">
+          <input id="edit-id" type="hidden" value="" />
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Name *</label>
+            <input id="career-name" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Computer Science" />
+          </div>
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Code *</label>
+            <input id="career-code" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="CS" />
+          </div>
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Description</label>
+            <textarea id="career-desc" rows="3" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none" placeholder="Brief description..."></textarea>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Duration (Years)</label>
+            <input id="career-duration" type="number" min="1" max="6" value="4" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
+          <div class="flex items-center gap-3">
+            <input id="career-active" type="checkbox" checked class="size-4 rounded border-border text-primary focus:ring-primary" />
+            <label for="career-active" class="text-sm text-foreground">Active</label>
+          </div>
+          <div id="form-error" class="hidden text-xs text-red-400"></div>
+        </form>
+      </div>
+      <!-- Pie fijo -->
+      <div class="flex items-center justify-end gap-3 px-5 py-4 border-t border-border shrink-0">
+        <button id="modal-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
+        <button id="modal-save" type="submit" form="career-form" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">Save</button>
+      </div>
     </div>
-    <form id="career-form" class="space-y-4">
-      <input id="edit-id" type="hidden" value="" />
-      <div>
-        <label class="text-xs font-medium text-muted-foreground">Name *</label>
-        <input id="career-name" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Computer Science" />
-      </div>
-      <div>
-        <label class="text-xs font-medium text-muted-foreground">Code *</label>
-        <input id="career-code" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="CS" />
-      </div>
-      <div>
-        <label class="text-xs font-medium text-muted-foreground">Description</label>
-        <textarea id="career-desc" rows="3" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none" placeholder="Brief description..."></textarea>
-      </div>
-      <div>
-        <label class="text-xs font-medium text-muted-foreground">Duration (Years)</label>
-        <input id="career-duration" type="number" min="1" max="6" value="4" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-      </div>
-      <div class="flex items-center gap-3">
-        <input id="career-active" type="checkbox" checked class="size-4 rounded border-border text-primary focus:ring-primary" />
-        <label for="career-active" class="text-sm text-foreground">Active</label>
-      </div>
-      <div id="form-error" class="hidden text-xs text-red-400"></div>
-      <div class="flex gap-3 pt-2">
-        <button type="button" id="cancel-form-btn" class="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
-        <button type="submit" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Save</button>
-      </div>
-    </form>
   </div>
 </DashboardLayout>
 
 <script>
+  import { toast } from "@/components/starwind/toast";
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
   const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
@@ -167,18 +173,25 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         try {
           await apiFetch(`/academic/careers/${id}/`, { method: 'PATCH', body: JSON.stringify({ is_active: !active }) });
           await loadCareers();
-        } catch { alert('Failed to update status'); }
+        } catch { toast.error('Failed to update status'); }
       });
     });
 
     tbody.querySelectorAll('.delete-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (!confirm('Delete this career? This cannot be undone.')) return;
+      btn.addEventListener('click', () => {
         const id = (btn as HTMLElement).dataset.id;
-        try {
-          await apiFetch(`/academic/careers/${id}/`, { method: 'DELETE' });
-          await loadCareers();
-        } catch { alert('Failed to delete career'); }
+        window.confirmAction({
+          title: "Delete Career",
+          description: "This action cannot be undone.",
+          confirmLabel: "Delete",
+          variant: "destructive",
+          onConfirm: async () => {
+            try {
+              await apiFetch(`/academic/careers/${id}/`, { method: 'DELETE' });
+              await loadCareers();
+            } catch { toast.error('Failed to delete career'); }
+          },
+        });
       });
     });
   }
@@ -192,7 +205,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   }
 
   function openPanel(career = null) {
-    const title = document.getElementById('panel-title');
+    const title = document.getElementById('modal-title');
     const idEl = document.getElementById('edit-id') as HTMLInputElement;
     const nameEl = document.getElementById('career-name') as HTMLInputElement;
     const codeEl = document.getElementById('career-code') as HTMLInputElement;
@@ -215,19 +228,18 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       (document.getElementById('career-form') as HTMLFormElement)?.reset();
       if (activeEl) activeEl.checked = true;
     }
-    document.getElementById('panel-backdrop')?.classList.remove('hidden');
-    document.getElementById('career-panel')?.classList.remove('hidden');
+    document.getElementById('modal-backdrop')?.classList.remove('hidden');
   }
 
   function closePanel() {
-    document.getElementById('panel-backdrop')?.classList.add('hidden');
-    document.getElementById('career-panel')?.classList.add('hidden');
+    document.getElementById('modal-backdrop')?.classList.add('hidden');
   }
 
   document.getElementById('new-career-btn')?.addEventListener('click', () => openPanel());
-  document.getElementById('close-panel-btn')?.addEventListener('click', closePanel);
-  document.getElementById('cancel-form-btn')?.addEventListener('click', closePanel);
-  document.getElementById('panel-backdrop')?.addEventListener('click', closePanel);
+  document.getElementById('modal-close')?.addEventListener('click', closePanel);
+  document.getElementById('modal-cancel')?.addEventListener('click', closePanel);
+  document.getElementById('modal-backdrop')?.addEventListener('click', e => { if (e.target === e.currentTarget) closePanel(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
 
   document.getElementById('career-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -248,7 +260,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       await loadCareers();
     } catch {
       errEl?.classList.remove('hidden');
-      if (errEl) errEl.textContent = 'Failed to save career';
+      if (errEl) errEl.textContent = 'No se ha podido guardar career';
     }
   });
 

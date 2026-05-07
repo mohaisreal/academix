@@ -222,41 +222,41 @@ import Button from "@/components/starwind/button/Button.astro";
     <div id="dashboard-management" class="hidden">
         <div class="flex items-center justify-between border-b border-border px-6 py-4">
             <div>
-                <h1 class="text-xl font-semibold text-foreground" id="mgmt-title">Management Dashboard</h1>
+                <h1 class="text-xl font-semibold text-foreground" id="mgmt-title">Panel de gestión</h1>
                 <p class="text-sm text-muted-foreground">Institutional overview and platform analytics.</p>
             </div>
             <a href="/enrolment/management">
                 <Button variant="primary" size="sm">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    New Enrollment
+                    Manage Enrolments
                 </Button>
             </a>
         </div>
         <div class="p-6 space-y-6">
             <div class="grid grid-cols-4 gap-4">
                 <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
-                    <p class="text-sm text-muted-foreground">Total Students</p>
+                    <p class="text-sm text-muted-foreground">Estudiantes Totales</p>
                     <p id="mgmt-students" class="text-3xl font-bold text-foreground mt-2">—</p>
-                    <p class="text-xs text-success mt-1">Active students</p>
+                    <p class="text-xs text-success mt-1">Estudiantes Activos</p>
                 </div>
                 <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
-                    <p class="text-sm text-muted-foreground">Total Teachers</p>
+                    <p class="text-sm text-muted-foreground">Profesores Totales</p>
                     <p id="mgmt-teachers" class="text-3xl font-bold text-foreground mt-2">—</p>
-                    <p class="text-xs text-success mt-1">Active faculty</p>
+                    <p class="text-xs text-success mt-1">Profesores Activos</p>
                 </div>
                 <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
-                    <p class="text-sm text-muted-foreground">Active Classes</p>
+                    <p class="text-sm text-muted-foreground">Clases Activas</p>
                     <p id="mgmt-classes" class="text-3xl font-bold text-foreground mt-2">—</p>
-                    <p class="text-xs text-success mt-1">Current period</p>
+                    <p class="text-xs text-success mt-1">Periodo actual</p>
                 </div>
                 <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
-                    <p class="text-sm text-muted-foreground">Pass Rate</p>
+                    <p class="text-sm text-muted-foreground">Ratio de Aprobados</p>
                     <p id="mgmt-pass-rate" class="text-3xl font-bold text-foreground mt-2">—</p>
                     <p class="text-xs text-muted-foreground mt-1">Platform-wide</p>
                 </div>
             </div>
 
-            <!-- Career Stats -->
+            <!-- Estadísticas de titulaciones -->
             <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-lg font-semibold text-foreground">Career Overview</h2>
@@ -281,26 +281,26 @@ import Button from "@/components/starwind/button/Button.astro";
 
             <!-- Quick Actions -->
             <div class="grid grid-cols-4 gap-4">
-                <a href="/enrolment/review" class="bg-card text-card-foreground rounded-xl border border-border p-5 hover:bg-muted/50 transition-colors block">
+                <a href="/enrolment/management" class="bg-card text-card-foreground rounded-xl border border-border p-5 hover:bg-muted/50 transition-colors block">
                     <div class="flex size-10 items-center justify-center rounded-lg bg-warning/15 mb-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-warning"><path d="M9 11l3 3L22 4"/></svg>
                     </div>
-                    <p class="text-sm font-medium text-foreground">Review Enrollments</p>
-                    <p class="text-xs text-muted-foreground mt-1">Approve or reject pending requests</p>
+                    <p class="text-sm font-medium text-foreground">Enrolments</p>
+                    <p class="text-xs text-muted-foreground mt-1">Manage and review enrolment requests</p>
                 </a>
-                <a href="/teachers" class="bg-card text-card-foreground rounded-xl border border-border p-5 hover:bg-muted/50 transition-colors block">
+                <a href="/system" id="quick-users-card" class="bg-card text-card-foreground rounded-xl border border-border p-5 hover:bg-muted/50 transition-colors block">
                     <div class="flex size-10 items-center justify-center rounded-lg bg-primary/15 mb-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
                     </div>
-                    <p class="text-sm font-medium text-foreground">Manage Teachers</p>
-                    <p class="text-xs text-muted-foreground mt-1">View and edit faculty profiles</p>
+                    <p class="text-sm font-medium text-foreground">Users</p>
+                    <p class="text-xs text-muted-foreground mt-1">Create and manage accounts by role</p>
                 </a>
-                <a href="/students" class="bg-card text-card-foreground rounded-xl border border-border p-5 hover:bg-muted/50 transition-colors block">
+                <a href="/files" class="bg-card text-card-foreground rounded-xl border border-border p-5 hover:bg-muted/50 transition-colors block">
                     <div class="flex size-10 items-center justify-center rounded-lg bg-success/15 mb-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-success"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-success"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                     </div>
-                    <p class="text-sm font-medium text-foreground">Manage Students</p>
-                    <p class="text-xs text-muted-foreground mt-1">Student profiles and records</p>
+                    <p class="text-sm font-medium text-foreground">Student Files</p>
+                    <p class="text-xs text-muted-foreground mt-1">Academic records and files</p>
                 </a>
                 <a href="/statistics" class="bg-card text-card-foreground rounded-xl border border-border p-5 hover:bg-muted/50 transition-colors block">
                     <div class="flex size-10 items-center justify-center rounded-lg bg-info/15 mb-3">
@@ -335,7 +335,7 @@ import Button from "@/components/starwind/button/Button.astro";
 
     const role: string = user?.role ?? "";
 
-    // Show correct dashboard
+    // Muestra el panel correcto
     const roleToDiv: Record<string, string> = {
         "s": "dashboard-student",
         "t": "dashboard-teacher",

@@ -14,11 +14,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     </div>
 
     <div class="p-6 space-y-6">
-      <!-- User Management -->
+      <!-- Gestión de usuarios -->
       <section class="bg-card text-card-foreground rounded-xl border border-border overflow-hidden">
         <div class="flex items-center justify-between px-5 py-4 border-b border-border">
           <div>
-            <h2 class="text-sm font-semibold text-foreground">User Management</h2>
+            <h2 class="text-sm font-semibold text-foreground">Gestión de usuarios</h2>
             <p class="text-xs text-muted-foreground mt-0.5">Create and manage all system users</p>
           </div>
           <button id="new-user-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
@@ -27,7 +27,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           </button>
         </div>
 
-        <!-- Filters -->
+        <!-- Filtros -->
         <div class="px-5 py-3 border-b border-border flex flex-wrap gap-3">
           <div class="relative flex-1 min-w-48">
             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
@@ -37,7 +37,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <option value="">All Roles</option>
             <option value="s">Student</option>
             <option value="t">Teacher</option>
-            <option value="m">Management</option>
+            <option value="m">Gestión</option>
             <option value="a">Admin</option>
           </select>
         </div>
@@ -47,7 +47,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <thead>
               <tr class="border-b border-border bg-muted/50">
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">User</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Email</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Correo electrónico</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Role</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Status</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Actions</th>
@@ -58,66 +58,133 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         </div>
         <div id="users-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No users found</div>
       </section>
+
+      <!-- Formato de ID de estudiante -->
+      <section class="bg-card text-card-foreground rounded-xl border border-border overflow-hidden">
+        <div class="px-5 py-4 border-b border-border">
+          <h2 class="text-sm font-semibold text-foreground">Student ID Format</h2>
+          <p class="text-xs text-muted-foreground mt-0.5">Configure the auto-generated student ID pattern for new registrations</p>
+        </div>
+        <div class="px-5 py-4 space-y-4">
+          <div class="space-y-1.5">
+            <label for="student-id-format" class="text-xs font-medium text-muted-foreground">Format Pattern</label>
+            <input id="student-id-format" type="text" placeholder="\d{6}"
+              class="w-full max-w-sm bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary font-mono" />
+            <p class="text-xs text-muted-foreground">
+              Supported tokens: <code class="bg-muted rounded px-1">\d&#123;N&#125;</code> = N random digits,
+              <code class="bg-muted rounded px-1">[A-Z]&#123;N&#125;</code> = N uppercase letters.
+              Prefixes are literal. Example: <code class="bg-muted rounded px-1">STU-\d&#123;6&#125;</code>
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <button id="save-student-id-format" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+              Save Format
+            </button>
+            <span id="student-id-format-status" class="hidden text-xs text-emerald-400">Saved</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cobros de matrícula -->
+      <section class="bg-card text-card-foreground rounded-xl border border-border overflow-hidden">
+        <div class="px-5 py-4 border-b border-border">
+          <h2 class="text-sm font-semibold text-foreground">Enrollment Payment Charges</h2>
+          <p class="text-xs text-muted-foreground mt-0.5">Configure administrative charges added after subject selection</p>
+        </div>
+        <div class="px-5 py-4 space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-1.5">
+              <label for="school-insurance-fee" class="text-xs font-medium text-muted-foreground">Seguro escolar (€)</label>
+              <input id="school-insurance-fee" type="number" min="0" step="0.01"
+                class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+            </div>
+            <div class="space-y-1.5">
+              <label for="transcript-opening-fee" class="text-xs font-medium text-muted-foreground">Apertura de expediente (€)</label>
+              <input id="transcript-opening-fee" type="number" min="0" step="0.01"
+                class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+              <p class="text-xs text-muted-foreground">Only applied when the student has no previous school period/enrollment.</p>
+            </div>
+          </div>
+          <div class="space-y-1.5">
+            <label for="enrollment-extra-charges" class="text-xs font-medium text-muted-foreground">Extra charges JSON</label>
+            <textarea id="enrollment-extra-charges" rows="5"
+              placeholder='[{"label":"Carné universitario","amount":"12.00","active":true}]'
+              class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary font-mono"></textarea>
+            <p class="text-xs text-muted-foreground">Each item needs label, amount and optional active=true/false.</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <button id="save-enrollment-charges" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+              Save Enrollment Charges
+            </button>
+            <span id="enrollment-charges-status" class="hidden text-xs"></span>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 
-  <!-- Side panel backdrop -->
-  <div id="panel-backdrop" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50"></div>
-  <!-- User panel -->
-  <div id="user-panel" class="hidden fixed inset-y-0 right-0 z-50 w-96 bg-card border-l border-border p-6 shadow-xl overflow-y-auto">
-    <div class="flex items-center justify-between mb-6">
-      <h2 id="panel-title" class="text-lg font-semibold text-foreground">New User</h2>
-      <button id="close-panel-btn" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+  <!-- Modal centrado -->
+  <div id="modal-backdrop" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-lg rounded-xl border border-border bg-background shadow-2xl max-h-[90vh] flex flex-col">
+      <!-- Cabecera -->
+      <div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+        <h2 id="modal-title" class="text-base font-semibold text-foreground">New User</h2>
+        <button id="modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <!-- Scrollable body -->
+      <div class="overflow-y-auto flex-1 px-5 py-4">
+        <form id="user-form" class="space-y-4">
+          <input id="edit-id" type="hidden" value="" />
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-medium text-muted-foreground">First Name *</label>
+              <input id="user-first" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+            </div>
+            <div>
+              <label class="text-xs font-medium text-muted-foreground">Last Name *</label>
+              <input id="user-last" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+            </div>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Correo electrónico *</label>
+            <input id="user-email" type="email" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Username *</label>
+            <input id="user-username" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
+          <div id="password-field">
+            <label class="text-xs font-medium text-muted-foreground">Contraseña <span id="pw-hint" class="text-muted-foreground/60">(obligatoria para usuarios nuevos)</span></label>
+            <input id="user-password" type="password" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Role *</label>
+            <select id="user-role" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+              <option value="s">Student</option>
+              <option value="t">Teacher</option>
+              <option value="m">Gestión</option>
+              <option value="a">Administration</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Phone</label>
+            <input id="user-phone" type="tel" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
+          <div class="flex items-center gap-3">
+            <input id="user-active" type="checkbox" checked class="size-4 rounded border-border" />
+            <label for="user-active" class="text-sm text-foreground">Active</label>
+          </div>
+          <div id="form-error" class="hidden text-xs text-red-400 bg-red-500/10 rounded-lg p-3"></div>
+        </form>
+      </div>
+      <!-- Pie fijo -->
+      <div class="flex items-center justify-end gap-3 px-5 py-4 border-t border-border shrink-0">
+        <button id="modal-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
+        <button id="modal-save" type="submit" form="user-form" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">Save</button>
+      </div>
     </div>
-    <form id="user-form" class="space-y-4">
-      <input id="edit-id" type="hidden" value="" />
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="text-xs font-medium text-muted-foreground">First Name *</label>
-          <input id="user-first" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-        </div>
-        <div>
-          <label class="text-xs font-medium text-muted-foreground">Last Name *</label>
-          <input id="user-last" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-        </div>
-      </div>
-      <div>
-        <label class="text-xs font-medium text-muted-foreground">Email *</label>
-        <input id="user-email" type="email" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-      </div>
-      <div>
-        <label class="text-xs font-medium text-muted-foreground">Username *</label>
-        <input id="user-username" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-      </div>
-      <div id="password-field">
-        <label class="text-xs font-medium text-muted-foreground">Password <span id="pw-hint" class="text-muted-foreground/60">(required for new users)</span></label>
-        <input id="user-password" type="password" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-      </div>
-      <div>
-        <label class="text-xs font-medium text-muted-foreground">Role *</label>
-        <select id="user-role" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="s">Student</option>
-          <option value="t">Teacher</option>
-          <option value="m">Management</option>
-          <option value="a">Administration</option>
-        </select>
-      </div>
-      <div>
-        <label class="text-xs font-medium text-muted-foreground">Phone</label>
-        <input id="user-phone" type="tel" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-      </div>
-      <div class="flex items-center gap-3">
-        <input id="user-active" type="checkbox" checked class="size-4 rounded border-border" />
-        <label for="user-active" class="text-sm text-foreground">Active</label>
-      </div>
-      <div id="form-error" class="hidden text-xs text-red-400 bg-red-500/10 rounded-lg p-3"></div>
-      <div class="flex gap-3 pt-2">
-        <button type="button" id="cancel-form-btn" class="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
-        <button type="submit" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Save</button>
-      </div>
-    </form>
   </div>
 </DashboardLayout>
 
@@ -141,8 +208,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       ...options,
     });
-    if (res.status === 401) window.location.replace('/login');
+    if (res.status === 401) { window.location.replace('/login'); throw new Error('Unauthorized'); }
     if (res.status === 204) return {};
+    if (!res.ok) throw new Error(`Request failed (${res.status})`);
     return res.json();
   }
 
@@ -152,7 +220,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     return d.innerHTML;
   }
 
-  const ROLE_LABELS: Record<string,string> = { s: 'Student', t: 'Teacher', m: 'Management', a: 'Admin' };
+  const ROLE_LABELS: Record<string,string> = { s: 'Student', t: 'Teacher', m: 'Gestión', a: 'Admin' };
   const ROLE_COLORS: Record<string,string> = {
     s: 'bg-blue-500/15 text-blue-400',
     t: 'bg-purple-500/15 text-purple-400',
@@ -240,16 +308,23 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   }
 
   async function loadUsers() {
-    const data = await apiFetch('/users/all/');
-    allUsers = Array.isArray(data) ? data : (data?.results ?? []);
-    renderTable();
-    document.getElementById('page-loading')?.classList.add('hidden');
-    document.getElementById('page-content')?.classList.remove('hidden');
+    try {
+      const data = await apiFetch('/users/');
+      allUsers = Array.isArray(data) ? data : (data?.results ?? []);
+      renderTable();
+    } catch (err) {
+      console.error('Failed to load users:', err);
+      const empty = document.getElementById('users-empty');
+      if (empty) { empty.textContent = 'Failed to load users.'; empty.classList.remove('hidden'); }
+    } finally {
+      document.getElementById('page-loading')?.classList.add('hidden');
+      document.getElementById('page-content')?.classList.remove('hidden');
+    }
   }
 
   function openPanel(u: any = null) {
     document.getElementById('form-error')?.classList.add('hidden');
-    const title = document.getElementById('panel-title');
+    const title = document.getElementById('modal-title');
     const pwHint = document.getElementById('pw-hint');
     const pwInput = document.getElementById('user-password') as HTMLInputElement;
     if (u) {
@@ -267,25 +342,24 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       pwInput.value = '';
     } else {
       if (title) title.textContent = 'New User';
-      if (pwHint) pwHint.textContent = '(required for new users)';
+      if (pwHint) pwHint.textContent = '(obligatoria para usuarios nuevos)';
       pwInput.setAttribute('required', '');
       (document.getElementById('edit-id') as HTMLInputElement).value = '';
       (document.getElementById('user-form') as HTMLFormElement)?.reset();
       (document.getElementById('user-active') as HTMLInputElement).checked = true;
     }
-    document.getElementById('panel-backdrop')?.classList.remove('hidden');
-    document.getElementById('user-panel')?.classList.remove('hidden');
+    document.getElementById('modal-backdrop')?.classList.remove('hidden');
   }
 
   function closePanel() {
-    document.getElementById('panel-backdrop')?.classList.add('hidden');
-    document.getElementById('user-panel')?.classList.add('hidden');
+    document.getElementById('modal-backdrop')?.classList.add('hidden');
   }
 
   document.getElementById('new-user-btn')?.addEventListener('click', () => openPanel());
-  document.getElementById('close-panel-btn')?.addEventListener('click', closePanel);
-  document.getElementById('cancel-form-btn')?.addEventListener('click', closePanel);
-  document.getElementById('panel-backdrop')?.addEventListener('click', closePanel);
+  document.getElementById('modal-close')?.addEventListener('click', closePanel);
+  document.getElementById('modal-cancel')?.addEventListener('click', closePanel);
+  document.getElementById('modal-backdrop')?.addEventListener('click', e => { if (e.target === e.currentTarget) closePanel(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
 
   document.getElementById('user-search')?.addEventListener('input', e => {
     searchQuery = (e.target as HTMLInputElement).value;
@@ -320,10 +394,86 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       await loadUsers();
     } catch (err: any) {
       errEl?.classList.remove('hidden');
-      const msg = err?.message || 'Failed to save user';
+      const msg = err?.message || 'No se ha podido guardar user';
       if (errEl) errEl.textContent = String(msg);
     }
   });
 
   loadUsers();
+
+  // --- Configuración del sistema ---
+  async function loadSystemSettings() {
+    try {
+      const data = await apiFetch('/notifications/system-settings/');
+      const input = document.getElementById('student-id-format') as HTMLInputElement;
+      if (input && data.student_id_format) input.value = data.student_id_format;
+      const schoolInsurance = document.getElementById('school-insurance-fee') as HTMLInputElement;
+      const transcriptOpening = document.getElementById('transcript-opening-fee') as HTMLInputElement;
+      const extraCharges = document.getElementById('enrollment-extra-charges') as HTMLTextAreaElement;
+      if (schoolInsurance) schoolInsurance.value = String(data.school_insurance_fee ?? '0.00');
+      if (transcriptOpening) transcriptOpening.value = String(data.transcript_opening_fee ?? '0.00');
+      if (extraCharges) extraCharges.value = JSON.stringify(data.enrollment_extra_charges ?? [], null, 2);
+    } catch { /* ignore */
+ }
+  }
+
+  document.getElementById('save-student-id-format')?.addEventListener('click', async () => {
+    const input = document.getElementById('student-id-format') as HTMLInputElement;
+    const status = document.getElementById('student-id-format-status');
+    const fmt = input?.value?.trim();
+    if (!fmt) return;
+    try {
+      await apiFetch('/notifications/system-settings/', {
+        method: 'PATCH',
+        body: JSON.stringify({ student_id_format: fmt }),
+      });
+      if (status) { status.classList.remove('hidden'); setTimeout(() => status.classList.add('hidden'), 2500); }
+    } catch { /* ignore */
+ }
+  });
+
+  document.getElementById('save-enrollment-charges')?.addEventListener('click', async () => {
+    const schoolInsurance = document.getElementById('school-insurance-fee') as HTMLInputElement;
+    const transcriptOpening = document.getElementById('transcript-opening-fee') as HTMLInputElement;
+    const extraCharges = document.getElementById('enrollment-extra-charges') as HTMLTextAreaElement;
+    const status = document.getElementById('enrollment-charges-status');
+    let parsedExtras: any[] = [];
+
+    try {
+      parsedExtras = extraCharges?.value?.trim() ? JSON.parse(extraCharges.value) : [];
+      if (!Array.isArray(parsedExtras)) throw new Error('Extra charges must be a JSON array.');
+    } catch (err: any) {
+      if (status) {
+        status.textContent = err?.message ?? 'Invalid JSON.';
+        status.className = 'text-xs text-red-400';
+        status.classList.remove('hidden');
+      }
+      return;
+    }
+
+    try {
+      await apiFetch('/notifications/system-settings/', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          school_insurance_fee: schoolInsurance?.value || '0.00',
+          transcript_opening_fee: transcriptOpening?.value || '0.00',
+          enrollment_extra_charges: parsedExtras,
+        }),
+      });
+      if (status) {
+        status.textContent = 'Saved';
+        status.className = 'text-xs text-emerald-400';
+        status.classList.remove('hidden');
+        setTimeout(() => status.classList.add('hidden'), 2500);
+      }
+    } catch (err: any) {
+      if (status) {
+        status.textContent = err?.message ?? 'Could not save enrollment charges.';
+        status.className = 'text-xs text-red-400';
+        status.classList.remove('hidden');
+      }
+    }
+  });
+
+  loadSystemSettings();
 </script>

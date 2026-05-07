@@ -5,8 +5,8 @@ import { tv, type VariantProps } from "tailwind-variants";
 
 type Props = Omit<HTMLAttributes<"input">, "type"> &
   VariantProps<typeof checkbox> & {
-    /**
-     * Optional label text to display next to the checkbox
+        /**
+     * Texto opcional de etiqueta que se muestra junto a la casilla
      */
     label?: string;
   };

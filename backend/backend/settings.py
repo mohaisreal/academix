@@ -15,7 +15,7 @@ from datetime import timedelta
 import environ
 import os
 
-# Initialize environment variables
+# Inicializa las variables de entorno
 env = environ.Env(
     DEBUG=(bool, True),
     ALLOWED_HOSTS=(list, ['*']),
@@ -25,27 +25,27 @@ env = environ.Env(
     JWT_REFRESH_TOKEN_LIFETIME=(int, 1440),
 )
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# Construye rutas dentro del proyecto así: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Read .env file if it exists
+# Lee el fichero .env si existe
 env_file = BASE_DIR / '.env'
 if env_file.exists():
     environ.Env.read_env(env_file)
 
-# Quick-start development settings - unsuitable for production
+# Ajustes rápidos de desarrollo; no son adecuados para producción
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
+# ADVERTENCIA DE SEGURIDAD: mantén en secreto la clave secreta usada en producción.
 SECRET_KEY = env('SECRET_KEY', default='django-insecure-y(im)4e3d_v5u!^hw!d4pgqx&p$yf)2=1vnqsq9*o46de*)h5k')
 
-# SECURITY WARNING: don't run with debug turned on in production!
+# ADVERTENCIA DE SEGURIDAD: no ejecutes con debug activado en producción.
 DEBUG = env('DEBUG')
 
 ALLOWED_HOSTS = env('ALLOWED_HOSTS')
 
 
-# Application definition
+# Definición de la aplicación
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -55,13 +55,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # Third-party apps
+    # Aplicaciones de terceros
     'rest_framework',
     'rest_framework_simplejwt',
-    'rest_framework_simplejwt.token_blacklist',  # For token blacklisting on logout
+    'rest_framework_simplejwt.token_blacklist',  # Para invalidar tokens al cerrar sesión
     'corsheaders',
 
-    # Local apps
+    # Aplicaciones locales
     'users',
     'academic',
     'enrollment',
@@ -84,7 +84,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# Custom User Model
+# Modelo de usuario personalizado
 AUTH_USER_MODEL = 'users.User'
 
 ROOT_URLCONF = 'backend.urls'
@@ -107,18 +107,18 @@ TEMPLATES = [
 WSGI_APPLICATION = 'backend.wsgi.application'
 
 
-# Database
+# Base de datos
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASE_URL = env('DATABASE_URL', default=None)
 
 if DATABASE_URL:
-    # Production: Use PostgreSQL via DATABASE_URL
+    # Producción: usa PostgreSQL mediante DATABASE_URL
     DATABASES = {
         'default': env.db('DATABASE_URL')
     }
 else:
-    # Development: Use SQLite with DATABASE_PATH
+    # Desarrollo: usa SQLite con DATABASE_PATH
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -127,7 +127,7 @@ else:
     }
 
 
-# Password validation
+# Validación de contraseñas
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -146,7 +146,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
+# Internacionalización
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
@@ -158,24 +158,24 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
+# Ficheros estáticos (CSS, JavaScript, imágenes)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Media files (User uploaded content)
+# Ficheros multimedia (contenido subido por usuarios)
 MEDIA_URL = env('MEDIA_URL', default='/media/')
 MEDIA_ROOT = BASE_DIR / env('MEDIA_ROOT', default='media')
 
-# Default primary key field type
+# Tipo de campo por defecto para la clave primaria
 # https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # ============================================================================
-# REST FRAMEWORK CONFIGURATION
+# CONFIGURACIÓN DE REST FRAMEWORK
 # ============================================================================
 
 REST_FRAMEWORK = {
@@ -210,7 +210,7 @@ REST_FRAMEWORK = {
 
 
 # ============================================================================
-# SIMPLE JWT CONFIGURATION
+# CONFIGURACIÓN DE SIMPLE JWT
 # ============================================================================
 
 SIMPLE_JWT = {
@@ -243,16 +243,16 @@ SIMPLE_JWT = {
 
 
 # ============================================================================
-# CORS CONFIGURATION
+# CONFIGURACIÓN DE CORS
 # ============================================================================
 
-# CORS settings for frontend communication
+# Ajustes de CORS para la comunicación con el frontend
 CORS_ALLOWED_ORIGINS = env('CORS_ALLOWED_ORIGINS')
 
-# Allow credentials (cookies, authorization headers)
+# Permite credenciales (cookies y cabeceras de autorización)
 CORS_ALLOW_CREDENTIALS = True
 
-# Additional CORS settings
+# Ajustes adicionales de CORS
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',

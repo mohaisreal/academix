@@ -30,7 +30,7 @@ const {
 } = Astro.props;
 
 /**
- * Detects the video type from the src URL
+ * Detecta el tipo de vídeo a partir de la URL src
  */
 function getVideoType(url: string): "youtube" | "youtube-shorts" | "native" {
   if (url.includes("youtube.com/shorts/") || url.includes("youtu.be/shorts/")) {
@@ -47,7 +47,7 @@ function getVideoType(url: string): "youtube" | "youtube-shorts" | "native" {
 }
 
 /**
- * Extracts YouTube video ID from various URL formats
+ * Extrae el ID de vídeo de YouTube desde varios formatos de URL
  */
 function getYouTubeId(url: string): string | null {
   const patterns = [
@@ -66,7 +66,7 @@ function getYouTubeId(url: string): string | null {
 }
 
 /**
- * Builds YouTube embed URL with parameters
+ * Construye la URL embebida de YouTube con parámetros
  */
 function buildYouTubeEmbedUrl(videoId: string, isShort: boolean): string {
   const params = new URLSearchParams();

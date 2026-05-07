@@ -3,16 +3,16 @@ import type { HTMLAttributes } from "astro/types";
 import { tv } from "tailwind-variants";
 
 type Props = HTMLAttributes<"div"> & {
-  /**
-   * Time in milliseconds to wait before showing the tooltip
+    /**
+   * Tiempo en milisegundos que se espera antes de mostrar el tooltip
    */
   openDelay?: number;
-  /**
-   * Time in milliseconds to wait before hiding the tooltip
+    /**
+   * Tiempo en milisegundos que se espera antes de ocultar el tooltip
    */
   closeDelay?: number;
-  /**
-   * When true, prevents the tooltip from staying open when hovering over its content
+    /**
+   * Cuando es true, evita que el tooltip permanezca abierto al pasar el cursor por su contenido
    */
   disableHoverableContent?: boolean;
 };
@@ -53,7 +53,7 @@ const {
       this.tooltip = tooltip;
       this.content = tooltip.querySelector(".starwind-tooltip-content");
 
-      // if tooltip.firstElementChild is this.content, then get the next element
+      // si tooltip.firstElementChild es this.content, obtiene el siguiente elemento
       this.trigger = tooltip.firstElementChild as HTMLElement;
       if (this.trigger === this.content) {
         this.trigger = this.trigger.nextElementSibling as HTMLElement;
@@ -63,12 +63,12 @@ const {
 
       if (!this.trigger || !this.content) return;
 
-      // animationDuration is set with inline styles through passed prop to TooltipContent
+      // animationDuration se establece con estilos inline mediante la prop pasada a TooltipContent
       const animationDurationString = this.content.style.animationDuration;
       if (animationDurationString.endsWith("ms")) {
         this.animationDuration = parseFloat(animationDurationString);
       } else if (animationDurationString.endsWith("s")) {
-        // using something like @playform/compress might optimize to use "s" instead of "ms"
+        // usar algo como @playform/compress podría optimizarlo para usar "s" en vez de "ms"
         this.animationDuration = parseFloat(animationDurationString) * 1000;
       }
       this.init();
@@ -153,7 +153,7 @@ const {
       let top = 0;
       let left = 0;
 
-      // Calculate position based on side
+      // Calcula la posición según el lado
       switch (side) {
         case "top":
           top = triggerRect.top - contentRect.height - sideOffset;
@@ -264,7 +264,7 @@ const {
     }
   }
 
-  // Store instances in a WeakMap to avoid memory leaks
+  // Guarda instancias en un WeakMap para evitar fugas de memoria
   const tooltipInstances = new WeakMap<HTMLElement, TooltipHandler>();
   let tooltipCounter = 0;
 

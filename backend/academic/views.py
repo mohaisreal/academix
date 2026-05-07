@@ -113,7 +113,7 @@ class ClassViewSet(viewsets.ModelViewSet):
         qs = self.get_queryset().filter(teacher=request.user)
         if active_period:
             qs = qs.filter(period=active_period)
-        # Annotate pending grades count
+        # Anota el recuento de notas pendientes
         from grades.models import Evaluation, Grade
         from enrollment.models import ClassEnrollment
         from django.db.models import Avg

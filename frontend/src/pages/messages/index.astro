@@ -106,7 +106,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       ...options,
     });
     if (res.status === 401) window.location.replace('/login');
-    return res.json();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw data;
+    return data;
   }
 
   function showContent() {
@@ -134,6 +136,19 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     return name.split(' ').map(p => p[0]).join('').toUpperCase().substring(0, 2);
   }
 
+  function userDisplayName(value) {
+    if (!value) return 'Unknown';
+    if (typeof value === 'string') return value;
+    return value.full_name || value.username || [value.first_name, value.last_name].filter(Boolean).join(' ') || `User #${value.id}`;
+  }
+
+  function userId(value) {
+    if (!value) return null;
+    if (typeof value === 'number') return value;
+    if (typeof value === 'object') return value.id ?? null;
+    return null;
+  }
+
   let activeTab = 'inbox';
   let selectedMessageId = null;
 
@@ -145,8 +160,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       return;
     }
     list.innerHTML = messages.map(m => {
-      const fromName = m.sender_name || m.from_name || m.sender || 'Unknown';
-      const toName = m.recipient_name || m.to_name || m.recipient || 'Unknown';
+      const fromName = m.sender_name || m.from_name || userDisplayName(m.sender);
+      const toName = m.recipient_name || m.to_name || userDisplayName(m.recipient);
       const displayName = activeTab === 'inbox' ? fromName : toName;
       const unread = !m.is_read && activeTab === 'inbox';
       const preview = (m.body || m.message || '').substring(0, 60);
@@ -215,10 +230,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
       if (msgs) {
         msgs.innerHTML = allMessages.map(m => {
-          const senderName = m.sender_name || m.from_name || 'Unknown';
+          const senderName = m.sender_name || m.from_name || userDisplayName(m.sender);
           const time = m.created_at || m.sent_at;
           const body = m.body || m.message || '';
-          const isOwn = (m.sender_id || m.sender) === user?.id || m.sender_name === `${user?.first_name} ${user?.last_name}`.trim();
+          const senderId = m.sender_id || userId(m.sender);
+          const isOwn = senderId === user?.id || m.sender_name === `${user?.first_name} ${user?.last_name}`.trim();
           return `<div class="flex ${isOwn ? 'justify-end' : 'justify-start'} gap-3">
             ${!isOwn ? `<div class="flex size-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary shrink-0 mt-1">${initials(senderName)}</div>` : ''}
             <div class="max-w-xs lg:max-w-md">
@@ -270,7 +286,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       });
       (document.getElementById('reply-body') as HTMLTextAreaElement).value = '';
       loadThread(selectedMessageId);
-    } catch { alert('Failed to send reply'); }
+    } catch { (window as any).showToast?.('error', 'Failed to send reply'); }
   });
 
   // Compose
@@ -294,18 +310,28 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const errEl = document.getElementById('compose-error');
     const successEl = document.getElementById('compose-success');
     try {
+      const recipientPayload = to.trim();
+      const bodyPayload: any = {
+        subject,
+        body,
+      };
+      if (/^\d+$/.test(recipientPayload)) {
+        bodyPayload.recipient_id = Number(recipientPayload);
+      } else {
+        bodyPayload.recipient = recipientPayload;
+      }
       await apiFetch('/messaging/compose/', {
         method: 'POST',
-        body: JSON.stringify({ recipient: to, subject, body }),
+        body: JSON.stringify(bodyPayload),
       });
       successEl?.classList.remove('hidden');
       if (successEl) successEl.textContent = 'Message sent!';
       errEl?.classList.add('hidden');
       setTimeout(closeCompose, 1200);
       if (activeTab === 'sent') loadMessages();
-    } catch {
+    } catch (err: any) {
       errEl?.classList.remove('hidden');
-      if (errEl) errEl.textContent = 'Failed to send message';
+      if (errEl) errEl.textContent = err?.recipient || err?.recipient_id || err?.detail || err?.error || 'Failed to send message';
     }
   });
 

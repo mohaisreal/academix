@@ -21,7 +21,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     </div>
 
     <div class="p-6 space-y-4">
-      <!-- Admin filters -->
+      <!-- Filtros de administración -->
       <div id="admin-filters" class="hidden flex gap-3">
         <select id="career-filter" class="bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
           <option value="">All Careers</option>
@@ -31,7 +31,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         </select>
       </div>
 
-      <!-- Files table -->
+      <!-- Tabla de ficheros -->
       <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
         <div class="overflow-x-auto">
           <table class="w-full">
@@ -53,16 +53,21 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     </div>
   </div>
 
-  <!-- Student detail side panel -->
-  <div id="panel-backdrop" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50" ></div>
-  <div id="detail-panel" class="hidden fixed inset-y-0 right-0 z-50 w-[480px] bg-card border-l border-border p-6 shadow-xl overflow-y-auto">
-    <div class="flex items-center justify-between mb-6">
-      <h2 class="text-lg font-semibold text-foreground">Student File</h2>
-      <button id="close-panel-btn" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+  <!-- Modal centrado — max-w-2xl para vista de detalle de solo lectura -->
+  <div id="modal-backdrop" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-2xl rounded-xl border border-border bg-background shadow-2xl max-h-[90vh] flex flex-col">
+      <!-- Cabecera -->
+      <div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+        <h2 class="text-base font-semibold text-foreground">Student File</h2>
+        <button id="modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <!-- Scrollable body -->
+      <div class="overflow-y-auto flex-1 px-5 py-4">
+        <div id="panel-content"></div>
+      </div>
     </div>
-    <div id="panel-content"></div>
   </div>
 </DashboardLayout>
 
@@ -158,11 +163,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   }
 
   async function openPanel(studentId) {
-    const backdrop = document.getElementById('panel-backdrop');
-    const panel = document.getElementById('detail-panel');
     const content = document.getElementById('panel-content');
-    backdrop?.classList.remove('hidden');
-    panel?.classList.remove('hidden');
+    document.getElementById('modal-backdrop')?.classList.remove('hidden');
     if (content) content.innerHTML = '<div class="text-sm text-muted-foreground">Loading...</div>';
 
     try {
@@ -240,14 +242,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   }
 
   function closePanel() {
-    document.getElementById('panel-backdrop')?.classList.add('hidden');
-    document.getElementById('detail-panel')?.classList.add('hidden');
+    document.getElementById('modal-backdrop')?.classList.add('hidden');
   }
 
-  document.getElementById('close-panel-btn')?.addEventListener('click', closePanel);
-  document.getElementById('panel-backdrop')?.addEventListener('click', closePanel);
+  document.getElementById('modal-close')?.addEventListener('click', closePanel);
+  document.getElementById('modal-backdrop')?.addEventListener('click', e => { if (e.target === e.currentTarget) closePanel(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
 
-  // Search
+  // Búsqueda
   document.getElementById('search-input')?.addEventListener('input', (e) => {
     const q = (e.target as HTMLInputElement).value.toLowerCase();
     displayFiles = allFiles.filter(f => {
@@ -257,7 +259,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     renderTable(displayFiles);
   });
 
-  // Admin career/period filter
+  // Filtro de administración por titulación/periodo
   function applyFilters() {
     const career = (document.getElementById('career-filter') as HTMLSelectElement)?.value;
     const period = (document.getElementById('period-filter') as HTMLSelectElement)?.value;
@@ -273,7 +275,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   document.getElementById('period-filter')?.addEventListener('change', applyFilters);
 
   (async () => {
-    // Show admin filters for admin/management
+    // Muestra filtros de administración para administración/gestión
     if (role === 'm' || role === 'a') {
       document.getElementById('admin-filters')?.classList.remove('hidden');
       try {
@@ -300,7 +302,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       } catch {}
     }
 
-    // Check URL param for direct student view
+    // Comprueba el parámetro de URL para vista directa de estudiante
     const urlParams = new URLSearchParams(window.location.search);
     const directStudent = urlParams.get('student');
 

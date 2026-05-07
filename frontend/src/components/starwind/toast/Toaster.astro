@@ -58,7 +58,7 @@ const {
   style={`--gap: ${gap}; --peek: ${peek};`}
   {...rest}
 >
-  <!-- Hidden templates for each variant - JS will clone these -->
+  <!-- Plantillas ocultas para cada variante; JS las clonará -->
   <slot>
     <ToastTemplate variant="default" />
     <ToastTemplate variant="success" />
@@ -113,7 +113,7 @@ const {
     opacity: 0;
   }
 
-  /* Position-specific overrides for top positions */
+  /* Sobrescrituras específicas de posición para posiciones superiores */
   .starwind-toast-viewport[data-position^="top"] [data-slot="toast"] {
     top: 0;
     bottom: auto;
@@ -152,25 +152,25 @@ const {
     opacity: 0;
   }
 
-  /* Entry animation - starting state (must come after base transforms) */
+  /* Animación de entrada: estado inicial (debe ir tras las transformaciones base) */
   .starwind-toast-viewport [data-slot="toast"][data-starting-style] {
     transform: translateY(150%);
     opacity: 0;
   }
 
-  /* Default exit animation - slide down (for non-swipe closes) */
+  /* Animación de salida por defecto: deslizar hacia abajo (para cierres sin swipe) */
   .starwind-toast-viewport [data-slot="toast"][data-state="closed"]:not([data-swipe-direction]) {
     transform: translateY(150%);
     opacity: 0;
   }
 
-  /* Top position entry - slide from top */
+  /* Entrada en posición superior: deslizar desde arriba */
   .starwind-toast-viewport[data-position^="top"] [data-slot="toast"][data-starting-style] {
     transform: translateY(-150%);
     opacity: 0;
   }
 
-  /* Top position default exit - slide up */
+  /* Salida por defecto en posición superior: deslizar hacia arriba */
   .starwind-toast-viewport[data-position^="top"]
     [data-slot="toast"][data-state="closed"]:not([data-swipe-direction]) {
     transform: translateY(-150%);
@@ -201,7 +201,7 @@ const {
     timeoutId?: number;
     height?: number;
     closing?: boolean;
-    // Swipe state
+    // Estado de swipe
     swiping?: boolean;
     swipeX?: number;
     swipeY?: number;
@@ -237,7 +237,7 @@ const {
       lockedDirection: "horizontal" | "vertical" | null;
     } | null = null;
 
-    // Bound event handlers for cleanup
+    // Manejadores de eventos vinculados para limpieza
     private boundHandlers: {
       mouseenter: () => void;
       mouseleave: (e: MouseEvent) => void;
@@ -252,13 +252,13 @@ const {
       this.limit = Number(viewport.dataset.limit) || 3;
       this.defaultDuration = Number(viewport.dataset.duration) || 5000;
 
-      // Determine swipe directions based on position
+      // Determina direcciones de swipe según la posición
       const position = viewport.dataset.position || "bottom-right";
       if (position.startsWith("top")) {
         this.swipeDirections = ["up", "right"];
       }
 
-      // Initialize bound handlers
+      // Inicializa manejadores vinculados
       this.boundHandlers = {
         mouseenter: this.handleMouseenter.bind(this),
         mouseleave: this.handleMouseleave.bind(this),
@@ -278,10 +278,10 @@ const {
     }
 
     private handleMouseleave(e: MouseEvent): void {
-      // Don't collapse if expanded by touch - let the document pointerdown handle it
+      // No colapsar si se expandió por toque; deja que pointerdown del documento lo gestione
       if (this.expandedByTouch) return;
 
-      // Check if mouse is still within viewport bounds (handles case where toast is removed)
+      // Comprueba si el ratón sigue dentro de los límites del viewport (gestiona el caso en que se elimina un toast)
       const rect = this.viewport.getBoundingClientRect();
       const isStillInside =
         e.clientX >= rect.left &&
@@ -303,11 +303,11 @@ const {
     }
 
     private handleFocusout(e: FocusEvent): void {
-      // Don't collapse if expanded by touch - let the document pointerdown handle it
+      // No colapsar si se expandió por toque; deja que pointerdown del documento lo gestione
       if (this.expandedByTouch) return;
 
-      // Check if mouse is still over viewport before collapsing
-      // This handles the case where focus leaves because a toast was closed
+      // Comprueba si el ratón sigue sobre el viewport antes de contraer
+      // Esto gestiona el caso en que el foco sale porque se cerró un toast
       const rect = this.viewport.getBoundingClientRect();
       const mouseEvent = (window as any).__lastMousePosition;
       const isMouseInside =
@@ -358,14 +358,14 @@ const {
       document.removeEventListener("pointerdown", this.boundHandlers.documentPointerdown);
     }
 
-    /**
-     * Destroy the manager and clean up all resources
+        /**
+     * Destruye el gestor y limpia todos los recursos
      */
     public destroy(): void {
       if (this.destroyed) return;
       this.destroyed = true;
 
-      // Clear all toasts and their timers
+      // Limpia todos los toasts y sus temporizadores
       this.toasts.forEach((toast) => {
         if (toast.timeoutId) {
           clearTimeout(toast.timeoutId);
@@ -375,23 +375,23 @@ const {
       this.toasts = [];
       this.queue = [];
 
-      // Remove all event listeners
+      // Elimina todos los escuchadores de eventos
       this.removeEvents();
 
-      // Clear active swipe state
+      // Limpia el estado de swipe activo
       this.activeSwipe = null;
 
-      // Null out the scoped namespace entry
+      // Anula la entrada del espacio de nombres acotado
       if ((window as any).__starwind__?.toast === this) {
         (window as any).__starwind__.toast = null;
       }
     }
 
     private updateExpanded(): void {
-      // Set expanded state on viewport
+      // Establece el estado expandido en el viewport
       if (this.expanded) {
         this.viewport.setAttribute("data-expanded", "");
-        // Calculate total height needed for expanded state
+        // Calcula la altura total necesaria para el estado expandido
         this.updateViewportHeight();
       } else {
         this.viewport.removeAttribute("data-expanded");
@@ -428,7 +428,7 @@ const {
       const value = getComputedStyle(this.viewport).getPropertyValue(property).trim();
       if (!value) return 16;
 
-      // Create a temporary element to convert CSS value to pixels
+      // Crea un elemento temporal para convertir un valor CSS a píxeles
       const temp = document.createElement("div");
       temp.style.position = "absolute";
       temp.style.visibility = "hidden";
@@ -459,7 +459,7 @@ const {
       });
     }
 
-    /**
+        /**
      * Add a new toast
      */
     public add(options: ToastOptions): string {
@@ -472,18 +472,18 @@ const {
         duration,
       };
 
-      // Always add the new toast at the front (newest first)
+      // Añade siempre el nuevo toast al principio (el más reciente primero)
       this.renderToast(toastState);
       this.toasts.unshift(toastState);
 
-      // updatePositions will handle hiding toasts beyond the limit via data-limited
-      // They'll become visible again when other toasts close
+      // updatePositions gestionará ocultar toasts más allá del límite mediante data-limited
+      // Volverán a ser visibles cuando se cierren otros toasts
 
       return id;
     }
 
-    /**
-     * Update an existing toast
+        /**
+     * Actualiza un toast existente
      */
     public update(id: string, options: Partial<ToastOptions>): void {
       const toastIndex = this.toasts.findIndex((t) => t.id === id);
@@ -493,14 +493,14 @@ const {
       const oldVariant = toast.variant;
       Object.assign(toast, options);
 
-      // If variant changed, we need to re-render the toast with new template
+      // Si cambió la variante, hay que rerenderizar el toast con la plantilla nueva
       if (options.variant && options.variant !== oldVariant && toast.element) {
         this.rerenderToast(toast);
       } else if (toast.element) {
         this.updateToastContent(toast);
       }
 
-      // Restart timer if duration changed or variant changed (new default duration)
+      // Reinicia el temporizador si cambió la duración o la variante (nueva duración por defecto)
       if (toast.element && (options.duration !== undefined || options.variant)) {
         if (toast.timeoutId) {
           clearTimeout(toast.timeoutId);
@@ -515,14 +515,14 @@ const {
       }
     }
 
-    /**
+        /**
      * Close a toast
      */
     public close(id: string): void {
       const toast = this.toasts.find((t) => t.id === id);
       if (!toast) return;
 
-      // Guard against closing a toast that's already closing
+      // Evita cerrar un toast que ya se está cerrando
       if (toast.closing) return;
       toast.closing = true;
 
@@ -548,7 +548,7 @@ const {
           this.updatePositions();
         }, 200);
       } else {
-        // No element, just remove from array immediately
+        // Sin elemento: eliminar del array inmediatamente
         const index = this.toasts.findIndex((t) => t.id === id);
         if (index !== -1) {
           this.toasts.splice(index, 1);
@@ -556,7 +556,7 @@ const {
       }
     }
 
-    /**
+        /**
      * Close all toasts
      */
     public closeAll(): void {
@@ -583,7 +583,7 @@ const {
       element.setAttribute("data-toast-id", toast.id);
       element.setAttribute("data-starting-style", "");
 
-      // Update title
+      // Actualiza el título
       const titleEl = element.querySelector("[data-toast-title]");
       const titleTextEl = element.querySelector("[data-toast-title-text]");
       if (titleEl) {
@@ -594,7 +594,7 @@ const {
         }
       }
 
-      // Update description
+      // Actualiza la descripción
       const descEl = element.querySelector("[data-toast-description]");
       if (descEl) {
         if (toast.description) {
@@ -604,18 +604,18 @@ const {
         }
       }
 
-      // Setup close button
+      // Configura el botón de cierre
       const closeBtn = element.querySelector('[data-slot="toast-close"]');
       closeBtn?.addEventListener("click", () => this.close(toast.id));
 
-      // Setup swipe handlers
+      // Configura manejadores de swipe
       this.setupSwipeHandlers(element, toast);
 
       // Initialize swipe CSS variables
       element.style.setProperty("--toast-swipe-movement-x", "0px");
       element.style.setProperty("--toast-swipe-movement-y", "0px");
 
-      // Insert at beginning (newest on top visually)
+      // Inserta al principio (el más reciente arriba visualmente)
       this.viewport.insertBefore(element, this.viewport.firstElementChild);
       toast.element = element;
 
@@ -624,7 +624,7 @@ const {
         toast.height = element.offsetHeight;
         this.updatePositions();
 
-        // Remove starting style after a frame to trigger animation
+        // Elimina el estilo inicial tras un frame para disparar la animación
         requestAnimationFrame(() => {
           element.removeAttribute("data-starting-style");
         });
@@ -654,8 +654,8 @@ const {
       }
     }
 
-    /**
-     * Re-render a toast with a new template (for variant changes)
+        /**
+     * Rerenderiza un toast con una plantilla nueva (para cambios de variante)
      */
     private rerenderToast(toast: ToastState): void {
       if (!toast.element) return;
@@ -675,14 +675,14 @@ const {
 
       if (!newElement) return;
 
-      // Copy over attributes and state from old element
+      // Copia atributos y estado desde el elemento antiguo
       newElement.setAttribute("data-toast-id", toast.id);
       newElement.setAttribute("data-state", "open");
       if (this.expanded) {
         newElement.setAttribute("data-expanded", "");
       }
 
-      // Copy CSS variables
+      // Copia variables CSS
       const oldStyle = toast.element.style;
       newElement.style.setProperty("--toast-index", oldStyle.getPropertyValue("--toast-index"));
       newElement.style.setProperty(
@@ -692,30 +692,30 @@ const {
       newElement.style.setProperty("--toast-swipe-movement-x", "0px");
       newElement.style.setProperty("--toast-swipe-movement-y", "0px");
 
-      // Update title
+      // Actualiza el título
       const titleTextEl = newElement.querySelector("[data-toast-title-text]");
       if (titleTextEl && toast.title) {
         titleTextEl.textContent = toast.title;
       }
 
-      // Update description
+      // Actualiza la descripción
       const descEl = newElement.querySelector("[data-toast-description]");
       if (descEl && toast.description) {
         descEl.textContent = toast.description;
       }
 
-      // Setup close button
+      // Configura el botón de cierre
       const closeBtn = newElement.querySelector('[data-slot="toast-close"]');
       closeBtn?.addEventListener("click", () => this.close(toast.id));
 
-      // Setup swipe handlers
+      // Configura manejadores de swipe
       this.setupSwipeHandlers(newElement, toast);
 
-      // Replace old element with new one
+      // Sustituye el elemento antiguo por el nuevo
       toast.element.replaceWith(newElement);
       toast.element = newElement;
 
-      // Update height
+      // Actualiza la altura
       toast.height = newElement.offsetHeight;
     }
 
@@ -728,11 +728,11 @@ const {
 
         const contentEl = toast.element.querySelector('[data-slot="toast-content"]');
 
-        // Set CSS variables for this toast
+        // Establece variables CSS para este toast
         toast.element.style.setProperty("--toast-index", String(index));
         toast.element.style.setProperty("--toast-offset-y", `${cumulativeOffset}px`);
 
-        // Set data-behind on content for toasts behind the frontmost
+        // Establece data-behind en el contenido para toasts detrás del principal
         if (index > 0) {
           contentEl?.setAttribute("data-behind", "");
         } else {
@@ -746,13 +746,13 @@ const {
           toast.element.removeAttribute("data-limited");
         }
 
-        // Accumulate offset for expanded state (height + gap)
+        // Acumula desplazamiento para el estado expandido (altura + separación)
         const gapValue = this.getCssPixelValue("--gap");
         cumulativeOffset += (toast.height || 0) + gapValue;
       });
     }
 
-    // Swipe handlers
+    // Manejadores de swipe
     private handlePointerDown(e: PointerEvent, toast: ToastState): void {
       if (e.button !== 0) return;
 
@@ -762,8 +762,8 @@ const {
       );
       if (isInteractive) return;
 
-      // Treat touch/pointer down as hover to expand stacked toasts
-      // Always mark as touch-expanded for long press detection
+      // Trata touch/pointer down como hover para expandir toasts apilados
+      // Marca siempre como touch-expanded para detectar pulsación larga
       this.expandedByTouch = true;
       if (!this.expanded) {
         this.expanded = true;
@@ -802,7 +802,7 @@ const {
       const deltaX = e.clientX - startX;
       const deltaY = e.clientY - startY;
 
-      // Lock direction on first significant movement
+      // Bloquea la dirección en el primer movimiento significativo
       if (!this.activeSwipe.lockedDirection) {
         const absX = Math.abs(deltaX);
         const absY = Math.abs(deltaY);
@@ -822,7 +822,7 @@ const {
         }
       }
 
-      // Apply damping for non-allowed directions
+      // Aplica amortiguación para direcciones no permitidas
       let swipeX = 0;
       let swipeY = 0;
 
@@ -861,7 +861,7 @@ const {
       const swipeX = toast.swipeX || 0;
       const swipeY = toast.swipeY || 0;
 
-      // Check if swipe exceeds threshold based on locked direction
+      // Comprueba si el swipe supera el umbral según la dirección bloqueada
       let shouldClose = false;
       let direction: SwipeDirection | undefined;
       const lockedDir = this.activeSwipe.lockedDirection;
@@ -884,7 +884,7 @@ const {
         }
       }
 
-      // Check if this was a long press or if user moved (swiped)
+      // Comprueba si fue una pulsación larga o si el usuario se movió (swipe)
       const pressDuration = Date.now() - this.activeSwipe.startTime;
       const isLongPress = pressDuration >= LONG_PRESS_DURATION;
       const didMove = this.activeSwipe.didMove;
@@ -902,20 +902,20 @@ const {
         toast.element?.setAttribute("data-swipe-direction", direction);
         this.close(toast.id);
       } else {
-        // Reset position
+        // Restablece la posición
         toast.swipeX = 0;
         toast.swipeY = 0;
         toast.element?.style.setProperty("--toast-swipe-movement-x", "0px");
         toast.element?.style.setProperty("--toast-swipe-movement-y", "0px");
 
-        // Collapse if: short tap without movement, OR pointer ended outside viewport
+        // Colapsa si: toque corto sin movimiento, O el puntero terminó fuera del viewport
         if ((!isLongPress && !didMove && this.expandedByTouch) || isOutsideViewport) {
           this.expandedByTouch = false;
           this.expanded = false;
           this.updateExpanded();
           this.resumeAllTimers();
         } else {
-          // Resume timer for this toast only
+          // Reanuda el temporizador solo para este toast
           const duration = toast.duration ?? this.defaultDuration;
           if (duration > 0 && !this.expanded) {
             toast.timeoutId = window.setTimeout(() => {
@@ -934,7 +934,7 @@ const {
       element.addEventListener("pointerup", (e) => this.handlePointerUp(e));
       element.addEventListener("pointercancel", (e) => this.handlePointerUp(e));
 
-      // Prevent default touch behavior to avoid scroll interference
+      // Evita el comportamiento táctil por defecto para no interferir con el scroll
       element.addEventListener(
         "touchmove",
         (e) => {
@@ -953,17 +953,17 @@ const {
   let currentManager: StarwindToastManager | null = null;
 
   const setupToasts = () => {
-    // Find the viewport in the current DOM
+    // Busca el viewport en el DOM actual
     const viewport = document.querySelector(".starwind-toast-viewport") as HTMLElement | null;
 
     if (!viewport) {
-      // No viewport on this page, destroy existing manager and clear references
+      // No hay viewport en esta página; destruye el gestor existente y limpia referencias
       currentManager?.destroy();
       currentManager = null;
       return;
     }
 
-    // Check if we already have a manager for this exact element
+    // Comprueba si ya tenemos un gestor para este elemento exacto
     if (currentManager && currentManager.viewport === viewport) {
       return;
     }
@@ -971,7 +971,7 @@ const {
     // Destroy previous manager before creating new one (viewport differs)
     currentManager?.destroy();
 
-    // Create new manager for the viewport
+    // Crea un gestor nuevo para el viewport
     currentManager = new StarwindToastManager(viewport);
     (window as any).__starwind__.toast = currentManager;
   };

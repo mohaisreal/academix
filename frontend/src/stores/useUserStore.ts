@@ -1,8 +1,7 @@
 /**
- * User store for authentication and user state management
- * Uses Zustand with persistence for cross-session state
+ * Almacén de estado de usuario para autenticación y gestión del estado
+ * Usa Zustand con persistencia del estado entre sesiones
  */
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { api, ApiErrorClass } from '@/utils/apiClient';
@@ -13,18 +12,17 @@ import type {
   UserRegisterData,
   LoginResponse,
   RegisterResponse,
-  UserResponse,
 } from '@/types/user';
 
 interface UserState {
-  // State
+  // Estado
   user: User | null;
   isLoading: boolean;
   error: string | null;
 
-  // Actions
+  // Acciones
   fetchUser: (userId: number) => Promise<void>;
-  login: (email: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   register: (userData: UserRegisterData) => Promise<void>;
   cleanError: () => void;
@@ -60,7 +58,7 @@ export const useUserStore = create<UserState>()(
             user: null,
           });
 
-          // If unauthorized, clear everything
+          // Si no tiene autorización, limpia todo
           if (err instanceof ApiErrorClass && err.status === 401) {
             clearTokens();
           }
@@ -107,7 +105,7 @@ export const useUserStore = create<UserState>()(
           const errorMessage =
             err instanceof ApiErrorClass
               ? err.message
-              : 'Login failed. Please check your credentials.';
+              : 'No se ha podido iniciar sesión. Revisa tus credenciales.';
 
           set({
             error: errorMessage,
@@ -115,7 +113,7 @@ export const useUserStore = create<UserState>()(
             user: null,
           });
 
-          // Clear any existing tokens on login failure
+          // Limpia cualquier token existente si falla el inicio de sesión
           clearTokens();
 
           throw err;
@@ -160,7 +158,7 @@ export const useUserStore = create<UserState>()(
           const errorMessage =
             err instanceof ApiErrorClass
               ? err.message
-              : 'Registration failed. Please try again.';
+              : 'No se ha podido completar el registro. Inténtalo de nuevo.';
 
           set({
             error: errorMessage,
@@ -168,7 +166,7 @@ export const useUserStore = create<UserState>()(
             user: null,
           });
 
-          // Clear any tokens on registration failure
+          // Limpia cualquier token si falla el registro
           clearTokens();
 
           throw err;
@@ -176,40 +174,40 @@ export const useUserStore = create<UserState>()(
       },
 
       /**
-       * Logout user
-       * Clears user state and JWT tokens
+       * Cierra la sesión del usuario
+       * Limpia el estado de usuario y los tokens JWT
        */
       logout: () => {
-        // Clear tokens from storage
+        // Limpia los tokens del almacenamiento
         clearTokens();
 
-        // Clear user state
+        // Limpia el estado de usuario
         set({
           user: null,
           isLoading: false,
           error: null,
         });
 
-        // Optional: Call logout endpoint to invalidate token on server
-        // This is a fire-and-forget request, we don't wait for it
+        // Opcional: llama al endpoint de cierre de sesión para invalidar el token en el servidor
+        // Es una petición de lanzar y olvidar; no esperamos a que termine
         try {
           api.post('/users/logout/', {}).catch(() => {
-            // Ignore errors on logout endpoint
+            // Ignora errores en el endpoint de cierre de sesión
           });
         } catch {
-          // Ignore errors
+          // Ignora errores
         }
       },
 
       /**
-       * Clear error message
+       * Limpia el mensaje de error
        */
       cleanError: () => {
         set({ error: null });
       },
 
       /**
-       * Set user data manually (useful for updates)
+       * Establece datos de usuario manualmente (útil para actualizaciones)
        */
       setUser: (user: User | null) => {
         set({ user });
@@ -217,15 +215,15 @@ export const useUserStore = create<UserState>()(
     }),
     {
       name: 'user-storage',
-      // Only persist user data, not loading/error states
+      // Persiste solo los datos de usuario, no los estados de carga/error
       partialize: (state) => ({ user: state.user }),
     }
   )
 );
 
 /**
- * Selector hooks for specific parts of state
- * These help prevent unnecessary re-renders
+ * Hooks selectores para partes concretas del estado
+ * Ayudan a evitar rerenderizados innecesarios
  */
 export const useUser = () => useUserStore((state) => state.user);
 export const useIsLoading = () => useUserStore((state) => state.isLoading);

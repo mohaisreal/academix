@@ -24,7 +24,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
     <div class="p-6 space-y-6">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Student info -->
+        <!-- Información del estudiante -->
         <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
           <div class="flex flex-col items-center text-center mb-5">
             <div id="student-avatar" class="flex size-16 items-center justify-center rounded-full bg-primary/15 text-2xl font-bold text-primary mb-3">??</div>
@@ -112,8 +112,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     try {
       const data = await apiFetch('/grades/my-file/');
 
-      // Student info
-      const name = data.student_name || data.full_name || `${data.first_name || ''} ${data.last_name || ''}`.trim() || user?.username || 'Student';
+      // Información del estudiante — data.student es el objeto anidado de la API
+      const s = data.student || {};
+      const name = s.full_name || `${s.first_name || ''} ${s.last_name || ''}`.trim() || user?.username || 'Student';
       const initials = name.split(' ').map(p => p[0]).join('').toUpperCase().substring(0, 2);
 
       const avatarEl = document.getElementById('student-avatar');
@@ -121,14 +122,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       const usernameEl = document.getElementById('student-username');
       if (avatarEl) avatarEl.textContent = initials;
       if (nameEl) nameEl.textContent = name;
-      if (usernameEl) usernameEl.textContent = data.username || user?.username || '-';
+      if (usernameEl) usernameEl.textContent = s.username || user?.username || '-';
 
       const detailsEl = document.getElementById('student-details');
       if (detailsEl) {
         const fields = [
-          { label: 'Email', value: data.email || '-' },
-          { label: 'Phone', value: data.phone || data.phone_number || '-' },
-          { label: 'Date of Birth', value: formatDate(data.date_of_birth || data.dob) },
+          { label: 'Correo electrónico', value: s.email || '-' },
+          { label: 'Phone', value: s.phone || '-' },
+          { label: 'Date of Birth', value: formatDate(s.date_of_birth) },
         ];
         detailsEl.innerHTML = fields.map(f => `
           <div class="flex justify-between items-center py-2 border-b border-border last:border-0">

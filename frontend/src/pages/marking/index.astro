@@ -47,7 +47,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     </div>
   </div>
 
-  <!-- New evaluation modal -->
+  <!-- Modal de nueva evaluación -->
   <div id="new-eval-backdrop" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
     <div class="bg-card border border-border rounded-xl p-6 w-96 shadow-xl">
       <div class="flex items-center justify-between mb-5">
@@ -90,6 +90,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 </DashboardLayout>
 
 <script>
+  import { toast } from "@/components/starwind/toast";
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
   const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
@@ -279,7 +280,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         const feedbackEl = document.querySelector(`.feedback-input[data-student-id="${studentId}"]`) as HTMLInputElement;
         const score = scoreEl?.value;
         const feedback = feedbackEl?.value || '';
-        if (score === '' || score == null) { alert('Please enter a score'); return; }
+        if (score === '' || score == null) { toast.error('Please enter a score'); return; }
         try {
           await apiFetch(`/grades/marking/${evalId}/`, {
             method: 'POST',
@@ -288,7 +289,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           if (scoreEl) scoreEl.style.borderColor = 'var(--color-green-500, #22c55e)';
           setTimeout(() => { if (scoreEl) scoreEl.style.borderColor = ''; }, 1500);
         } catch {
-          alert('Failed to save grade');
+          toast.error('No se ha podido guardar grade');
         }
       }
 
@@ -310,7 +311,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     }
   }
 
-  // New evaluation modal
+  // Modal de nueva evaluación
   document.getElementById('new-eval-btn')?.addEventListener('click', () => {
     document.getElementById('new-eval-backdrop')?.classList.remove('hidden');
   });

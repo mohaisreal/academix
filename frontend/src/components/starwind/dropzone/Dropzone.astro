@@ -7,13 +7,13 @@ import DropzoneLoadingIndicator from "./DropzoneLoadingIndicator.astro";
 import DropzoneUploadIndicator from "./DropzoneUploadIndicator.astro";
 
 type Props = HTMLAttributes<"input"> & {
-  /**
-   * Whether to show the loading indicator initially
+    /**
+   * Indica si se muestra inicialmente el indicador de carga
    */
   isUploading?: boolean;
 };
 
-// extract id separately so it can be used in the label. The input will get the same id with "-input" suffix.
+// extrae el id por separado para poder usarlo en la etiqueta. El input recibirá el mismo id con el sufijo "-input".
 const { class: className, id, isUploading = false, ...rest } = Astro.props as Props;
 
 export const dropzone = tv({
@@ -81,7 +81,7 @@ export const dropzone = tv({
         this.label.htmlFor = generatedId;
       }
 
-      // Setup event handlers
+      // Configura manejadores de eventos
       this.setupEvents();
     }
 
@@ -89,7 +89,7 @@ export const dropzone = tv({
       this.label.dataset.dragActive = String(active);
     }
 
-    // Set up mutation observer to watch for external attribute changes
+    // Configura un MutationObserver para vigilar cambios externos de atributos
     private observeAttributeChanges() {
       this.observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
@@ -105,15 +105,15 @@ export const dropzone = tv({
       });
     }
 
-    // Handle attribute changes from external sources
+    // Gestiona cambios de atributos desde fuentes externas
     private handleAttributeChange() {
       const isUploading = this.label.dataset.isUploading === "true";
 
-      // Only update internal state if it's different
+      // Actualiza el estado interno solo si es distinto
       if (isUploading !== this.isUploading) {
         this.isUploading = isUploading;
 
-        // Update UI
+        // Actualiza la interfaz
         if (this.uploadIndicator && this.loadingIndicator) {
           if (isUploading) {
             this.uploadIndicator.classList.add("hidden");
@@ -135,10 +135,10 @@ export const dropzone = tv({
       if (hasFiles) {
         this.filesList.classList.remove("invisible");
 
-        // Clear previous files
+        // Limpia los ficheros anteriores
         this.filesList.innerHTML = "";
 
-        // Create file list
+        // Crea la lista de ficheros
         this.files.forEach((file) => {
           const fileItem = document.createElement("div");
 
@@ -148,10 +148,10 @@ export const dropzone = tv({
           const fileText = document.createElement("span");
           fileText.textContent = file.name;
 
-          // Append text after the SVG
+          // Añade texto después del SVG
           fileItem.appendChild(fileText);
 
-          // Use non-null assertion since we already checked at the beginning of the method
+          // Usa aserción no nula porque ya se comprobó al principio del método
           this.filesList!.appendChild(fileItem);
         });
       } else {
@@ -191,30 +191,30 @@ export const dropzone = tv({
         }
       });
 
-      // Handle file selection from dialog
+      // Gestiona la selección de ficheros desde el diálogo
       this.input.addEventListener("change", () => {
         this.handleFiles(this.input.files);
       });
 
-      // Add keyboard accessibility for Enter and Space keys
+      // Añade accesibilidad por teclado para las teclas Intro y Espacio
       this.label.addEventListener("keydown", (e) => {
-        // Handle Enter (13) and Space (32) keys
+        // Gestiona las teclas Intro (13) y Espacio (32)
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          this.input.click(); // Trigger the native file dialog
+          this.input.click(); // Dispara el diálogo nativo de ficheros
         }
       });
 
       if (this.loadingIndicator) {
-        // Watch for external changes to data-is-uploading attribute
+        // Vigila cambios externos en el atributo data-is-uploading
         this.observeAttributeChanges();
-        // Initialize based on current attribute values
+        // Inicializa en función de los valores actuales de atributos
         this.handleAttributeChange();
       }
     }
   }
 
-  // Store instances in a WeakMap to avoid memory leaks
+  // Guarda instancias en un WeakMap para evitar fugas de memoria
   const fileInputInstances = new WeakMap<HTMLElement, FileInputHandler>();
   let dropzoneCounter = 0;
 
@@ -224,7 +224,7 @@ export const dropzone = tv({
         try {
           fileInputInstances.set(label, new FileInputHandler(label, dropzoneCounter++));
         } catch {
-          /* ignore labels without inputs */
+          /* ignora etiquetas sin inputs */
         }
       }
     });

@@ -4,28 +4,28 @@ import type { HTMLAttributes } from "astro/types";
 import { tv } from "tailwind-variants";
 
 type Props = HTMLAttributes<"div"> & {
-  /**
-   * Side of the tooltip
+    /**
+   * Lado del tooltip
    * @default top
    */
   side?: "top" | "right" | "bottom" | "left";
-  /**
-   * Alignment of the tooltip
+    /**
+   * Alineación del tooltip
    * @default center
    */
   align?: "start" | "center" | "end";
-  /**
-   * Offset distance in pixels
+    /**
+   * Distancia de desplazamiento en píxeles
    * @default 8
    */
   sideOffset?: number;
-  /**
-   * Prevent the tooltip from colliding with other elements
+    /**
+   * Evita que el tooltip colisione con otros elementos
    * @default true
    */
   avoidCollisions?: boolean;
-  /**
-   * Open and close animation duration in milliseconds
+    /**
+   * Duración de las animaciones de apertura y cierre en milisegundos
    * @default 150
    */
   animationDuration?: number;

@@ -1,38 +1,31 @@
 /**
- * Starwind Toast API
- *
- * A simple, framework-agnostic toast notification system.
- *
+ * API de toasts de Starwind
+ * Un sistema sencillo de notificaciones toast independiente del framework.
  * @example
  * ```ts
  * import { toast } from "@/components/starwind/toast";
- *
- * // Simple usage
- * toast("Hello world");
- * toast({ title: "Success", description: "Item saved" });
- *
- * // Variant shortcuts
- * toast.success("Saved successfully");
- * toast.error("Something went wrong");
- * toast.warning("Please check your input");
- * toast.info("New update available");
- * toast.loading("Processing...");
- *
- * // Promise handling
+ * // Uso sencillo
+ * toast("Hola, mundo");
+ * toast({ title: "Correcto", description: "Elemento guardado" });
+ * // Atajos de variantes
+ * toast.success("Guardado correctamente");
+ * toast.error("Algo ha ido mal");
+ * toast.warning("Revisa los datos introducidos");
+ * toast.info("Nueva actualización disponible");
+ * toast.loading("Procesando...");
+ * // Gestión de promesas
  * toast.promise(saveData(), {
- *   loading: "Saving...",
- *   success: "Saved!",
- *   error: "Failed to save",
+ * loading: "Guardando...",
+ * success: "Guardado",
+ * error: "No se ha podido guardar",
  * });
- *
- * // Management
- * const id = toast("Processing...");
- * toast.update(id, { title: "Almost done..." });
+ * // Gestión
+ * const id = toast("Procesando...");
+ * toast.update(id, { title: "Casi terminado" });
  * toast.dismiss(id);
- * toast.dismiss(); // dismiss all
+ * toast.dismiss(); // cerrar todos
  * ```
  */
-
 export type Variant = "default" | "success" | "error" | "warning" | "info" | "loading";
 
 export interface ToastOptions {
@@ -40,11 +33,11 @@ export interface ToastOptions {
   title?: string;
   description?: string;
   variant?: Variant;
-  /** Duration in ms. Set to 0 for infinite (no auto-dismiss). */
+  /** Duración en ms. Establecer a 0 para infinito (sin autocierre). */
   duration?: number;
-  /** Callback when toast close animation starts */
+  /** Callback cuando empieza la animación de cierre del toast. */
   onClose?: () => void;
-  /** Callback when toast is removed from DOM */
+  /** Callback cuando el toast se elimina del DOM. */
   onRemove?: () => void;
   action?: {
     label: string;
@@ -77,7 +70,7 @@ interface ToastManager {
 }
 
 /**
- * Get the toast manager instance from the window
+ * Obtiene la instancia del gestor de toasts desde window
  */
 function getManager(): ToastManager | null {
   if (typeof window === "undefined") return null;
@@ -85,7 +78,7 @@ function getManager(): ToastManager | null {
 }
 
 /**
- * Normalize a string or options object to ToastOptions
+ * Normaliza una cadena u objeto de opciones a ToastOptions
  */
 function normalizeOption<T>(
   value: string | PromiseStateOption | ((data: T) => string | PromiseStateOption),
@@ -99,7 +92,7 @@ function normalizeOption<T>(
 }
 
 /**
- * Create a toast notification
+ * Crea una notificación toast
  */
 function createToast(
   messageOrOptions: string | ToastOptions,
@@ -122,7 +115,7 @@ function createToast(
 }
 
 /**
- * Create a toast with a specific variant
+ * Crea un toast con una variante concreta
  */
 function createVariantToast(
   variant: Variant,
@@ -149,7 +142,7 @@ interface ToastAPI {
 }
 
 /**
- * Main toast function with variant methods attached
+ * Función principal de toast con métodos de variante adjuntos
  */
 const toast = createToast as ToastAPI;
 
@@ -176,7 +169,7 @@ toast.promise = async <T, E = Error>(
   const id = createToast({
     ...loadingOpts,
     variant: "loading",
-    duration: 0, // Don't auto-dismiss while loading
+    duration: 0, // No autocerrar mientras está cargando
   });
 
   try {

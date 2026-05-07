@@ -2,20 +2,20 @@
 import type { HTMLAttributes } from "astro/types";
 
 type Props = HTMLAttributes<"button"> & {
-  /**
-   * When true, the component will render its child element with a simple wrapper instead of a button component
+    /**
+   * Cuando es true, el componente renderizará su elemento hijo con un envoltorio simple en vez de un componente botón
    */
   asChild?: boolean;
-  /**
-   * Optional ID of the dialog to trigger. If not provided and the trigger is inside a Dialog component,
-   * it will automatically target that dialog. Required when used outside a Dialog component.
+    /**
+   * ID opcional del diálogo que se va a disparar. Si no se proporciona y el disparador está dentro de un componente Dialog,
+   * apuntará automáticamente a ese diálogo. Es obligatorio cuando se usa fuera de un componente Dialog.
    */
   for?: string;
 };
 
 const { class: className, asChild = false, for: dialogFor, ...rest } = Astro.props;
 
-// Get the first child element if asChild is true
+// Obtiene el primer elemento hijo si asChild es true
 let hasChildren = false;
 if (Astro.slots.has("default")) {
   hasChildren = true;

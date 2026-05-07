@@ -188,7 +188,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         """Validate that passwords match"""
         if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError({
-                "password": "Contraseña fields didn't match."
+                "password": "Datos de inicio de sesión incorrectos."
             })
         return attrs
 
@@ -223,7 +223,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 class UserUpdateSerializer(serializers.ModelSerializer):
     """
     Serializer for updating user profile.
-    Password updates are handled separately.
+    Contraseña updates are handled separately.
     """
     class Meta:
         model = User
@@ -376,14 +376,14 @@ class ChangePasswordSerializer(serializers.Serializer):
         required=True,
         write_only=True,
         style={'input_type': 'password'},
-        label='Confirm New Contraseña'
+        label='Confirmar nueva contraseña'
     )
 
     def validate(self, attrs):
         """Validate that new passwords match"""
         if attrs['new_password'] != attrs['new_password2']:
             raise serializers.ValidationError({
-                "new_password": "Contraseña fields didn't match."
+                "new_password": "Datos de inicio de sesión incorrectos."
             })
         return attrs
 
@@ -391,7 +391,7 @@ class ChangePasswordSerializer(serializers.Serializer):
         """Validate that old password is correct"""
         user = self.context['request'].user
         if not user.check_password(value):
-            raise serializers.ValidationError("Old password is not correct.")
+            raise serializers.ValidationError("Contraseña antigua incorrecta.")
         return value
 
     def save(self, **kwargs):

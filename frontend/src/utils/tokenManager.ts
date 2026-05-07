@@ -1,7 +1,6 @@
 /**
- * Token management utilities for JWT authentication
+ * Utilidades de gestión de tokens para autenticación JWT
  */
-
 import type { AuthTokens } from '@/types/user';
 
 const TOKEN_KEYS = {
@@ -10,7 +9,7 @@ const TOKEN_KEYS = {
 } as const;
 
 /**
- * Store authentication tokens in localStorage
+ * Guarda los tokens de autenticación en localStorage
  */
 export function setTokens(tokens: AuthTokens): void {
   try {
@@ -22,7 +21,7 @@ export function setTokens(tokens: AuthTokens): void {
 }
 
 /**
- * Get the access token from localStorage
+ * Obtiene el token de acceso desde localStorage
  */
 export function getAccessToken(): string | null {
   try {
@@ -34,7 +33,7 @@ export function getAccessToken(): string | null {
 }
 
 /**
- * Get the refresh token from localStorage
+ * Obtiene el token de refresco desde localStorage
  */
 export function getRefreshToken(): string | null {
   try {
@@ -46,7 +45,7 @@ export function getRefreshToken(): string | null {
 }
 
 /**
- * Remove all authentication tokens from localStorage
+ * Elimina todos los tokens de autenticación de localStorage
  */
 export function clearTokens(): void {
   try {
@@ -58,13 +57,13 @@ export function clearTokens(): void {
 }
 
 /**
- * Check if user is authenticated by verifying token existence and validity
+ * Comprueba si el usuario está autenticado verificando existencia y validez del token
  */
 export function isAuthenticated(): boolean {
   const token = getAccessToken();
   if (!token) return false;
 
-  // Check if the token is expired (without the 60s refresh buffer)
+  // Comprueba si el token ha caducado (sin el margen de refresco de 60 s)
   const expiration = getTokenExpiration(token);
   if (!expiration) return false;
 
@@ -72,7 +71,7 @@ export function isAuthenticated(): boolean {
 }
 
 /**
- * Decode JWT token to get expiration time
+ * Decodifica el token JWT para obtener la hora de caducidad
  */
 export function getTokenExpiration(token: string): number | null {
   try {
@@ -85,18 +84,18 @@ export function getTokenExpiration(token: string): number | null {
 }
 
 /**
- * Check if the access token is expired
+ * Comprueba si el token de acceso ha caducado
  */
 export function isTokenExpired(token: string): boolean {
   const expiration = getTokenExpiration(token);
   if (!expiration) return true;
 
-  // Add 60 second buffer to refresh before actual expiration
+  // Añade un margen de 60 segundos para refrescar antes de la caducidad real
   return Date.now() >= expiration - 60000;
 }
 
 /**
- * Check if the current access token needs refresh
+ * Comprueba si el token de acceso actual necesita refresco
  */
 export function needsTokenRefresh(): boolean {
   const accessToken = getAccessToken();

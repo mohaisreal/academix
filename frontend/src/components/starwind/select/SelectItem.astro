@@ -4,12 +4,12 @@ import type { HTMLAttributes } from "astro/types";
 import { tv } from "tailwind-variants";
 
 type Props = HTMLAttributes<"div"> & {
-  /**
-   * The value associated with this select item
+    /**
+   * Valor asociado a este elemento del selector
    */
   value: string;
-  /**
-   * Whether this select item is disabled and cannot be selected
+    /**
+   * Indica si este elemento del selector está deshabilitado y no puede seleccionarse
    */
   disabled?: boolean;
 };

@@ -1,7 +1,7 @@
 ---
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
-<DashboardLayout title="Enrolment Management — Academix" currentPath="/enrolment/management">
+<DashboardLayout title="Gestión de matrículas — Academix" currentPath="/enrolment/management">
   <div id="page-loading" class="p-6 space-y-4">
     <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
     <div class="h-64 bg-card rounded-xl border border-border animate-pulse"></div>
@@ -10,7 +10,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   <div id="page-content" class="hidden">
     <div class="flex items-center justify-between border-b border-border px-6 py-4">
       <div>
-        <h1 class="text-xl font-semibold text-foreground">Enrolment Management</h1>
+        <h1 class="text-xl font-semibold text-foreground">Gestión de matrículas</h1>
         <p class="text-sm text-muted-foreground">Manage student career enrolments</p>
       </div>
       <button id="new-enrolment-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
@@ -20,11 +20,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     </div>
 
     <div class="p-6 space-y-4">
-      <!-- Filters -->
+      <!-- Filtros -->
       <div class="flex flex-wrap gap-3">
         <select id="filter-status" class="bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
           <option value="">All Statuses</option>
-          <option value="pending">Pending</option>
+          <option value="pending">Pending Review</option>
           <option value="active">Active</option>
           <option value="completed">Completed</option>
           <option value="dropped">Dropped</option>
@@ -54,50 +54,56 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     </div>
   </div>
 
-  <!-- Side panel -->
-  <div id="panel-backdrop" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50"></div>
-  <div id="enrolment-panel" class="hidden fixed inset-y-0 right-0 z-50 w-96 bg-card border-l border-border p-6 shadow-xl overflow-y-auto">
-    <div class="flex items-center justify-between mb-6">
-      <h2 id="panel-title" class="text-lg font-semibold text-foreground">New Enrolment</h2>
-      <button id="close-panel-btn" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+  <!-- Modal centrado -->
+  <div id="modal-backdrop" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-lg rounded-xl border border-border bg-background shadow-2xl max-h-[90vh] flex flex-col">
+      <!-- Cabecera -->
+      <div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+        <h2 id="modal-title" class="text-base font-semibold text-foreground">New Enrolment</h2>
+        <button id="modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <!-- Scrollable body -->
+      <div class="overflow-y-auto flex-1 px-5 py-4">
+        <form id="enrolment-form" class="space-y-4">
+          <input id="edit-id" type="hidden" value="" />
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Student *</label>
+            <select id="enrolment-student" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+              <option value="">Select student...</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Career *</label>
+            <select id="enrolment-career" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+              <option value="">Select career...</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Period *</label>
+            <select id="enrolment-period" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+              <option value="">Select period...</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Status</label>
+            <select id="enrolment-status" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+              <option value="pending">Pending Review</option>
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+              <option value="dropped">Dropped</option>
+            </select>
+          </div>
+          <div id="form-error" class="hidden text-xs text-red-400"></div>
+        </form>
+      </div>
+      <!-- Pie fijo -->
+      <div class="flex items-center justify-end gap-3 px-5 py-4 border-t border-border shrink-0">
+        <button id="modal-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
+        <button id="modal-save" type="submit" form="enrolment-form" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">Save</button>
+      </div>
     </div>
-    <form id="enrolment-form" class="space-y-4">
-      <input id="edit-id" type="hidden" value="" />
-      <div>
-        <label class="text-xs font-medium text-muted-foreground">Student *</label>
-        <select id="enrolment-student" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="">Select student...</option>
-        </select>
-      </div>
-      <div>
-        <label class="text-xs font-medium text-muted-foreground">Career *</label>
-        <select id="enrolment-career" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="">Select career...</option>
-        </select>
-      </div>
-      <div>
-        <label class="text-xs font-medium text-muted-foreground">Period *</label>
-        <select id="enrolment-period" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="">Select period...</option>
-        </select>
-      </div>
-      <div>
-        <label class="text-xs font-medium text-muted-foreground">Status</label>
-        <select id="enrolment-status" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="pending">Pending</option>
-          <option value="active">Active</option>
-          <option value="completed">Completed</option>
-          <option value="dropped">Dropped</option>
-        </select>
-      </div>
-      <div id="form-error" class="hidden text-xs text-red-400"></div>
-      <div class="flex gap-3 pt-2">
-        <button type="button" id="cancel-form-btn" class="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
-        <button type="submit" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Save</button>
-      </div>
-    </form>
   </div>
 </DashboardLayout>
 
@@ -140,7 +146,15 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     dropped: 'bg-red-500/15 text-red-400',
   };
 
+  const STATUS_LABELS: Record<string, string> = {
+    pending: 'Pending Review',
+    active: 'Active',
+    completed: 'Completed',
+    dropped: 'Dropped',
+  };
+
   let enrolments: any[] = [], careers: any[] = [], periods: any[] = [], students: any[] = [];
+  let studentOptionsLoaded = false;
   let filterStatus = '', filterCareer = '';
 
   function renderTable() {
@@ -170,10 +184,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <td class="px-4 py-3 text-sm text-muted-foreground">${escHtml(careerName)}</td>
         <td class="px-4 py-3 text-sm text-muted-foreground">${escHtml(periodName)}</td>
         <td class="px-4 py-3">
-          <span class="inline-flex items-center rounded-full ${colorClass} px-2 py-0.5 text-xs font-medium capitalize">${e.status}</span>
+          <span class="inline-flex items-center rounded-full ${colorClass} px-2 py-0.5 text-xs font-medium">${STATUS_LABELS[e.status] ?? e.status}</span>
         </td>
         <td class="px-4 py-3">
           <div class="flex items-center gap-2">
+            ${e.status === 'pending' ? `
+              <button class="approve-btn rounded-lg bg-green-500/15 border border-green-500/30 px-2.5 py-1 text-xs font-medium text-green-400 hover:bg-green-500/25 transition-colors" data-id="${e.id}">Approve</button>
+              <button class="reject-btn rounded-lg bg-red-500/15 border border-red-500/30 px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/25 transition-colors" data-id="${e.id}">Reject</button>
+            ` : ''}
             <button class="edit-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors" data-id="${e.id}">Edit</button>
             <button class="delete-btn rounded-lg border border-red-500/30 px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors" data-id="${e.id}">Delete</button>
           </div>
@@ -182,16 +200,48 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     }).join('');
 
     tbody.querySelectorAll<HTMLButtonElement>('.edit-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const e = enrolments.find(x => x.id == btn.dataset.id);
-        if (e) openPanel(e);
+        if (e) {
+          await ensureStudentOptions();
+          openPanel(e);
+        }
+      });
+    });
+    tbody.querySelectorAll<HTMLButtonElement>('.approve-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        await apiFetch(`/enrollment/review/${btn.dataset.id}/approve/`, { method: 'PATCH' });
+        await loadData();
+      });
+    });
+    tbody.querySelectorAll<HTMLButtonElement>('.reject-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        window.confirmAction({
+          title: "Reject Enrolment",
+          description: "This will mark the enrolment as dropped.",
+          confirmLabel: "Reject",
+          variant: "destructive",
+          onConfirm: async () => {
+            await apiFetch(`/enrollment/review/${id}/reject/`, { method: 'PATCH' });
+            await loadData();
+          },
+        });
       });
     });
     tbody.querySelectorAll<HTMLButtonElement>('.delete-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (!confirm('Delete this enrolment?')) return;
-        await apiFetch(`/enrollment/management/${btn.dataset.id}/`, { method: 'DELETE' });
-        await loadData();
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        window.confirmAction({
+          title: "Delete Enrolment",
+          description: "This action cannot be undone.",
+          confirmLabel: "Delete",
+          variant: "destructive",
+          onConfirm: async () => {
+            await apiFetch(`/enrollment/management/${id}/`, { method: 'DELETE' });
+            await loadData();
+          },
+        });
       });
     });
   }
@@ -243,7 +293,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   function openPanel(enrolment: any = null) {
     document.getElementById('form-error')?.classList.add('hidden');
-    const title = document.getElementById('panel-title');
+    const title = document.getElementById('modal-title');
     if (enrolment) {
       if (title) title.textContent = 'Edit Enrolment';
       (document.getElementById('edit-id') as HTMLInputElement).value = enrolment.id;
@@ -258,35 +308,38 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       (document.getElementById('edit-id') as HTMLInputElement).value = '';
       (document.getElementById('enrolment-form') as HTMLFormElement)?.reset();
     }
-    document.getElementById('panel-backdrop')?.classList.remove('hidden');
-    document.getElementById('enrolment-panel')?.classList.remove('hidden');
+    document.getElementById('modal-backdrop')?.classList.remove('hidden');
   }
 
   function closePanel() {
-    document.getElementById('panel-backdrop')?.classList.add('hidden');
-    document.getElementById('enrolment-panel')?.classList.add('hidden');
+    document.getElementById('modal-backdrop')?.classList.add('hidden');
+  }
+
+  async function ensureStudentOptions() {
+    if (studentOptionsLoaded) return;
+    const sData = await apiFetch('/users/students/');
+    students = Array.isArray(sData) ? sData : (sData?.results ?? []);
+    const sel = document.getElementById('enrolment-student') as HTMLSelectElement;
+    if (sel) {
+      sel.innerHTML = '<option value="">Select student...</option>';
+      students.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = `${s.first_name} ${s.last_name}`;
+        sel.appendChild(opt);
+      });
+    }
+    studentOptionsLoaded = true;
   }
 
   document.getElementById('new-enrolment-btn')?.addEventListener('click', async () => {
-    // Load students on demand
-    if (students.length === 0) {
-      const sData = await apiFetch('/users/students/');
-      students = Array.isArray(sData) ? sData : (sData?.results ?? []);
-      const sel = document.getElementById('enrolment-student') as HTMLSelectElement;
-      if (sel) {
-        sel.innerHTML = '<option value="">Select student...</option>';
-        students.forEach(s => {
-          const opt = document.createElement('option');
-          opt.value = s.id; opt.textContent = `${s.first_name} ${s.last_name}`;
-          sel.appendChild(opt);
-        });
-      }
-    }
+    await ensureStudentOptions();
     openPanel();
   });
-  document.getElementById('close-panel-btn')?.addEventListener('click', closePanel);
-  document.getElementById('cancel-form-btn')?.addEventListener('click', closePanel);
-  document.getElementById('panel-backdrop')?.addEventListener('click', closePanel);
+  document.getElementById('modal-close')?.addEventListener('click', closePanel);
+  document.getElementById('modal-cancel')?.addEventListener('click', closePanel);
+  document.getElementById('modal-backdrop')?.addEventListener('click', e => { if (e.target === e.currentTarget) closePanel(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
   document.getElementById('filter-status')?.addEventListener('change', e => { filterStatus = (e.target as HTMLSelectElement).value; renderTable(); });
   document.getElementById('filter-career')?.addEventListener('change', e => { filterCareer = (e.target as HTMLSelectElement).value; renderTable(); });
 
@@ -310,7 +363,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       await loadData();
     } catch {
       errEl?.classList.remove('hidden');
-      if (errEl) errEl.textContent = 'Failed to save enrolment';
+      if (errEl) errEl.textContent = 'No se ha podido guardar enrolment';
     }
   });
 

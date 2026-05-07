@@ -1,7 +1,6 @@
 /**
- * User type definitions matching the Django backend User model
+ * Definiciones de tipos de usuario alineadas con el modelo User del backend Django
  */
-
 export type UserRole = 's' | 't' | 'm' | 'a';
 
 export interface User {

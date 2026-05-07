@@ -3,23 +3,23 @@ import type { HTMLAttributes } from "astro/types";
 import { tv } from "tailwind-variants";
 
 type Props = HTMLAttributes<"div"> & {
-  /**
-   * Side of the dropdown
+    /**
+   * Lado del desplegable
    * @default bottom
    */
   side?: "top" | "bottom";
-  /**
-   * Alignment of the dropdown
+    /**
+   * Alineación del desplegable
    * @default start
    */
   align?: "start" | "center" | "end";
-  /**
-   * Offset distance in pixels
+    /**
+   * Distancia de desplazamiento en píxeles
    * @default 4
    */
   sideOffset?: number;
-  /**
-   * Open and close animation duration in milliseconds
+    /**
+   * Duración de las animaciones de apertura y cierre en milisegundos
    * @default 150
    */
   animationDuration?: number;

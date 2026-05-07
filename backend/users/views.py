@@ -341,8 +341,8 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
         """
         super().check_object_permissions(request, obj)
 
-        # Allow admin or the user themselves
-        if not request.user.is_staff and obj != request.user:
+        # Permite gestión/administración o el propio usuario
+        if request.user.role not in ('m', 'a') and obj != request.user:
             self.permission_denied(
                 request,
                 message='You do not have permission to access this user.'

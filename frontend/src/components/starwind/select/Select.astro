@@ -2,16 +2,16 @@
 import type { HTMLAttributes } from "astro/types";
 
 type Props = HTMLAttributes<"div"> & {
-  /**
-   * The name for the hidden <select> element - used for standard form handling
+    /**
+   * Nombre del elemento <select> oculto; se usa para la gestión estándar del formulario
    */
   name?: string;
-  /**
-   * The value of the item that should be selected by default
+    /**
+   * Valor del elemento que debe seleccionarse por defecto
    */
   defaultValue?: string;
-  /**
-   * Whether the select field is required in a form context
+    /**
+   * Indica si el campo select es obligatorio en un contexto de formulario
    */
   required?: boolean;
 
@@ -61,12 +61,12 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
 
       this.required = this.select.getAttribute("data-required") === "true";
 
-      // animationDuration is set with inline styles through passed prop to SelectContent
+      // animationDuration se establece con estilos inline mediante la prop pasada a SelectContent
       const animationDurationString = this.content.style.animationDuration;
       if (animationDurationString.endsWith("ms")) {
         this.animationDuration = parseFloat(animationDurationString);
       } else if (animationDurationString.endsWith("s")) {
-        // using something like @playform/compress might optimize to use "s" instead of "ms"
+        // usar algo como @playform/compress podría optimizarlo para usar "s" en vez de "ms"
         this.animationDuration = parseFloat(animationDurationString) * 1000;
       }
 
@@ -82,7 +82,7 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
 
     private setupSelectField() {
       if (!this.trigger || !this.content) return;
-      // build the standard select field
+      // construye el campo select estándar
       const selectField = document.createElement("select");
       selectField.tabIndex = -1;
       selectField.setAttribute("aria-hidden", "true");
@@ -97,10 +97,10 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
         selectField.name = selectName;
       }
 
-      // you can comment out this "sr-only" class line below if you want to see the native select in action
+      // puedes comentar la línea de clase "sr-only" de abajo si quieres ver el select nativo en acción
       selectField.classList.add("starwind-sr-only");
 
-      // The first option is a placeholder
+      // La primera opción es un placeholder
       const placeholderOption = document.createElement("option");
       placeholderOption.value = "";
       placeholderOption.textContent = "Select";
@@ -108,7 +108,7 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
       placeholderOption.selected = true;
       selectField.appendChild(placeholderOption);
 
-      // add all options to the select field
+      // añade todas las opciones al campo select
       this.content.querySelectorAll('[role="option"]').forEach((option) => {
         const optionValue = option.getAttribute("data-value");
         const optionText = option.textContent;
@@ -119,10 +119,10 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
       });
       this.trigger.appendChild(selectField);
 
-      // add this select field right after the trigger
+      // añade este campo select justo después del disparador
       this.trigger.parentElement?.insertBefore(selectField, this.trigger.nextSibling);
 
-      // Intercept invalid event to show error on trigger instead of hidden select
+      // Intercepta el evento invalid para mostrar el error en el disparador en vez de en el select oculto
       if (this.required) {
         selectField.addEventListener("invalid", (e) => {
           this.showValidationError();
@@ -137,7 +137,7 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
     private setupAccessibility(selectIdx: number) {
       if (!this.trigger || !this.content) return;
 
-      // Generate unique IDs for accessibility
+      // Genera ID únicos para accesibilidad
       this.trigger.id = `starwind-select${selectIdx}-trigger`;
       this.content.id = `starwind-select${selectIdx}-content`;
 
@@ -146,12 +146,12 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
       this.trigger.setAttribute("aria-required", this.required ? "true" : "false");
       this.content.setAttribute("aria-labelledby", this.trigger.id);
 
-      // If search input exists, add IDs to all items for aria-activedescendant
+      // Si existe input de búsqueda, añade ID a todos los elementos para aria-activedescendant
       if (this.searchInput) {
         if (!this.searchInput.id) {
           this.searchInput.id = `starwind-select${selectIdx}-search`;
         }
-        // Link search input to the listbox it filters
+        // Vincula el input de búsqueda con el listbox que filtra
         this.searchInput.setAttribute("aria-controls", this.content.id);
 
         const items = this.content.querySelectorAll('[role="option"]');
@@ -166,12 +166,12 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
     private setupEvents() {
       if (!this.trigger || !this.content) return;
 
-      // Handle search input if it exists
+      // Gestiona el input de búsqueda si existe
       if (this.searchInput) {
         this.setupSearchInput();
       }
 
-      // Handle pointerdown
+      // Gestiona pointerdown
       this.trigger.addEventListener("pointerdown", (e) => {
         // prevent implicit pointer capture
         // https://www.w3.org/TR/pointerevents3/#implicit-pointer-capture
@@ -180,19 +180,19 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
           target.releasePointerCapture(e.pointerId);
         }
 
-        // prevent trigger from stealing focus from the active item after opening.
+        // evita que el disparador robe el foco al elemento activo tras abrir.
         e.preventDefault();
 
-        // only call handler if it's the left button (mousedown gets triggered by all mouse buttons)
-        // but not when the control key is pressed (avoiding MacOS right click); also not for touch
-        // devices because that would open the menu on scroll. (pen devices behave as touch on iOS).
+        // llama al manejador solo si es el botón izquierdo (mousedown se dispara con todos los botones del ratón)
+        // pero no cuando la tecla Control está pulsada (evita el clic derecho de macOS); tampoco para táctil
+        // porque eso abriría el menú al hacer scroll. (Los dispositivos con lápiz se comportan como táctiles en iOS).
         if (e.button === 0 && e.ctrlKey === false && e.pointerType === "mouse") {
           this.returnFocusOnClose = true;
           this.toggleSelect();
         }
       });
 
-      // Handle click event for mobile devices
+      // Gestiona el evento de clic para dispositivos móviles
       this.trigger.addEventListener("click", (e) => {
         if (window.matchMedia("(pointer: coarse)").matches) {
           e.preventDefault();
@@ -201,7 +201,7 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
         }
       });
 
-      // add enter or space key to select trigger to toggle select
+      // añade las teclas Intro o Espacio al disparador del select para alternarlo
       this.trigger.addEventListener("keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
@@ -210,38 +210,38 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
         }
       });
 
-      // Handle keyboard navigation inside select content
+      // Gestiona la navegación por teclado inside select content
       this.content.addEventListener("keydown", (e) => {
-        // Check if the event originated from the search input
+        // Comprueba si el evento se originó en el input de búsqueda
         const isFromSearchInput = e.target === this.searchInput;
 
         if (e.key === "Enter" || e.key === " ") {
-          // Only handle selection if not typing in search input
+          // Gestiona la selección solo si no se está escribiendo en el input de búsqueda
           if (!isFromSearchInput) {
             e.preventDefault();
-            // set element based on current focused element
+            // establece el elemento según el elemento enfocado actualmente
             const activeElement = document.activeElement;
             this.returnFocusOnClose = true;
             this.handleSelection(activeElement as HTMLElement);
           }
-          // If from search input, don't handle it here - let the input handle it naturally
+          // Si viene del input de búsqueda, no lo gestiones aquí; deja que el input lo gestione naturalmente
         } else if (e.key === "Escape" && this.isOpen) {
           this.returnFocusOnClose = true;
           this.closeSelect();
         }
 
-        // add key navigation for accessibility
-        // "Home" goes to first element
-        // "End" goes to last element
-        // "ArrowUp" goes to previous element
-        // "ArrowDown" goes to next element
+        // añade navegación por teclado para accesibilidad
+        // "Home" va al primer elemento
+        // "End" va al último elemento
+        // "ArrowUp" va al elemento anterior
+        // "ArrowDown" va al elemento siguiente
         else if (["ArrowUp", "ArrowDown", "Home", "End"].includes(e.key)) {
           this.handleNavigationKeys(e);
           e.preventDefault();
         } else {
           const isModifierKey = e.ctrlKey || e.altKey || e.metaKey;
 
-          // select should not be navigated using tab key so we prevent it
+          // El select no debe navegarse con la tecla Tab, así que lo evitamos
           if (e.key === "Tab") e.preventDefault();
 
           if (!isModifierKey && e.key.length === 1 && !this.searchInput) {
@@ -250,7 +250,7 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
         }
       });
 
-      // Handle hover on select items
+      // Gestiona el paso del cursor sobre elementos del selector
       this.content.addEventListener("mouseover", (e) => {
         const target = e.target as HTMLElement;
         const option = target.closest('[role="option"]');
@@ -259,9 +259,9 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
         }
       });
 
-      // handle pointerdown outside select content to close
+      // gestiona pointerdown fuera del contenido del selector para cerrar
       document.addEventListener("pointerdown", (e) => {
-        // only close if not a mouse pointer
+        // cierra solo si no es un puntero de ratón
         if (!window.matchMedia("(pointer: coarse)").matches) {
           if (
             !(
@@ -275,7 +275,7 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
         }
       });
 
-      // Handle click outside select content to close
+      // Gestiona el clic fuera del contenido del selector para cerrar
       document.addEventListener("click", (e) => {
         if (
           !(this.trigger?.contains(e.target as Node) || this.content?.contains(e.target as Node)) &&
@@ -286,7 +286,7 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
         }
       });
 
-      // Handle selection of items
+      // Gestiona la selección de elementos
       this.content?.addEventListener("click", (e) => {
         const item = (e.target as HTMLElement).closest("[role='option']");
         if (item instanceof HTMLElement) {
@@ -295,17 +295,17 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
         }
       });
 
-      // passive resize listener to call setSize()
+      // escuchador pasivo de resize para llamar a setSize()
       window.addEventListener("resize", () => this.setSize(), { passive: true });
 
-      // Listen for programmatic selection events
+      // Escucha eventos de selección programática
       document.addEventListener("starwind-select:select", (e: Event) => {
         const selectEvent = e as SelectEvent;
         const selectId = selectEvent.detail.selectId;
         const selectName = selectEvent.detail.selectName;
         const selectValue = selectEvent.detail.value;
 
-        // Check if this event is for this select
+        // Comprueba si este evento es para este selector
         if (
           (selectId && this.select.id === selectId) ||
           (selectName && this.select.getAttribute("data-name") === selectName)
@@ -318,7 +318,7 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
     private setActiveItem(item: HTMLElement | null) {
       if (!this.content) return;
 
-      // Remove active state from previous item
+      // Elimina el estado activo del elemento anterior
       if (this.activeItem) {
         this.activeItem.removeAttribute("data-active");
       }
@@ -331,16 +331,16 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
         // Scroll item into view if needed
         item.scrollIntoView({ block: "nearest" });
 
-        // For search mode, set aria-activedescendant for assistive technologies
+        // En modo búsqueda, establece aria-activedescendant para tecnologías de apoyo
         if (this.searchInput) {
-          // Item should already have an ID from setupAccessibility
+          // El elemento ya debería tener un ID procedente de setupAccessibility
           this.searchInput.setAttribute("aria-activedescendant", item.id);
         } else {
-          // For non-search mode, set focus for keyboard accessibility
+          // En modo sin búsqueda, establece foco para accesibilidad por teclado
           item.focus();
         }
       } else if (this.searchInput) {
-        // Clear aria-activedescendant when no item is active
+        // Limpia aria-activedescendant cuando no hay elemento activo
         this.searchInput.removeAttribute("aria-activedescendant");
       }
     }
@@ -408,20 +408,20 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
         this.filterItems(searchValue);
       });
 
-      // Handle keyboard navigation from search input
+      // Gestiona la navegación por teclado desde el input de búsqueda
       this.searchInput.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
           e.stopPropagation();
           this.returnFocusOnClose = true;
           this.closeSelect();
         }
-        // Allow arrow keys to navigate to items
+        // Permite que las flechas naveguen entre elementos
         else if (["ArrowUp", "ArrowDown", "Home", "End"].includes(e.key)) {
           e.preventDefault();
           e.stopPropagation();
           this.handleNavigationKeys(e);
         }
-        // Handle Enter to select the active or first visible item
+        // Gestiona Intro para seleccionar el elemento activo o el primer elemento visible
         else if (e.key === "Enter") {
           e.preventDefault();
           const itemToSelect = this.activeItem || this.getFirstVisibleItem();
@@ -430,7 +430,7 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
             this.handleSelection(itemToSelect);
           }
         }
-        // Prevent space from scrolling the page, but allow it to be typed
+        // Evita que Espacio desplace la página, pero permite escribirlo
         else if (e.key === " ") {
           e.stopPropagation();
         }
@@ -476,14 +476,14 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
         }
       });
 
-      // Update active item to first visible item after filtering
+      // Actualiza el elemento activo al primer elemento visible tras filtrar
       if (this.searchInput && firstVisibleItem) {
         this.setActiveItem(firstVisibleItem);
       } else if (this.searchInput && visibleCount === 0) {
         this.setActiveItem(null);
       }
 
-      // Show/hide empty message
+      // Muestra/oculta el mensaje de vacío
       if (this.emptyElement) {
         if (visibleCount === 0 && searchValue !== "") {
           this.emptyElement.classList.remove("hidden");
@@ -498,7 +498,7 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
       const search = this.typeaheadSearch + key;
       const items = this.content.querySelectorAll('[role="option"]');
 
-      // find and set active the first matching option
+      // busca y activa la primera opción coincidente
       const matches = Array.from(items).filter((item) =>
         item.textContent?.toLowerCase().trim().startsWith(search.toLowerCase()),
       ) as HTMLElement[];
@@ -506,13 +506,13 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
         this.setActiveItem(matches[0]);
       }
 
-      // update the typeahead search and reset the timer
+      // actualiza la búsqueda incremental y reinicia el temporizador
       this.typeaheadSearch = search;
       if (this.typeaheadTimerRef) {
         window.clearTimeout(this.typeaheadTimerRef);
       }
 
-      // set a timer to clear the search after 1 second
+      // establece un temporizador para limpiar la búsqueda tras 1 segundo
       this.typeaheadTimerRef = window.setTimeout(() => {
         this.typeaheadSearch = "";
         this.typeaheadTimerRef = null;
@@ -548,12 +548,12 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
       this.trigger.setAttribute("aria-expanded", "true");
       this.content.style.removeProperty("display");
 
-      // If search input exists, focus it and clear any previous search
+      // Si existe input de búsqueda, enfócalo y limpia cualquier búsqueda previa
       if (this.searchInput) {
         this.searchInput.value = "";
         this.filterItems("");
 
-        // Set the selected item or first item as active
+        // Establece como activo el elemento seleccionado o el primero
         const initialItem = this.selectedItem || this.getFirstVisibleItem();
         if (initialItem) {
           this.setActiveItem(initialItem);
@@ -563,11 +563,11 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
           this.searchInput?.focus();
         });
       } else {
-        // set active on the current selected item
+        // activa el elemento seleccionado actualmente
         if (this.selectedItem) {
           this.setActiveItem(this.selectedItem);
         } else {
-          // if no item is selected, set active on the first item
+          // si no hay ningún elemento seleccionado, activa el primero
           const firstItem = this.content.querySelector('[role="option"]') as HTMLElement;
           if (firstItem) {
             this.setActiveItem(firstItem);
@@ -582,13 +582,13 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
       this.isOpen = false;
       this.content.setAttribute("data-state", "closed");
 
-      // Remove focus from any currently focused element
+      // Quita el foco de cualquier elemento enfocado actualmente
       const activeElement = document.activeElement;
       if (activeElement instanceof HTMLElement) {
         activeElement.blur();
       }
 
-      // Set focus on trigger if returnFocusOnClose is true
+      // Establece el foco en el disparador si returnFocusOnClose es true
       if (this.returnFocusOnClose) {
         requestAnimationFrame(() => {
           if (!this.trigger) return;
@@ -596,12 +596,12 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
         });
       }
 
-      // give the content time to animate before hiding
+      // da tiempo al contenido para animarse antes de ocultarlo
       setTimeout(() => {
         if (!this.content) return;
         this.content.style.display = "none";
 
-        // Clear search and show all items after animation completes
+        // Limpia la búsqueda y muestra todos los elementos al completar la animación
         if (this.searchInput) {
           this.searchInput.value = "";
           this.filterItems("");
@@ -615,16 +615,16 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
     private handleSelection(item: HTMLElement) {
       if (!this.trigger) return;
 
-      // Clear any validation error when a selection is made
+      // Limpia cualquier error de validación al realizar una selección
       this.clearValidationError();
 
-      // update the hidden select field
+      // actualiza el campo select oculto
       const selectField = this.select.querySelector("select");
       if (selectField) {
         const newValue = item.getAttribute("data-value") || "";
         selectField.value = newValue;
 
-        // Dispatch custom event with the new value
+        // Despacha un evento personalizado con el nuevo valor
         const event = new CustomEvent<SelectChangeEvent["detail"]>("starwind-select:change", {
           detail: { value: newValue, selectId: this.select.id, label: item.textContent || "" },
           bubbles: true,
@@ -634,13 +634,13 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
         selectField.dispatchEvent(event);
       }
 
-      // Update trigger content
+      // Actualiza el contenido del disparador
       const triggerSpan = this.trigger.firstElementChild as HTMLSpanElement;
       if (triggerSpan) {
         triggerSpan.textContent = item.textContent;
       }
 
-      // Update selected states after select finishes closing
+      // Actualiza los estados seleccionados cuando el selector termina de cerrarse
       setTimeout(() => {
         if (this.selectedItem) {
           this.selectedItem.setAttribute("aria-selected", "false");
@@ -649,12 +649,12 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
         this.selectedItem = item;
       }, this.animationDuration);
 
-      // Close the select
+      // Cierra el selector
       this.closeSelect();
     }
 
-    /**
-     * Sets the initial state based on the default value attribute
+        /**
+     * Establece el estado inicial según el atributo de valor por defecto
      */
     private setInitialState(): void {
       const defaultValue = this.select.dataset.value;
@@ -669,48 +669,48 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
       }
     }
 
-    /**
+        /**
      * Programmatically selects an option by value
      */
     private programmaticallySelect(value: string): void {
       if (!this.content) return;
 
-      // Skip if already selected (prevents infinite loops with synced selects)
+      // Omite si ya está seleccionado (evita bucles infinitos con selects sincronizados)
       if (this.selectedItem?.getAttribute("data-value") === value) return;
 
       const item = this.content.querySelector(`[data-value="${value}"]`);
       if (item instanceof HTMLElement) {
         this.returnFocusOnClose = false;
 
-        // Update aria-selected attributes immediately
+        // Actualiza los atributos aria-selected inmediatamente
         if (this.selectedItem) {
           this.selectedItem.setAttribute("aria-selected", "false");
         }
         item.setAttribute("aria-selected", "true");
 
-        // Then call handleSelection which will update the rest
+        // Luego llama a handleSelection, que actualizará el resto
         this.handleSelection(item);
       }
     }
 
-    /**
-     * Shows validation error on the trigger
+        /**
+     * Muestra el error de validación en el disparador
      */
     private showValidationError(): void {
       if (!this.trigger) return;
 
-      // Add error state to trigger
+      // Añade estado de error al disparador
       this.trigger.setAttribute("aria-invalid", "true");
 
       // scroll trigger into view
       this.trigger.scrollIntoView({ behavior: "auto", block: "center" });
 
-      // Focus the trigger so user knows where the error is
+      // Enfoca el disparador para que el usuario sepa dónde está el error
       this.trigger.focus();
     }
 
-    /**
-     * Clears validation error from the trigger
+        /**
+     * Limpia el error de validación del disparador
      */
     private clearValidationError(): void {
       if (!this.trigger) return;
@@ -719,7 +719,7 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
     }
   }
 
-  // Store instances in a WeakMap to avoid memory leaks
+  // Guarda instancias en un WeakMap para evitar fugas de memoria
   const selectInstances = new WeakMap<HTMLElement, SelectHandler>();
   let selectCounter = 0;
 

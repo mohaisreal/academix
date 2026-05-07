@@ -1,17 +1,16 @@
 /**
- * Type validation file to ensure all types compile correctly
- * This file is for validation only and should not be imported in production
+ * Fichero de validación de tipos para asegurar que todos los tipos compilen correctamente
+ * Este fichero es solo para validación y no debe importarse en producción
  */
-
-import type { User, UserRole, UserLoginData, UserRegisterData, AuthTokens, LoginResponse, RegisterResponse, UserResponse, ApiError } from '@/types/user';
+import type { User, UserRole, UserLoginData, UserRegisterData, AuthTokens, LoginResponse, ApiError } from '@/types/user';
 import { useUserStore, useUser, useIsLoading, useError, useIsAuthenticated } from '@/stores/useUserStore';
 import { api, ApiErrorClass } from '@/utils/apiClient';
 import { setTokens, getAccessToken, getRefreshToken, clearTokens, isAuthenticated, isTokenExpired, needsTokenRefresh } from '@/utils/tokenManager';
 import { useAuth } from '@/hooks/useAuth';
 
-// Type validation tests
+// Pruebas de validación de tipos
 const validateTypes = () => {
-  // User type
+  // Tipo de usuario
   const user: User = {
     id: 1,
     username: 'test',
@@ -27,7 +26,7 @@ const validateTypes = () => {
     updated_at: '2024-01-01',
   };
 
-  // Auth tokens
+  // Tokens de autenticación
   const tokens: AuthTokens = {
     access: 'token',
     refresh: 'token',
@@ -35,20 +34,20 @@ const validateTypes = () => {
 
   // Login data
   const loginData: UserLoginData = {
-    email: 'test@test.com',
+    username: 'test',
     password: 'password',
   };
 
   // Register data
   const registerData: UserRegisterData = {
-    username: 'test',
     email: 'test@test.com',
     password: 'password',
+    password2: 'password',
     first_name: 'Test',
     last_name: 'User',
   };
 
-  // API Error
+  // Error de API
   const error: ApiError = {
     message: 'Error',
     errors: {},
@@ -62,17 +61,17 @@ const validateTypes = () => {
 const validateStore = async () => {
   const store = useUserStore.getState();
 
-  // State properties
+  // Propiedades de estado
   const user: User | null = store.user;
   const isLoading: boolean = store.isLoading;
   const error: string | null = store.error;
 
   // Action methods
-  await store.login('email', 'password');
+  await store.login('username', 'password');
   await store.register({
-    username: 'test',
     email: 'test@test.com',
     password: 'password',
+    password2: 'password',
     first_name: 'Test',
     last_name: 'User',
   });
@@ -93,19 +92,19 @@ const validateStore = async () => {
 // API Client validation
 const validateApiClient = async () => {
   // GET
-  const getResult = await api.get<UserResponse>('/users/1/');
+  const getResult = await api.get<User>('/users/1/');
 
   // POST
-  const postResult = await api.post<LoginResponse>('/auth/login/', {
-    email: 'test@test.com',
+  const postResult = await api.post<LoginResponse>('/users/login/', {
+    username: 'test',
     password: 'password',
   });
 
   // PUT
-  const putResult = await api.put<UserResponse>('/users/1/', {});
+  const putResult = await api.put<User>('/users/1/', {});
 
   // PATCH
-  const patchResult = await api.patch<UserResponse>('/users/1/', {});
+  const patchResult = await api.patch<User>('/users/1/', {});
 
   // DELETE
   await api.delete('/users/1/');
@@ -128,7 +127,7 @@ const validateTokenManager = () => {
   const accessToken: string | null = getAccessToken();
   const refreshToken: string | null = getRefreshToken();
 
-  // Clear tokens
+  // Limpia tokens
   clearTokens();
 
   // Check authentication
@@ -141,7 +140,7 @@ const validateTokenManager = () => {
   console.log('Token manager validation successful');
 };
 
-// Auth hook validation
+// Validación del hook de autenticación
 const validateAuthHook = async () => {
   const {
     user,
@@ -162,11 +161,11 @@ const validateAuthHook = async () => {
   const authType: boolean = isAuthenticated;
 
   // Method calls
-  await login('email', 'password');
+  await login('username', 'password');
   await register({
-    username: 'test',
     email: 'test@test.com',
     password: 'password',
+    password2: 'password',
     first_name: 'Test',
     last_name: 'User',
   });
@@ -174,7 +173,7 @@ const validateAuthHook = async () => {
   logout();
   cleanError();
 
-  console.log('Auth hook validation successful');
+  console.log('Validación del hook de autenticación successful');
 };
 
 export { validateTypes, validateStore, validateApiClient, validateTokenManager, validateAuthHook };

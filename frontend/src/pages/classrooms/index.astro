@@ -48,46 +48,54 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     </div>
   </div>
 
-  <div id="panel-backdrop" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50"></div>
-  <div id="classroom-panel" class="hidden fixed inset-y-0 right-0 z-50 w-96 bg-card border-l border-border p-6 shadow-xl overflow-y-auto">
-    <div class="flex items-center justify-between mb-6">
-      <h2 id="panel-title" class="text-lg font-semibold text-foreground">New Classroom</h2>
-      <button id="close-panel-btn" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+  <!-- Modal centrado -->
+  <div id="modal-backdrop" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-lg rounded-xl border border-border bg-background shadow-2xl max-h-[90vh] flex flex-col">
+      <!-- Cabecera -->
+      <div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+        <h2 id="modal-title" class="text-base font-semibold text-foreground">New Classroom</h2>
+        <button id="modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <!-- Scrollable body -->
+      <div class="overflow-y-auto flex-1 px-5 py-4">
+        <form id="classroom-form" class="space-y-4">
+          <input id="edit-id" type="hidden" value="" />
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Name *</label>
+            <input id="classroom-name" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Room 101" />
+          </div>
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Building *</label>
+            <input id="classroom-building" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Main Building" />
+          </div>
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Capacity *</label>
+            <input id="classroom-capacity" type="number" required min="1" value="30" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Type *</label>
+            <select id="classroom-type" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+              <option value="lecture">Lecture</option>
+              <option value="lab">Lab</option>
+              <option value="seminar">Seminar</option>
+            </select>
+          </div>
+          <div id="form-error" class="hidden text-xs text-red-400"></div>
+        </form>
+      </div>
+      <!-- Pie fijo -->
+      <div class="flex items-center justify-end gap-3 px-5 py-4 border-t border-border shrink-0">
+        <button id="modal-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
+        <button id="modal-save" type="submit" form="classroom-form" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">Save</button>
+      </div>
     </div>
-    <form id="classroom-form" class="space-y-4">
-      <input id="edit-id" type="hidden" value="" />
-      <div>
-        <label class="text-xs font-medium text-muted-foreground">Name *</label>
-        <input id="classroom-name" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Room 101" />
-      </div>
-      <div>
-        <label class="text-xs font-medium text-muted-foreground">Building *</label>
-        <input id="classroom-building" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Main Building" />
-      </div>
-      <div>
-        <label class="text-xs font-medium text-muted-foreground">Capacity *</label>
-        <input id="classroom-capacity" type="number" required min="1" value="30" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-      </div>
-      <div>
-        <label class="text-xs font-medium text-muted-foreground">Type *</label>
-        <select id="classroom-type" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="lecture">Lecture</option>
-          <option value="lab">Lab</option>
-          <option value="seminar">Seminar</option>
-        </select>
-      </div>
-      <div id="form-error" class="hidden text-xs text-red-400"></div>
-      <div class="flex gap-3 pt-2">
-        <button type="button" id="cancel-form-btn" class="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
-        <button type="submit" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Save</button>
-      </div>
-    </form>
   </div>
 </DashboardLayout>
 
 <script>
+  import { toast } from "@/components/starwind/toast";
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
   const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
@@ -170,13 +178,20 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     });
 
     tbody.querySelectorAll('.delete-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (!confirm('Delete this classroom?')) return;
+      btn.addEventListener('click', () => {
         const id = (btn as HTMLElement).dataset.id;
-        try {
-          await apiFetch(`/academic/classrooms/${id}/`, { method: 'DELETE' });
-          await loadClassrooms();
-        } catch { alert('Failed to delete classroom'); }
+        window.confirmAction({
+          title: "Delete Classroom",
+          description: "This action cannot be undone.",
+          confirmLabel: "Delete",
+          variant: "destructive",
+          onConfirm: async () => {
+            try {
+              await apiFetch(`/academic/classrooms/${id}/`, { method: 'DELETE' });
+              await loadClassrooms();
+            } catch { toast.error('Failed to delete classroom'); }
+          },
+        });
       });
     });
   }
@@ -197,7 +212,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   function openPanel(classroom = null) {
     document.getElementById('form-error')?.classList.add('hidden');
-    const title = document.getElementById('panel-title');
+    const title = document.getElementById('modal-title');
     const idEl = document.getElementById('edit-id') as HTMLInputElement;
 
     if (classroom) {
@@ -212,19 +227,18 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       if (idEl) idEl.value = '';
       (document.getElementById('classroom-form') as HTMLFormElement)?.reset();
     }
-    document.getElementById('panel-backdrop')?.classList.remove('hidden');
-    document.getElementById('classroom-panel')?.classList.remove('hidden');
+    document.getElementById('modal-backdrop')?.classList.remove('hidden');
   }
 
   function closePanel() {
-    document.getElementById('panel-backdrop')?.classList.add('hidden');
-    document.getElementById('classroom-panel')?.classList.add('hidden');
+    document.getElementById('modal-backdrop')?.classList.add('hidden');
   }
 
   document.getElementById('new-classroom-btn')?.addEventListener('click', () => openPanel());
-  document.getElementById('close-panel-btn')?.addEventListener('click', closePanel);
-  document.getElementById('cancel-form-btn')?.addEventListener('click', closePanel);
-  document.getElementById('panel-backdrop')?.addEventListener('click', closePanel);
+  document.getElementById('modal-close')?.addEventListener('click', closePanel);
+  document.getElementById('modal-cancel')?.addEventListener('click', closePanel);
+  document.getElementById('modal-backdrop')?.addEventListener('click', e => { if (e.target === e.currentTarget) closePanel(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
 
   document.getElementById('classroom-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -233,18 +247,18 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const name = (document.getElementById('classroom-name') as HTMLInputElement).value;
     const building = (document.getElementById('classroom-building') as HTMLInputElement).value;
     const capacity = parseInt((document.getElementById('classroom-capacity') as HTMLInputElement).value);
-    const room_type = (document.getElementById('classroom-type') as HTMLSelectElement).value;
+    const type = (document.getElementById('classroom-type') as HTMLSelectElement).value;
     try {
       if (id) {
-        await apiFetch(`/academic/classrooms/${id}/`, { method: 'PATCH', body: JSON.stringify({ name, building, capacity, room_type }) });
+        await apiFetch(`/academic/classrooms/${id}/`, { method: 'PATCH', body: JSON.stringify({ name, building, capacity, type }) });
       } else {
-        await apiFetch('/academic/classrooms/', { method: 'POST', body: JSON.stringify({ name, building, capacity, room_type }) });
+        await apiFetch('/academic/classrooms/', { method: 'POST', body: JSON.stringify({ name, building, capacity, type }) });
       }
       closePanel();
       await loadClassrooms();
     } catch {
       errEl?.classList.remove('hidden');
-      if (errEl) errEl.textContent = 'Failed to save classroom';
+      if (errEl) errEl.textContent = 'No se ha podido guardar classroom';
     }
   });
 

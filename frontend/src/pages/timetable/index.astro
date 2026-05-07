@@ -9,7 +9,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   </div>
 
   <div id="page-content" class="hidden">
-    <!-- Student timetable section -->
+    <!-- Sección de horario del estudiante -->
     <div id="timetable-student" class="hidden">
       <div class="flex items-center justify-between border-b border-border px-6 py-4">
         <div>
@@ -157,7 +157,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   if (role !== 's' && role !== 't') window.location.replace('/');
 
-  // Map student subject enrollment data into the same shape as class data
+  // Mapea datos de matrícula de asignaturas del estudiante a la misma forma que los datos de clase
   function normalizeStudentSubjects(subjects) {
     return subjects.map(s => ({
       id: s.class_id || s.id,
@@ -206,13 +206,13 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
     let gridHtml = `<div style="display:grid;grid-template-columns:70px repeat(${numCols},1fr);border:1px solid var(--color-border);border-radius:8px;overflow:hidden;">`;
 
-    // Header row
+    // Fila de cabecera
     gridHtml += `<div style="background:var(--color-muted);padding:8px;font-size:11px;font-weight:600;color:var(--color-muted-foreground);text-align:center;border-right:1px solid var(--color-border);border-bottom:1px solid var(--color-border);">TIME</div>`;
     days.forEach(d => {
       gridHtml += `<div style="background:var(--color-muted);padding:8px;font-size:11px;font-weight:600;color:var(--color-muted-foreground);text-align:center;border-right:1px solid var(--color-border);border-bottom:1px solid var(--color-border);">${DAY_NAMES[d === 0 ? 6 : d - 1]}</div>`;
     });
 
-    // Build class map: day -> hour -> class info
+    // Construye mapa de clases: día -> hora -> información de clase
     const cellMap = {};
     let colorIdx = 0;
     classes.forEach(c => {
@@ -255,7 +255,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     gridHtml += `</div>`;
     container.innerHTML = gridHtml;
 
-    // Table list
+    // Lista de tabla
     const tbody = document.getElementById(tableBodyId);
     const emptyEl = document.getElementById(emptyId);
     if (!tbody) return;

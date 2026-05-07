@@ -24,7 +24,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       <!-- KPI row -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="kpi-row"></div>
 
-      <!-- Subject tabs -->
+      <!-- Pestañas de asignaturas -->
       <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
         <h2 class="text-lg font-semibold text-foreground mb-4">Evaluations by Subject</h2>
         <div id="subject-tabs" class="flex gap-1 overflow-x-auto pb-2 mb-4 border-b border-border"></div>
@@ -39,6 +39,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
   const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
+  const RECENT_SUBJECTS_KEY = "academix:recent-subject-visits";
 
   function getUser() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
@@ -71,6 +72,31 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const d = document.createElement('div');
     d.textContent = String(str ?? '');
     return d.innerHTML;
+  }
+
+  function getClassId(item) {
+    return String(item?.class_id ?? item?.class?.id ?? item?.cls?.id ?? item?.id ?? "");
+  }
+
+  function getRecentSubjectIds() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(RECENT_SUBJECTS_KEY) ?? "[]");
+      if (!Array.isArray(parsed)) return [];
+      return parsed.map(entry => String(entry?.classId ?? entry?.id ?? entry ?? "")).filter(Boolean);
+    } catch {
+      return [];
+    }
+  }
+
+  function rememberSubjectVisit(classId) {
+    if (!classId) return;
+    const next = [
+      { classId, visitedAt: new Date().toISOString() },
+      ...getRecentSubjectIds()
+        .filter(id => id !== classId)
+        .map(id => ({ classId: id, visitedAt: null })),
+    ].slice(0, 20);
+    try { localStorage.setItem(RECENT_SUBJECTS_KEY, JSON.stringify(next)); } catch {}
   }
 
   function formatDate(str) {
@@ -158,11 +184,17 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         return;
       }
 
-      // Build tabs
+      // Construye pestañas
       const tabsEl = document.getElementById('subject-tabs');
       const panelsEl = document.getElementById('subject-panels');
+      const requestedClassId = new URLSearchParams(window.location.search).get('class');
+      const requestedIdx = requestedClassId
+        ? gradesData.findIndex(sub => getClassId(sub) === requestedClassId)
+        : -1;
+      const selectedIdx = requestedIdx >= 0 ? requestedIdx : 0;
 
       gradesData.forEach((sub, idx) => {
+        const classId = getClassId(sub);
         const subjectName = sub.subject_name || sub.class_name || sub.name || `Subject ${idx + 1}`;
         const tabId = `tab-${idx}`;
         const panelId = `panel-${idx}`;
@@ -170,9 +202,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         const tab = document.createElement('button');
         tab.id = tabId;
         tab.dataset.panel = panelId;
-        tab.className = `subject-tab px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors ${idx === 0 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`;
+        tab.dataset.subjectClassId = classId;
+        tab.className = `subject-tab px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors ${idx === selectedIdx ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`;
         tab.textContent = subjectName;
         tab.addEventListener('click', () => {
+          rememberSubjectVisit(tab.dataset.subjectClassId || '');
           document.querySelectorAll('.subject-tab').forEach(t => {
             t.className = 'subject-tab px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors text-muted-foreground hover:text-foreground hover:bg-muted';
           });
@@ -187,7 +221,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
         const panel = document.createElement('div');
         panel.id = panelId;
-        panel.className = `subject-panel ${idx !== 0 ? 'hidden' : ''}`;
+        panel.className = `subject-panel ${idx !== selectedIdx ? 'hidden' : ''}`;
         panel.innerHTML = `
           <div class="overflow-x-auto">
             <table class="w-full">
@@ -229,6 +263,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         `;
         panelsEl?.appendChild(panel);
       });
+      rememberSubjectVisit(getClassId(gradesData[selectedIdx]));
 
     } catch {
       document.getElementById('grades-empty')?.classList.remove('hidden');

@@ -4,9 +4,9 @@ import type { HTMLAttributes } from "astro/types";
 import { tv } from "tailwind-variants";
 
 type Props = Omit<HTMLAttributes<"input">, "type" | "autocomplete"> & {
-  /**
-   * The text to display when no results are found
-   * @default "No results found."
+    /**
+   * Texto que se muestra cuando no se encuentran resultados
+   * @default "No se han encontrado resultados."
    */
   emptyText?: string;
 };
@@ -21,7 +21,7 @@ export const selectSearch = tv({
 const {
   class: className,
   placeholder = "Search...",
-  emptyText = "No results found.",
+  emptyText = "No se han encontrado resultados.",
   ...rest
 } = Astro.props;
 ---

@@ -5,8 +5,8 @@ import { tv, type VariantProps } from "tailwind-variants";
 
 type Props = Omit<HTMLAttributes<"button">, "role" | "type"> &
   VariantProps<typeof selectTrigger> & {
-    /**
-     * The content to be rendered inside the select trigger
+        /**
+     * Contenido que se renderizará dentro del disparador del selector
      */
     children: any;
   };

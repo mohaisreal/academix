@@ -37,6 +37,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
   const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
+  const RECENT_SUBJECTS_KEY = "academix:recent-subject-visits";
 
   function getUser() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
@@ -71,6 +72,31 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     return d.innerHTML;
   }
 
+  function getClassId(item) {
+    return String(item?.class_id ?? item?.class?.id ?? item?.cls?.id ?? item?.id ?? "");
+  }
+
+  function getRecentSubjectIds() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(RECENT_SUBJECTS_KEY) ?? "[]");
+      if (!Array.isArray(parsed)) return [];
+      return parsed.map(entry => String(entry?.classId ?? entry?.id ?? entry ?? "")).filter(Boolean);
+    } catch {
+      return [];
+    }
+  }
+
+  function rememberSubjectVisit(classId) {
+    if (!classId) return;
+    const next = [
+      { classId, visitedAt: new Date().toISOString() },
+      ...getRecentSubjectIds()
+        .filter(id => id !== classId)
+        .map(id => ({ classId: id, visitedAt: null })),
+    ].slice(0, 20);
+    try { localStorage.setItem(RECENT_SUBJECTS_KEY, JSON.stringify(next)); } catch {}
+  }
+
   function initials(name) {
     if (!name) return '??';
     return name.split(' ').map(p => p[0]).join('').toUpperCase().substring(0, 2);
@@ -91,10 +117,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         return;
       }
 
-      // Set period badge from first subject
+      // Establece la insignia de periodo desde la primera asignatura
       if (badge && subjects[0]?.period_name) badge.textContent = subjects[0].period_name;
 
       grid.innerHTML = subjects.map(s => {
+        const classId = getClassId(s);
         const name = s.subject_name || s.name || 'Subject';
         const code = s.subject_code || s.code || '';
         const teacher = s.teacher_name || s.teacher || 'Unknown Teacher';
@@ -131,12 +158,16 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
               </div>
             </div>
             ${slotText ? `<p class="text-xs text-muted-foreground">Next: ${escHtml(slotText)}</p>` : ''}
-            <a href="/grades" class="mt-auto inline-flex items-center justify-center rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors">
+            <a href="/grades${classId ? `?class=${encodeURIComponent(classId)}` : ''}" data-subject-class-id="${escHtml(classId)}" class="mt-auto inline-flex items-center justify-center rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors">
               View Grades
             </a>
           </div>
         `;
       }).join('');
+
+      grid.querySelectorAll('[data-subject-class-id]').forEach(el => {
+        el.addEventListener('click', () => rememberSubjectVisit(el.dataset.subjectClassId || ''));
+      });
 
     } catch {
       document.getElementById('subjects-empty')?.classList.remove('hidden');
