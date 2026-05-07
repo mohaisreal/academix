@@ -1,0 +1,646 @@
+---
+import DashboardLayout from "@/layouts/DashboardLayout.astro";
+---
+
+<DashboardLayout title="Gestión de admisiones — Academix" currentPath="/management/admissions">
+    <!-- Cabecera -->
+    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+        <div>
+            <h1 class="text-xl font-semibold text-foreground">Admission Applications</h1>
+            <p class="text-sm text-muted-foreground">Review and manage all student admission applications.</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <!-- Insignia de atención: se muestra cuando hay elementos accionables -->
+            <span id="needs-attention-badge" class="hidden items-center gap-1.5 rounded-full bg-yellow-500/15 border border-yellow-500/30 px-3 py-1 text-xs font-semibold text-yellow-500">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span id="needs-attention-text"></span>
+            </span>
+            <span id="total-count" class="text-sm text-muted-foreground bg-muted px-3 py-1.5 rounded-full"></span>
+            <button id="btn-refresh" class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                Refresh
+            </button>
+        </div>
+    </div>
+
+    <div class="p-6 space-y-5">
+        <!-- Píldoras de estado de filtro rápido -->
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-medium text-muted-foreground mr-1">Quick filter:</span>
+            <button class="status-pill active" data-status="">
+                All
+            </button>
+            <button class="status-pill" data-status="submitted">
+                <span class="size-1.5 rounded-full bg-blue-500 inline-block"></span>
+                Submitted
+            </button>
+            <button class="status-pill" data-status="under_review">
+                <span class="size-1.5 rounded-full bg-yellow-500 inline-block"></span>
+                Under Review
+            </button>
+            <button class="status-pill" data-status="admitted">
+                <span class="size-1.5 rounded-full bg-green-500 inline-block"></span>
+                Admitted
+            </button>
+            <button class="status-pill" data-status="rejected">
+                <span class="size-1.5 rounded-full bg-red-500 inline-block"></span>
+                Rejected
+            </button>
+            <button class="status-pill" data-status="confirmed">
+                <span class="size-1.5 rounded-full bg-emerald-500 inline-block"></span>
+                Confirmed
+            </button>
+            <button class="status-pill" data-status="waitlisted">
+                <span class="size-1.5 rounded-full bg-orange-500 inline-block"></span>
+                Waitlisted
+            </button>
+        </div>
+
+        <!-- Fila de filtros adicionales -->
+        <div class="flex flex-wrap items-center gap-3">
+            <div class="relative">
+                <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="search-input" type="text" placeholder="Search student or career..." class="pl-8 pr-3 py-2 rounded-md border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30 w-56" />
+            </div>
+            <select id="filter-career" class="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30">
+                <option value="">All Careers</option>
+            </select>
+        </div>
+
+        <!-- Ranking generation -->
+        <section class="rounded-xl border border-border bg-card p-4 space-y-4 shadow-sm">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h2 class="text-sm font-semibold text-foreground">Admission lists</h2>
+                    <p class="text-xs text-muted-foreground mt-1">
+                        Generate admitted/waitlisted results by career capacity, then publish them to the public results page.
+                    </p>
+                </div>
+                <a href="/admissions/results" target="_blank" rel="noopener noreferrer" class="text-xs font-medium text-primary hover:underline">
+                    Open public results →
+                </a>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <label class="space-y-1">
+                    <span class="text-xs font-medium text-muted-foreground">Academic period</span>
+                    <select id="ranking-period" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30">
+                        <option value="">Loading periods...</option>
+                    </select>
+                </label>
+                <label class="space-y-1">
+                    <span class="text-xs font-medium text-muted-foreground">Career</span>
+                    <select id="ranking-career" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30">
+                        <option value="">Loading careers...</option>
+                    </select>
+                </label>
+                <label class="space-y-1">
+                    <span class="text-xs font-medium text-muted-foreground">Score source</span>
+                    <select id="ranking-source" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30">
+                        <option value="admission_score">Calculated admission score</option>
+                        <option value="questionnaire_average">Questionnaire field average</option>
+                    </select>
+                </label>
+                <label class="space-y-1">
+                    <span class="text-xs font-medium text-muted-foreground">Question IDs</span>
+                    <input id="ranking-question-ids" type="text" placeholder="e.g. 12,15,18" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30" />
+                </label>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <button id="btn-generate-ranking" class="inline-flex items-center justify-center rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+                    Generate draft
+                </button>
+                <button id="btn-generate-publish" class="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                    Generate and publish
+                </button>
+                <button id="btn-publish-ranking" class="inline-flex items-center justify-center rounded-md border border-primary/40 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10 transition-colors">
+                    Publish existing draft
+                </button>
+                <p class="text-xs text-muted-foreground">
+                    “Questionnaire average” requires question IDs with numeric answers.
+                </p>
+            </div>
+
+            <div id="ranking-feedback" class="hidden rounded-lg border px-3 py-2 text-sm"></div>
+        </section>
+
+        <!-- Cargando -->
+        <div id="loading-state" class="space-y-2">
+            <div class="h-16 bg-muted animate-pulse rounded-xl"></div>
+            <div class="h-16 bg-muted animate-pulse rounded-xl"></div>
+            <div class="h-16 bg-muted animate-pulse rounded-xl"></div>
+        </div>
+
+        <!-- Tabla -->
+        <div id="table-wrapper" class="hidden bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-border bg-muted/30">
+                        <th class="text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">Student</th>
+                        <th class="text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">Career</th>
+                        <th class="text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">Period</th>
+                        <th class="text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">Status</th>
+                        <th class="text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">Submitted</th>
+                        <th class="text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="applications-tbody"></tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div id="pagination-wrapper" class="hidden items-center justify-between rounded-xl border border-border bg-card px-4 py-3 shadow-sm">
+            <p id="pagination-summary" class="text-sm text-muted-foreground"></p>
+            <div class="flex items-center gap-2">
+                <button id="btn-prev-page" class="inline-flex items-center rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent">
+                    Previous
+                </button>
+                <span id="pagination-page" class="min-w-20 text-center text-sm font-medium text-foreground"></span>
+                <button id="btn-next-page" class="inline-flex items-center rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent">
+                    Next
+                </button>
+            </div>
+        </div>
+
+        <!-- Vacío -->
+        <div id="empty-state" class="hidden">
+            <div class="flex flex-col items-center justify-center py-16 text-center">
+                <div class="flex size-16 items-center justify-center rounded-full bg-muted mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                </div>
+                <h3 class="text-base font-medium text-foreground">No applications found</h3>
+                <p id="empty-message" class="text-sm text-muted-foreground mt-1">No applications match the selected filters.</p>
+                <button id="btn-clear-filters" class="mt-4 text-sm text-primary hover:underline">Clear all filters</button>
+            </div>
+        </div>
+
+        <!-- Error -->
+        <div id="error-state" class="hidden rounded-xl border border-destructive/30 bg-destructive/10 p-5 flex items-start gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-destructive mt-0.5 shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div>
+                <p class="text-sm font-medium text-destructive">Failed to load applications</p>
+                <p id="error-message" class="text-sm text-destructive/80 mt-0.5"></p>
+                <button id="btn-retry" class="mt-2 text-sm text-destructive underline hover:no-underline">Try again</button>
+            </div>
+        </div>
+    </div>
+</DashboardLayout>
+
+<style>
+    @reference "../../../styles/starwind.css";
+
+    .status-pill {
+        @apply inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 hover:bg-muted transition-colors cursor-pointer;
+    }
+    .status-pill.active {
+        @apply bg-foreground text-background border-foreground;
+    }
+</style>
+
+<script>
+    const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
+    const token = localStorage.getItem("access_token");
+
+    function getUser(): Record<string, any> | null {
+        try {
+            const stored = localStorage.getItem("user-storage");
+            if (!stored) return null;
+            return JSON.parse(stored)?.state?.user ?? null;
+        } catch { return null; }
+    }
+
+    if (!token) { window.location.replace("/login"); }
+    const user = getUser();
+    if (!user) { window.location.replace("/login"); }
+    if (!["m", "a"].includes(user?.role)) { window.location.replace("/"); }
+
+    const STATUS_BADGES: Record<string, string> = {
+        draft: "bg-gray-500/15 text-gray-400 border border-gray-500/20",
+        submitted: "bg-blue-500/15 text-blue-400 border border-blue-500/20",
+        under_review: "bg-yellow-500/15 text-yellow-400 border border-yellow-500/20",
+        admitted: "bg-green-500/15 text-green-400 border border-green-500/20",
+        waitlisted: "bg-orange-500/15 text-orange-400 border border-orange-500/20",
+        rejected: "bg-red-500/15 text-red-400 border border-red-500/20",
+        confirmed: "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20",
+        withdrawn: "bg-gray-500/15 text-gray-400 border border-gray-500/20",
+        expired: "bg-red-500/15 text-red-400 border border-red-500/20",
+    };
+
+    const STATUS_LABELS: Record<string, string> = {
+        draft: "Draft", submitted: "Submitted", under_review: "Under Review",
+        admitted: "Admitted", waitlisted: "Waitlisted", rejected: "Rejected",
+        confirmed: "Confirmed", withdrawn: "Withdrawn", expired: "Expired",
+    };
+
+    // Estados que necesitan atención de administración
+    const ACTION_NEEDED = ["submitted", "under_review"];
+
+    let allApplications: any[] = [];
+    let careersList: any[] = [];
+    let periodsList: any[] = [];
+    let activeStatusFilter = "";
+    let activeSearchQuery = "";
+    let currentPage = 1;
+    let pagination = {
+        count: 0,
+        next: null as string | null,
+        previous: null as string | null,
+    };
+    const PAGE_SIZE = 20;
+
+    async function apiFetch(path: string, options: RequestInit = {}) {
+        const body = options.body;
+        const headers: Record<string, string> = {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/json",
+            ...(body && !(body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
+            ...((options.headers as Record<string, string> | undefined) ?? {}),
+        };
+        const res = await fetch(`${API_URL}${path}`, {
+            ...options,
+            headers,
+        });
+        if (res.status === 401) { window.location.replace("/login"); throw new Error("Unauthorized"); }
+        return res;
+    }
+
+    async function loadCareers() {
+        try {
+            const res = await apiFetch("/academic/careers/");
+            if (!res.ok) return;
+            const data = await res.json();
+            careersList = Array.isArray(data) ? data : (data.results ?? []);
+
+            const filterSelect = document.getElementById("filter-career") as HTMLSelectElement;
+            filterSelect.innerHTML = `<option value="">All Careers</option>`;
+            careersList.forEach((c: any) => {
+                filterSelect.appendChild(new Option(c.name, String(c.id)));
+            });
+
+            const rankingSelect = document.getElementById("ranking-career") as HTMLSelectElement;
+            rankingSelect.innerHTML = `<option value="">Select career</option>`;
+            careersList.forEach((c: any) => {
+                const spots = Number(c.total_spots ?? 0);
+                rankingSelect.appendChild(new Option(`${c.name}${spots ? ` (${spots} spots)` : ""}`, String(c.id)));
+            });
+        } catch {}
+    }
+
+    async function loadPeriods() {
+        const select = document.getElementById("ranking-period") as HTMLSelectElement;
+        try {
+            const res = await apiFetch("/academic/periods/");
+            if (!res.ok) {
+                select.innerHTML = `<option value="">Could not load periods</option>`;
+                return;
+            }
+            const data = await res.json();
+            periodsList = Array.isArray(data) ? data : (data.results ?? []);
+            select.innerHTML = `<option value="">Select period</option>`;
+            periodsList.forEach((p: any) => {
+                const label = `${p.name}${p.is_active ? " · active" : ""}`;
+                const opt = new Option(label, String(p.id));
+                if (p.is_active) opt.selected = true;
+                select.appendChild(opt);
+            });
+        } catch {
+            select.innerHTML = `<option value="">Could not load periods</option>`;
+        }
+    }
+
+    function getPreferenceCareerIds(app: any): string[] {
+        const ids = new Set<string>();
+        if (app.assigned_career_id) ids.add(String(app.assigned_career_id));
+        (app.preferences ?? []).forEach((p: any) => {
+            const id = p.career_id_ro ?? p.career_id ?? p.career?.id;
+            if (id) ids.add(String(id));
+        });
+        return Array.from(ids);
+    }
+
+    function getCareerSummary(app: any): string {
+        if (app.assigned_career_name) return app.assigned_career_name;
+        if (app.career_name) return app.career_name;
+        const preferences = Array.isArray(app.preferences) ? app.preferences : [];
+        if (preferences.length > 0) {
+            return preferences
+                .slice()
+                .sort((a: any, b: any) => (a.preference_order ?? 999) - (b.preference_order ?? 999))
+                .map((p: any) => `${p.preference_order ?? "?"}. ${p.career_name ?? p.career_code ?? "Career"}`)
+                .join("<br>");
+        }
+        return "—";
+    }
+
+    function applyFilters() {
+        currentPage = 1;
+        loadApplications();
+    }
+
+    function buildApplicationsPath(page = currentPage) {
+        const params = new URLSearchParams();
+        params.set("page", String(page));
+
+        if (activeStatusFilter) {
+            params.set("status", activeStatusFilter);
+        }
+
+        const career = (document.getElementById("filter-career") as HTMLSelectElement).value;
+        if (career) {
+            params.set("career", career);
+        }
+
+        if (activeSearchQuery) {
+            params.set("search", activeSearchQuery);
+        }
+
+        return `/admissions/applications/?${params.toString()}`;
+    }
+
+    function renderApplications(apps: any[]) {
+        const loading = document.getElementById("loading-state")!;
+        const tableWrapper = document.getElementById("table-wrapper")!;
+        const empty = document.getElementById("empty-state")!;
+        const tbody = document.getElementById("applications-tbody")!;
+        const totalCount = document.getElementById("total-count")!;
+        const attentionBadge = document.getElementById("needs-attention-badge")!;
+        const attentionText = document.getElementById("needs-attention-text")!;
+        const paginationWrapper = document.getElementById("pagination-wrapper")!;
+
+        loading.classList.add("hidden");
+        totalCount.textContent = `${pagination.count} application${pagination.count !== 1 ? "s" : ""}`;
+
+        // Cuenta elementos accionables de la página cargada.
+        const actionNeededCount = allApplications.filter(a => ACTION_NEEDED.includes(a.status)).length;
+        if (actionNeededCount > 0) {
+            attentionText.textContent = `${actionNeededCount} need${actionNeededCount === 1 ? "s" : ""} attention`;
+            attentionBadge.classList.remove("hidden");
+            attentionBadge.classList.add("inline-flex");
+        } else {
+            attentionBadge.classList.add("hidden");
+            attentionBadge.classList.remove("inline-flex");
+        }
+
+        if (apps.length === 0) {
+            tableWrapper.classList.add("hidden");
+            empty.classList.remove("hidden");
+            paginationWrapper.classList.add("hidden");
+            paginationWrapper.classList.remove("flex");
+            return;
+        }
+
+        empty.classList.add("hidden");
+        tableWrapper.classList.remove("hidden");
+        renderPagination();
+
+        tbody.innerHTML = apps.map(app => {
+            const studentName = app.student_name ?? (app.student
+                ? `${app.student.first_name ?? ""} ${app.student.last_name ?? ""}`.trim() || app.student.username
+                : "—");
+            const studentEmail = app.student_email ?? app.student?.email ?? "";
+            const careerName = getCareerSummary(app);
+            const periodName = app.academic_period_name ?? app.academic_period?.name ?? "—";
+            const status = app.status ?? "draft";
+            const badgeClass = STATUS_BADGES[status] ?? "bg-gray-500/15 text-gray-400";
+            const submitted = (app.submission_date ?? app.submitted_at)
+                ? new Date(app.submission_date ?? app.submitted_at).toLocaleDateString()
+                : "—";
+            const isActionable = ACTION_NEEDED.includes(status);
+
+            return `
+            <tr class="border-b border-border hover:bg-muted/30 transition-colors cursor-pointer ${isActionable ? "bg-yellow-500/5" : ""}" data-href="/management/admissions/${app.id}">
+                <td class="px-5 py-3.5">
+                    <div class="flex items-center gap-2.5">
+                        <div class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                            ${(studentName.split(" ").map((n: string) => n[0] ?? "").join("").substring(0, 2)).toUpperCase()}
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-foreground">${studentName}</p>
+                            <p class="text-xs text-muted-foreground">${studentEmail}</p>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-5 py-3.5 text-sm text-foreground">${careerName}</td>
+                <td class="px-5 py-3.5 text-sm text-muted-foreground">${periodName}</td>
+                <td class="px-5 py-3.5">
+                    <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${badgeClass}">${STATUS_LABELS[status] ?? status}</span>
+                </td>
+                <td class="px-5 py-3.5 text-sm text-muted-foreground">${submitted}</td>
+                <td class="px-5 py-3.5 text-right">
+                    ${isActionable
+                        ? `<a href="/management/admissions/${app.id}" class="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors" onclick="event.stopPropagation()">
+                            Review
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                           </a>`
+                        : `<a href="/management/admissions/${app.id}" class="text-xs text-primary hover:underline" onclick="event.stopPropagation()">View →</a>`
+                    }
+                </td>
+            </tr>`;
+        }).join("");
+
+        // Row click navigation
+        tbody.querySelectorAll("tr[data-href]").forEach(row => {
+            row.addEventListener("click", (e: Event) => {
+                const target = e.target as HTMLElement;
+                if (target.tagName === "A" || target.closest("a")) return;
+                window.location.href = (row as HTMLElement).dataset.href!;
+            });
+        });
+    }
+
+    function renderPagination() {
+        const wrapper = document.getElementById("pagination-wrapper")!;
+        const summary = document.getElementById("pagination-summary")!;
+        const pageLabel = document.getElementById("pagination-page")!;
+        const prevButton = document.getElementById("btn-prev-page") as HTMLButtonElement;
+        const nextButton = document.getElementById("btn-next-page") as HTMLButtonElement;
+        const totalPages = Math.max(1, Math.ceil(pagination.count / PAGE_SIZE));
+        const start = pagination.count === 0 ? 0 : ((currentPage - 1) * PAGE_SIZE) + 1;
+        const end = Math.min(currentPage * PAGE_SIZE, pagination.count);
+
+        summary.textContent = `Showing ${start}-${end} of ${pagination.count}`;
+        pageLabel.textContent = `Page ${currentPage} / ${totalPages}`;
+        prevButton.disabled = !pagination.previous;
+        nextButton.disabled = !pagination.next;
+
+        if (pagination.count > PAGE_SIZE) {
+            wrapper.classList.remove("hidden");
+            wrapper.classList.add("flex");
+        } else {
+            wrapper.classList.add("hidden");
+            wrapper.classList.remove("flex");
+        }
+    }
+
+    async function loadApplications() {
+        document.getElementById("table-wrapper")?.classList.add("hidden");
+        document.getElementById("pagination-wrapper")?.classList.add("hidden");
+        document.getElementById("pagination-wrapper")?.classList.remove("flex");
+        document.getElementById("empty-state")?.classList.add("hidden");
+        document.getElementById("error-state")?.classList.add("hidden");
+        document.getElementById("loading-state")?.classList.remove("hidden");
+
+        try {
+            const res = await apiFetch(buildApplicationsPath());
+            if (!res.ok) {
+                document.getElementById("loading-state")?.classList.add("hidden");
+                document.getElementById("error-message")!.textContent = `Failed to load (${res.status})`;
+                document.getElementById("error-state")?.classList.remove("hidden");
+                return;
+            }
+            const data = await res.json();
+            allApplications = Array.isArray(data) ? data : (data.results ?? []);
+            pagination = Array.isArray(data)
+                ? { count: allApplications.length, next: null, previous: null }
+                : {
+                    count: Number(data.count ?? allApplications.length),
+                    next: data.next ?? null,
+                    previous: data.previous ?? null,
+                };
+            renderApplications(allApplications);
+        } catch {
+            document.getElementById("loading-state")?.classList.add("hidden");
+            document.getElementById("error-message")!.textContent = "Network error. Please check your connection.";
+            document.getElementById("error-state")?.classList.remove("hidden");
+        }
+    }
+
+    function setRankingFeedback(message: string, variant: "success" | "error" | "info" = "info") {
+        const el = document.getElementById("ranking-feedback")!;
+        el.classList.remove("hidden", "border-emerald-500/30", "bg-emerald-500/10", "text-emerald-300", "border-destructive/30", "bg-destructive/10", "text-destructive", "border-border", "bg-muted/40", "text-muted-foreground");
+        const classes = variant === "success"
+            ? ["border-emerald-500/30", "bg-emerald-500/10", "text-emerald-300"]
+            : variant === "error"
+                ? ["border-destructive/30", "bg-destructive/10", "text-destructive"]
+                : ["border-border", "bg-muted/40", "text-muted-foreground"];
+        el.classList.add(...classes);
+        el.textContent = message;
+    }
+
+    function getRankingPayload(publish = false) {
+        const periodId = (document.getElementById("ranking-period") as HTMLSelectElement).value;
+        const careerId = (document.getElementById("ranking-career") as HTMLSelectElement).value;
+        const scoreSource = (document.getElementById("ranking-source") as HTMLSelectElement).value;
+        const questionText = (document.getElementById("ranking-question-ids") as HTMLInputElement).value.trim();
+        const questionIds = questionText
+            ? questionText.split(",").map(v => Number(v.trim())).filter(v => Number.isFinite(v) && v > 0)
+            : [];
+
+        if (!periodId || !careerId) {
+            throw new Error("Select an academic period and a career first.");
+        }
+        if (scoreSource === "questionnaire_average" && questionIds.length === 0) {
+            throw new Error("Questionnaire average requires at least one numeric question ID.");
+        }
+
+        return {
+            academic_period_id: Number(periodId),
+            career_id: Number(careerId),
+            score_source: scoreSource,
+            question_ids: questionIds,
+            publish,
+        };
+    }
+
+    async function runRanking(publish = false) {
+        try {
+            setRankingFeedback(publish ? "Generating and publishing list..." : "Generating draft list...", "info");
+            const payload = getRankingPayload(publish);
+            const res = await apiFetch("/admissions/applications/generate-ranking/", {
+                method: "POST",
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.detail || data.error || `Ranking failed (${res.status}).`);
+            }
+            const admitted = (data.results ?? []).filter((r: any) => r.status === "admitted").length;
+            const waitlisted = (data.results ?? []).filter((r: any) => r.status === "waitlisted").length;
+            setRankingFeedback(
+                publish
+                    ? `Published for ${data.career_name}: ${admitted} admitted, ${waitlisted} waitlisted. Capacity: ${data.capacity}.`
+                    : `Draft generated for ${data.career_name}: ${admitted} would be admitted, ${waitlisted} would be waitlisted. Nothing has been published yet.`,
+                "success",
+            );
+            if (publish) {
+                await loadApplications();
+            }
+        } catch (err) {
+            setRankingFeedback(err instanceof Error ? err.message : "Could not generate ranking.", "error");
+        }
+    }
+
+    async function publishRanking() {
+        try {
+            const periodId = (document.getElementById("ranking-period") as HTMLSelectElement).value;
+            const careerId = (document.getElementById("ranking-career") as HTMLSelectElement).value;
+            if (!periodId || !careerId) {
+                throw new Error("Select an academic period and a career first.");
+            }
+            setRankingFeedback("Publishing existing list...", "info");
+            const res = await apiFetch("/admissions/applications/publish-ranking/", {
+                method: "POST",
+                body: JSON.stringify({
+                    academic_period_id: Number(periodId),
+                    career_id: Number(careerId),
+                }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.detail || data.error || `Publish failed (${res.status}).`);
+            }
+            setRankingFeedback(`Published ${data.published ?? 0} result rows.`, "success");
+            await loadApplications();
+        } catch (err) {
+            setRankingFeedback(err instanceof Error ? err.message : "Could not publish ranking.", "error");
+        }
+    }
+
+    // Alternador de píldora de estado
+    document.querySelectorAll<HTMLButtonElement>(".status-pill").forEach(pill => {
+        pill.addEventListener("click", () => {
+            document.querySelectorAll(".status-pill").forEach(p => p.classList.remove("active"));
+            pill.classList.add("active");
+            activeStatusFilter = pill.dataset.status ?? "";
+            applyFilters();
+        });
+    });
+
+    // Búsqueda
+    document.getElementById("search-input")?.addEventListener("input", (e: Event) => {
+        activeSearchQuery = (e.target as HTMLInputElement).value.trim();
+        applyFilters();
+    });
+
+    document.getElementById("filter-career")?.addEventListener("change", applyFilters);
+    document.getElementById("btn-generate-ranking")?.addEventListener("click", () => runRanking(false));
+    document.getElementById("btn-generate-publish")?.addEventListener("click", () => runRanking(true));
+    document.getElementById("btn-publish-ranking")?.addEventListener("click", publishRanking);
+    document.getElementById("btn-refresh")?.addEventListener("click", loadApplications);
+    document.getElementById("btn-retry")?.addEventListener("click", loadApplications);
+    document.getElementById("btn-prev-page")?.addEventListener("click", () => {
+        if (!pagination.previous || currentPage <= 1) return;
+        currentPage -= 1;
+        loadApplications();
+    });
+    document.getElementById("btn-next-page")?.addEventListener("click", () => {
+        if (!pagination.next) return;
+        currentPage += 1;
+        loadApplications();
+    });
+
+    document.getElementById("btn-clear-filters")?.addEventListener("click", () => {
+        activeStatusFilter = "";
+        activeSearchQuery = "";
+        (document.getElementById("search-input") as HTMLInputElement).value = "";
+        (document.getElementById("filter-career") as HTMLSelectElement).value = "";
+        document.querySelectorAll(".status-pill").forEach(p => p.classList.remove("active"));
+        document.querySelector<HTMLButtonElement>('.status-pill[data-status=""]')?.classList.add("active");
+        applyFilters();
+    });
+
+    loadCareers();
+    loadPeriods();
+    loadApplications();
+</script>

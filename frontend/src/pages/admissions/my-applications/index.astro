@@ -1,0 +1,398 @@
+---
+import DashboardLayout from "@/layouts/DashboardLayout.astro";
+---
+
+<DashboardLayout title="Mis Preinscripciones — Academix" currentPath="/admissions/my-applications">
+    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+        <div>
+            <h1 class="text-xl font-semibold text-foreground">Mis preinscripciones</h1>
+            <p class="text-sm text-muted-foreground">Seguimiento de todas tus solicitudes de admisión.</p>
+        </div>
+        <a id="btn-nueva-preinscripcion" href="/admissions/preinscripcion"
+            class="hidden items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nueva preinscripción
+        </a>
+    </div>
+
+    <!-- Banner de solicitud activa — se muestra cuando el estudiante ya tiene una solicitud viva -->
+    <div id="active-app-banner" class="hidden mx-6 mt-5 rounded-xl border-2 border-amber-500/40 bg-amber-500/10 px-5 py-4 flex items-start gap-3">
+        <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-500/20 mt-0.5">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber-500"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div>
+            <p class="text-sm font-semibold text-amber-600">Ya tienes una preinscripción activa</p>
+            <p class="text-xs text-amber-600/80 mt-0.5">Tu solicitud está en proceso. No puedes crear una nueva hasta que la actual se resuelva, expire o la rechacen.</p>
+        </div>
+    </div>
+
+    <!-- Submitted success banner -->
+    <div id="submitted-banner" class="hidden mx-6 mt-5 rounded-xl border-2 border-emerald-500/40 bg-emerald-500/10 px-5 py-4 flex items-start gap-3">
+        <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 mt-0.5">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-emerald-500"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div>
+            <p class="text-sm font-semibold text-emerald-600">¡Preinscripción enviada correctamente!</p>
+            <p class="text-xs text-emerald-600/80 mt-0.5">Tu solicitud fue registrada. Te notificaremos cuando haya una resolución.</p>
+        </div>
+    </div>
+
+    <div class="p-6 space-y-4">
+        <!-- Cargando -->
+        <div id="loading-state" class="space-y-3">
+            <div class="h-32 bg-muted animate-pulse rounded-xl"></div>
+            <div class="h-32 bg-muted animate-pulse rounded-xl"></div>
+        </div>
+
+        <!-- Applications list -->
+        <div id="apps-list" class="hidden space-y-4"></div>
+
+        <!-- Estado vacío -->
+        <div id="empty-state" class="hidden text-center py-16">
+            <div class="flex size-16 items-center justify-center rounded-full bg-muted mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <h3 class="text-base font-medium text-foreground">Sin preinscripciones</h3>
+            <p class="text-sm text-muted-foreground mt-1">Todavía no realizaste ninguna solicitud de admisión.</p>
+            <a href="/admissions/preinscripcion" class="inline-flex items-center gap-2 mt-4 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                Iniciar preinscripción
+            </a>
+        </div>
+
+        <!-- Estado de error -->
+        <div id="error-state" class="hidden rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+            <p class="text-sm font-medium text-destructive">Error al cargar las solicitudes</p>
+            <p id="error-message" class="text-sm text-destructive/80 mt-1"></p>
+        </div>
+
+        <div id="action-feedback" class="hidden rounded-lg border p-3 text-sm"></div>
+    </div>
+</DashboardLayout>
+
+<script>
+    const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
+    const token = localStorage.getItem("access_token");
+
+    function getUser(): Record<string, any> | null {
+        try {
+            const stored = localStorage.getItem("user-storage");
+            if (!stored) return null;
+            return JSON.parse(stored)?.state?.user ?? null;
+        } catch { return null; }
+    }
+
+    if (!token) window.location.replace("/login");
+    const user = getUser();
+    if (!user || user.role !== "s") window.location.replace("/login");
+
+    // Muestra el banner de enviada si se redirigió desde el asistente
+    if (new URLSearchParams(window.location.search).get("submitted") === "1") {
+        document.getElementById("submitted-banner")!.classList.remove("hidden");
+        history.replaceState({}, "", window.location.pathname);
+    }
+
+    const STATUS_CONFIG: Record<string, { label: string; badge: string; description: string }> = {
+        draft:                   { label: "Borrador",                  badge: "bg-gray-100 text-gray-600",     description: "Tu preinscripción está en borrador." },
+        submitted:               { label: "Enviada",                   badge: "bg-blue-100 text-blue-700",     description: "Tu preinscripción ha sido enviada y está pendiente de revisión." },
+        under_review:            { label: "En revisión",               badge: "bg-yellow-100 text-yellow-700", description: "Tu solicitud está siendo revisada por el equipo de admisiones." },
+        provisional_admitted:    { label: "Admitido provisionalmente", badge: "bg-emerald-100 text-emerald-700", description: "Admitido en la resolución provisional. Puedes reclamar si hay algún error." },
+        provisional_waitlisted:  { label: "Lista de espera prov.",     badge: "bg-orange-100 text-orange-700", description: "En lista de espera en la resolución provisional." },
+        provisional_rejected:    { label: "No admitido prov.",         badge: "bg-red-100 text-red-600",       description: "No admitido en la resolución provisional." },
+        admitted:                { label: "Plaza asignada",            badge: "bg-green-100 text-green-700",   description: "Has obtenido plaza. Confirmá antes de que expire el plazo." },
+        waitlisted:              { label: "Lista de espera",           badge: "bg-orange-100 text-orange-700", description: "Estás en lista de espera definitiva." },
+        rejected:                { label: "No admitido",               badge: "bg-red-100 text-red-700",       description: "No has sido admitido en la resolución definitiva." },
+        confirmed:               { label: "Plaza confirmada",          badge: "bg-teal-100 text-teal-700",     description: "Plaza confirmada. Puedes proceder con la matrícula." },
+        completed:               { label: "Completada",                badge: "bg-gray-100 text-gray-600",     description: "Proceso completado." },
+        withdrawn:               { label: "Renunciada",                badge: "bg-gray-100 text-gray-500",     description: "Has renunciado a esta plaza." },
+        expired:                 { label: "Expirada",                  badge: "bg-red-100 text-red-700",       description: "El plazo de confirmación ha expirado." },
+    };
+
+    async function apiFetch(path: string, opts: RequestInit = {}) {
+        const res = await fetch(`${API_URL}${path}`, {
+            ...opts,
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Accept": "application/json",
+                ...(!opts.body || opts.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+                ...(opts.headers || {}),
+            },
+        });
+        if (res.status === 401) { window.location.replace("/login"); throw new Error("Unauthorized"); }
+        return res;
+    }
+
+    function showFeedback(msg: string, isError = false) {
+        const el = document.getElementById("action-feedback")!;
+        el.textContent = msg;
+        el.className = `rounded-lg border p-3 text-sm ${isError ? "border-destructive/30 bg-destructive/10 text-destructive" : "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"}`;
+        el.classList.remove("hidden");
+        setTimeout(() => el.classList.add("hidden"), 5000);
+    }
+
+    const TERMINAL_STATUSES = new Set(["completed", "withdrawn", "expired", "rejected", "provisional_rejected"]);
+
+    let completedEnrollmentId: number | null = null;
+    let paidEnrollmentByKey = new Map<string, number>();
+
+    function enrollmentKey(careerId: unknown, periodId: unknown) {
+        return `${careerId ?? ""}:${periodId ?? ""}`;
+    }
+
+    function renderApplications(apps: any[]) {
+        document.getElementById("loading-state")!.classList.add("hidden");
+
+        if (apps.length === 0) {
+            document.getElementById("empty-state")!.classList.remove("hidden");
+            return;
+        }
+
+        // Muestra el botón solo cuando no existe ninguna solicitud no terminal.
+        const hasActiveApp = apps.some(a => !TERMINAL_STATUSES.has(a.status));
+        if (hasActiveApp) {
+            document.getElementById("btn-nueva-preinscripcion")?.classList.add("hidden");
+            document.getElementById("btn-nueva-preinscripcion")?.classList.remove("inline-flex");
+            document.getElementById("active-app-banner")?.classList.remove("hidden");
+        } else {
+            document.getElementById("btn-nueva-preinscripcion")?.classList.remove("hidden");
+            document.getElementById("btn-nueva-preinscripcion")?.classList.add("inline-flex");
+            document.getElementById("active-app-banner")?.classList.add("hidden");
+        }
+
+        const list = document.getElementById("apps-list")!;
+        list.classList.remove("hidden");
+
+        list.innerHTML = apps.map(app => {
+            const cfg = STATUS_CONFIG[app.status] ?? { label: app.status, badge: "bg-gray-100 text-gray-600", description: "" };
+            const period = app.academic_period_name ?? "—";
+const score = app.admission_score ? `${app.admission_score}` : null;
+            const assigned = app.assigned_career_name;
+            const prefOrder = app.assigned_preference_order;
+            const submitted = app.submission_date
+                ? new Date(app.submission_date).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })
+                : null;
+            const prefCount = app.preferences_count ?? 0;
+
+            // Acciones
+            let actionsHtml = "";
+            if (app.status === "admitted") {
+                const deadline = app.admission_expiry_date
+                    ? `Plazo: ${new Date(app.admission_expiry_date).toLocaleDateString("es-ES")}`
+                    : "";
+                actionsHtml = `
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                        ${deadline ? `<span class="text-xs text-muted-foreground">${deadline}</span>` : ""}
+                        <button class="btn-confirm rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition-colors" data-app-id="${app.id}">
+                            Confirmar plaza
+                        </button>
+                        <button class="btn-withdraw rounded-md border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors" data-app-id="${app.id}">
+                            Renunciar
+                        </button>
+                    </div>`;
+            } else if (["submitted", "under_review", "provisional_admitted", "provisional_waitlisted", "waitlisted"].includes(app.status)) {
+                actionsHtml = `
+                    <button class="btn-withdraw rounded-md border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors" data-app-id="${app.id}">
+                        Renunciar a la solicitud
+                    </button>`;
+            } else if (app.status === "confirmed") {
+                actionsHtml = `
+                    <a href="/enrollment" class="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                        Ir a matrícula
+                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </a>`;
+            } else if (app.status === "completed") {
+                const paidEnrollmentId = paidEnrollmentByKey.get(
+                    enrollmentKey(app.assigned_career_id, app.academic_period_id_ro)
+                ) ?? completedEnrollmentId;
+                if (!paidEnrollmentId) {
+                    actionsHtml = "";
+                } else {
+                actionsHtml = `
+                    <div class="flex flex-wrap gap-2">
+                        <a href="/enrollment/receipt/${paidEnrollmentId}" class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            Ver ticket
+                        </a>
+                        <button type="button" data-enrollment-id="${paidEnrollmentId}" class="btn-download-ticket-pdf inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Descargar PDF
+                        </button>
+                    </div>`;
+                }
+            }
+
+            return `
+            <div class="bg-card border border-border rounded-xl overflow-hidden shadow-sm" data-app-id="${app.id}">
+                <!-- Cabecera -->
+                <div class="flex items-center justify-between px-5 py-3.5 border-b border-border bg-muted/20">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${cfg.badge}">${cfg.label}</span>
+                        <span class="text-sm text-muted-foreground truncate">${period}</span>
+                    </div>
+                    ${submitted ? `<span class="text-xs text-muted-foreground shrink-0 hidden sm:block">Enviada ${submitted}</span>` : ""}
+                </div>
+
+                <!-- Body -->
+                <div class="px-5 py-4 space-y-3">
+                    <p class="text-xs text-muted-foreground">${cfg.description}</p>
+
+                    <!-- Titulación asignada (si la hay) -->
+                    ${assigned ? `
+                    <div class="flex items-center gap-2 rounded-md bg-primary/5 border border-primary/20 px-3 py-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-primary shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
+                        <p class="text-sm font-medium text-foreground">${assigned}</p>
+                        ${prefOrder ? `<span class="ml-auto text-xs text-muted-foreground">Opción ${prefOrder}</span>` : ""}
+                    </div>` : ""}
+
+                    <!-- Meta row -->
+                    <div class="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
+                        ${score ? `<span>Nota admisión: <span class="text-foreground font-semibold">${score}</span></span>` : ""}
+                        <span>Titulaciones: <span class="text-foreground">${prefCount}</span></span>
+                    </div>
+
+                    ${Array.isArray(app.preferences) && app.preferences.length ? `
+                    <div class="rounded-md border border-border bg-muted/20 divide-y divide-border">
+                        ${app.preferences.map((pref: any) => {
+                            const prefCfg = STATUS_CONFIG[pref.status] ?? { label: pref.status ?? "Pendiente", badge: "bg-gray-100 text-gray-600", description: "" };
+                            const pos = pref.status === "waitlisted" && pref.waitlist_position
+                                ? `<span class="ml-auto text-xs text-orange-600">Posición espera #${pref.waitlist_position}</span>`
+                                : pref.rank_position
+                                    ? `<span class="ml-auto text-xs text-muted-foreground">Ranking #${pref.rank_position}</span>`
+                                    : "";
+                            return `
+                            <div class="flex items-center gap-2 px-3 py-2">
+                                <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-background text-[11px] font-semibold text-muted-foreground">${pref.preference_order}</span>
+                                <span class="text-xs font-medium text-foreground">${pref.career_name ?? "—"}</span>
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${prefCfg.badge}">${prefCfg.label}</span>
+                                ${pos}
+                            </div>`;
+                        }).join("")}
+                    </div>` : ""}
+
+                    <!-- Acciones -->
+                    ${actionsHtml ? `<div class="pt-1">${actionsHtml}</div>` : ""}
+                </div>
+            </div>`;
+        }).join("");
+
+        // Adjunta manejadores de botón
+        list.querySelectorAll(".btn-confirm").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const id = Number((btn as HTMLElement).dataset.appId);
+                try {
+                    const res = await apiFetch(`/admissions/applications/${id}/confirm/`, { method: "PATCH" });
+                    if (!res.ok) { const j = await res.json().catch(() => ({})); showFeedback(j.detail || "Error al confirmar.", true); return; }
+                    showFeedback("¡Plaza confirmada correctamente!");
+                    loadApplications();
+                } catch { showFeedback("Error de red.", true); }
+            });
+        });
+
+        list.querySelectorAll(".btn-withdraw").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const id = Number((btn as HTMLElement).dataset.appId);
+                (window as any).confirmAction?.({
+                    title: "Renunciar a la plaza",
+                    description: "¿Seguro que quieres renunciar? Esta acción no se puede deshacer.",
+                    confirmLabel: "Renunciar",
+                    variant: "destructive",
+                    onConfirm: async () => {
+                        try {
+                            const res = await apiFetch(`/admissions/applications/${id}/withdraw/`, { method: "PATCH" });
+                            if (!res.ok) { const j = await res.json().catch(() => ({})); showFeedback(j.detail || "Error.", true); return; }
+                            showFeedback("Renuncia procesada.");
+                            loadApplications();
+                        } catch { showFeedback("Error de red.", true); }
+                    },
+                }) ?? (async () => {
+                    const res = await apiFetch(`/admissions/applications/${id}/withdraw/`, { method: "PATCH" });
+                    if (!res.ok) { const j = await res.json().catch(() => ({})); showFeedback(j.detail || "Error.", true); return; }
+                    showFeedback("Renuncia procesada.");
+                    loadApplications();
+                })();
+            });
+        });
+
+        list.querySelectorAll(".btn-download-ticket-pdf").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const enrollmentId = Number((btn as HTMLElement).dataset.enrollmentId);
+                if (!enrollmentId) return;
+                await downloadTicketPdf(enrollmentId, btn as HTMLButtonElement);
+            });
+        });
+    }
+
+    async function downloadTicketPdf(enrollmentId: number, btn: HTMLButtonElement) {
+        const previousText = btn.textContent ?? "Descargar PDF";
+        btn.disabled = true;
+        btn.textContent = "Descargando...";
+        try {
+            const res = await apiFetch(`/enrollment/career-enrollments/${enrollmentId}/receipt.pdf/`);
+            if (!res.ok) {
+                const json = await res.json().catch(() => ({}));
+                showFeedback(json.detail || `No se pudo descargar el PDF (${res.status}).`, true);
+                return;
+            }
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `ticket-matricula-${enrollmentId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        } catch {
+            showFeedback("Error de red al descargar el PDF.", true);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = previousText.trim() || "Descargar PDF";
+        }
+    }
+
+    async function loadApplications() {
+        document.getElementById("apps-list")?.classList.add("hidden");
+        document.getElementById("empty-state")?.classList.add("hidden");
+        document.getElementById("error-state")?.classList.add("hidden");
+        document.getElementById("loading-state")?.classList.remove("hidden");
+
+        try {
+            const [appsRes, enrollRes] = await Promise.all([
+                apiFetch("/admissions/applications/"),
+                apiFetch("/enrollment/career-enrollments/"),
+            ]);
+
+            if (!appsRes.ok) {
+                document.getElementById("loading-state")?.classList.add("hidden");
+                document.getElementById("error-message")!.textContent = `Error al cargar (${appsRes.status})`;
+                document.getElementById("error-state")?.classList.remove("hidden");
+                return;
+            }
+
+            if (enrollRes.ok) {
+                const enrollData = await enrollRes.json();
+                const enrollments = Array.isArray(enrollData) ? enrollData : (enrollData.results ?? []);
+                paidEnrollmentByKey = new Map<string, number>();
+                enrollments
+                    .filter((e: any) => e.fee_paid || ["paid", "exempted"].includes(e.fee_status))
+                    .forEach((e: any) => {
+                        paidEnrollmentByKey.set(
+                            enrollmentKey(e.career_id_ro ?? e.career?.id ?? e.career_id, e.period_id_ro ?? e.period?.id ?? e.period_id),
+                            e.id,
+                        );
+                    });
+                const completed = enrollments.find((e: any) => e.status === "completed")
+                    ?? enrollments.find((e: any) => e.fee_paid || ["paid", "exempted"].includes(e.fee_status));
+                if (completed) completedEnrollmentId = completed.id;
+            }
+
+            const data = await appsRes.json();
+            renderApplications(Array.isArray(data) ? data : (data.results ?? []));
+        } catch {
+            document.getElementById("loading-state")?.classList.add("hidden");
+            document.getElementById("error-message")!.textContent = "Error de red.";
+            document.getElementById("error-state")?.classList.remove("hidden");
+        }
+    }
+
+    loadApplications();
+</script>

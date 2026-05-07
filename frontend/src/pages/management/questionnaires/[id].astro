@@ -1,0 +1,1111 @@
+---
+// NOTA: esta página está enlazada desde /management/questionnaires (index.astro) mediante botones "Edit".
+// El enlace de navegación /management/questionnaires ya existe en DashboardLayout.astro.
+export const prerender = false;
+import DashboardLayout from "@/layouts/DashboardLayout.astro";
+---
+
+<DashboardLayout title="Questionnaire Builder — Academix" currentPath="/management/questionnaires">
+    <!-- Pantalla de carga -->
+    <div id="loading-screen" class="flex items-center justify-center min-h-[60vh]">
+        <div class="text-center space-y-3">
+            <div class="inline-block size-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-sm text-muted-foreground">Loading builder...</p>
+        </div>
+    </div>
+
+    <!-- Pantalla de error -->
+    <div id="error-screen" class="hidden flex items-center justify-center min-h-[60vh] p-6">
+        <div class="text-center space-y-4 max-w-md">
+            <h2 class="text-lg font-semibold text-foreground">Unable to load questionnaire</h2>
+            <p id="error-message" class="text-sm text-muted-foreground"></p>
+            <a href="/management/questionnaires" class="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                Back to Questionnaires
+            </a>
+        </div>
+    </div>
+
+    <!-- Interfaz del constructor -->
+    <div id="builder-screen" class="hidden flex flex-col h-full">
+        <!-- Cabecera de página -->
+        <div class="flex items-center justify-between border-b border-border px-6 py-4 shrink-0">
+            <div class="min-w-0 flex items-center gap-3">
+                <a href="/management/questionnaires" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                </a>
+                <div class="min-w-0">
+                    <h1 id="builder-title" class="text-xl font-semibold text-foreground truncate"></h1>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span id="builder-flow-type" class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium"></span>
+                        <span id="builder-active-badge" class="hidden inline-flex items-center gap-1 text-xs text-emerald-400">
+                            <span class="size-1.5 rounded-full bg-emerald-400"></span>Active
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Diseño de dos columnas -->
+        <div class="flex flex-1 overflow-hidden" style="height: calc(100vh - 3.5rem - 4.5rem);">
+
+            <!-- LEFT: Step list -->
+            <div class="w-64 shrink-0 border-r border-border flex flex-col bg-background overflow-hidden">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Steps</span>
+                    <button id="btn-add-step" type="button" title="Add Step" class="rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </button>
+                </div>
+                <div id="step-list" class="flex-1 overflow-y-auto py-2 space-y-0.5 px-2"></div>
+            </div>
+
+            <!-- RIGHT: Step editor -->
+            <div class="flex-1 overflow-y-auto">
+                <!-- Ningún paso seleccionado -->
+                <div id="no-step-selected" class="flex items-center justify-center h-full text-center p-8">
+                    <div class="space-y-3">
+                        <div class="flex size-14 items-center justify-center rounded-full bg-muted mx-auto">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/></svg>
+                        </div>
+                        <p class="text-sm text-muted-foreground">Select a step to edit, or create one to get started.</p>
+                    </div>
+                </div>
+
+                <!-- Step editor panel -->
+                <div id="step-editor" class="hidden p-6 space-y-6 max-w-3xl mx-auto">
+                    <!-- Step meta form -->
+                    <div class="rounded-xl border border-border bg-card p-5 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-sm font-semibold text-foreground uppercase tracking-wider">Step Details</h2>
+                            <button id="btn-delete-step" type="button" class="inline-flex items-center gap-1.5 rounded-md border border-destructive/30 px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                                Delete Step
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 gap-4">
+                            <div class="space-y-1.5">
+                                <label class="text-sm font-medium text-foreground" for="step-title-input">Step Title <span class="text-destructive">*</span></label>
+                                <input id="step-title-input" type="text" placeholder="e.g., Personal Information" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-sm font-medium text-foreground" for="step-desc-input">Step Description</label>
+                                <textarea id="step-desc-input" placeholder="Optional guidance for students..." rows="2" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring resize-y"></textarea>
+                            </div>
+                        </div>
+                        <div class="flex justify-end">
+                            <button id="btn-save-step-meta" type="button" class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                                <span id="btn-save-step-meta-label">Save Step</span>
+                                <div id="btn-save-step-meta-spinner" class="hidden size-3 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Lista de preguntas -->
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-sm font-semibold text-foreground">Questions</h3>
+                            <button id="btn-add-question" type="button" class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Add Question
+                            </button>
+                        </div>
+
+                        <div id="questions-list" class="space-y-2"></div>
+
+                        <div id="no-questions" class="hidden rounded-xl border border-dashed border-border p-8 text-center">
+                            <p class="text-sm text-muted-foreground">No questions yet. Click "Add Question" to create one.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de edición de paso (para pedir el título de un paso nuevo) -->
+    <div id="step-modal-backdrop" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+        <div class="w-full max-w-md rounded-xl border border-border bg-background shadow-2xl">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-border">
+                <h2 class="text-base font-semibold text-foreground">New Step</h2>
+                <button id="step-modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="px-5 py-4 space-y-4">
+                <div class="space-y-1.5">
+                    <label class="text-sm font-medium text-foreground" for="new-step-title">Step Title <span class="text-destructive">*</span></label>
+                    <input id="new-step-title" type="text" placeholder="e.g., Personal Information" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-sm font-medium text-foreground" for="new-step-desc">Description</label>
+                    <textarea id="new-step-desc" placeholder="Optional..." rows="2" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring resize-y"></textarea>
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-3 px-5 py-4 border-t border-border">
+                <button id="step-modal-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
+                <button id="step-modal-save" type="button" class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                    <span>Create Step</span>
+                    <div id="step-modal-spinner" class="hidden size-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de editor de pregunta -->
+    <div id="question-modal-backdrop" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+        <div class="w-full max-w-2xl rounded-xl border border-border bg-background shadow-2xl max-h-[92vh] flex flex-col">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+                <h2 id="question-modal-title" class="text-base font-semibold text-foreground">Add Question</h2>
+                <button id="question-modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="overflow-y-auto flex-1 px-5 py-4 space-y-4">
+                <input type="hidden" id="qm-question-id" value="" />
+
+                <!-- Campos principales -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="space-y-1.5 sm:col-span-2">
+                        <label class="text-sm font-medium text-foreground" for="qm-label">Label <span class="text-destructive">*</span></label>
+                        <input id="qm-label" type="text" placeholder="e.g., Full Name" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
+                    </div>
+                    <div class="space-y-1.5 sm:col-span-2">
+                        <label class="text-sm font-medium text-foreground" for="qm-help-text">Help Text</label>
+                        <input id="qm-help-text" type="text" placeholder="Optional hint shown below the label" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-sm font-medium text-foreground" for="qm-type">Question Type <span class="text-destructive">*</span></label>
+                        <select id="qm-type" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring">
+                            <option value="text">Text (single line)</option>
+                            <option value="textarea">Text (multi-line)</option>
+                            <option value="email">Email</option>
+                            <option value="tel">Phone</option>
+                            <option value="number">Number</option>
+                            <option value="date">Date</option>
+                            <option value="select">Dropdown (select)</option>
+                            <option value="radio">Radio buttons</option>
+                            <option value="checkbox">Checkboxes</option>
+                            <option value="file_upload">File upload</option>
+                            <option value="career_select">Career selector</option>
+                            <option value="subject_select">Subject selector</option>
+                            <option value="stripe_payment">Pago de Stripe</option>
+                            <option value="info">Info block (HTML)</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-sm font-medium text-foreground" for="qm-order">Order</label>
+                        <input id="qm-order" type="number" min="1" value="1" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
+                    </div>
+                </div>
+
+                <!-- Alternador de obligatoriedad -->
+                <div class="flex items-center gap-3">
+                    <button type="button" id="qm-required-toggle" role="switch" aria-checked="false"
+                        class="relative inline-flex h-6 w-11 items-center rounded-full border-2 border-transparent bg-muted-foreground/30 transition-colors focus:outline-none focus:ring-2 focus:ring-ring">
+                        <span id="qm-required-thumb" class="pointer-events-none inline-block size-4 translate-x-0.5 rounded-full bg-white shadow-lg transition-transform duration-200"></span>
+                    </button>
+                    <label class="text-sm font-medium text-foreground cursor-pointer">Required field</label>
+                </div>
+
+                <!-- Visualización condicional -->
+                <div class="rounded-lg border border-border p-4 space-y-3">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Conditional Display</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-1.5">
+                            <label class="text-xs text-muted-foreground" for="qm-depends-on">Show only if question</label>
+                            <select id="qm-depends-on" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring">
+                                <option value="">Always show</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-xs text-muted-foreground" for="qm-depends-value">Has value equal to</label>
+                            <input id="qm-depends-value" type="text" placeholder="Expected value..." class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Type-specific config panels -->
+                <!-- Options editor (select / radio / checkbox) -->
+                <div id="cfg-options" class="hidden space-y-3">
+                    <div class="flex items-center justify-between">
+                        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Options</p>
+                        <button id="btn-add-option" type="button" class="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Add Option
+                        </button>
+                    </div>
+                    <div id="options-list" class="space-y-2"></div>
+                    <p class="text-xs text-muted-foreground">Both label (displayed) and value (stored) are required.</p>
+                </div>
+
+                <!-- Configuración de Stripe -->
+                <div id="cfg-stripe" class="hidden rounded-lg border border-border p-4 space-y-3">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Payment Configuration</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-1.5">
+                            <label class="text-xs text-muted-foreground" for="cfg-stripe-amount">Amount</label>
+                            <input id="cfg-stripe-amount" type="number" min="0" step="0.01" placeholder="e.g. 50.00" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-xs text-muted-foreground" for="cfg-stripe-currency">Currency</label>
+                            <input id="cfg-stripe-currency" type="text" placeholder="USD" maxlength="3" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
+                        </div>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-xs text-muted-foreground" for="cfg-stripe-desc">Payment description</label>
+                        <input id="cfg-stripe-desc" type="text" placeholder="e.g. Application processing fee" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
+                    </div>
+                </div>
+
+                <!-- Configuración de subida de ficheros -->
+                <div id="cfg-file" class="hidden rounded-lg border border-border p-4 space-y-3">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">File Upload Configuration</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-1.5">
+                            <label class="text-xs text-muted-foreground" for="cfg-file-types">Accepted types (comma-separated)</label>
+                            <input id="cfg-file-types" type="text" placeholder=".pdf,.jpg,.png" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-xs text-muted-foreground" for="cfg-file-max">Max size (MB)</label>
+                            <input id="cfg-file-max" type="number" min="1" max="100" placeholder="10" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configuración del selector de asignaturas -->
+                <div id="cfg-subject" class="hidden rounded-lg border border-border p-4 space-y-3">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Subject Selector Configuration</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="flex items-center gap-2">
+                            <input id="cfg-subject-past-years" type="checkbox" class="size-4 accent-primary rounded" />
+                            <label class="text-xs text-muted-foreground" for="cfg-subject-past-years">Allow past year subjects</label>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-xs text-muted-foreground" for="cfg-subject-max">Max selections (0 = unlimited)</label>
+                            <input id="cfg-subject-max" type="number" min="0" placeholder="0" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configuración del selector de titulaciones -->
+                <div id="cfg-career" class="hidden rounded-lg border border-border p-4 space-y-3">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Career Selector Configuration</p>
+                    <div class="space-y-1.5">
+                        <label class="text-xs text-muted-foreground" for="cfg-career-max">Max selections (0 = unlimited)</label>
+                        <input id="cfg-career-max" type="number" min="0" placeholder="0" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
+                    </div>
+                </div>
+
+                <!-- Configuración de bloque informativo -->
+                <div id="cfg-info" class="hidden space-y-1.5">
+                    <label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground" for="cfg-info-content">HTML Content</label>
+                    <textarea id="cfg-info-content" rows="6" placeholder="<p>This questionnaire collects...</p>" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring resize-y"></textarea>
+                    <p class="text-xs text-muted-foreground">Basic HTML is supported. This block is read-only for students.</p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 px-5 py-4 border-t border-border shrink-0">
+                <button id="question-modal-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
+                <button id="question-modal-save" type="button" class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                    <span id="question-modal-save-label">Save Question</span>
+                    <div id="question-modal-save-spinner" class="hidden size-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
+                </button>
+            </div>
+        </div>
+    </div>
+</DashboardLayout>
+
+<script>
+    const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
+
+    function getToken(): string | null { return localStorage.getItem("access_token"); }
+    function getUser(): Record<string, any> | null {
+        try {
+            const s = localStorage.getItem("user-storage");
+            return s ? JSON.parse(s)?.state?.user ?? null : null;
+        } catch { return null; }
+    }
+    function authHeaders(): Record<string, string> {
+        return { "Authorization": `Bearer ${getToken()}`, "Content-Type": "application/json" };
+    }
+
+    const token = getToken();
+    if (!token) { window.location.replace("/login"); throw new Error(); }
+    const user = getUser();
+    if (!user) { window.location.replace("/login"); throw new Error(); }
+    if (!["a", "m"].includes(user.role)) { window.location.replace("/"); throw new Error(); }
+
+    function el<T extends HTMLElement>(id: string): T { return document.getElementById(id) as T; }
+    function show(id: string) { el(id).classList.remove("hidden"); }
+    function hide(id: string) { el(id).classList.add("hidden"); }
+    function showToast(v: "success" | "error" | "warning" | "info", t: string, d?: string) {
+        (window as any).showToast?.(v, t, d);
+    }
+
+    // ── Estado ─────────────────────────────────────────────────────────────────
+    interface QuestionOption { id?: number; label: string; value: string; order: number; }
+    interface Question {
+        id?: number;
+        label: string;
+        help_text?: string;
+        question_type: string;
+        is_required: boolean;
+        order: number;
+        config: Record<string, any>;
+        options: QuestionOption[];
+        depends_on?: number | null;
+        depends_on_value?: string | null;
+    }
+    interface Step {
+        id?: number;
+        title: string;
+        description?: string;
+        order: number;
+        questions: Question[];
+    }
+    interface Questionnaire {
+        id: number;
+        title: string;
+        description?: string;
+        flow_type: string;
+        is_active: boolean;
+        steps: Step[];
+    }
+
+    const state = {
+        questionnaireId: 0,
+        questionnaire: null as Questionnaire | null,
+        selectedStepIndex: -1,
+        editingQuestionIndex: -1,
+        qmRequiredOn: false,
+        qmOptions: [] as QuestionOption[],
+    };
+
+    // ── Arranque ──────────────────────────────────────────────────────────────────
+    const parts = window.location.pathname.split("/");
+    state.questionnaireId = parseInt(parts[parts.length - 1], 10);
+    if (isNaN(state.questionnaireId)) {
+        el("error-message").textContent = "Invalid questionnaire URL.";
+        hide("loading-screen");
+        show("error-screen");
+        throw new Error();
+    }
+
+    async function loadQuestionnaire() {
+        try {
+            const res = await fetch(`${API_URL}/questionnaire/questionnaires/${state.questionnaireId}/`, {
+                headers: authHeaders()
+            });
+            if (res.status === 401) { window.location.replace("/login"); return; }
+            if (!res.ok) {
+                el("error-message").textContent = `Questionnaire not found (${res.status}).`;
+                hide("loading-screen");
+                show("error-screen");
+                return;
+            }
+            state.questionnaire = await res.json();
+            // Asegura que los pasos tengan preguntas ordenadas
+            state.questionnaire!.steps.forEach(s => {
+                s.questions = s.questions.slice().sort((a, b) => a.order - b.order);
+            });
+            state.questionnaire!.steps.sort((a, b) => a.order - b.order);
+
+            hide("loading-screen");
+            show("builder-screen");
+            renderBuilderHeader();
+            renderStepList();
+
+        } catch {
+            el("error-message").textContent = "Network error. Please check your connection.";
+            hide("loading-screen");
+            show("error-screen");
+        }
+    }
+
+    // ── Cabecera ────────────────────────────────────────────────────────────────
+    function renderBuilderHeader() {
+        const q = state.questionnaire!;
+        el("builder-title").textContent = q.title;
+
+        const typeEl = el("builder-flow-type");
+        const label = q.flow_type === "admissions" ? "Admissions" : "Enrollment";
+        const cls = q.flow_type === "admissions"
+            ? "bg-blue-500/10 text-blue-400 border-blue-500/20 border"
+            : "bg-violet-500/10 text-violet-400 border-violet-500/20 border";
+        typeEl.className = `inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${cls}`;
+        typeEl.textContent = label;
+
+        if (q.is_active) show("builder-active-badge");
+        else hide("builder-active-badge");
+    }
+
+    // ── Lista de pasos ─────────────────────────────────────────────────────────────
+    function renderStepList() {
+        const container = el("step-list");
+        const steps = state.questionnaire?.steps ?? [];
+
+        if (steps.length === 0) {
+            container.innerHTML = `<p class="px-3 py-2 text-xs text-muted-foreground text-center">No steps yet.</p>`;
+            return;
+        }
+
+        container.innerHTML = steps.map((s, i) => {
+            const isActive = i === state.selectedStepIndex;
+            return `
+            <button type="button" class="step-list-item w-full text-left rounded-lg px-3 py-2.5 text-sm transition-colors ${isActive ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}" data-index="${i}">
+                <div class="flex items-center gap-2">
+                    <span class="flex size-5 items-center justify-center rounded-full text-[10px] font-bold shrink-0 ${isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}">${i + 1}</span>
+                    <span class="truncate font-medium">${s.title}</span>
+                </div>
+                <p class="text-xs text-muted-foreground mt-0.5 ml-7 truncate">${s.questions.length} question${s.questions.length !== 1 ? "s" : ""}</p>
+            </button>`;
+        }).join("");
+
+        container.querySelectorAll(".step-list-item").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const idx = parseInt((btn as HTMLElement).dataset.index ?? "0", 10);
+                selectStep(idx);
+            });
+        });
+    }
+
+    function selectStep(index: number) {
+        state.selectedStepIndex = index;
+        renderStepList();
+        renderStepEditor();
+    }
+
+    // ── Editor de pasos ───────────────────────────────────────────────────────────
+    function renderStepEditor() {
+        const steps = state.questionnaire?.steps ?? [];
+        const step = steps[state.selectedStepIndex];
+        if (!step) { show("no-step-selected"); hide("step-editor"); return; }
+
+        hide("no-step-selected");
+        show("step-editor");
+
+        (el<HTMLInputElement>("step-title-input")).value = step.title;
+        (el<HTMLTextAreaElement>("step-desc-input")).value = step.description ?? "";
+
+        renderQuestionsList(step);
+    }
+
+    function renderQuestionsList(step: Step) {
+        const list = el("questions-list");
+        const noQ = el("no-questions");
+
+        const questions = step.questions.slice().sort((a, b) => a.order - b.order);
+
+        if (questions.length === 0) {
+            list.innerHTML = "";
+            show("no-questions");
+            return;
+        }
+
+        hide("no-questions");
+        list.innerHTML = questions.map((q, qi) => {
+            const typeLabel = getTypeLabel(q.question_type);
+            const typeColor = getTypeColor(q.question_type);
+            return `
+            <div class="rounded-xl border border-border bg-card p-4 flex items-start gap-3" data-qi="${qi}">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-sm font-medium text-foreground">${q.label}</span>
+                        ${q.is_required ? `<span class="text-destructive text-xs">*</span>` : ""}
+                        <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${typeColor}">${typeLabel}</span>
+                        ${q.depends_on ? `<span class="text-xs text-muted-foreground">conditional</span>` : ""}
+                    </div>
+                    ${q.help_text ? `<p class="text-xs text-muted-foreground mt-0.5">${q.help_text}</p>` : ""}
+                    ${q.question_type === "select" || q.question_type === "radio" || q.question_type === "checkbox"
+                        ? `<p class="text-xs text-muted-foreground mt-0.5">${q.options.length} option${q.options.length !== 1 ? "s" : ""}</p>`
+                        : ""}
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                    <button type="button" class="btn-move-up rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors ${qi === 0 ? "opacity-30 pointer-events-none" : ""}" data-qi="${qi}" title="Move up">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+                    </button>
+                    <button type="button" class="btn-move-down rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors ${qi === questions.length - 1 ? "opacity-30 pointer-events-none" : ""}" data-qi="${qi}" title="Move down">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <button type="button" class="btn-edit-question rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" data-qi="${qi}" title="Edit question">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button type="button" class="btn-delete-question rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" data-qi="${qi}" title="Delete question">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                    </button>
+                </div>
+            </div>`;
+        }).join("");
+
+        list.querySelectorAll(".btn-edit-question").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const qi = parseInt((btn as HTMLElement).dataset.qi ?? "0", 10);
+                openQuestionModal(qi);
+            });
+        });
+
+        list.querySelectorAll(".btn-delete-question").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const qi = parseInt((btn as HTMLElement).dataset.qi ?? "0", 10);
+                const step = state.questionnaire!.steps[state.selectedStepIndex];
+                const q = step.questions[qi];
+                (window as any).confirmAction?.({
+                    title: "Delete Question",
+                    description: `Delete "${q.label}"? This cannot be undone.`,
+                    confirmLabel: "Delete",
+                    variant: "destructive",
+                    onConfirm: () => deleteQuestion(qi),
+                });
+            });
+        });
+
+        list.querySelectorAll(".btn-move-up").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const qi = parseInt((btn as HTMLElement).dataset.qi ?? "0", 10);
+                moveQuestion(qi, "up");
+            });
+        });
+
+        list.querySelectorAll(".btn-move-down").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const qi = parseInt((btn as HTMLElement).dataset.qi ?? "0", 10);
+                moveQuestion(qi, "down");
+            });
+        });
+    }
+
+    function getTypeLabel(type: string): string {
+        const map: Record<string, string> = {
+            text: "Text", textarea: "Textarea", email: "Email", tel: "Phone",
+            number: "Number", date: "Date", select: "Select", radio: "Radio",
+            checkbox: "Checkbox", file_upload: "File", career_select: "Career",
+            subject_select: "Subjects", stripe_payment: "Payment", info: "Info",
+        };
+        return map[type] ?? type;
+    }
+
+    function getTypeColor(type: string): string {
+        const map: Record<string, string> = {
+            stripe_payment: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
+            career_select: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+            subject_select: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+            info: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+            file_upload: "bg-orange-500/10 text-orange-400 border-orange-500/20",
+        };
+        return map[type] ?? "bg-muted text-muted-foreground border-border";
+    }
+
+    // ── CRUD de pasos ─────────────────────────────────────────────────────────────
+    async function createStep(title: string, description: string) {
+        const nextOrder = (state.questionnaire?.steps.length ?? 0) + 1;
+        try {
+            const res = await fetch(`${API_URL}/questionnaire/questionnaires/${state.questionnaireId}/steps/`, {
+                method: "POST",
+                headers: authHeaders(),
+                body: JSON.stringify({ title, description, order: nextOrder }),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                showToast("error", "Failed to create step", Object.values(err).flat().join(" ") || `Error ${res.status}`);
+                return false;
+            }
+            const newStep = await res.json();
+            newStep.questions = newStep.questions ?? [];
+            state.questionnaire!.steps.push(newStep);
+            state.questionnaire!.steps.sort((a, b) => a.order - b.order);
+            return true;
+        } catch {
+            showToast("error", "Network error", "Could not create step.");
+            return false;
+        }
+    }
+
+    async function saveStepMeta() {
+        const step = state.questionnaire?.steps[state.selectedStepIndex];
+        if (!step || !step.id) return;
+
+        const title = (el<HTMLInputElement>("step-title-input")).value.trim();
+        const description = (el<HTMLTextAreaElement>("step-desc-input")).value.trim();
+
+        if (!title) { showToast("warning", "Título obligatorio", "Please enter a step title."); return; }
+
+        el("btn-save-step-meta-label").textContent = "Guardando...";
+        el("btn-save-step-meta-spinner").classList.remove("hidden");
+        el<HTMLButtonElement>("btn-save-step-meta").disabled = true;
+
+        try {
+            const res = await fetch(`${API_URL}/questionnaire/steps/${step.id}/`, {
+                method: "PATCH",
+                headers: authHeaders(),
+                body: JSON.stringify({ title, description }),
+            });
+            if (!res.ok) {
+                showToast("error", "Save failed", `Error ${res.status}`);
+                return;
+            }
+            step.title = title;
+            step.description = description;
+            renderStepList();
+            showToast("success", "Step saved", "Step details updated.");
+        } catch {
+            showToast("error", "Network error", "Could not save step.");
+        } finally {
+            el("btn-save-step-meta-label").textContent = "Save Step";
+            el("btn-save-step-meta-spinner").classList.add("hidden");
+            el<HTMLButtonElement>("btn-save-step-meta").disabled = false;
+        }
+    }
+
+    async function deleteStep() {
+        const step = state.questionnaire?.steps[state.selectedStepIndex];
+        if (!step) return;
+
+        (window as any).confirmAction?.({
+            title: "Delete Step",
+            description: `Delete step "${step.title}" and all its questions? This cannot be undone.`,
+            confirmLabel: "Delete",
+            variant: "destructive",
+            onConfirm: async () => {
+                if (!step.id) {
+                    state.questionnaire!.steps.splice(state.selectedStepIndex, 1);
+                    state.selectedStepIndex = -1;
+                    renderStepList();
+                    hide("step-editor");
+                    show("no-step-selected");
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`${API_URL}/questionnaire/steps/${step.id}/`, {
+                        method: "DELETE",
+                        headers: authHeaders(),
+                    });
+                    if (res.ok || res.status === 204) {
+                        state.questionnaire!.steps.splice(state.selectedStepIndex, 1);
+                        state.selectedStepIndex = -1;
+                        renderStepList();
+                        hide("step-editor");
+                        show("no-step-selected");
+                        showToast("success", "Deleted", "Step removed.");
+                    } else {
+                        showToast("error", "Delete failed", `Error ${res.status}`);
+                    }
+                } catch {
+                    showToast("error", "Network error", "Could not delete step.");
+                }
+            },
+        });
+    }
+
+    // ── Modal de pregunta ────────────────────────────────────────────────────────
+    function populateDependsOnDropdown(excludeQIndex: number) {
+        const step = state.questionnaire?.steps[state.selectedStepIndex];
+        const sel = el<HTMLSelectElement>("qm-depends-on");
+        sel.innerHTML = `<option value="">Always show</option>`;
+        if (!step) return;
+        step.questions.forEach((q, qi) => {
+            if (qi === excludeQIndex) return;
+            sel.innerHTML += `<option value="${q.id ?? ""}" data-qi="${qi}">${q.label}</option>`;
+        });
+    }
+
+    function openQuestionModal(qi: number) {
+        state.editingQuestionIndex = qi;
+        const step = state.questionnaire!.steps[state.selectedStepIndex];
+        const q: Question | undefined = step.questions[qi];
+
+        el("question-modal-title").textContent = qi === -1 ? "Add Question" : "Edit Question";
+
+        if (q) {
+            (el<HTMLInputElement>("qm-label")).value = q.label;
+            (el<HTMLInputElement>("qm-help-text")).value = q.help_text ?? "";
+            (el<HTMLSelectElement>("qm-type")).value = q.question_type;
+            (el<HTMLInputElement>("qm-order")).value = String(q.order);
+            setQmRequired(q.is_required);
+            state.qmOptions = q.options ? [...q.options] : [];
+
+            populateDependsOnDropdown(qi);
+            (el<HTMLSelectElement>("qm-depends-on")).value = q.depends_on ? String(q.depends_on) : "";
+            (el<HTMLInputElement>("qm-depends-value")).value = q.depends_on_value ?? "";
+
+            // Config
+            (el<HTMLInputElement>("cfg-stripe-amount")).value = String(q.config?.amount ?? "");
+            (el<HTMLInputElement>("cfg-stripe-currency")).value = q.config?.currency ?? "";
+            (el<HTMLInputElement>("cfg-stripe-desc")).value = q.config?.description ?? "";
+            (el<HTMLInputElement>("cfg-file-types")).value = Array.isArray(q.config?.accepted_types) ? q.config.accepted_types.join(",") : (q.config?.accepted_types ?? "");
+            (el<HTMLInputElement>("cfg-file-max")).value = String(q.config?.max_size_mb ?? "");
+            (el<HTMLInputElement>("cfg-career-max")).value = String(q.config?.max_selections ?? "");
+            (el<HTMLInputElement>("cfg-subject-max")).value = String(q.config?.max_selections ?? "");
+            (el<HTMLInputElement>("cfg-subject-past-years")).checked = q.config?.allow_past_years ?? false;
+            (el<HTMLTextAreaElement>("cfg-info-content")).value = q.config?.content ?? "";
+            (el<HTMLInputElement>("qm-question-id")).value = String(q.id ?? "");
+        } else {
+            // Valores por defecto de pregunta nueva
+            (el<HTMLInputElement>("qm-label")).value = "";
+            (el<HTMLInputElement>("qm-help-text")).value = "";
+            (el<HTMLSelectElement>("qm-type")).value = "text";
+            (el<HTMLInputElement>("qm-order")).value = String(step.questions.length + 1);
+            setQmRequired(false);
+            state.qmOptions = [];
+            populateDependsOnDropdown(-1);
+            (el<HTMLSelectElement>("qm-depends-on")).value = "";
+            (el<HTMLInputElement>("qm-depends-value")).value = "";
+            (el<HTMLInputElement>("cfg-stripe-amount")).value = "";
+            (el<HTMLInputElement>("cfg-stripe-currency")).value = "USD";
+            (el<HTMLInputElement>("cfg-stripe-desc")).value = "";
+            (el<HTMLInputElement>("cfg-file-types")).value = "";
+            (el<HTMLInputElement>("cfg-file-max")).value = "10";
+            (el<HTMLInputElement>("cfg-career-max")).value = "10";
+            (el<HTMLInputElement>("cfg-subject-max")).value = "0";
+            (el<HTMLInputElement>("cfg-subject-past-years")).checked = false;
+            (el<HTMLTextAreaElement>("cfg-info-content")).value = "";
+            (el<HTMLInputElement>("qm-question-id")).value = "";
+        }
+
+        updateTypeConfigPanels();
+        renderOptionsList();
+        show("question-modal-backdrop");
+    }
+
+    function setQmRequired(val: boolean) {
+        state.qmRequiredOn = val;
+        const btn = el("qm-required-toggle");
+        const thumb = el("qm-required-thumb");
+        btn.setAttribute("aria-checked", String(val));
+        if (val) {
+            btn.classList.remove("bg-muted-foreground/30");
+            btn.classList.add("bg-primary");
+            thumb.style.transform = "translateX(1.25rem)";
+        } else {
+            btn.classList.add("bg-muted-foreground/30");
+            btn.classList.remove("bg-primary");
+            thumb.style.transform = "translateX(0.125rem)";
+        }
+    }
+
+    function updateTypeConfigPanels() {
+        const type = (el<HTMLSelectElement>("qm-type")).value;
+        const hasOptions = ["select", "radio", "checkbox"].includes(type);
+        setVisible("cfg-options", hasOptions);
+        setVisible("cfg-stripe", type === "stripe_payment");
+        setVisible("cfg-file", type === "file_upload");
+        setVisible("cfg-career", type === "career_select");
+        setVisible("cfg-subject", type === "subject_select");
+        setVisible("cfg-info", type === "info");
+    }
+
+    function setVisible(id: string, visible: boolean) {
+        visible ? show(id) : hide(id);
+    }
+
+    // ── Editor de opciones ────────────────────────────────────────────────────────
+    function renderOptionsList() {
+        const container = el("options-list");
+        if (state.qmOptions.length === 0) {
+            container.innerHTML = `<p class="text-xs text-muted-foreground text-center py-2">No options yet.</p>`;
+            return;
+        }
+        container.innerHTML = state.qmOptions.map((opt, i) => `
+            <div class="flex items-center gap-2" data-opt-index="${i}">
+                <input type="text" class="opt-label flex h-8 flex-1 rounded-md border border-input bg-background px-2.5 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring" value="${opt.label}" placeholder="Label (shown to user)" data-idx="${i}" />
+                <input type="text" class="opt-value flex h-8 flex-1 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring" value="${opt.value}" placeholder="Value (stored)" data-idx="${i}" />
+                <button type="button" class="btn-remove-opt rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" data-idx="${i}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+        `).join("");
+
+        container.querySelectorAll(".opt-label").forEach(input => {
+            input.addEventListener("input", (e) => {
+                const idx = parseInt((e.target as HTMLElement).dataset.idx ?? "0", 10);
+                state.qmOptions[idx].label = (e.target as HTMLInputElement).value;
+            });
+        });
+        container.querySelectorAll(".opt-value").forEach(input => {
+            input.addEventListener("input", (e) => {
+                const idx = parseInt((e.target as HTMLElement).dataset.idx ?? "0", 10);
+                state.qmOptions[idx].value = (e.target as HTMLInputElement).value;
+            });
+        });
+        container.querySelectorAll(".btn-remove-opt").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                const idx = parseInt((e.currentTarget as HTMLElement).dataset.idx ?? "0", 10);
+                state.qmOptions.splice(idx, 1);
+                renderOptionsList();
+            });
+        });
+    }
+
+    // ── CRUD de preguntas ─────────────────────────────────────────────────────────
+    async function saveQuestion() {
+        const step = state.questionnaire?.steps[state.selectedStepIndex];
+        if (!step || !step.id) return;
+
+        const label = (el<HTMLInputElement>("qm-label")).value.trim();
+        const helpText = (el<HTMLInputElement>("qm-help-text")).value.trim();
+        const qType = (el<HTMLSelectElement>("qm-type")).value;
+        const order = parseInt((el<HTMLInputElement>("qm-order")).value, 10) || 1;
+        const dependsOnRaw = (el<HTMLSelectElement>("qm-depends-on")).value;
+        const dependsOnValue = (el<HTMLInputElement>("qm-depends-value")).value.trim();
+        const questionIdRaw = (el<HTMLInputElement>("qm-question-id")).value.trim();
+
+        if (!label) { showToast("warning", "Label required", "Please enter a question label."); return; }
+
+        // Construye configuración
+        const config: Record<string, any> = {};
+        if (qType === "stripe_payment") {
+            config.amount = parseFloat((el<HTMLInputElement>("cfg-stripe-amount")).value) || 0;
+            config.currency = (el<HTMLInputElement>("cfg-stripe-currency")).value.toUpperCase() || "USD";
+            config.description = (el<HTMLInputElement>("cfg-stripe-desc")).value.trim();
+        }
+        if (qType === "file_upload") {
+            const types = (el<HTMLInputElement>("cfg-file-types")).value.trim();
+            config.accepted_types = types ? types.split(",").map(t => t.trim()).filter(Boolean) : [];
+            config.max_size_mb = parseInt((el<HTMLInputElement>("cfg-file-max")).value, 10) || 10;
+        }
+        if (qType === "career_select") {
+            config.max_selections = parseInt((el<HTMLInputElement>("cfg-career-max")).value, 10) || 0;
+        }
+        if (qType === "subject_select") {
+            config.allow_past_years = (el<HTMLInputElement>("cfg-subject-past-years")).checked;
+            config.max_selections = parseInt((el<HTMLInputElement>("cfg-subject-max")).value, 10) || 0;
+        }
+        if (qType === "info") {
+            config.content = (el<HTMLTextAreaElement>("cfg-info-content")).value;
+        }
+
+        const payload: Record<string, any> = {
+            label,
+            help_text: helpText,
+            question_type: qType,
+            is_required: state.qmRequiredOn,
+            order,
+            config,
+            depends_on: dependsOnRaw ? parseInt(dependsOnRaw, 10) : null,
+            depends_on_value: dependsOnValue || null,
+        };
+
+        const isEdit = questionIdRaw !== "";
+        const url = isEdit
+            ? `${API_URL}/questionnaire/questions/${questionIdRaw}/`
+            : `${API_URL}/questionnaire/steps/${step.id}/questions/`;
+        const method = isEdit ? "PATCH" : "POST";
+
+        el("question-modal-save-label").textContent = isEdit ? "Guardando..." : "Creating...";
+        el("question-modal-save-spinner").classList.remove("hidden");
+        el<HTMLButtonElement>("question-modal-save").disabled = true;
+
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: authHeaders(),
+                body: JSON.stringify(payload),
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                showToast("error", isEdit ? "Update failed" : "Create failed", Object.values(err).flat().join(" ") || `Error ${res.status}`);
+                return;
+            }
+
+            const savedQuestion: Question = await res.json();
+            savedQuestion.options = savedQuestion.options ?? [];
+
+            // Sincroniza opciones
+            if (["select", "radio", "checkbox"].includes(qType) && savedQuestion.id) {
+                await syncOptions(savedQuestion.id, step, savedQuestion);
+            }
+
+            // Actualiza el estado local
+            if (isEdit) {
+                step.questions = step.questions.map(q => q.id === savedQuestion.id ? { ...savedQuestion, options: state.qmOptions } : q);
+            } else {
+                savedQuestion.options = state.qmOptions;
+                step.questions.push(savedQuestion);
+            }
+            step.questions.sort((a, b) => a.order - b.order);
+
+            hide("question-modal-backdrop");
+            renderQuestionsList(step);
+            renderStepList();
+            showToast("success", isEdit ? "Question updated" : "Question added", label);
+
+        } catch {
+            showToast("error", "Network error", "Could not save question.");
+        } finally {
+            el("question-modal-save-label").textContent = "Save Question";
+            el("question-modal-save-spinner").classList.add("hidden");
+            el<HTMLButtonElement>("question-modal-save").disabled = false;
+        }
+    }
+
+    async function syncOptions(questionId: number, step: Step, savedQ: Question) {
+        const existingIds = new Set((savedQ.options ?? []).map((o: QuestionOption) => o.id).filter(Boolean));
+        const incomingIds = new Set(state.qmOptions.filter(o => o.id).map(o => o.id));
+
+        // Elimina opciones quitadas
+        for (const existing of (savedQ.options ?? [])) {
+            if (existing.id && !incomingIds.has(existing.id)) {
+                await fetch(`${API_URL}/questionnaire/options/${existing.id}/`, {
+                    method: "DELETE",
+                    headers: authHeaders(),
+                }).catch(() => {});
+            }
+        }
+
+        // Crea/actualiza opciones
+        for (let i = 0; i < state.qmOptions.length; i++) {
+            const opt = state.qmOptions[i];
+            if (!opt.label || !opt.value) continue;
+            const optPayload = { label: opt.label, value: opt.value, order: i + 1 };
+
+            if (opt.id && existingIds.has(opt.id)) {
+                await fetch(`${API_URL}/questionnaire/options/${opt.id}/`, {
+                    method: "PATCH",
+                    headers: authHeaders(),
+                    body: JSON.stringify(optPayload),
+                }).catch(() => {});
+            } else {
+                const res = await fetch(`${API_URL}/questionnaire/questions/${questionId}/options/`, {
+                    method: "POST",
+                    headers: authHeaders(),
+                    body: JSON.stringify(optPayload),
+                }).catch(() => null);
+                if (res?.ok) {
+                    const saved = await res.json();
+                    state.qmOptions[i].id = saved.id;
+                }
+            }
+        }
+    }
+
+    async function deleteQuestion(qi: number) {
+        const step = state.questionnaire?.steps[state.selectedStepIndex];
+        if (!step) return;
+        const q = step.questions[qi];
+        if (!q) return;
+
+        if (q.id) {
+            try {
+                const res = await fetch(`${API_URL}/questionnaire/questions/${q.id}/`, {
+                    method: "DELETE",
+                    headers: authHeaders(),
+                });
+                if (!res.ok && res.status !== 204) {
+                    showToast("error", "Delete failed", `Error ${res.status}`);
+                    return;
+                }
+            } catch {
+                showToast("error", "Network error", "Could not delete question.");
+                return;
+            }
+        }
+
+        step.questions.splice(qi, 1);
+        renderQuestionsList(step);
+        renderStepList();
+        showToast("success", "Deleted", `Question "${q.label}" removed.`);
+    }
+
+    async function moveQuestion(qi: number, dir: "up" | "down") {
+        const step = state.questionnaire?.steps[state.selectedStepIndex];
+        if (!step) return;
+
+        const questions = step.questions;
+        const newIdx = dir === "up" ? qi - 1 : qi + 1;
+        if (newIdx < 0 || newIdx >= questions.length) return;
+
+        // Intercambia órdenes
+        const aOrder = questions[qi].order;
+        const bOrder = questions[newIdx].order;
+        questions[qi].order = bOrder;
+        questions[newIdx].order = aOrder;
+
+        // Intercambia en el array
+        [questions[qi], questions[newIdx]] = [questions[newIdx], questions[qi]];
+
+        // Persiste los nuevos órdenes en segundo plano
+        const toUpdate = [questions[qi], questions[newIdx]];
+        for (const q of toUpdate) {
+            if (q.id) {
+                fetch(`${API_URL}/questionnaire/questions/${q.id}/`, {
+                    method: "PATCH",
+                    headers: authHeaders(),
+                    body: JSON.stringify({ order: q.order }),
+                }).catch(() => {});
+            }
+        }
+
+        renderQuestionsList(step);
+    }
+
+    // ── Escuchadores de eventos ───────────────────────────────────────────────────────
+
+    // Lista de pasos
+    el("btn-add-step").addEventListener("click", () => {
+        (el<HTMLInputElement>("new-step-title")).value = "";
+        (el<HTMLTextAreaElement>("new-step-desc")).value = "";
+        show("step-modal-backdrop");
+        setTimeout(() => el<HTMLInputElement>("new-step-title").focus(), 50);
+    });
+
+    el("step-modal-close").addEventListener("click", () => hide("step-modal-backdrop"));
+    el("step-modal-cancel").addEventListener("click", () => hide("step-modal-backdrop"));
+    el("step-modal-backdrop").addEventListener("click", e => {
+        if (e.target === el("step-modal-backdrop")) hide("step-modal-backdrop");
+    });
+
+    el("step-modal-save").addEventListener("click", async () => {
+        const title = (el<HTMLInputElement>("new-step-title")).value.trim();
+        const desc = (el<HTMLTextAreaElement>("new-step-desc")).value.trim();
+        if (!title) { showToast("warning", "Título obligatorio", "Enter a step title."); return; }
+
+        const spinner = el("step-modal-spinner");
+        const btn = el<HTMLButtonElement>("step-modal-save");
+        spinner.classList.remove("hidden");
+        btn.disabled = true;
+
+        const ok = await createStep(title, desc);
+        spinner.classList.add("hidden");
+        btn.disabled = false;
+
+        if (ok) {
+            hide("step-modal-backdrop");
+            const newIdx = (state.questionnaire?.steps.length ?? 1) - 1;
+            selectStep(newIdx);
+            renderStepList();
+            showToast("success", "Step created", title);
+        }
+    });
+
+    // Editor de pasos
+    el("btn-save-step-meta").addEventListener("click", saveStepMeta);
+    el("btn-delete-step").addEventListener("click", deleteStep);
+
+    // Añadir pregunta
+    el("btn-add-question").addEventListener("click", () => openQuestionModal(-1));
+
+    // Modal de pregunta
+    el("question-modal-close").addEventListener("click", () => hide("question-modal-backdrop"));
+    el("question-modal-cancel").addEventListener("click", () => hide("question-modal-backdrop"));
+    el("question-modal-backdrop").addEventListener("click", e => {
+        if (e.target === el("question-modal-backdrop")) hide("question-modal-backdrop");
+    });
+
+    el("qm-type").addEventListener("change", () => {
+        updateTypeConfigPanels();
+        renderOptionsList();
+    });
+
+    el("qm-required-toggle").addEventListener("click", () => setQmRequired(!state.qmRequiredOn));
+
+    el("btn-add-option").addEventListener("click", () => {
+        state.qmOptions.push({ label: "", value: "", order: state.qmOptions.length + 1 });
+        renderOptionsList();
+    });
+
+    el("question-modal-save").addEventListener("click", saveQuestion);
+
+    // ── Inicialización ──────────────────────────────────────────────────────────────────
+    loadQuestionnaire();
+</script>

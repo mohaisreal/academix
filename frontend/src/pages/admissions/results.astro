@@ -1,0 +1,201 @@
+---
+import "@/styles/starwind.css";
+---
+
+<html lang="es" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Resultados de admisión — Academix</title>
+  </head>
+  <body class="min-h-svh bg-background text-foreground">
+    <main class="mx-auto flex min-h-svh w-full max-w-5xl flex-col px-6 py-8">
+      <header class="flex items-center justify-between border-b border-border pb-5">
+        <a href="/" class="flex items-center gap-2.5">
+          <div class="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-primary"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          </div>
+          <span class="text-xl font-bold tracking-tight">academix</span>
+        </a>
+        <a href="/login" class="text-sm text-muted-foreground hover:text-foreground">Iniciar sesión</a>
+      </header>
+
+      <section class="grid gap-6 py-10 lg:grid-cols-[1fr_360px]">
+        <div class="space-y-5">
+          <div class="inline-flex rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+            Consulta pública
+          </div>
+          <h1 class="text-3xl font-bold tracking-tight">Resultados del proceso de admisión</h1>
+          <p class="max-w-2xl text-sm leading-6 text-muted-foreground">
+            Introduce tu DNI/NIE para consultar tu estado. Las listas públicas muestran el identificador enmascarado para proteger la privacidad.
+          </p>
+
+          <form id="dni-form" class="flex max-w-xl flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row">
+            <input id="dni-input" type="text" placeholder="DNI/NIE" class="min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring/30" />
+            <button class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90" type="submit">
+              Consultar
+            </button>
+          </form>
+
+          <div id="personal-result" class="hidden rounded-xl border border-border bg-card p-5"></div>
+        </div>
+
+        <aside class="rounded-xl border border-border bg-card p-5">
+          <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Estado del proceso</p>
+          <p id="process-status" class="mt-2 text-lg font-semibold">Cargando…</p>
+          <p id="process-detail" class="mt-1 text-sm text-muted-foreground"></p>
+        </aside>
+      </section>
+
+      <section class="rounded-xl border border-border bg-card">
+        <div class="border-b border-border px-5 py-4">
+          <h2 class="text-base font-semibold">Listas publicadas</h2>
+          <p class="text-sm text-muted-foreground">DNI/NIE enmascarado, estado y posición de espera por titulación.</p>
+        </div>
+        <div id="lists" class="divide-y divide-border"></div>
+        <div id="empty" class="hidden px-5 py-10 text-center text-sm text-muted-foreground">Todavía no hay listas publicadas.</div>
+      </section>
+    </main>
+  </body>
+</html>
+
+<script>
+  const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
+
+  function escHtml(value: any) {
+    const d = document.createElement("div");
+    d.textContent = String(value ?? "");
+    return d.innerHTML;
+  }
+
+  function statusLabel(status: string) {
+    return {
+      admitted: "Admitido",
+      waitlisted: "Lista de espera",
+      rejected: "No admitido",
+    }[status] ?? status;
+  }
+
+  function statusClass(status: string) {
+    return {
+      admitted: "bg-emerald-500/15 text-emerald-400",
+      waitlisted: "bg-orange-500/15 text-orange-400",
+      rejected: "bg-red-500/15 text-red-400",
+    }[status] ?? "bg-muted text-muted-foreground";
+  }
+
+  async function fetchResults(dni = "") {
+    const params = new URLSearchParams();
+    if (dni) params.set("dni", dni);
+    const res = await fetch(`${API_URL}/admissions/public/results/?${params.toString()}`, {
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    return res.json();
+  }
+
+  function renderLists(results: any[]) {
+    const container = document.getElementById("lists")!;
+    const empty = document.getElementById("empty")!;
+    if (!results.length) {
+      container.innerHTML = "";
+      empty.classList.remove("hidden");
+      return;
+    }
+    empty.classList.add("hidden");
+
+    const grouped = results.reduce((acc: Record<string, any[]>, row: any) => {
+      const key = row.career_name ?? "—";
+      acc[key] = acc[key] || [];
+      acc[key].push(row);
+      return acc;
+    }, {});
+
+    container.innerHTML = Object.entries(grouped).map(([career, rows]: [string, any[]]) => {
+      const waitlistedCount = rows.filter((row: any) => row.status === "waitlisted").length;
+      return `
+      <details class="group">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 hover:bg-muted/30">
+          <div>
+            <h3 class="text-sm font-semibold text-foreground">${escHtml(career)}</h3>
+            <p class="mt-0.5 text-xs text-muted-foreground">${rows.length} resultado${rows.length !== 1 ? "s" : ""} · ${waitlistedCount} en espera</p>
+          </div>
+          <svg class="size-4 text-muted-foreground transition-transform group-open:rotate-180" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </summary>
+        <div class="overflow-x-auto px-5 pb-5">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
+                <th class="py-2 text-left">DNI/NIE</th>
+                <th class="py-2 text-left">Estado</th>
+                <th class="py-2 text-left">Espera</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map((row: any) => `
+                <tr class="border-b border-border/60 last:border-0">
+                  <td class="py-2 font-mono text-muted-foreground">${escHtml(row.dni_masked || "—")}</td>
+                  <td class="py-2"><span class="rounded-full px-2 py-0.5 text-xs font-semibold ${statusClass(row.status)}">${statusLabel(row.status)}</span></td>
+                  <td class="py-2 text-muted-foreground">${row.waitlist_position ? `#${row.waitlist_position}` : "—"}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    `}).join("");
+  }
+
+  function renderProcess(data: any) {
+    const status = document.getElementById("process-status")!;
+    const detail = document.getElementById("process-detail")!;
+    if (data.process_status === "published") {
+      status.textContent = "Listas publicadas";
+      detail.textContent = data.latest_publication
+        ? `Última publicación: ${new Date(data.latest_publication).toLocaleString("es-ES")}`
+        : "Hay resultados disponibles.";
+    } else {
+      status.textContent = "Pendiente de publicación";
+      detail.textContent = "Gestión todavía no ha publicado la resolución.";
+    }
+  }
+
+  async function loadInitial() {
+    try {
+      const data = await fetchResults();
+      renderProcess(data);
+      renderLists(data.results ?? []);
+    } catch {
+      document.getElementById("process-status")!.textContent = "No disponible";
+      document.getElementById("process-detail")!.textContent = "No se pudo cargar el estado del proceso.";
+    }
+  }
+
+  document.getElementById("dni-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const dni = (document.getElementById("dni-input") as HTMLInputElement).value.trim();
+    const box = document.getElementById("personal-result")!;
+    if (!dni) return;
+    try {
+      const data = await fetchResults(dni);
+      const rows = data.results ?? [];
+      box.classList.remove("hidden");
+      box.innerHTML = rows.length
+        ? `<h2 class="text-sm font-semibold">Tu resultado</h2>
+           <div class="mt-3 space-y-2">
+             ${rows.map((row: any) => `
+              <div class="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
+                <span class="text-sm text-foreground">${escHtml(row.career_name)}</span>
+                <span class="rounded-full px-2 py-0.5 text-xs font-semibold ${statusClass(row.status)}">${statusLabel(row.status)}${row.waitlist_position ? ` · espera #${row.waitlist_position}` : ""}</span>
+              </div>
+             `).join("")}
+           </div>`
+        : `<p class="text-sm text-muted-foreground">No hay resultados publicados para ese DNI/NIE.</p>`;
+    } catch {
+      box.classList.remove("hidden");
+      box.innerHTML = `<p class="text-sm text-destructive">No se pudo consultar el resultado.</p>`;
+    }
+  });
+
+  loadInitial();
+</script>

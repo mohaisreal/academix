@@ -1,0 +1,537 @@
+---
+import DashboardLayout from "@/layouts/DashboardLayout.astro";
+---
+
+<DashboardLayout title="Subject Selection — Academix" currentPath="/enrollment/classes">
+    <!-- Capa de finalización — se muestra tras terminar la matrícula -->
+    <div id="completion-screen" class="hidden fixed inset-0 z-50 bg-background items-center justify-center p-6">
+        <div class="max-w-lg w-full text-center space-y-6">
+            <!-- Animated checkmark -->
+            <div class="flex size-24 items-center justify-center rounded-full bg-emerald-500/15 mx-auto ring-4 ring-emerald-500/20">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-emerald-400">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+            </div>
+
+            <div class="space-y-2">
+                <h1 class="text-3xl font-bold text-foreground">You're all enrolled!</h1>
+                <p class="text-muted-foreground">Your admission process is complete. Here's a summary of your selected classes.</p>
+            </div>
+
+            <!-- Resumen de clases seleccionadas -->
+            <div id="completion-classes" class="text-left space-y-2 max-h-64 overflow-y-auto rounded-xl border border-border bg-card p-4">
+                <!-- populated by JS -->
+            </div>
+
+            <!-- Completion meta info -->
+            <div id="completion-meta" class="text-sm text-muted-foreground"></div>
+
+            <a href="/" class="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                Go to Dashboard
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+        <div>
+            <h1 class="text-xl font-semibold text-foreground">Subject Selection</h1>
+            <p id="page-subtitle" class="text-sm text-muted-foreground">Select your classes for this period.</p>
+        </div>
+        <a href="/enrollment" class="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            ← Enrollment
+        </a>
+    </div>
+
+    <div class="p-6 space-y-6">
+        <!-- Cargando -->
+        <div id="loading-state" class="space-y-3">
+            <div class="h-24 bg-muted animate-pulse rounded-xl"></div>
+            <div class="h-24 bg-muted animate-pulse rounded-xl"></div>
+            <div class="h-24 bg-muted animate-pulse rounded-xl"></div>
+        </div>
+
+        <!-- Sin matrícula -->
+        <div id="state-no-enrollment" class="hidden text-center py-16">
+            <p class="text-sm text-muted-foreground">You need to start an enrollment before selecting subjects.</p>
+            <a href="/enrollment" class="inline-flex items-center gap-2 mt-4 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                Go to Enrollment
+            </a>
+        </div>
+
+        <!-- Enrolled count summary + finish button -->
+        <div id="enrollment-summary" class="hidden flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-5 py-3">
+            <div class="flex items-center gap-2 text-sm">
+                <span class="text-muted-foreground">Enrolled in</span>
+                <span id="enrolled-count" class="font-semibold text-foreground">0</span>
+                <span class="text-muted-foreground">class(es)</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="btn-finish-enrollment" class="hidden inline-flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    Continue to Payment
+                </button>
+                <a id="link-view-receipt" href="#" class="hidden inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    View Receipt
+                </a>
+            </div>
+        </div>
+
+        <!-- Weekly schedule view -->
+        <div id="schedule-section" class="hidden">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-base font-semibold text-foreground">Weekly Schedule</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full border border-border rounded-xl overflow-hidden text-xs">
+                    <thead>
+                        <tr class="bg-muted/50">
+                            <th class="border-r border-border px-3 py-2 text-left text-muted-foreground font-medium w-16">Time</th>
+                            <th class="border-r border-border px-3 py-2 text-center text-muted-foreground font-medium">Mon</th>
+                            <th class="border-r border-border px-3 py-2 text-center text-muted-foreground font-medium">Tue</th>
+                            <th class="border-r border-border px-3 py-2 text-center text-muted-foreground font-medium">Wed</th>
+                            <th class="border-r border-border px-3 py-2 text-center text-muted-foreground font-medium">Thu</th>
+                            <th class="px-3 py-2 text-center text-muted-foreground font-medium">Fri</th>
+                        </tr>
+                    </thead>
+                    <tbody id="schedule-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Lista de clases -->
+        <div id="classes-content" class="hidden space-y-6">
+            <!-- agrupadas por asignatura -->
+        </div>
+
+        <!-- Vacío -->
+        <div id="empty-state" class="hidden text-center py-16">
+            <div class="flex size-16 items-center justify-center rounded-full bg-muted mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg>
+            </div>
+            <h3 class="text-base font-medium text-foreground">No classes available</h3>
+            <p class="text-sm text-muted-foreground mt-1">No classes are offered for this career and period.</p>
+        </div>
+
+        <!-- Error -->
+        <div id="error-state" class="hidden rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+            <p class="text-sm font-medium text-destructive">Failed to load classes</p>
+            <p id="error-message" class="text-sm text-destructive/80 mt-1"></p>
+        </div>
+
+        <!-- Action feedback -->
+        <div id="action-feedback" class="hidden fixed bottom-6 right-6 rounded-lg border px-4 py-3 text-sm shadow-lg z-50"></div>
+    </div>
+</DashboardLayout>
+
+<script>
+    const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
+    const token = localStorage.getItem("access_token");
+
+    function getUser(): Record<string, any> | null {
+        try {
+            const stored = localStorage.getItem("user-storage");
+            if (!stored) return null;
+            return JSON.parse(stored)?.state?.user ?? null;
+        } catch { return null; }
+    }
+
+    if (!token) { window.location.replace("/login"); }
+    const user = getUser();
+    if (!user) { window.location.replace("/login"); }
+    if (user?.role !== "s") { window.location.replace("/"); }
+
+    async function apiFetch(path: string, opts: RequestInit = {}) {
+        const res = await fetch(`${API_URL}${path}`, {
+            ...opts,
+            headers: { "Authorization": `Bearer ${token}`, "Accept": "application/json", ...(opts.headers || {}) },
+        });
+        if (res.status === 401) { window.location.replace("/login"); throw new Error("Unauthorized"); }
+        return res;
+    }
+
+    // Borrador: selección local (aún no guardada). Inicializada desde BD al cargar.
+    let draftEnrollIds = new Set<number>();
+    // Estado en BD: lo que está persistido actualmente. Se usa para calcular diferencias al finalizar.
+    let originalEnrollIds = new Set<number>();
+    // classId → ID de matrícula de clase en BD (necesario para DELETE)
+    let dbEnrollmentMap = new Map<number, number>();
+
+    let careerEnrollmentId: number | null = null;
+    let enrollmentCareerName = "";
+    let enrollmentPeriodName = "";
+    let isCompleted = false;
+
+    function showFeedback(message: string, isError = false) {
+        const el = document.getElementById("action-feedback")!;
+        el.textContent = message;
+        el.className = `fixed bottom-6 right-6 rounded-lg border px-4 py-3 text-sm shadow-lg z-50 ${isError ? "border-destructive/30 bg-destructive/15 text-destructive" : "border-emerald-500/30 bg-emerald-500/15 text-emerald-400"}`;
+        el.classList.remove("hidden");
+        setTimeout(() => el.classList.add("hidden"), 3000);
+    }
+
+    // Mapeo day_name desde backend (español) a índice de cuadrícula (0=lun…4=vie)
+    const DAY_NAME_TO_INDEX: Record<string, number> = {
+        "lunes": 0, "martes": 1, "miércoles": 2, "miercoles": 2,
+        "jueves": 3, "viernes": 4,
+        "monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3, "friday": 4,
+    };
+    const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+    const HOURS = Array.from({ length: 13 }, (_, i) => i + 8); // 8-20
+
+    function buildScheduleGrid(enrolledClasses: any[]) {
+        const grid: Record<number, Record<number, { name: string }[]>> = {};
+        for (let d = 0; d < 5; d++) { grid[d] = {}; HOURS.forEach(h => { grid[d][h] = []; }); }
+
+        enrolledClasses.forEach(cls => {
+            (cls.schedules ?? []).forEach((sched: any) => {
+                const dayName = (sched.day_name ?? sched.day ?? "").toLowerCase();
+                const dayIndex = DAY_NAME_TO_INDEX[dayName] ?? -1;
+                const startHour = sched.start_time ? parseInt(sched.start_time.split(":")[0]) : null;
+                if (dayIndex >= 0 && startHour !== null && grid[dayIndex] && grid[dayIndex][startHour] !== undefined) {
+                    grid[dayIndex][startHour].push({ name: cls.subject?.name ?? cls.subject_name ?? "Class" });
+                }
+            });
+        });
+
+        const tbody = document.getElementById("schedule-tbody")!;
+        tbody.innerHTML = HOURS.map(hour => {
+            const cells = [0, 1, 2, 3, 4].map(dayIdx => {
+                const items = grid[dayIdx][hour];
+                const content = items.map(i => `<div class="bg-primary/15 text-primary rounded px-1 py-0.5 truncate text-xs">${i.name}</div>`).join("");
+                return `<td class="border-r border-border last:border-r-0 border-t border-border px-1 py-1 min-w-24 align-top">${content || ""}</td>`;
+            }).join("");
+            return `<tr><td class="border-r border-border border-t border-border px-2 py-1 text-muted-foreground whitespace-nowrap">${hour}:00</td>${cells}</tr>`;
+        }).join("");
+    }
+
+    function renderClasses(classes: any[]) {
+        const loading = document.getElementById("loading-state")!;
+        const content = document.getElementById("classes-content")!;
+        const empty = document.getElementById("empty-state")!;
+
+        loading.classList.add("hidden");
+
+        if (classes.length === 0) {
+            empty.classList.remove("hidden");
+            return;
+        }
+
+        content.classList.remove("hidden");
+        document.getElementById("enrollment-summary")?.classList.remove("hidden");
+        document.getElementById("schedule-section")?.classList.remove("hidden");
+
+        buildScheduleGrid(classes.filter(cls => draftEnrollIds.has(cls.id)));
+
+        const bySubject = new Map<string, any[]>();
+        classes.forEach(cls => {
+            const subjectKey = cls.subject?.name ?? cls.subject_name ?? "Unknown Subject";
+            if (!bySubject.has(subjectKey)) bySubject.set(subjectKey, []);
+            bySubject.get(subjectKey)!.push(cls);
+        });
+
+        content.innerHTML = Array.from(bySubject.entries()).map(([subjectName, subjectClasses]) => `
+            <div>
+                <h3 class="text-sm font-semibold text-foreground mb-3">
+                    ${subjectName}
+                    <span class="text-xs font-normal text-muted-foreground ml-1">${subjectClasses[0]?.subject?.code ?? ""} · ${subjectClasses[0]?.subject?.credits ?? 0} credits</span>
+                </h3>
+                <div class="space-y-2">
+                    ${subjectClasses.map(cls => {
+                        const isEnrolled = draftEnrollIds.has(cls.id);
+                        const spotsAvailable: number = cls.available_spots ??
+                            (cls.max_students != null ? cls.max_students - (cls.enrolled_count ?? 0) : 30);
+                        const isFull = !isEnrolled && spotsAvailable <= 0;
+
+                        const teacherName = cls.teacher?.full_name
+                            ?? (`${cls.teacher?.first_name ?? ""} ${cls.teacher?.last_name ?? ""}`.trim() || "—");
+                        const classroomStr = cls.classroom
+                            ? `${cls.classroom.name} (${cls.classroom.building})`
+                            : "—";
+                        const scheduleStr = (cls.schedules ?? []).map((s: any) => {
+                            const day = s.day_name ?? s.day ?? "";
+                            const start = s.start_time ?? "";
+                            const end = s.end_time ?? "";
+                            return `${day} ${start}–${end}`;
+                        }).join(" · ");
+
+                        let actionBtn = "";
+                        if (isCompleted) {
+                            actionBtn = "";
+                        } else if (isEnrolled) {
+                            actionBtn = `<button class="btn-unenroll text-xs rounded-md border border-destructive/40 px-3 py-1.5 text-destructive hover:bg-destructive/10 transition-colors" data-class-id="${cls.id}">Remove</button>`;
+                        } else if (isFull) {
+                            actionBtn = `<button disabled class="text-xs rounded-md border border-border px-3 py-1.5 text-muted-foreground opacity-50 cursor-not-allowed">Class Full</button>`;
+                        } else {
+                            actionBtn = `<button class="btn-enroll text-xs rounded-md bg-primary px-3 py-1.5 text-primary-foreground hover:bg-primary/90 transition-colors" data-class-id="${cls.id}">Select</button>`;
+                        }
+
+                        const spotsLabel = isEnrolled ? ""
+                            : isFull ? `<span class="text-xs text-destructive/70">Full</span>`
+                            : `<span class="text-xs text-muted-foreground">${spotsAvailable} spot${spotsAvailable !== 1 ? "s" : ""} left</span>`;
+
+                        return `
+                        <div class="bg-card border ${isEnrolled ? "border-primary/40" : "border-border"} rounded-lg p-4 flex items-center justify-between gap-4" data-class-card="${cls.id}">
+                            <div class="flex-1 min-w-0 space-y-1.5">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    ${isEnrolled ? '<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-primary/15 text-primary">Enrolled</span>' : ""}
+                                    ${spotsLabel}
+                                </div>
+                                <div class="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                                    ${teacherName !== "—" ? `<span class="flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>${teacherName}</span>` : ""}
+                                    ${classroomStr !== "—" ? `<span class="flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>${classroomStr}</span>` : ""}
+                                    ${scheduleStr ? `<span class="flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${scheduleStr}</span>` : ""}
+                                </div>
+                            </div>
+                            <div class="shrink-0">${actionBtn}</div>
+                        </div>`;
+                    }).join("")}
+                </div>
+            </div>
+        `).join("");
+
+        document.getElementById("enrolled-count")!.textContent = String(draftEnrollIds.size);
+
+        if (isCompleted) {
+            document.getElementById("btn-finish-enrollment")?.classList.add("hidden");
+            const receiptLink = document.getElementById("link-view-receipt");
+            if (receiptLink) receiptLink.classList.remove("hidden");
+        } else {
+            const finishBtn = document.getElementById("btn-finish-enrollment")!;
+            draftEnrollIds.size > 0 ? finishBtn.classList.remove("hidden") : finishBtn.classList.add("hidden");
+            document.getElementById("link-view-receipt")?.classList.add("hidden");
+        }
+
+        content.querySelectorAll(".btn-enroll").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const classId = Number((btn as HTMLElement).dataset.classId);
+                enrollInClass(classId, classes);
+            });
+        });
+
+        content.querySelectorAll(".btn-unenroll").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const classId = Number((btn as HTMLElement).dataset.classId);
+                unenrollFromClass(classId, classes);
+            });
+        });
+    }
+
+    function enrollInClass(classId: number, allClasses: any[]) {
+        draftEnrollIds.add(classId);
+        const clsObj = allClasses.find(c => c.id === classId);
+        if (clsObj && clsObj.available_spots != null) {
+            clsObj.available_spots = Math.max(0, clsObj.available_spots - 1);
+            clsObj.enrolled_count = (clsObj.enrolled_count ?? 0) + 1;
+        }
+        renderClasses(allClasses);
+    }
+
+    function unenrollFromClass(classId: number, allClasses: any[]) {
+        draftEnrollIds.delete(classId);
+        const clsObj = allClasses.find(c => c.id === classId);
+        if (clsObj && clsObj.available_spots != null) {
+            clsObj.available_spots = clsObj.available_spots + 1;
+            clsObj.enrolled_count = Math.max(0, (clsObj.enrolled_count ?? 1) - 1);
+        }
+        renderClasses(allClasses);
+    }
+
+    function showCompletionScreen(allClasses: any[]) {
+        const enrolledClasses = allClasses.filter(cls => draftEnrollIds.has(cls.id));
+
+        const completionClasses = document.getElementById("completion-classes")!;
+        if (enrolledClasses.length === 0) {
+            completionClasses.innerHTML = `<p class="text-sm text-muted-foreground text-center py-4">No classes selected.</p>`;
+        } else {
+            completionClasses.innerHTML = enrolledClasses.map(cls => {
+                const subjectName = cls.subject?.name ?? cls.subject_name ?? "Class";
+                const scheduleStr = (cls.schedules ?? []).map((s: any) => {
+                    const day = s.day_name ?? s.day ?? "";
+                    const start = s.start_time ?? "";
+                    const end = s.end_time ?? "";
+                    return `${day} ${start}${end ? "–" + end : ""}`;
+                }).join(" · ");
+
+                return `
+                <div class="flex items-start gap-3 py-2 border-b border-border/50 last:border-0">
+                    <div class="flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 mt-0.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-emerald-400"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-sm font-medium text-foreground">${subjectName}</p>
+                        ${scheduleStr ? `<p class="text-xs text-muted-foreground mt-0.5">${scheduleStr}</p>` : ""}
+                    </div>
+                </div>`;
+            }).join("");
+        }
+
+        document.getElementById("completion-meta")!.textContent =
+            `${enrollmentCareerName}${enrollmentPeriodName ? " · " + enrollmentPeriodName : ""}`;
+
+        const screen = document.getElementById("completion-screen")!;
+        screen.classList.remove("hidden");
+        screen.classList.add("flex");
+    }
+
+    async function finishEnrollment(allClasses: any[]) {
+        if (!careerEnrollmentId) {
+            showFeedback("Enrollment ID not found. Please refresh and try again.", true);
+            return;
+        }
+
+        const btn = document.getElementById("btn-finish-enrollment") as HTMLButtonElement;
+        const resetBtn = () => {
+            btn.disabled = false;
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Continue to Payment`;
+        };
+
+        btn.disabled = true;
+        btn.textContent = "Saving selections...";
+
+        try {
+            // Diff draft vs DB
+            const toAdd = [...draftEnrollIds].filter(id => !originalEnrollIds.has(id));
+            const toRemove = [...originalEnrollIds].filter(id => !draftEnrollIds.has(id));
+
+            for (const classId of toAdd) {
+                const res = await apiFetch("/enrollment/class-enrollments/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ class_id: classId }),
+                });
+                if (res.ok) {
+                    const json = await res.json().catch(() => ({}));
+                    if (json.id) dbEnrollmentMap.set(classId, json.id);
+                    originalEnrollIds.add(classId);
+                } else {
+                    const json = await res.json().catch(() => ({}));
+                    showFeedback(json.detail || json.error || `Failed to enroll in class (${res.status})`, true);
+                    resetBtn();
+                    return;
+                }
+            }
+
+            for (const classId of toRemove) {
+                const enrollmentId = dbEnrollmentMap.get(classId);
+                if (!enrollmentId) continue;
+                const res = await apiFetch(`/enrollment/class-enrollments/${enrollmentId}/`, { method: "DELETE" });
+                if (res.ok || res.status === 204) {
+                    dbEnrollmentMap.delete(classId);
+                    originalEnrollIds.delete(classId);
+                }
+            }
+
+            btn.textContent = "Calculating payment...";
+            const res = await apiFetch(`/enrollment/career-enrollments/${careerEnrollmentId}/complete/`, {
+                method: "POST",
+            });
+
+            if (!res.ok) {
+                const json = await res.json().catch(() => ({}));
+                showFeedback(json.detail || json.error || `Failed to complete enrollment (${res.status})`, true);
+                resetBtn();
+                return;
+            }
+
+            const json = await res.json().catch(() => ({}));
+            if (json.next_step === "receipt") {
+                window.location.href = `/enrollment/receipt/${careerEnrollmentId}`;
+            } else {
+                window.location.href = "/enrollment";
+            }
+
+        } catch (err) {
+            console.error("finishEnrollment error:", err);
+            showFeedback("Failed to complete enrollment. Please try again.", true);
+            resetBtn();
+        }
+    }
+
+    async function init() {
+        try {
+            const enrollRes = await apiFetch("/enrollment/career-enrollments/");
+            if (!enrollRes.ok) {
+                document.getElementById("loading-state")?.classList.add("hidden");
+                document.getElementById("state-no-enrollment")?.classList.remove("hidden");
+                return;
+            }
+
+            const enrollData = await enrollRes.json();
+            const enrollments = Array.isArray(enrollData) ? enrollData : (enrollData.results ?? []);
+            const enrollment = enrollments.find((e: any) => e.status === "pending")
+                ?? enrollments.find((e: any) => e.status === "active")
+                ?? enrollments.find((e: any) => e.status === "completed")
+                ?? enrollments[0]
+                ?? null;
+
+            if (!enrollment) {
+                document.getElementById("loading-state")?.classList.add("hidden");
+                document.getElementById("state-no-enrollment")?.classList.remove("hidden");
+                return;
+            }
+
+            careerEnrollmentId = enrollment.id;
+            isCompleted = enrollment.status === "completed";
+
+            const careerId = enrollment.career_id_ro ?? enrollment.career?.id ?? enrollment.career_id;
+            const periodId = enrollment.period_id_ro ?? enrollment.period?.id ?? enrollment.academic_period?.id ?? enrollment.period_id;
+
+            enrollmentCareerName = enrollment.career_name ?? enrollment.career?.name ?? "Career";
+            enrollmentPeriodName = enrollment.period_name ?? enrollment.period?.name ?? enrollment.academic_period?.name ?? "";
+
+            document.getElementById("page-subtitle")!.textContent =
+                `${enrollmentCareerName} — ${enrollmentPeriodName || "Current Period"}`;
+
+            // Carga matrículas de clase desde BD → inicializa originalEnrollIds y draftEnrollIds
+            const classEnrollRes = await apiFetch("/enrollment/class-enrollments/");
+            if (classEnrollRes.ok) {
+                const classEnrollData = await classEnrollRes.json();
+                const classEnrollments = Array.isArray(classEnrollData) ? classEnrollData : (classEnrollData.results ?? []);
+                classEnrollments.forEach((ce: any) => {
+                    const classId = ce.class_id ?? ce.academic_class?.id ?? ce.class?.id;
+                    if (classId) {
+                        const id = Number(classId);
+                        originalEnrollIds.add(id);
+                        draftEnrollIds.add(id);
+                        if (ce.id) dbEnrollmentMap.set(id, ce.id);
+                    }
+                });
+            }
+
+            // Establece el enlace de recibo para matrículas completadas
+            if (isCompleted) {
+                const receiptLink = document.getElementById("link-view-receipt") as HTMLAnchorElement | null;
+                if (receiptLink) receiptLink.href = `/enrollment/receipt/${careerEnrollmentId}`;
+            }
+
+            const classesRes = await apiFetch(`/academic/careers/${careerId}/classes/?period=${periodId}`);
+            document.getElementById("loading-state")?.classList.add("hidden");
+
+            if (!classesRes.ok) {
+                document.getElementById("error-message")!.textContent = `Failed to load classes (${classesRes.status})`;
+                document.getElementById("error-state")?.classList.remove("hidden");
+                return;
+            }
+
+            const classesData = await classesRes.json();
+            const classes = Array.isArray(classesData) ? classesData : (classesData.results ?? []);
+            renderClasses(classes);
+
+            if (!isCompleted) {
+                document.getElementById("btn-finish-enrollment")?.addEventListener("click", () => {
+                    finishEnrollment(classes);
+                });
+            }
+
+        } catch {
+            document.getElementById("loading-state")?.classList.add("hidden");
+            document.getElementById("error-message")!.textContent = "Network error. Please check your connection.";
+            document.getElementById("error-state")?.classList.remove("hidden");
+        }
+    }
+
+    init();
+</script>

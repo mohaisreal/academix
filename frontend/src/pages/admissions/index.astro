@@ -1,0 +1,122 @@
+---
+import DashboardLayout from "@/layouts/DashboardLayout.astro";
+---
+
+<DashboardLayout title="Preinscripción — Academix" currentPath="/admissions">
+    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+        <div>
+            <h1 class="text-xl font-semibold text-foreground">Preinscripción universitaria</h1>
+            <p class="text-sm text-muted-foreground">Solicitá plaza para el próximo período académico.</p>
+        </div>
+        <a href="/admissions/my-applications"
+            class="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            Mis solicitudes →
+        </a>
+    </div>
+
+    <div class="p-6 max-w-2xl mx-auto">
+
+        <!-- Hero card -->
+        <div class="bg-card border border-border rounded-xl p-8 shadow-sm text-center mb-6">
+            <div class="flex size-16 items-center justify-center rounded-full bg-primary/10 mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-primary">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                    <path d="M6 12v5c3 3 6 3 6 3s3 0 6-3v-5"/>
+                </svg>
+            </div>
+            <h2 class="text-lg font-semibold text-foreground mb-2">Nueva preinscripción</h2>
+            <p class="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+                Completa el formulario de preinscripción en 6 pasos: elige tus titulaciones por orden de preferencia, indica tu vía de acceso y adjunta la documentación requerida.
+            </p>
+            <a href="/admissions/preinscripcion"
+                id="btn-start"
+                class="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                Iniciar preinscripción
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
+        </div>
+
+        <!-- Process steps overview -->
+        <div class="space-y-3">
+            <h3 class="text-sm font-semibold text-foreground">¿Cómo funciona?</h3>
+            <div class="space-y-2">
+                <div class="flex gap-4 rounded-lg border border-border bg-card px-4 py-3">
+                    <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">1</span>
+                    <div>
+                        <p class="text-sm font-medium text-foreground">Preinscripción</p>
+                        <p class="text-xs text-muted-foreground mt-0.5">Completas el formulario indicando tus preferencias de titulación por orden de prioridad.</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 rounded-lg border border-border bg-card px-4 py-3">
+                    <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">2</span>
+                    <div>
+                        <p class="text-sm font-medium text-foreground">Asignación de plazas</p>
+                        <p class="text-xs text-muted-foreground mt-0.5">El sistema asigna plazas según nota de corte. Hay resolución provisional y definitiva.</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 rounded-lg border border-border bg-card px-4 py-3">
+                    <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">3</span>
+                    <div>
+                        <p class="text-sm font-medium text-foreground">Matrícula</p>
+                        <p class="text-xs text-muted-foreground mt-0.5">Una vez admitido, confirmás la plaza y formalizás la matrícula en los plazos establecidos.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Already have application notice -->
+        <div id="existing-app-notice" class="hidden mt-4 rounded-xl border-2 border-amber-500/40 bg-amber-500/10 px-5 py-5 flex items-start gap-4">
+            <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-500/20 mt-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber-500"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div>
+                <p class="text-base font-semibold text-amber-600">Ya tienes una preinscripción activa</p>
+                <p class="text-sm text-amber-600/80 mt-1">Tu solicitud está en proceso. No puedes iniciar una nueva preinscripción hasta que la actual se resuelva, expire o la rechacen.</p>
+                <a href="/admissions/my-applications" class="inline-flex items-center gap-1.5 mt-3 text-sm font-semibold text-amber-600 hover:text-amber-700 transition-colors">
+                    Ver mis solicitudes
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </a>
+            </div>
+        </div>
+
+        <div id="error-msg" class="hidden mt-4 text-sm text-destructive"></div>
+    </div>
+</DashboardLayout>
+
+<script>
+    const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
+    const token = localStorage.getItem("access_token");
+
+    function getUser(): Record<string, any> | null {
+        try {
+            const stored = localStorage.getItem("user-storage");
+            if (!stored) return null;
+            return JSON.parse(stored)?.state?.user ?? null;
+        } catch { return null; }
+    }
+
+    if (!token) window.location.replace("/login");
+    const user = getUser();
+    if (!user || user.role !== "s") window.location.replace("/");
+
+    // Comprueba si existe una solicitud activa
+    async function checkExisting() {
+        try {
+            const res = await fetch(`${API_URL}/admissions/applications/`, {
+                headers: { "Authorization": `Bearer ${token}`, "Accept": "application/json" },
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            const apps: any[] = Array.isArray(data) ? data : (data.results ?? []);
+            const terminalStatuses = new Set(['withdrawn', 'expired', 'rejected', 'provisional_rejected']);
+            const active = apps.filter(a => !terminalStatuses.has(a.status));
+            if (active.length > 0) {
+                document.getElementById("btn-start")!.classList.add("hidden");
+                document.getElementById("existing-app-notice")!.classList.remove("hidden");
+            }
+        } catch { /* ignore */
+ }
+    }
+
+    checkExisting();
+</script>

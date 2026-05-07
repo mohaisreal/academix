@@ -1,0 +1,368 @@
+---
+import "@/styles/starwind.css";
+---
+
+<html lang="en" class="dark">
+    <head>
+        <meta charset="utf-8" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="icon" href="/favicon.ico" />
+        <meta name="viewport" content="width=device-width" />
+        <meta name="generator" content={Astro.generator} />
+        <title>Create Account — Academix</title>
+        <style>
+            .dot-grid {
+                background-image: radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px);
+                background-size: 24px 24px;
+            }
+            .ambient-glow {
+                background: radial-gradient(
+                    ellipse 60% 50% at 50% 50%,
+                    rgba(59, 130, 246, 0.06) 0%,
+                    transparent 70%
+                );
+            }
+            .fade-up {
+                opacity: 0;
+                transform: translateY(12px);
+                animation: fadeUp 0.5s ease-out forwards;
+            }
+            .fade-up:nth-child(1) { animation-delay: 0.1s; }
+            .fade-up:nth-child(2) { animation-delay: 0.2s; }
+            .fade-up:nth-child(3) { animation-delay: 0.3s; }
+            @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+            @media (prefers-reduced-motion: reduce) {
+                .fade-up { opacity: 1; transform: none; animation: none; }
+            }
+        </style>
+    </head>
+    <body class="bg-background text-foreground">
+        <div class="grid min-h-svh lg:grid-cols-[1fr_minmax(520px,1fr)]">
+
+            <!-- Left panel: branding -->
+            <div class="relative hidden overflow-hidden border-r border-border lg:flex lg:flex-col">
+                <div class="dot-grid absolute inset-0"></div>
+                <div class="ambient-glow absolute inset-0"></div>
+                <div class="relative z-10 flex flex-1 flex-col justify-between p-10 xl:p-14">
+                    <div>
+                        <div class="flex items-center gap-3">
+                            <div class="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary">
+                                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                                </svg>
+                            </div>
+                            <span class="text-xl font-bold tracking-tight text-foreground">academix</span>
+                        </div>
+                    </div>
+                    <div class="max-w-md">
+                        <h1 class="text-4xl font-bold leading-tight tracking-tight text-foreground xl:text-5xl">
+                            Start your<br/>
+                            <span class="text-primary">academic</span><br/>
+                            journey today.
+                        </h1>
+                        <p class="mt-4 text-base leading-relaxed text-muted-foreground">
+                            Join thousands of students managing their education on one unified platform.
+                        </p>
+                        <div class="mt-10 space-y-5">
+                            <div class="fade-up flex items-start gap-3">
+                                <div class="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 6 3 6 3s3 0 6-3v-5"/></svg>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-foreground">Apply for Admission</p>
+                                    <p class="text-sm text-muted-foreground">Browse careers and submit your application online.</p>
+                                </div>
+                            </div>
+                            <div class="fade-up flex items-start gap-3">
+                                <div class="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-foreground">Track Your Enrollment</p>
+                                    <p class="text-sm text-muted-foreground">Manage classes, grades, and academic records.</p>
+                                </div>
+                            </div>
+                            <div class="fade-up flex items-start gap-3">
+                                <div class="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-foreground">Real-time Insights</p>
+                                    <p class="text-sm text-muted-foreground">Monitor your progress throughout the academic year.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 border-t border-border pt-6">
+                        <div class="flex -space-x-2">
+                            <div class="flex size-8 items-center justify-center rounded-full border-2 border-background bg-blue-600 text-xs font-bold text-white">S</div>
+                            <div class="flex size-8 items-center justify-center rounded-full border-2 border-background bg-emerald-600 text-xs font-bold text-white">T</div>
+                            <div class="flex size-8 items-center justify-center rounded-full border-2 border-background bg-amber-600 text-xs font-bold text-white">A</div>
+                        </div>
+                        <p class="text-sm text-muted-foreground">
+                            Trusted by <span class="font-medium text-foreground">students</span>, <span class="font-medium text-foreground">teachers</span>, and <span class="font-medium text-foreground">admins</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel derecho: formulario de registro -->
+            <div class="flex flex-col p-6 md:p-10 overflow-y-auto">
+                <!-- Mobile logo -->
+                <div class="lg:hidden mb-8">
+                    <div class="flex items-center gap-2.5">
+                        <div class="flex size-8 items-center justify-center rounded-lg bg-primary/10">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary">
+                                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                            </svg>
+                        </div>
+                        <span class="text-lg font-bold tracking-tight text-foreground">academix</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-1 items-center justify-center py-4">
+                    <div class="w-full max-w-md">
+                        <div class="mb-8">
+                            <h2 class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Create your account</h2>
+                            <p class="mt-2 text-sm text-muted-foreground">Fill in your details to get started</p>
+                        </div>
+
+                        <!-- Alerta de error -->
+                        <div id="register-error" class="mb-6 hidden rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+                            <p class="text-sm font-medium text-destructive">Registration failed</p>
+                            <p id="register-error-message" class="text-sm text-destructive/80 mt-1">Please check the errors below.</p>
+                        </div>
+
+                        <!-- Correcto alert -->
+                        <div id="register-success" class="mb-6 hidden rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4">
+                            <p class="text-sm font-medium text-emerald-400">Account created!</p>
+                            <p class="text-sm text-emerald-400/80 mt-1">Revisa tu correo electrónico para activar tu cuenta antes de iniciar sesión.</p>
+                        </div>
+
+                        <form id="register-form" novalidate class="space-y-4">
+                            <!-- Name row -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-1.5">
+                                    <label for="first_name" class="text-sm font-medium text-foreground">First Name</label>
+                                    <input id="first_name" name="first_name" type="text" autocomplete="given-name" required placeholder="Jane"
+                                        class="w-full min-h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30 aria-invalid:border-destructive" />
+                                    <p id="first_name-error" class="text-xs text-destructive hidden"></p>
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label for="last_name" class="text-sm font-medium text-foreground">Last Name</label>
+                                    <input id="last_name" name="last_name" type="text" autocomplete="family-name" required placeholder="Doe"
+                                        class="w-full min-h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30 aria-invalid:border-destructive" />
+                                    <p id="last_name-error" class="text-xs text-destructive hidden"></p>
+                                </div>
+                            </div>
+
+                            <!-- Correo electrónico -->
+                            <div class="space-y-1.5">
+                                <label for="email" class="text-sm font-medium text-foreground">Correo electrónico</label>
+                                <input id="email" name="email" type="email" autocomplete="email" required placeholder="jane@example.com"
+                                    class="w-full min-h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30 aria-invalid:border-destructive" />
+                                <p id="email-error" class="text-xs text-destructive hidden"></p>
+                            </div>
+
+                            <!-- DNI y teléfono -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-1.5">
+                                    <label for="dni" class="text-sm font-medium text-foreground">DNI</label>
+                                    <input id="dni" name="dni" type="text" required placeholder="12345678"
+                                        class="w-full min-h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30 aria-invalid:border-destructive" />
+                                    <p id="dni-error" class="text-xs text-destructive hidden"></p>
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label for="phone" class="text-sm font-medium text-foreground">Phone</label>
+                                    <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+54 11 1234-5678"
+                                        class="w-full min-h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30" />
+                                    <p id="phone-error" class="text-xs text-destructive hidden"></p>
+                                </div>
+                            </div>
+
+                            <!-- Date of Birth -->
+                            <div class="space-y-1.5">
+                                <label for="date_of_birth" class="text-sm font-medium text-foreground">Date of Birth</label>
+                                <input id="date_of_birth" name="date_of_birth" type="date" required
+                                    class="w-full min-h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30 aria-invalid:border-destructive" />
+                                <p id="date_of_birth-error" class="text-xs text-destructive hidden"></p>
+                            </div>
+
+                            <!-- Contraseña -->
+                            <div class="space-y-1.5">
+                                <label for="password" class="text-sm font-medium text-foreground">Contraseña</label>
+                                <input id="password" name="password" type="password" autocomplete="new-password" required placeholder="Al menos 8 caracteres"
+                                    class="w-full min-h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30 aria-invalid:border-destructive" />
+                                <p id="password-error" class="text-xs text-destructive hidden"></p>
+                            </div>
+
+                            <!-- Confirmar contraseña -->
+                            <div class="space-y-1.5">
+                                <label for="password2" class="text-sm font-medium text-foreground">Confirmar contraseña</label>
+                                <div class="relative">
+                                    <input id="password2" name="password2" type="password" autocomplete="new-password" required placeholder="Repite tu contraseña"
+                                        class="w-full min-h-10 rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30 aria-invalid:border-destructive" />
+                                    <button type="button" id="toggle-password-btn" aria-label="Toggle password visibility"
+                                        class="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground transition-colors">
+                                        <!-- Icono de ojo (contraseña oculta) -->
+                                        <svg id="icon-eye" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                        <!-- Icono de ojo tachado (contraseña visible) -->
+                                        <svg id="icon-eye-off" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                                    </button>
+                                </div>
+                                <p id="password2-error" class="text-xs text-destructive hidden"></p>
+                            </div>
+
+                            <!-- Submit -->
+                            <button type="submit" id="register-submit"
+                                class="w-full mt-2 flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                                <span id="btn-label">Create Account</span>
+                                <svg id="btn-spinner" class="hidden animate-spin" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                            </button>
+                        </form>
+
+                        <p class="mt-6 text-center text-sm text-muted-foreground">
+                            Already have an account?{" "}
+                            <a href="/login" class="font-medium text-foreground underline underline-offset-4 transition-colors hover:text-primary">Sign in</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
+
+<script>
+    const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
+
+    // Redirige si ya se ha iniciado sesión
+    if (localStorage.getItem("access_token")) {
+        window.location.replace("/");
+    }
+
+    const form = document.getElementById("register-form") as HTMLFormElement;
+    const submitBtn = document.getElementById("register-submit") as HTMLButtonElement;
+    const btnLabel = document.getElementById("btn-label") as HTMLSpanElement;
+    const btnSpinner = document.getElementById("btn-spinner") as HTMLElement;
+    const errorBanner = document.getElementById("register-error") as HTMLDivElement;
+    const errorMsg = document.getElementById("register-error-message") as HTMLParagraphElement;
+    const successBanner = document.getElementById("register-success") as HTMLDivElement;
+
+    const FIELDS = ["first_name", "last_name", "email", "dni", "phone", "date_of_birth", "password", "password2"] as const;
+
+    // Establece la fecha máxima de date_of_birth a hoy
+    const dobInput = document.getElementById("date_of_birth") as HTMLInputElement;
+    if (dobInput) dobInput.max = new Date().toISOString().split("T")[0];
+
+    // Alternador de visibilidad de contraseña
+    const toggleBtn = document.getElementById("toggle-password-btn") as HTMLButtonElement;
+    const iconEye = document.getElementById("icon-eye") as SVGElement;
+    const iconEyeOff = document.getElementById("icon-eye-off") as SVGElement;
+    const pwInput = document.getElementById("password") as HTMLInputElement;
+    const pw2Input = document.getElementById("password2") as HTMLInputElement;
+    let passwordVisible = false;
+    toggleBtn?.addEventListener("click", () => {
+        passwordVisible = !passwordVisible;
+        const type = passwordVisible ? "text" : "password";
+        pwInput.type = type;
+        pw2Input.type = type;
+        iconEye.classList.toggle("hidden", passwordVisible);
+        iconEyeOff.classList.toggle("hidden", !passwordVisible);
+    });
+
+    function clearErrors() {
+        errorBanner.classList.add("hidden");
+        for (const f of FIELDS) {
+            const el = document.getElementById(`${f}-error`);
+            const input = document.getElementById(f) as HTMLInputElement | null;
+            if (el) { el.textContent = ""; el.classList.add("hidden"); }
+            if (input) input.removeAttribute("aria-invalid");
+        }
+    }
+
+    function showFieldError(field: string, messages: string[]) {
+        const el = document.getElementById(`${field}-error`);
+        const input = document.getElementById(field) as HTMLInputElement | null;
+        if (el) { el.textContent = messages.join(" "); el.classList.remove("hidden"); }
+        if (input) input.setAttribute("aria-invalid", "true");
+    }
+
+    function setLoading(loading: boolean) {
+        submitBtn.disabled = loading;
+        btnLabel.textContent = loading ? "Creating account..." : "Create Account";
+        btnSpinner.classList.toggle("hidden", !loading);
+    }
+
+    form.addEventListener("submit", async (e: Event) => {
+        e.preventDefault();
+        clearErrors();
+
+        const data: Record<string, string> = {};
+        for (const f of FIELDS) {
+            const input = document.getElementById(f) as HTMLInputElement | null;
+            if (input) data[f] = input.value.trim();
+        }
+
+        // Client-side validation
+        let hasError = false;
+        if (!data.first_name) { showFieldError("first_name", ["Obligatorio"]); hasError = true; }
+        if (!data.last_name) { showFieldError("last_name", ["Obligatorio"]); hasError = true; }
+        if (!data.email) { showFieldError("email", ["Obligatorio"]); hasError = true; }
+        if (!data.dni) { showFieldError("dni", ["Obligatorio"]); hasError = true; }
+        if (!data.date_of_birth) { showFieldError("date_of_birth", ["Obligatorio"]); hasError = true; }
+        if (data.date_of_birth && data.date_of_birth > new Date().toISOString().split("T")[0]) {
+            showFieldError("date_of_birth", ["Date of birth cannot be in the future"]);
+            hasError = true;
+        }
+        if (!data.password) { showFieldError("password", ["Obligatorio"]); hasError = true; }
+        if (!data.password2) { showFieldError("password2", ["Obligatorio"]); hasError = true; }
+        if (data.password && data.password2 && data.password !== data.password2) {
+            showFieldError("password2", ["Las contraseñas no coinciden"]);
+            hasError = true;
+        }
+        if (hasError) return;
+
+        setLoading(true);
+
+        try {
+            const res = await fetch(`${API_URL}/auth/register/`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                body: JSON.stringify(data),
+            });
+
+            const json = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                // Muestra errores de campo del backend
+                let shownField = false;
+                for (const f of FIELDS) {
+                    if (json[f]) {
+                        showFieldError(f, Array.isArray(json[f]) ? json[f] : [json[f]]);
+                        shownField = true;
+                    }
+                }
+                if (!shownField) {
+                    const msg = json.detail || json.error || json.message || `Registration failed (${res.status})`;
+                    errorMsg.textContent = msg;
+                    errorBanner.classList.remove("hidden");
+                }
+                setLoading(false);
+                return;
+            }
+
+            // Correcto
+            form.classList.add("hidden");
+            successBanner.classList.remove("hidden");
+
+        } catch (err) {
+            errorMsg.textContent = err instanceof TypeError
+                ? "Unable to reach the server. Check your connection."
+                : "An unexpected error occurred. Please try again.";
+            errorBanner.classList.remove("hidden");
+            setLoading(false);
+        }
+    });
+</script>

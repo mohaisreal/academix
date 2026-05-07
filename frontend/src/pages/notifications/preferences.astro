@@ -1,0 +1,393 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+---
+
+<DashboardLayout title="Profile Settings — Academix" currentPath="/notifications/preferences">
+  <!-- Esqueleto de carga -->
+  <div id="page-loading" class="p-6 space-y-4">
+    <div class="h-14 bg-card rounded-xl border border-border animate-pulse"></div>
+    <div class="h-64 bg-card rounded-xl border border-border animate-pulse"></div>
+    <div class="h-40 bg-card rounded-xl border border-border animate-pulse"></div>
+  </div>
+
+  <!-- Actual content -->
+  <div id="page-content" class="hidden">
+    <div class="border-b border-border px-6 py-4">
+      <h1 class="text-xl font-semibold text-foreground">Configuración del perfil</h1>
+      <p class="text-sm text-muted-foreground">
+        Gestiona cómo quieres recibir notificaciones y qué tema visual quieres usar.
+      </p>
+    </div>
+
+    <div class="p-6 max-w-5xl space-y-6">
+      <section class="bg-card border border-border rounded-xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-border">
+          <h2 class="text-base font-semibold text-foreground">Sistema de notificaciones</h2>
+          <p class="text-sm text-muted-foreground mt-1">
+            Primero entiende la idea: una notificación no es “ruido”; es una decisión clave del sistema.
+            Por eso puedes activar/desactivar el canal y los eventos importantes.
+          </p>
+        </div>
+
+        <div class="p-5 space-y-6">
+          <div class="flex flex-col gap-4 rounded-xl border border-border bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 class="text-sm font-medium text-foreground">Activar notificaciones</h3>
+              <p class="text-sm text-muted-foreground mt-1">
+                Si lo desactivas, no se crearán avisos en tu perfil ni se enviarán emails de notificación.
+              </p>
+            </div>
+            <button
+              id="notifications-toggle"
+              role="switch"
+              aria-checked="true"
+              class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span class="pointer-events-none inline-block h-5 w-5 translate-x-5 rounded-full bg-background shadow-lg ring-0 transition-transform"></span>
+            </button>
+          </div>
+
+          <div id="system-email-override" class="hidden rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
+            <p class="text-sm text-amber-700 dark:text-amber-300">
+              <strong>Atención:</strong> el administrador ha desactivado el envío global de emails.
+              Tu preferencia se guardará, pero no saldrán correos hasta que se reactive en
+              <span class="font-medium">Gestión → System</span>.
+            </p>
+          </div>
+
+          <div id="notification-controls" class="space-y-6">
+            <div>
+              <h3 class="text-sm font-medium text-foreground">Canal de entrega</h3>
+              <p class="text-sm text-muted-foreground mt-1">
+                Elige dónde quieres que “salte” la notificación.
+              </p>
+
+              <div class="mt-3 grid gap-3 md:grid-cols-3" id="delivery-options">
+                <button type="button" data-channel="profile" class="delivery-option rounded-xl border border-border bg-background p-4 text-left transition-colors hover:bg-muted">
+                  <div class="flex items-center gap-3">
+                    <div class="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    </div>
+                    <div>
+                      <p class="text-sm font-medium text-foreground">Solo perfil</p>
+                      <p class="text-xs text-muted-foreground mt-0.5">Aparece en Academix.</p>
+                    </div>
+                  </div>
+                </button>
+
+                <button type="button" data-channel="email" class="delivery-option rounded-xl border border-border bg-background p-4 text-left transition-colors hover:bg-muted">
+                  <div class="flex items-center gap-3">
+                    <div class="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    </div>
+                    <div>
+                      <p class="text-sm font-medium text-foreground">Solo email</p>
+                      <p class="text-xs text-muted-foreground mt-0.5">No aparece en el perfil.</p>
+                    </div>
+                  </div>
+                </button>
+
+                <button type="button" data-channel="both" class="delivery-option rounded-xl border border-border bg-background p-4 text-left transition-colors hover:bg-muted">
+                  <div class="flex items-center gap-3">
+                    <div class="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M18 8a6 6 0 0 0-12 0"/></svg>
+                    </div>
+                    <div>
+                      <p class="text-sm font-medium text-foreground">Perfil y email</p>
+                      <p class="text-xs text-muted-foreground mt-0.5">Opción completa.</p>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-sm font-medium text-foreground">Eventos importantes</h3>
+              <p class="text-sm text-muted-foreground mt-1">
+                No metas TODO en notificaciones. Solo eventos con impacto real: calificaciones, mensajes, materiales y decisiones administrativas.
+              </p>
+              <div id="event-preferences" class="mt-3 divide-y divide-border rounded-xl border border-border overflow-hidden"></div>
+            </div>
+          </div>
+
+          <div id="status-msg" class="hidden text-sm rounded-lg px-3 py-2"></div>
+        </div>
+      </section>
+
+      <section class="bg-card border border-border rounded-xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-border">
+          <h2 class="text-base font-semibold text-foreground">Tema</h2>
+          <p class="text-sm text-muted-foreground mt-1">
+            El tema por defecto es negro. Puedes cambiar a blanco cuando lo necesites.
+          </p>
+        </div>
+
+        <div class="p-5 grid gap-3 sm:grid-cols-2" id="theme-options">
+          <button type="button" data-theme="dark" class="theme-option rounded-xl border border-border bg-background p-4 text-left transition-colors hover:bg-muted">
+            <div class="flex items-center gap-3">
+              <div class="flex size-10 items-center justify-center rounded-lg bg-neutral-950 text-neutral-50 border border-neutral-700">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-foreground">Negro</p>
+                <p class="text-xs text-muted-foreground mt-0.5">Predeterminado del sistema.</p>
+              </div>
+            </div>
+          </button>
+
+          <button type="button" data-theme="light" class="theme-option rounded-xl border border-border bg-background p-4 text-left transition-colors hover:bg-muted">
+            <div class="flex items-center gap-3">
+              <div class="flex size-10 items-center justify-center rounded-lg bg-white text-neutral-950 border border-neutral-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-foreground">Blanco</p>
+                <p class="text-xs text-muted-foreground mt-0.5">Mayor luminosidad.</p>
+              </div>
+            </div>
+          </button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = (import.meta as any).env?.PUBLIC_API_URL || "http://localhost:8000/api";
+    const token = localStorage.getItem("access_token");
+    const THEME_STORAGE_KEY = "academix-theme";
+
+    if (!token) window.location.href = "/login";
+
+    type DeliveryChannel = "profile" | "email" | "both";
+    type Theme = "dark" | "light";
+    type EventDefinition = {
+      key: string;
+      label: string;
+      description: string;
+      template_name: string;
+    };
+    type Preferences = {
+      notifications_enabled: boolean;
+      email_enabled: boolean;
+      delivery_channel: DeliveryChannel;
+      theme: Theme;
+      event_preferences: Record<string, boolean>;
+      available_events: EventDefinition[];
+      system_email_notifications_enabled?: boolean;
+    };
+
+    let preferences: Preferences = {
+      notifications_enabled: true,
+      email_enabled: true,
+      delivery_channel: "both",
+      theme: "dark",
+      event_preferences: {},
+      available_events: [],
+      system_email_notifications_enabled: true,
+    };
+
+    const loading = document.getElementById("page-loading") as HTMLElement;
+    const content = document.getElementById("page-content") as HTMLElement;
+    const notificationsToggle = document.getElementById("notifications-toggle") as HTMLButtonElement;
+    const statusMsg = document.getElementById("status-msg") as HTMLElement;
+    const notificationControls = document.getElementById("notification-controls") as HTMLElement;
+
+    function escHtml(value: unknown) {
+      const d = document.createElement("div");
+      d.textContent = String(value ?? "");
+      return d.innerHTML;
+    }
+
+    function showStatus(msg: string, isError = false) {
+      statusMsg.textContent = msg;
+      statusMsg.className = `text-sm rounded-lg px-3 py-2 ${isError ? "bg-destructive/10 text-destructive" : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"}`;
+      statusMsg.classList.remove("hidden");
+      setTimeout(() => statusMsg.classList.add("hidden"), 2800);
+    }
+
+    function updateSwitchUI(toggle: HTMLButtonElement, enabled: boolean) {
+      const knob = toggle.querySelector("span") as HTMLElement;
+      toggle.classList.toggle("bg-primary", enabled);
+      toggle.classList.toggle("bg-muted", !enabled);
+      toggle.setAttribute("aria-checked", String(enabled));
+      knob.classList.toggle("translate-x-5", enabled);
+      knob.classList.toggle("translate-x-0", !enabled);
+    }
+
+    function applyTheme(theme: Theme) {
+      document.documentElement.classList.toggle("dark", theme !== "light");
+      document.documentElement.dataset.theme = theme;
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+    }
+
+    function updateDeliveryUI() {
+      document.querySelectorAll<HTMLElement>(".delivery-option").forEach(option => {
+        const selected = option.dataset.channel === preferences.delivery_channel;
+        option.classList.toggle("border-primary", selected);
+        option.classList.toggle("bg-primary/10", selected);
+        option.classList.toggle("ring-2", selected);
+        option.classList.toggle("ring-primary/20", selected);
+      });
+    }
+
+    function updateThemeUI() {
+      document.querySelectorAll<HTMLElement>(".theme-option").forEach(option => {
+        const selected = option.dataset.theme === preferences.theme;
+        option.classList.toggle("border-primary", selected);
+        option.classList.toggle("bg-primary/10", selected);
+        option.classList.toggle("ring-2", selected);
+        option.classList.toggle("ring-primary/20", selected);
+      });
+    }
+
+    function renderEvents() {
+      const wrapper = document.getElementById("event-preferences") as HTMLElement;
+      wrapper.innerHTML = preferences.available_events.map(event => {
+        const enabled = preferences.event_preferences[event.key] !== false;
+        return `
+          <div class="flex flex-col gap-3 bg-background p-4 sm:flex-row sm:items-center sm:justify-between" data-event-row="${escHtml(event.key)}">
+            <div class="min-w-0">
+              <p class="text-sm font-medium text-foreground">${escHtml(event.label)}</p>
+              <p class="text-xs text-muted-foreground mt-0.5">${escHtml(event.description)}</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked="${String(enabled)}"
+              data-event-key="${escHtml(event.key)}"
+              class="event-toggle relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent ${enabled ? "bg-primary" : "bg-muted"} transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span class="pointer-events-none inline-block h-5 w-5 ${enabled ? "translate-x-5" : "translate-x-0"} rounded-full bg-background shadow-lg ring-0 transition-transform"></span>
+            </button>
+          </div>
+        `;
+      }).join("");
+
+      wrapper.querySelectorAll<HTMLButtonElement>(".event-toggle").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const key = btn.dataset.eventKey;
+          if (!key) return;
+          const nextValue = !(preferences.event_preferences[key] !== false);
+          btn.disabled = true;
+          try {
+            const nextEvents = { [key]: nextValue };
+            const updated = await savePreferences({ event_preferences: nextEvents });
+            preferences = updated;
+            renderAll();
+            showStatus(nextValue ? "Evento activado" : "Evento desactivado");
+          } catch {
+            showStatus("No se pudo actualizar el evento", true);
+          } finally {
+            btn.disabled = false;
+          }
+        });
+      });
+    }
+
+    function renderAll() {
+      updateSwitchUI(notificationsToggle, preferences.notifications_enabled);
+      notificationControls.classList.toggle("opacity-50", !preferences.notifications_enabled);
+      notificationControls.classList.toggle("pointer-events-none", !preferences.notifications_enabled);
+
+      if (preferences.system_email_notifications_enabled === false) {
+        document.getElementById("system-email-override")?.classList.remove("hidden");
+      } else {
+        document.getElementById("system-email-override")?.classList.add("hidden");
+      }
+
+      renderEvents();
+      updateDeliveryUI();
+      updateThemeUI();
+    }
+
+    async function apiFetch(path: string, options: RequestInit = {}) {
+      const res = await fetch(`${API_URL}${path}`, {
+        ...options,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          ...(options.headers as Record<string, string> ?? {}),
+        },
+      });
+      if (res.status === 401) {
+        window.location.href = "/login";
+        throw new Error("Unauthorized");
+      }
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      return res.json();
+    }
+
+    async function savePreferences(patch: Partial<Preferences>): Promise<Preferences> {
+      return apiFetch("/notifications/preferences/", {
+        method: "PATCH",
+        body: JSON.stringify(patch),
+      });
+    }
+
+    notificationsToggle.addEventListener("click", async () => {
+      const nextValue = !preferences.notifications_enabled;
+      notificationsToggle.disabled = true;
+      try {
+        preferences = await savePreferences({ notifications_enabled: nextValue });
+        renderAll();
+        showStatus(nextValue ? "Notificaciones activadas" : "Notificaciones desactivadas");
+      } catch {
+        showStatus("No se pudo actualizar la preferencia", true);
+      } finally {
+        notificationsToggle.disabled = false;
+      }
+    });
+
+    document.querySelectorAll<HTMLElement>(".delivery-option").forEach(option => {
+      option.addEventListener("click", async () => {
+        const channel = option.dataset.channel as DeliveryChannel;
+        if (!channel || channel === preferences.delivery_channel) return;
+        try {
+          preferences = await savePreferences({ delivery_channel: channel });
+          renderAll();
+          showStatus("Canal de entrega actualizado");
+        } catch {
+          showStatus("No se pudo actualizar el canal", true);
+        }
+      });
+    });
+
+    document.querySelectorAll<HTMLElement>(".theme-option").forEach(option => {
+      option.addEventListener("click", async () => {
+        const theme = option.dataset.theme as Theme;
+        if (!theme || theme === preferences.theme) return;
+
+        const previousTheme = preferences.theme;
+        preferences.theme = theme;
+        applyTheme(theme);
+        updateThemeUI();
+
+        try {
+          preferences = await savePreferences({ theme });
+          applyTheme(preferences.theme);
+          renderAll();
+          showStatus(theme === "dark" ? "Tema negro activado" : "Tema blanco activado");
+        } catch {
+          preferences.theme = previousTheme;
+          applyTheme(previousTheme);
+          renderAll();
+          showStatus("No se pudo actualizar el tema", true);
+        }
+      });
+    });
+
+    (async () => {
+      try {
+        preferences = await apiFetch("/notifications/preferences/");
+        preferences.theme = preferences.theme || "dark";
+        applyTheme(preferences.theme);
+        renderAll();
+      } catch {
+        showStatus("No se pudieron cargar las preferencias", true);
+      } finally {
+        loading.classList.add("hidden");
+        content.classList.remove("hidden");
+      }
+    })();
+  </script>
+</DashboardLayout>

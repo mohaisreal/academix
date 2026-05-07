@@ -1,0 +1,889 @@
+---
+import DashboardLayout from "@/layouts/DashboardLayout.astro";
+---
+
+<DashboardLayout title="Nueva Preinscripción — Academix" currentPath="/admissions">
+
+    <!-- Cabecera -->
+    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+        <div>
+            <h1 class="text-xl font-semibold text-foreground">Nueva Preinscripción</h1>
+            <p class="text-sm text-muted-foreground">Completa los 6 pasos para formalizar tu solicitud de plaza.</p>
+        </div>
+        <a href="/admissions/my-applications" class="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            ← Mis solicitudes
+        </a>
+    </div>
+
+    <div class="p-6 max-w-3xl mx-auto">
+
+        <!-- Stepper -->
+        <div id="stepper" class="flex items-center gap-0 mb-8 overflow-x-auto pb-2">
+        </div>
+
+        <!-- Step panels -->
+        <div id="step-panel" class="bg-card border border-border rounded-xl p-6 shadow-sm min-h-[360px]">
+            <div id="loading-panel" class="flex items-center justify-center h-40">
+                <div class="size-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        </div>
+
+        <!-- Nav buttons -->
+        <div class="flex items-center justify-between mt-6">
+            <button id="btn-back" class="hidden inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 5 5 12 12 19"/></svg>
+                Anterior
+            </button>
+            <div></div>
+            <button id="btn-next" class="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                Siguiente
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+        </div>
+
+        <!-- Error global -->
+        <div id="global-error" class="hidden mt-4 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"></div>
+
+    </div>
+</DashboardLayout>
+
+<script>
+    const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
+    const token = localStorage.getItem("access_token");
+
+    // ---- Guarda de autenticación ----
+    function getUser(): Record<string, any> | null {
+        try {
+            const stored = localStorage.getItem("user-storage");
+            if (!stored) return null;
+            return JSON.parse(stored)?.state?.user ?? null;
+        } catch { return null; }
+    }
+    if (!token) window.location.replace("/login");
+    const user = getUser();
+    if (!user || user.role !== "s") window.location.replace("/login");
+
+    const TERMINAL_APPLICATION_STATUSES = new Set(["withdrawn", "expired", "rejected", "provisional_rejected"]);
+
+    async function guardAgainstActiveApplication() {
+        try {
+            const res = await fetch(`${API_URL}/admissions/applications/`, {
+                cache: "no-store",
+                headers: { "Authorization": `Bearer ${token}`, "Accept": "application/json" },
+            });
+            if (!res.ok) return false;
+            const data = await res.json();
+            const apps = Array.isArray(data) ? data : (data.results ?? []);
+            if (apps.some((app: any) => !TERMINAL_APPLICATION_STATUSES.has(app.status))) {
+                window.location.replace("/admissions/my-applications?blocked=active");
+                return true;
+            }
+        } catch {
+            // Si falla la comprobación, dejamos que el backend siga siendo la barrera final al crear.
+        }
+        return false;
+    }
+
+    // ---- Asistente activo: si hay un cuestionario configurado como asistente, redirigir ----
+    async function checkActiveWizard() {
+        try {
+            // cache: 'no-store' evita que el navegador sirva un 404 obsoleto (o
+            // un 200 obsoleto) de una carga anterior en la que el ajuste del asistente era distinto.
+            const res = await fetch(`${API_URL}/questionnaire/wizard/`, {
+                cache: "no-store",
+                headers: { "Authorization": `Bearer ${token}`, "Accept": "application/json" },
+            });
+            if (res.ok) {
+                const wizard = await res.json();
+                // Iniciar (o recuperar) la respuesta del estudiante para este asistente
+                const startRes = await fetch(`${API_URL}/questionnaire/questionnaires/${wizard.id}/start/`, {
+                    method: "POST",
+                    cache: "no-store",
+                    headers: { "Authorization": `Bearer ${token}`, "Accept": "application/json" },
+                });
+                if (startRes.ok) {
+                    window.location.replace(`/admissions/questionnaire/${wizard.id}`);
+                    return true;
+                }
+            }
+        } catch {
+            // Sin asistente activo o error de red — continuar con el asistente estático
+        }
+        return false;
+    }
+
+    // ---- Estado ----
+    let currentStep = 0;
+    let appId: number | null = null;
+    let periods: any[] = [];
+    let careers: any[] = [];
+    let preferences: { career_id: number; preference_order: number; career_name: string; career_code: string }[] = [];
+
+    // Collected form data across steps
+    const form = {
+        academic_period_id: null as number | null,
+        access_route: "",
+        bachillerato_grade: "",
+        evau_obligatory_grade: "",
+        evau_voluntary_subjects: [] as { subject: string; grade: string }[],
+        documents: [] as File[],
+    };
+
+    // ---- Steps definition ----
+    const STEPS = [
+        { label: "Período", icon: "📅" },
+        { label: "Vía de acceso", icon: "🎓" },
+        { label: "Datos académicos", icon: "📊" },
+        { label: "Titulaciones", icon: "📋" },
+        { label: "Documentación", icon: "📎" },
+        { label: "Confirmación", icon: "✅" },
+    ];
+
+    const ACCESS_ROUTES = [
+        { value: "evau",         label: "EvAU / EBAU (Bachillerato + Selectividad)" },
+        { value: "fp",           label: "Ciclo Formativo de Grado Superior (FP)" },
+        { value: "titulado",     label: "Titulado Universitario" },
+        { value: "mayores_25",   label: "Mayores de 25 años" },
+        { value: "mayores_40",   label: "Mayores de 40 años" },
+        { value: "mayores_45",   label: "Mayores de 45 años" },
+        { value: "internacional","label": "Acceso Internacional / Homologación" },
+    ];
+
+    const DOCUMENT_TYPES = [
+        { value: "id_document",              label: "DNI / NIE / Pasaporte" },
+        { value: "evau_credential",          label: "Credencial EvAU / EBAU" },
+        { value: "bachillerato_certificate", label: "Certificado de Notas de Bachillerato" },
+        { value: "fp_title",                 label: "Título de FP / Ciclo Formativo" },
+        { value: "university_degree",        label: "Título Universitario" },
+        { value: "disability_certificate",   label: "Certificado de Discapacidad" },
+        { value: "large_family",             label: "Título de Familia Numerosa" },
+        { value: "academic_record",          label: "Expediente Académico" },
+        { value: "other",                    label: "Otro Documento" },
+    ];
+
+    // ---- Utilidades de API ----
+    async function apiFetch(path: string, opts: RequestInit = {}) {
+        const res = await fetch(`${API_URL}${path}`, {
+            ...opts,
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Accept": "application/json",
+                ...(!opts.body || opts.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+                ...(opts.headers || {}),
+            },
+        });
+        if (res.status === 401) { window.location.replace("/login"); throw new Error("Unauthorized"); }
+        return res;
+    }
+
+    function showError(msg: string) {
+        const el = document.getElementById("global-error")!;
+        el.textContent = msg;
+        el.classList.remove("hidden");
+        setTimeout(() => el.classList.add("hidden"), 6000);
+    }
+
+    // ---- Stepper render ----
+    function renderStepper() {
+        const container = document.getElementById("stepper")!;
+        container.innerHTML = STEPS.map((s, i) => {
+            const done = i < currentStep;
+            const active = i === currentStep;
+            const circleClass = done
+                ? "bg-primary text-primary-foreground"
+                : active
+                    ? "bg-primary text-primary-foreground ring-4 ring-primary/20"
+                    : "bg-muted text-muted-foreground";
+            const labelClass = active ? "text-foreground font-semibold" : "text-muted-foreground";
+            const connector = i < STEPS.length - 1
+                ? `<div class="flex-1 h-px ${i < currentStep ? 'bg-primary' : 'bg-border'} mx-2 mt-5 shrink-0 min-w-[16px]"></div>`
+                : "";
+            return `
+                <div class="flex flex-col items-center shrink-0">
+                    <div class="flex size-10 items-center justify-center rounded-full text-sm font-bold ${circleClass} transition-all">
+                        ${done ? `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>` : (i + 1)}
+                    </div>
+                    <span class="mt-1.5 text-xs ${labelClass} whitespace-nowrap hidden sm:block">${s.label}</span>
+                </div>
+                ${connector}`;
+        }).join("");
+    }
+
+    // ---- Estado de los botones de navegación ----
+    function updateNavButtons() {
+        const btnBack = document.getElementById("btn-back")!;
+        const btnNext = document.getElementById("btn-next")!;
+
+        btnBack.classList.toggle("hidden", currentStep === 0);
+
+        if (currentStep === STEPS.length - 1) {
+            btnNext.textContent = "Enviar preinscripción";
+            btnNext.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mr-1.5"><polyline points="20 6 9 17 4 12"/></svg>Enviar preinscripción`;
+        } else {
+            btnNext.innerHTML = `Siguiente <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`;
+        }
+    }
+
+    // ---- Step renderers ----
+
+    // Step 0 — Selección de período
+    function renderStep0() {
+        const panel = document.getElementById("step-panel")!;
+        panel.innerHTML = `
+            <h2 class="text-base font-semibold text-foreground mb-1">Selección de período académico</h2>
+            <p class="text-sm text-muted-foreground mb-6">Elige el periodo al que quieres preinscribirte.</p>
+            <div id="periods-loading" class="space-y-2">
+                <div class="h-12 bg-muted animate-pulse rounded-lg"></div>
+                <div class="h-12 bg-muted animate-pulse rounded-lg"></div>
+            </div>
+            <div id="periods-list" class="hidden space-y-2"></div>
+            <div id="periods-error" class="hidden text-sm text-destructive mt-2"></div>
+        `;
+        loadPeriods();
+    }
+
+    async function loadPeriods() {
+        try {
+            const res = await apiFetch("/academic/periods/");
+            if (!res.ok) { document.getElementById("periods-error")!.textContent = "Error al cargar períodos."; document.getElementById("periods-error")!.classList.remove("hidden"); return; }
+            const data = await res.json();
+            periods = Array.isArray(data) ? data : (data.results ?? []);
+            renderPeriodsList();
+        } catch {
+            document.getElementById("periods-error")!.textContent = "Error de red.";
+            document.getElementById("periods-error")!.classList.remove("hidden");
+        }
+    }
+
+    function renderPeriodsList() {
+        document.getElementById("periods-loading")!.classList.add("hidden");
+        const list = document.getElementById("periods-list")!;
+        list.classList.remove("hidden");
+        if (periods.length === 0) {
+            list.innerHTML = `<p class="text-sm text-muted-foreground">No hay períodos activos disponibles.</p>`;
+            return;
+        }
+        list.innerHTML = periods.map(p => {
+            const isSelected = form.academic_period_id === p.id;
+            return `
+            <button data-period-id="${p.id}" class="period-btn w-full text-left rounded-lg border px-4 py-3 transition-all ${isSelected ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'border-border hover:border-primary/50 hover:bg-muted/40'}">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-foreground">${p.name}</p>
+                        <p class="text-xs text-muted-foreground mt-0.5">${p.code} · ${p.start_date ?? ''} – ${p.end_date ?? ''}</p>
+                    </div>
+                    ${p.is_active ? `<span class="text-xs font-medium text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">Activo</span>` : ''}
+                </div>
+            </button>`;
+        }).join("");
+
+        list.querySelectorAll(".period-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                form.academic_period_id = Number((btn as HTMLElement).dataset.periodId);
+                renderPeriodsList();
+            });
+        });
+    }
+
+    // Step 1 — Vía de acceso
+    function renderStep1() {
+        const panel = document.getElementById("step-panel")!;
+        panel.innerHTML = `
+            <h2 class="text-base font-semibold text-foreground mb-1">Vía de acceso a la universidad</h2>
+            <p class="text-sm text-muted-foreground mb-6">Indica cómo accedes a la universidad. Esto determina la nota con la que compites por plaza.</p>
+            <div class="space-y-2">
+                ${ACCESS_ROUTES.map(r => `
+                <button data-route="${r.value}" class="route-btn w-full text-left rounded-lg border px-4 py-3 transition-all ${form.access_route === r.value ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'border-border hover:border-primary/50 hover:bg-muted/40'}">
+                    <p class="text-sm font-medium text-foreground">${r.label}</p>
+                </button>`).join("")}
+            </div>
+        `;
+        document.getElementById("step-panel")!.querySelectorAll(".route-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                form.access_route = (btn as HTMLElement).dataset.route!;
+                renderStep1();
+            });
+        });
+    }
+
+    // Step 2 — Datos académicos
+    function renderStep2() {
+        const isEvauRoute = ['evau', 'fp'].includes(form.access_route);
+        const panel = document.getElementById("step-panel")!;
+
+        const voluntaryRows = form.evau_voluntary_subjects.length > 0
+            ? form.evau_voluntary_subjects
+            : [{ subject: "", grade: "" }];
+
+        panel.innerHTML = `
+            <h2 class="text-base font-semibold text-foreground mb-1">Datos académicos</h2>
+            <p class="text-sm text-muted-foreground mb-6">Introducí tus calificaciones. La nota de admisión se calcula automáticamente.</p>
+
+            <div class="space-y-5">
+                <div>
+                    <label class="text-sm font-medium text-foreground block mb-1.5">
+                        ${form.access_route === 'fp' ? 'Nota media del Ciclo Formativo' : 'Nota media de Bachillerato'}
+                        <span class="text-destructive">*</span>
+                    </label>
+                    <input id="bach-grade" type="number" step="0.001" min="0" max="10"
+                        value="${form.bachillerato_grade}"
+                        placeholder="Ej: 8.250"
+                        class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30" />
+                    <p class="text-xs text-muted-foreground mt-1">Entre 0.000 y 10.000</p>
+                </div>
+
+                ${isEvauRoute ? `
+                <div>
+                    <label class="text-sm font-medium text-foreground block mb-1.5">
+                        Nota fase obligatoria EvAU <span class="text-destructive">*</span>
+                    </label>
+                    <input id="evau-grade" type="number" step="0.001" min="0" max="10"
+                        value="${form.evau_obligatory_grade}"
+                        placeholder="Ej: 7.500"
+                        class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30" />
+                    <p class="text-xs text-muted-foreground mt-1">Entre 0.000 y 10.000</p>
+                </div>
+
+                <div>
+                    <label class="text-sm font-medium text-foreground block mb-2">
+                        Asignaturas fase voluntaria
+                        <span class="text-xs text-muted-foreground ml-1">(opcional, máx 2)</span>
+                    </label>
+                    <div id="voluntary-rows" class="space-y-2">
+                        ${voluntaryRows.map((row, i) => `
+                        <div class="flex gap-2 items-center" data-vol-idx="${i}">
+                            <input type="text" placeholder="Nombre de la asignatura" value="${row.subject}"
+                                data-field="subject" data-vol-idx="${i}"
+                                class="vol-subject flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30" />
+                            <input type="number" step="0.001" min="0" max="10" placeholder="Nota" value="${row.grade}"
+                                data-field="grade" data-vol-idx="${i}"
+                                class="vol-grade w-24 rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30" />
+                            ${i > 0 ? `<button class="remove-vol text-muted-foreground hover:text-destructive transition-colors" data-vol-idx="${i}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>` : '<div class="w-5"></div>'}
+                        </div>`).join("")}
+                    </div>
+                    ${voluntaryRows.length < 2 ? `
+                    <button id="add-voluntary" class="mt-2 text-xs text-primary hover:underline">+ Agregar otra asignatura</button>` : ''}
+                </div>` : `
+                <div class="rounded-lg border border-border bg-muted/30 p-4">
+                    <p class="text-sm text-muted-foreground">Los campos de EvAU no aplican para tu vía de acceso. Solo se requiere la nota media.</p>
+                </div>`}
+
+                <div id="score-preview" class="rounded-lg border border-primary/20 bg-primary/5 p-4 hidden">
+                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Nota de admisión estimada</p>
+                    <p id="score-value" class="text-2xl font-bold text-primary"></p>
+                    <p class="text-xs text-muted-foreground mt-1">Calculada según la fórmula oficial (NMB × 0.6 + EvAU × 0.4 + bonus voluntaria)</p>
+                </div>
+            </div>
+        `;
+
+        // Live score calculation
+        function recalcScore() {
+            const bachEl = document.getElementById("bach-grade") as HTMLInputElement | null;
+            const evauEl = document.getElementById("evau-grade") as HTMLInputElement | null;
+            if (!bachEl) return;
+
+            const bach = parseFloat(bachEl.value);
+            if (isNaN(bach)) { document.getElementById("score-preview")!.classList.add("hidden"); return; }
+
+            // Save values
+            form.bachillerato_grade = bachEl.value;
+            if (evauEl) form.evau_obligatory_grade = evauEl.value;
+
+            // Voluntary subjects
+            const subjects: { subject: string; grade: string }[] = [];
+            document.querySelectorAll("[data-field='subject']").forEach((el) => {
+                const idx = Number((el as HTMLElement).dataset.volIdx);
+                const g = (document.querySelector(`[data-field='grade'][data-vol-idx='${idx}']`) as HTMLInputElement)?.value ?? "";
+                subjects[idx] = { subject: (el as HTMLInputElement).value, grade: g };
+            });
+            form.evau_voluntary_subjects = subjects.filter(s => s.subject.trim());
+
+            if (!evauEl || isNaN(parseFloat(evauEl.value))) {
+                document.getElementById("score-preview")!.classList.add("hidden");
+                return;
+            }
+
+            const evau = parseFloat(evauEl.value);
+            let base = bach * 0.6 + evau * 0.4;
+            let bonus = 0;
+            let counted = 0;
+            for (const s of form.evau_voluntary_subjects) {
+                if (counted >= 2) break;
+                const g = parseFloat(s.grade);
+                if (!isNaN(g) && g >= 5) { bonus += (g - 5) * 0.2; counted++; }
+            }
+            const score = Math.min(base + bonus, 14).toFixed(3);
+            document.getElementById("score-preview")!.classList.remove("hidden");
+            document.getElementById("score-value")!.textContent = score;
+        }
+
+        document.getElementById("bach-grade")?.addEventListener("input", recalcScore);
+        document.getElementById("evau-grade")?.addEventListener("input", recalcScore);
+
+        document.getElementById("add-voluntary")?.addEventListener("click", () => {
+            if (form.evau_voluntary_subjects.length < 2) {
+                form.evau_voluntary_subjects.push({ subject: "", grade: "" });
+            }
+            renderStep2();
+        });
+
+        document.querySelectorAll(".remove-vol").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const idx = Number((btn as HTMLElement).dataset.volIdx);
+                form.evau_voluntary_subjects.splice(idx, 1);
+                renderStep2();
+            });
+        });
+
+        document.querySelectorAll(".vol-subject, .vol-grade").forEach(el => {
+            el.addEventListener("input", recalcScore);
+        });
+
+        // Trigger initial score if values already set
+        if (form.bachillerato_grade && form.evau_obligatory_grade) recalcScore();
+    }
+
+    // Step 3 — Titulaciones
+    function renderStep3() {
+        const panel = document.getElementById("step-panel")!;
+        panel.innerHTML = `
+            <h2 class="text-base font-semibold text-foreground mb-1">Selección de titulaciones</h2>
+            <p class="text-sm text-muted-foreground mb-1">Elige las titulaciones por orden de preferencia (máx. 10).</p>
+            <p class="text-xs text-amber-500 mb-6">⚠ El orden importa: si te dan plaza en la opción 2, perdés la opción 1 automáticamente.</p>
+
+            <!-- Selected preferences -->
+            <div id="pref-list" class="space-y-2 mb-4">
+                ${preferences.length === 0
+                    ? '<p class="text-sm text-muted-foreground italic">Aún no seleccionaste ninguna titulación.</p>'
+                    : preferences.map((p, i) => `
+                    <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
+                        <span class="flex size-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shrink-0">${p.preference_order}</span>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-medium text-foreground truncate">${p.career_name}</p>
+                            <p class="text-xs text-muted-foreground font-mono">${p.career_code}</p>
+                        </div>
+                        <div class="flex gap-1 shrink-0">
+                            ${i > 0 ? `<button class="pref-up p-1 text-muted-foreground hover:text-foreground" data-idx="${i}" title="Subir">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+                            </button>` : '<div class="w-6"></div>'}
+                            ${i < preferences.length - 1 ? `<button class="pref-down p-1 text-muted-foreground hover:text-foreground" data-idx="${i}" title="Bajar">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                            </button>` : '<div class="w-6"></div>'}
+                            <button class="pref-remove p-1 text-muted-foreground hover:text-destructive" data-idx="${i}" title="Eliminar">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                        </div>
+                    </div>`).join("")}
+            </div>
+
+            ${preferences.length < 10 ? `
+            <!-- Añadir titulación -->
+            <div class="border border-dashed border-border rounded-lg p-4">
+                <p class="text-sm font-medium text-foreground mb-2">Agregar titulación</p>
+                <div class="flex gap-2">
+                    <div class="relative flex-1">
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input id="career-search" type="text" placeholder="Buscar titulación..." class="w-full pl-8 pr-3 py-2 rounded-md border border-input bg-background text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30" />
+                    </div>
+                </div>
+                <div id="careers-results" class="mt-2 space-y-1 max-h-48 overflow-y-auto"></div>
+                <div id="careers-loading" class="hidden text-xs text-muted-foreground mt-2">Cargando titulaciones...</div>
+            </div>` : `
+            <p class="text-sm text-muted-foreground text-center py-2">Llegaste al máximo de 10 preferencias.</p>`}
+        `;
+
+        // Manejadores de reordenación
+        document.querySelectorAll(".pref-up").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const idx = Number((btn as HTMLElement).dataset.idx);
+                [preferences[idx - 1], preferences[idx]] = [preferences[idx], preferences[idx - 1]];
+                renumberPreferences();
+                renderStep3();
+            });
+        });
+        document.querySelectorAll(".pref-down").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const idx = Number((btn as HTMLElement).dataset.idx);
+                [preferences[idx], preferences[idx + 1]] = [preferences[idx + 1], preferences[idx]];
+                renumberPreferences();
+                renderStep3();
+            });
+        });
+        document.querySelectorAll(".pref-remove").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const idx = Number((btn as HTMLElement).dataset.idx);
+                preferences.splice(idx, 1);
+                renumberPreferences();
+                renderStep3();
+            });
+        });
+
+        // Búsqueda de titulaciones
+        const searchInput = document.getElementById("career-search") as HTMLInputElement | null;
+        if (searchInput) {
+            if (careers.length === 0) loadCareers();
+            else renderCareersResults((searchInput.value ?? "").toLowerCase());
+
+            searchInput.addEventListener("input", () => {
+                renderCareersResults(searchInput.value.toLowerCase());
+            });
+        }
+    }
+
+    function renumberPreferences() {
+        preferences = preferences.map((p, i) => ({ ...p, preference_order: i + 1 }));
+    }
+
+    async function loadCareers() {
+        document.getElementById("careers-loading")?.classList.remove("hidden");
+        try {
+            const res = await apiFetch("/academic/careers/");
+            if (!res.ok) return;
+            const data = await res.json();
+            careers = (Array.isArray(data) ? data : (data.results ?? [])).filter((c: any) => c.is_active);
+        } catch { /* ignore */
+ }
+        document.getElementById("careers-loading")?.classList.add("hidden");
+        const searchInput = document.getElementById("career-search") as HTMLInputElement | null;
+        if (searchInput) renderCareersResults(searchInput.value.toLowerCase());
+    }
+
+    function renderCareersResults(query: string) {
+        const container = document.getElementById("careers-results");
+        if (!container) return;
+        const alreadySelected = new Set(preferences.map(p => p.career_id));
+        const filtered = careers.filter(c =>
+            (c.name ?? "").toLowerCase().includes(query) ||
+            (c.code ?? "").toLowerCase().includes(query)
+        ).filter(c => !alreadySelected.has(c.id)).slice(0, 8);
+
+        if (filtered.length === 0) {
+            container.innerHTML = `<p class="text-xs text-muted-foreground py-2">${query ? "Sin resultados." : "Escribí para buscar titulaciones."}</p>`;
+            return;
+        }
+
+        container.innerHTML = filtered.map(c => `
+            <button data-career-id="${c.id}" data-career-name="${c.name}" data-career-code="${c.code}"
+                class="add-career-btn w-full text-left rounded-md px-3 py-2 text-sm hover:bg-muted transition-colors">
+                <span class="font-medium">${c.name}</span>
+                <span class="text-xs text-muted-foreground ml-1.5 font-mono">${c.code}</span>
+            </button>`).join("");
+
+        container.querySelectorAll(".add-career-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const el = btn as HTMLElement;
+                preferences.push({
+                    career_id: Number(el.dataset.careerId),
+                    career_name: el.dataset.careerName!,
+                    career_code: el.dataset.careerCode!,
+                    preference_order: preferences.length + 1,
+                });
+                renderStep3();
+            });
+        });
+    }
+
+    // Step 4 — Documentación
+    let pendingDocumentUploads: { file: File; type: string }[] = [];
+
+    function renderStep4() {
+        const panel = document.getElementById("step-panel")!;
+        panel.innerHTML = `
+            <h2 class="text-base font-semibold text-foreground mb-1">Documentación</h2>
+            <p class="text-sm text-muted-foreground mb-6">Adjunta los documentos requeridos. Puedes subirlos ahora o después de enviar la solicitud.</p>
+
+            <div class="space-y-4">
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <div>
+                        <label class="text-sm font-medium text-foreground block mb-1.5">Tipo de documento</label>
+                        <select id="doc-type" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30">
+                            ${DOCUMENT_TYPES.map(d => `<option value="${d.value}">${d.label}</option>`).join("")}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-foreground block mb-1.5">Archivo</label>
+                        <input id="doc-file" type="file" accept=".pdf,.jpg,.jpeg,.png"
+                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium cursor-pointer" />
+                    </div>
+                </div>
+                <button id="add-doc-btn" class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Agregar documento
+                </button>
+
+                <!-- Pending uploads list -->
+                <div id="pending-docs" class="space-y-2 mt-2">
+                    ${pendingDocumentUploads.length === 0
+                        ? '<p class="text-sm text-muted-foreground italic">No hay documentos agregados aún.</p>'
+                        : pendingDocumentUploads.map((d, i) => `
+                        <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-2.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-medium text-foreground truncate">${d.file.name}</p>
+                                <p class="text-xs text-muted-foreground">${DOCUMENT_TYPES.find(t => t.value === d.type)?.label ?? d.type}</p>
+                            </div>
+                            <button class="remove-doc text-muted-foreground hover:text-destructive" data-doc-idx="${i}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                        </div>`).join("")}
+                </div>
+
+                <p class="text-xs text-muted-foreground">Formatos aceptados: PDF, JPG, PNG. También puedes subir documentos después de enviar la solicitud.</p>
+            </div>
+        `;
+
+        document.getElementById("add-doc-btn")?.addEventListener("click", () => {
+            const typeEl = document.getElementById("doc-type") as HTMLSelectElement;
+            const fileEl = document.getElementById("doc-file") as HTMLInputElement;
+            if (!fileEl.files?.length) { showError("Selecciona un fichero."); return; }
+            pendingDocumentUploads.push({ file: fileEl.files[0], type: typeEl.value });
+            renderStep4();
+        });
+
+        document.querySelectorAll(".remove-doc").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const idx = Number((btn as HTMLElement).dataset.docIdx);
+                pendingDocumentUploads.splice(idx, 1);
+                renderStep4();
+            });
+        });
+    }
+
+    // Step 5 — Revisión y confirmación
+    function renderStep5() {
+        const period = periods.find(p => p.id === form.academic_period_id);
+        const routeLabel = ACCESS_ROUTES.find(r => r.value === form.access_route)?.label ?? "—";
+        const panel = document.getElementById("step-panel")!;
+
+        panel.innerHTML = `
+            <h2 class="text-base font-semibold text-foreground mb-1">Revisión y confirmación</h2>
+            <p class="text-sm text-muted-foreground mb-6">Revisa tu preinscripción antes de enviarla. Una vez enviada, no podrás modificar las preferencias.</p>
+
+            <div class="space-y-4">
+                <!-- Datos personales -->
+                <div class="rounded-lg border border-border bg-card overflow-hidden">
+                    <div class="px-4 py-2.5 bg-muted/40 border-b border-border">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Datos personales</p>
+                    </div>
+                    <div class="px-4 py-3 grid grid-cols-2 gap-y-2 text-sm">
+                        <span class="text-muted-foreground">Nombre</span><span class="font-medium">${user?.first_name ?? ''} ${user?.last_name ?? ''}</span>
+                        <span class="text-muted-foreground">Correo electrónico</span><span>${user?.email ?? ''}</span>
+                    </div>
+                </div>
+
+                <!-- Período -->
+                <div class="rounded-lg border border-border bg-card overflow-hidden">
+                    <div class="px-4 py-2.5 bg-muted/40 border-b border-border">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Período académico</p>
+                    </div>
+                    <div class="px-4 py-3 text-sm">
+                        <p class="font-medium">${period?.name ?? '—'}</p>
+                        <p class="text-muted-foreground text-xs">${period?.code ?? ''}</p>
+                    </div>
+                </div>
+
+                <!-- Vía de acceso y nota -->
+                <div class="rounded-lg border border-border bg-card overflow-hidden">
+                    <div class="px-4 py-2.5 bg-muted/40 border-b border-border">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Vía de acceso y nota</p>
+                    </div>
+                    <div class="px-4 py-3 grid grid-cols-2 gap-y-2 text-sm">
+                        <span class="text-muted-foreground">Vía</span><span class="font-medium">${routeLabel}</span>
+                        <span class="text-muted-foreground">Nota Bachillerato</span><span>${form.bachillerato_grade || '—'}</span>
+                        ${form.evau_obligatory_grade ? `<span class="text-muted-foreground">Nota EvAU obligatoria</span><span>${form.evau_obligatory_grade}</span>` : ''}
+                        ${form.evau_voluntary_subjects.length > 0 ? `<span class="text-muted-foreground">Fase voluntaria</span><span>${form.evau_voluntary_subjects.map(s => `${s.subject} (${s.grade})`).join(', ')}</span>` : ''}
+                    </div>
+                </div>
+
+                <!-- Titulaciones -->
+                <div class="rounded-lg border border-border bg-card overflow-hidden">
+                    <div class="px-4 py-2.5 bg-muted/40 border-b border-border">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Titulaciones solicitadas</p>
+                    </div>
+                    <div class="divide-y divide-border">
+                        ${preferences.map(p => `
+                        <div class="flex items-center gap-3 px-4 py-2.5">
+                            <span class="flex size-6 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary shrink-0">${p.preference_order}</span>
+                            <div>
+                                <p class="text-sm font-medium text-foreground">${p.career_name}</p>
+                                <p class="text-xs text-muted-foreground font-mono">${p.career_code}</p>
+                            </div>
+                        </div>`).join("")}
+                    </div>
+                </div>
+
+                <!-- Documentos -->
+                ${pendingDocumentUploads.length > 0 ? `
+                <div class="rounded-lg border border-border bg-card overflow-hidden">
+                    <div class="px-4 py-2.5 bg-muted/40 border-b border-border">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Documentos a adjuntar</p>
+                    </div>
+                    <div class="divide-y divide-border">
+                        ${pendingDocumentUploads.map(d => `
+                        <div class="flex items-center gap-3 px-4 py-2.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+                            <p class="text-sm text-foreground">${d.file.name}</p>
+                            <span class="text-xs text-muted-foreground ml-auto">${DOCUMENT_TYPES.find(t => t.value === d.type)?.label ?? d.type}</span>
+                        </div>`).join("")}
+                    </div>
+                </div>` : ''}
+            </div>
+        `;
+    }
+
+    // ---- Step validation ----
+    function validateStep(): string | null {
+        if (currentStep === 0 && !form.academic_period_id) return "Selecciona un periodo académico.";
+        if (currentStep === 1 && !form.access_route) return "Selecciona una vía de acceso.";
+        if (currentStep === 2) {
+            if (!form.bachillerato_grade) return "Introduce la nota de Bachillerato.";
+            const b = parseFloat(form.bachillerato_grade);
+            if (isNaN(b) || b < 0 || b > 10) return "La nota de Bachillerato debe estar entre 0 y 10.";
+            if (['evau', 'fp'].includes(form.access_route)) {
+                if (!form.evau_obligatory_grade) return "Introduce la nota de la fase obligatoria de la EvAU.";
+                const e = parseFloat(form.evau_obligatory_grade);
+                if (isNaN(e) || e < 0 || e > 10) return "La nota EvAU debe estar entre 0 y 10.";
+            }
+        }
+        if (currentStep === 3 && preferences.length === 0) return "Selecciona al menos una titulación.";
+        return null;
+    }
+
+    // ---- Collect step data ----
+    function collectStep2() {
+        const bachEl = document.getElementById("bach-grade") as HTMLInputElement | null;
+        const evauEl = document.getElementById("evau-grade") as HTMLInputElement | null;
+        if (bachEl) form.bachillerato_grade = bachEl.value;
+        if (evauEl) form.evau_obligatory_grade = evauEl.value;
+
+        const subjects: { subject: string; grade: string }[] = [];
+        document.querySelectorAll(".vol-subject").forEach((el) => {
+            const idx = Number((el as HTMLElement).dataset.volIdx);
+            const g = (document.querySelector(`.vol-grade[data-vol-idx='${idx}']`) as HTMLInputElement)?.value ?? "";
+            if ((el as HTMLInputElement).value.trim()) {
+                subjects[idx] = { subject: (el as HTMLInputElement).value.trim(), grade: g };
+            }
+        });
+        form.evau_voluntary_subjects = subjects.filter(Boolean);
+    }
+
+    // ---- Render step ----
+    function renderStep(step: number) {
+        document.getElementById("loading-panel")?.remove();
+        switch (step) {
+            case 0: renderStep0(); break;
+            case 1: renderStep1(); break;
+            case 2: renderStep2(); break;
+            case 3: renderStep3(); break;
+            case 4: renderStep4(); break;
+            case 5: renderStep5(); break;
+        }
+    }
+
+    // ---- Submit final ----
+    async function submitPreinscripcion() {
+        const btnNext = document.getElementById("btn-next")!;
+        btnNext.setAttribute("disabled", "true");
+        btnNext.textContent = "Enviando...";
+
+        try {
+            // 1. Crea solicitud
+            const createRes = await apiFetch("/admissions/applications/", {
+                method: "POST",
+                body: JSON.stringify({ academic_period_id: form.academic_period_id }),
+            });
+            if (!createRes.ok) {
+                const err = await createRes.json().catch(() => ({}));
+                throw new Error(err.detail || "Error al crear la preinscripción.");
+            }
+            const app = await createRes.json();
+            appId = app.id;
+
+            // 2. Academic data
+            await apiFetch(`/admissions/applications/${appId}/academic-data/`, {
+                method: "PATCH",
+                body: JSON.stringify({
+                    access_route: form.access_route,
+                    bachillerato_grade: form.bachillerato_grade || null,
+                    evau_obligatory_grade: form.evau_obligatory_grade || null,
+                    evau_voluntary_subjects: form.evau_voluntary_subjects,
+                }),
+            });
+
+            // 3. Preferences
+            await apiFetch(`/admissions/applications/${appId}/preferences/`, {
+                method: "POST",
+                body: JSON.stringify(preferences.map(p => ({
+                    career_id: p.career_id,
+                    preference_order: p.preference_order,
+                }))),
+            });
+
+            // 4. Documents
+            for (const d of pendingDocumentUploads) {
+                const fd = new FormData();
+                fd.append("document_type", d.type);
+                fd.append("file", d.file);
+                await apiFetch(`/admissions/applications/${appId}/documents/`, { method: "POST", body: fd });
+            }
+
+            // 5. Submit
+            const submitRes = await apiFetch(`/admissions/applications/${appId}/submit/`, { method: "PATCH" });
+            if (!submitRes.ok) {
+                const err = await submitRes.json().catch(() => ({}));
+                throw new Error(err.detail || "Error al enviar la preinscripción.");
+            }
+
+            window.location.replace(`/admissions/my-applications?submitted=1`);
+
+        } catch (err: any) {
+            showError(err.message || "Error inesperado. Intentá de nuevo.");
+            btnNext.removeAttribute("disabled");
+            btnNext.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mr-1.5"><polyline points="20 6 9 17 4 12"/></svg>Enviar preinscripción`;
+        }
+    }
+
+    // ---- Manejadores de navegación ----
+    document.getElementById("btn-next")?.addEventListener("click", async () => {
+        if (currentStep === 2) collectStep2();
+
+        const err = validateStep();
+        if (err) { showError(err); return; }
+
+        if (currentStep === STEPS.length - 1) {
+            await submitPreinscripcion();
+            return;
+        }
+
+        currentStep++;
+        renderStepper();
+        renderStep(currentStep);
+        updateNavButtons();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    document.getElementById("btn-back")?.addEventListener("click", () => {
+        if (currentStep === 0) return;
+        currentStep--;
+        renderStepper();
+        renderStep(currentStep);
+        updateNavButtons();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    // ---- Inicialización ----
+    // Verificar si hay un wizard de cuestionario configurado como activo.
+    // Si lo hay, redirigir directamente. Si no, continuar con el asistente estático.
+    guardAgainstActiveApplication().then(blocked => {
+        if (blocked) return;
+        checkActiveWizard().then(redirected => {
+            if (!redirected) {
+                renderStepper();
+                renderStep(0);
+                updateNavButtons();
+            }
+        });
+    });
+</script>

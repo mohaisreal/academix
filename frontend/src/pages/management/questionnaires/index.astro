@@ -1,0 +1,772 @@
+---
+// NOTA: el enlace de navegación de esta página ya está en DashboardLayout.astro en las líneas 240-243:
+//   <a href="/management/questionnaires" class="nav-link ...">Cuestionarios</a>
+// No hace falta modificar DashboardLayout.
+import DashboardLayout from "@/layouts/DashboardLayout.astro";
+---
+
+<DashboardLayout title="Questionnaires — Academix" currentPath="/management/questionnaires">
+    <!-- Cabecera -->
+    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+        <div>
+            <h1 class="text-xl font-semibold text-foreground">Questionnaires</h1>
+            <p class="text-sm text-muted-foreground">Create and manage admission and enrollment questionnaires.</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <span id="total-count" class="text-sm text-muted-foreground bg-muted px-3 py-1.5 rounded-full hidden"></span>
+            <button id="btn-from-template" type="button" class="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
+                From Template
+            </button>
+            <button id="btn-import" type="button" class="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Import JSON
+            </button>
+            <button id="btn-create" type="button" class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                New Questionnaire
+            </button>
+        </div>
+    </div>
+
+    <div class="p-6 space-y-5">
+        <!-- Filtros -->
+        <div class="flex flex-wrap items-center gap-3">
+            <div class="relative">
+                <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="search-input" type="text" placeholder="Search questionnaires..." class="pl-8 pr-3 py-2 rounded-md border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30 w-64" />
+            </div>
+            <select id="filter-type" class="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30">
+                <option value="">All Types</option>
+                <option value="admissions">Admissions</option>
+                <option value="enrollment">Enrollment</option>
+            </select>
+        </div>
+
+        <!-- Cargando -->
+        <div id="loading-state" class="space-y-2">
+            <div class="h-16 bg-muted animate-pulse rounded-xl"></div>
+            <div class="h-16 bg-muted animate-pulse rounded-xl"></div>
+            <div class="h-16 bg-muted animate-pulse rounded-xl"></div>
+        </div>
+
+        <!-- Tabla -->
+        <div id="table-wrapper" class="hidden bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-border bg-muted/30">
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Title</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Type</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground hidden sm:table-cell">Career</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground hidden md:table-cell">Steps</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+            </table>
+        </div>
+
+        <!-- Estado vacío -->
+        <div id="empty-state" class="hidden text-center py-16">
+            <div class="flex size-16 items-center justify-center rounded-full bg-muted mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/></svg>
+            </div>
+            <h3 class="text-base font-medium text-foreground">No questionnaires yet</h3>
+            <p class="text-sm text-muted-foreground mt-1">Create your first questionnaire to get started.</p>
+        </div>
+
+        <!-- Estado de error -->
+        <div id="error-state" class="hidden rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+            <p class="text-sm font-medium text-destructive">Failed to load questionnaires</p>
+            <p id="error-message" class="text-sm text-destructive/80 mt-1"></p>
+        </div>
+    </div>
+
+    <!-- Modal de importación -->
+    <div id="import-modal-backdrop" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+        <div class="w-full max-w-md rounded-xl border border-border bg-background shadow-2xl">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-border">
+                <h2 class="text-base font-semibold text-foreground">Import Questionnaire from JSON</h2>
+                <button id="import-modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="px-5 py-4 space-y-4">
+                <p class="text-sm text-muted-foreground">Select a <code class="text-xs bg-muted px-1 py-0.5 rounded">.json</code> file previously exported from this system. A new questionnaire will be created — existing ones are not overwritten.</p>
+                <div class="space-y-1.5">
+                    <label class="text-sm font-medium text-foreground" for="import-file-input">JSON File</label>
+                    <input id="import-file-input" type="file" accept=".json,application/json"
+                        class="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-border file:bg-muted file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-foreground hover:file:bg-muted/80 cursor-pointer" />
+                </div>
+                <div id="import-error" class="hidden rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"></div>
+            </div>
+            <div class="flex items-center justify-end gap-3 px-5 py-4 border-t border-border">
+                <button id="import-modal-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
+                <button id="import-modal-confirm" type="button" class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                    <span id="import-confirm-label">Import</span>
+                    <div id="import-confirm-spinner" class="hidden size-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de creación/edición -->
+    <div id="modal-backdrop" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+        <div class="w-full max-w-lg rounded-xl border border-border bg-background shadow-2xl max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+                <h2 id="modal-title" class="text-base font-semibold text-foreground">Create Questionnaire</h2>
+                <button id="modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="overflow-y-auto flex-1 px-5 py-4">
+                <form id="questionnaire-form" class="space-y-4">
+                    <input type="hidden" id="form-questionnaire-id" value="" />
+
+                    <div class="space-y-1.5">
+                        <label class="text-sm font-medium text-foreground" for="form-title">
+                            Title <span class="text-destructive">*</span>
+                        </label>
+                        <input
+                            id="form-title"
+                            type="text"
+                            placeholder="e.g., Undergraduate Admission 2025"
+                            required
+                            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                        />
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-sm font-medium text-foreground" for="form-description">Description</label>
+                        <textarea
+                            id="form-description"
+                            placeholder="Optional description for students..."
+                            rows="3"
+                            class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring resize-y"
+                        ></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="text-sm font-medium text-foreground" for="form-flow-type">
+                                Flow Type <span class="text-destructive">*</span>
+                            </label>
+                            <select
+                                id="form-flow-type"
+                                required
+                                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                            >
+                                <option value="">Select type...</option>
+                                <option value="admissions">Admissions</option>
+                                <option value="enrollment">Enrollment</option>
+                            </select>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label class="text-sm font-medium text-foreground" for="form-career">Career</label>
+                            <select
+                                id="form-career"
+                                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                            >
+                                <option value="">All careers (global)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 pt-1">
+                        <button
+                            type="button"
+                            id="toggle-active"
+                            role="switch"
+                            aria-checked="true"
+                            class="relative inline-flex h-6 w-11 items-center rounded-full border-2 border-transparent bg-primary transition-colors focus:outline-none focus:ring-2 focus:ring-ring overflow-hidden"
+                        >
+                            <span id="toggle-thumb" class="pointer-events-none inline-block size-4 translate-x-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200"></span>
+                        </button>
+                        <label class="text-sm font-medium text-foreground cursor-pointer" id="toggle-active-label">Active</label>
+                    </div>
+                </form>
+            </div>
+            <div class="flex items-center justify-end gap-3 px-5 py-4 border-t border-border shrink-0">
+                <button id="modal-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+                    Cancel
+                </button>
+                <button id="modal-save" type="button" class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                    <span id="modal-save-label">Create</span>
+                    <div id="modal-save-spinner" class="hidden size-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
+                </button>
+            </div>
+        </div>
+    </div>
+</DashboardLayout>
+
+<script>
+    const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
+
+    function getToken(): string | null { return localStorage.getItem("access_token"); }
+    function getUser(): Record<string, any> | null {
+        try {
+            const s = localStorage.getItem("user-storage");
+            return s ? JSON.parse(s)?.state?.user ?? null : null;
+        } catch { return null; }
+    }
+    function authHeaders(): Record<string, string> {
+        return { "Authorization": `Bearer ${getToken()}`, "Content-Type": "application/json" };
+    }
+
+    const token = getToken();
+    if (!token) { window.location.replace("/login"); throw new Error(); }
+    const user = getUser();
+    if (!user) { window.location.replace("/login"); throw new Error(); }
+    if (!["a", "m"].includes(user.role)) { window.location.replace("/"); throw new Error(); }
+
+    let allQuestionnaires: any[] = [];
+    let allCareers: any[] = [];
+    let isActiveToggle = true;
+
+    function el<T extends HTMLElement>(id: string): T { return document.getElementById(id) as T; }
+    function show(id: string) { el(id).classList.remove("hidden"); }
+    function hide(id: string) { el(id).classList.add("hidden"); }
+
+    function showToast(variant: "success" | "error" | "warning" | "info", title: string, description?: string) {
+        (window as any).showToast?.(variant, title, description);
+    }
+
+    // ── Renderiza la tabla ──────────────────────────────────────────────────────────
+    function renderTable(items: any[]) {
+        const wrapper = el("table-wrapper");
+        const empty = el("empty-state");
+        const loading = el("loading-state");
+        const countEl = el("total-count");
+
+        loading.classList.add("hidden");
+        countEl.textContent = `${items.length} questionnaire${items.length !== 1 ? "s" : ""}`;
+        countEl.classList.remove("hidden");
+
+        if (items.length === 0) {
+            wrapper.classList.add("hidden");
+            empty.classList.remove("hidden");
+            return;
+        }
+
+        empty.classList.add("hidden");
+        wrapper.classList.remove("hidden");
+
+        const body = el("table-body");
+        body.innerHTML = items.map(q => {
+            const typeLabel = q.flow_type === "admissions" ? "Admissions" : "Enrollment";
+            const typeColor = q.flow_type === "admissions"
+                ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                : "bg-violet-500/10 text-violet-400 border-violet-500/20";
+            const stepCount = q.steps?.length ?? q.step_count ?? 0;
+            const careerName = q.career_name ?? (allCareers.find((c: any) => c.id === q.career)?.name ?? "—");
+
+            return `
+            <tr class="border-b border-border last:border-0 hover:bg-muted/20 transition-colors" data-id="${q.id}">
+                <td class="px-4 py-3">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <p class="font-medium text-foreground">${q.title ?? ""}</p>
+                            ${q.is_preinscripcion_wizard ? `<span class="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-400"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Wizard</span>` : ""}
+                        </div>
+                        ${q.description ? `<p class="text-xs text-muted-foreground mt-0.5 line-clamp-1">${q.description}</p>` : ""}
+                    </div>
+                </td>
+                <td class="px-4 py-3">
+                    <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${typeColor}">${typeLabel}</span>
+                </td>
+                <td class="px-4 py-3 hidden sm:table-cell text-sm text-muted-foreground">${careerName}</td>
+                <td class="px-4 py-3 hidden md:table-cell">
+                    <span class="inline-flex items-center gap-1 text-sm text-muted-foreground">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                        ${stepCount}
+                    </span>
+                </td>
+                <td class="px-4 py-3">
+                    <button class="btn-toggle-active inline-flex items-center gap-1.5 text-xs font-medium rounded-md px-2 py-1 transition-colors ${q.is_active ? "text-emerald-400 hover:bg-emerald-500/10" : "text-muted-foreground hover:bg-muted"}" data-id="${q.id}" data-active="${q.is_active}" type="button" title="${q.is_active ? "Deactivate" : "Activate"}">
+                        <span class="size-1.5 rounded-full ${q.is_active ? "bg-emerald-400" : "bg-muted-foreground"}"></span>
+                        ${q.is_active ? "Active" : "Inactive"}
+                    </button>
+                </td>
+                <td class="px-4 py-3">
+                    <div class="flex items-center justify-end gap-2">
+                        ${q.is_preinscripcion_wizard
+                            ? `<button class="btn-unset-wizard inline-flex items-center gap-1.5 rounded-md border border-amber-500/30 px-3 py-1.5 text-xs font-medium text-amber-400 hover:bg-amber-500/10 transition-colors" data-id="${q.id}" type="button">Unset Wizard</button>`
+                            : `<button class="btn-set-wizard inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" data-id="${q.id}" type="button">Set as Wizard</button>`
+                        }
+                        <button class="btn-export inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" data-id="${q.id}" data-title="${q.title}" type="button">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Export
+                        </button>
+                        <a href="/management/questionnaires/${q.id}" class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            Edit
+                        </a>
+                        <button class="btn-delete inline-flex items-center gap-1.5 rounded-md border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors" data-id="${q.id}" data-title="${q.title}" type="button">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                            Delete
+                        </button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join("");
+
+        // Establece manejadores del asistente
+        body.querySelectorAll(".btn-set-wizard").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const id = parseInt((btn as HTMLElement).dataset.id ?? "0", 10);
+                setWizard(id, true);
+            });
+        });
+        body.querySelectorAll(".btn-unset-wizard").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const id = parseInt((btn as HTMLElement).dataset.id ?? "0", 10);
+                setWizard(id, false);
+            });
+        });
+
+        // Manejadores de exportación
+        body.querySelectorAll(".btn-export").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const id = parseInt((btn as HTMLElement).dataset.id ?? "0", 10);
+                const title = (btn as HTMLElement).dataset.title ?? "questionnaire";
+                exportQuestionnaire(id, title);
+            });
+        });
+
+        // Manejadores de borrado
+        body.querySelectorAll(".btn-delete").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const id = parseInt((btn as HTMLElement).dataset.id ?? "0", 10);
+                const title = (btn as HTMLElement).dataset.title ?? "this questionnaire";
+                (window as any).confirmAction?.({
+                    title: "Delete Questionnaire",
+                    description: `Are you sure you want to delete "${title}"? All steps, questions, and student responses will be permanently removed.`,
+                    confirmLabel: "Delete",
+                    variant: "destructive",
+                    onConfirm: () => deleteQuestionnaire(id),
+                });
+            });
+        });
+
+        // Manejadores de activación/desactivación
+        body.querySelectorAll(".btn-toggle-active").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const id = parseInt((btn as HTMLElement).dataset.id ?? "0", 10);
+                const active = (btn as HTMLElement).dataset.active === "true";
+                toggleActive(id, active);
+            });
+        });
+    }
+
+    function filterAndRender() {
+        const query = (el<HTMLInputElement>("search-input")).value.toLowerCase().trim();
+        const type = (el<HTMLSelectElement>("filter-type")).value;
+
+        const filtered = allQuestionnaires.filter(q => {
+            const matchesQuery = !query ||
+                (q.title ?? "").toLowerCase().includes(query) ||
+                (q.description ?? "").toLowerCase().includes(query);
+            const matchesType = !type || q.flow_type === type;
+            return matchesQuery && matchesType;
+        });
+
+        renderTable(filtered);
+    }
+
+    // ── API calls ─────────────────────────────────────────────────────────────
+    async function loadData() {
+        try {
+            const [qRes, cRes] = await Promise.all([
+                fetch(`${API_URL}/questionnaire/questionnaires/`, { headers: authHeaders() }),
+                fetch(`${API_URL}/academic/careers/`, { headers: authHeaders() }),
+            ]);
+
+            if (qRes.status === 401) { window.location.replace("/login"); return; }
+
+            if (!qRes.ok) {
+                hide("loading-state");
+                el("error-message").textContent = `Failed to load (${qRes.status}).`;
+                show("error-state");
+                return;
+            }
+
+            const qData = await qRes.json();
+            allQuestionnaires = Array.isArray(qData) ? qData : (qData.results ?? []);
+
+            if (cRes.ok) {
+                const cData = await cRes.json();
+                allCareers = Array.isArray(cData) ? cData : (cData.results ?? []);
+                populateCareerDropdown();
+            }
+
+            renderTable(allQuestionnaires);
+
+        } catch {
+            hide("loading-state");
+            el("error-message").textContent = "Network error. Please check your connection.";
+            show("error-state");
+        }
+    }
+
+    function populateCareerDropdown() {
+        const sel = el<HTMLSelectElement>("form-career");
+        sel.innerHTML = `<option value="">All careers (global)</option>` +
+            allCareers.map((c: any) => `<option value="${c.id}">${c.name}</option>`).join("");
+    }
+
+    async function setWizard(id: number, enable: boolean) {
+        const action = enable ? "set-wizard" : "unset-wizard";
+        try {
+            const res = await fetch(`${API_URL}/questionnaire/questionnaires/${id}/${action}/`, {
+                method: "POST",
+                headers: authHeaders(),
+            });
+            if (res.ok) {
+                // Actualiza el estado local: limpia todas las marcas de asistente y establece esta si se activa
+                allQuestionnaires = allQuestionnaires.map(q => ({
+                    ...q,
+                    is_preinscripcion_wizard: enable ? q.id === id : false,
+                }));
+                filterAndRender();
+                showToast("success", enable ? "Wizard configurado" : "Wizard eliminado",
+                    enable ? "Este cuestionario ahora es el wizard de preinscripción." : "Se restauró el asistente estático por defecto.");
+            } else {
+                const err = await res.json().catch(() => ({}));
+                showToast("error", "Error", err.detail ?? `No se pudo actualizar el wizard (${res.status}).`);
+            }
+        } catch {
+            showToast("error", "Network error", "Could not update wizard.");
+        }
+    }
+
+    async function toggleActive(id: number, currentActive: boolean) {
+        const newActive = !currentActive;
+        try {
+            const res = await fetch(`${API_URL}/questionnaire/questionnaires/${id}/`, {
+                method: "PATCH",
+                headers: authHeaders(),
+                body: JSON.stringify({ is_active: newActive }),
+            });
+            if (res.ok) {
+                const updated = await res.json();
+                allQuestionnaires = allQuestionnaires.map(q =>
+                    q.id === id ? { ...q, ...updated } : q
+                );
+                filterAndRender();
+                showToast("success", newActive ? "Activated" : "Deactivated",
+                    newActive ? "Questionnaire is now active." : "Questionnaire is now inactive.");
+            } else {
+                showToast("error", "Error", `Could not update status (${res.status}).`);
+            }
+        } catch {
+            showToast("error", "Network error", "Could not update questionnaire status.");
+        }
+    }
+
+    async function deleteQuestionnaire(id: number) {
+        try {
+            const res = await fetch(`${API_URL}/questionnaire/questionnaires/${id}/`, {
+                method: "DELETE",
+                headers: authHeaders(),
+            });
+            if (res.ok || res.status === 204) {
+                allQuestionnaires = allQuestionnaires.filter(q => q.id !== id);
+                filterAndRender();
+                showToast("success", "Deleted", "Questionnaire removed successfully.");
+            } else {
+                showToast("error", "Delete failed", `Server responded with ${res.status}.`);
+            }
+        } catch {
+            showToast("error", "Network error", "Could not delete questionnaire.");
+        }
+    }
+
+    // ── Modal ─────────────────────────────────────────────────────────────────
+    function openCreateModal() {
+        el<HTMLInputElement>("form-questionnaire-id").value = "";
+        el<HTMLInputElement>("form-title").value = "";
+        el<HTMLTextAreaElement>("form-description").value = "";
+        el<HTMLSelectElement>("form-flow-type").value = "";
+        el<HTMLSelectElement>("form-career").value = "";
+        setActiveToggle(true);
+        el("modal-title").textContent = "Create Questionnaire";
+        el("modal-save-label").textContent = "Create";
+        show("modal-backdrop");
+    }
+
+    function closeModal() {
+        hide("modal-backdrop");
+    }
+
+    function setActiveToggle(active: boolean) {
+        isActiveToggle = active;
+        const btn = el("toggle-active");
+        const thumb = el("toggle-thumb");
+        btn.setAttribute("aria-checked", String(active));
+        if (active) {
+            btn.classList.remove("bg-muted-foreground/30");
+            btn.classList.add("bg-primary");
+            thumb.style.transform = "translateX(1.25rem)";
+        } else {
+            btn.classList.add("bg-muted-foreground/30");
+            btn.classList.remove("bg-primary");
+            thumb.style.transform = "translateX(0.125rem)";
+        }
+        el("toggle-active-label").textContent = active ? "Active" : "Inactive";
+    }
+
+    async function saveQuestionnaire() {
+        const idVal = (el<HTMLInputElement>("form-questionnaire-id")).value.trim();
+        const title = (el<HTMLInputElement>("form-title")).value.trim();
+        const description = (el<HTMLTextAreaElement>("form-description")).value.trim();
+        const flowType = (el<HTMLSelectElement>("form-flow-type")).value;
+        const careerId = (el<HTMLSelectElement>("form-career")).value;
+
+        if (!title) {
+            showToast("warning", "Título obligatorio", "Introduce un título para el cuestionario.");
+            return;
+        }
+        if (!flowType) {
+            showToast("warning", "Tipo de flujo obligatorio", "Selecciona un tipo de flujo.");
+            return;
+        }
+
+        const payload: Record<string, any> = {
+            title,
+            description: description || "",
+            flow_type: flowType,
+            is_active: isActiveToggle,
+        };
+        if (careerId) payload.career = parseInt(careerId, 10);
+
+        const isEdit = idVal !== "";
+        const url = isEdit
+            ? `${API_URL}/questionnaire/questionnaires/${idVal}/`
+            : `${API_URL}/questionnaire/questionnaires/`;
+        const method = isEdit ? "PATCH" : "POST";
+
+        el("modal-save-label").textContent = isEdit ? "Guardando..." : "Creating...";
+        el("modal-save-spinner").classList.remove("hidden");
+        el<HTMLButtonElement>("modal-save").disabled = true;
+
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: authHeaders(),
+                body: JSON.stringify(payload),
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                const msg = Object.values(err).flat().join(" ") || `Server error ${res.status}.`;
+                showToast("error", isEdit ? "Update failed" : "Create failed", msg);
+                return;
+            }
+
+            const saved = await res.json();
+
+            if (isEdit) {
+                allQuestionnaires = allQuestionnaires.map(q => q.id === saved.id ? { ...q, ...saved } : q);
+                showToast("success", "Updated", "Questionnaire updated successfully.");
+            } else {
+                allQuestionnaires.unshift(saved);
+                showToast("success", "Created", "Questionnaire created successfully.");
+            }
+
+            filterAndRender();
+            closeModal();
+
+        } catch {
+            showToast("error", "Network error", "Could not save questionnaire.");
+        } finally {
+            el("modal-save-label").textContent = isEdit ? "Save" : "Create";
+            el("modal-save-spinner").classList.add("hidden");
+            el<HTMLButtonElement>("modal-save").disabled = false;
+        }
+    }
+
+    // ── Export ────────────────────────────────────────────────────────────────
+    async function exportQuestionnaire(id: number, title: string) {
+        try {
+            const res = await fetch(`${API_URL}/questionnaire/questionnaires/${id}/export/`, { headers: authHeaders() });
+            if (!res.ok) {
+                showToast("error", "Export failed", `Server responded with ${res.status}.`);
+                return;
+            }
+            const data = await res.json();
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast("success", "Exported", `${title} downloaded as JSON.`);
+        } catch {
+            showToast("error", "Network error", "Could not export questionnaire.");
+        }
+    }
+
+    // ── Modal de importación ─────────────────────────────────────────────────────────
+    function openImportModal() {
+        el<HTMLInputElement>("import-file-input").value = "";
+        el("import-error").classList.add("hidden");
+        el("import-modal-backdrop").classList.remove("hidden");
+    }
+    function closeImportModal() {
+        el("import-modal-backdrop").classList.add("hidden");
+    }
+
+    async function runImport() {
+        const fileInput = el<HTMLInputElement>("import-file-input");
+        const file = fileInput.files?.[0];
+        if (!file) {
+            el("import-error").textContent = "Please select a JSON file.";
+            el("import-error").classList.remove("hidden");
+            return;
+        }
+
+        let parsed: any;
+        try {
+            parsed = JSON.parse(await file.text());
+        } catch {
+            el("import-error").textContent = "Invalid JSON file. Please check the file and try again.";
+            el("import-error").classList.remove("hidden");
+            return;
+        }
+
+        el("import-confirm-label").textContent = "Importing...";
+        el("import-confirm-spinner").classList.remove("hidden");
+        el<HTMLButtonElement>("import-modal-confirm").disabled = true;
+
+        try {
+            const res = await fetch(`${API_URL}/questionnaire/import/`, {
+                method: "POST",
+                headers: authHeaders(),
+                body: JSON.stringify(parsed),
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                el("import-error").textContent = err.detail ?? `Import failed (${res.status}).`;
+                el("import-error").classList.remove("hidden");
+                return;
+            }
+
+            const created = await res.json();
+            allQuestionnaires.unshift(created);
+            filterAndRender();
+            closeImportModal();
+            showToast("success", "Imported", `"${created.title}" was created successfully.`);
+        } catch {
+            el("import-error").textContent = "Network error. Could not import questionnaire.";
+            el("import-error").classList.remove("hidden");
+        } finally {
+            el("import-confirm-label").textContent = "Import";
+            el("import-confirm-spinner").classList.add("hidden");
+            el<HTMLButtonElement>("import-modal-confirm").disabled = false;
+        }
+    }
+
+    // ── Desde plantilla ─────────────────────────────────────────────────────────
+    async function createFromTemplate() {
+        const PREINSCRIPCION_TEMPLATE = {
+            title: "Preinscripción — Plantilla Base",
+            description: "Plantilla que replica el formulario estático de preinscripción. Puedes activarla como asistente o usarla como punto de partida.",
+            flow_type: "admissions",
+            steps: [
+                {
+                    title: "Vía de Acceso y Datos Académicos",
+                    description: "Indica cómo accedes a la universidad y tus notas.",
+                    order: 0,
+                    questions: [
+                        {
+                            label: "Vía de acceso", help_text: "Selecciona la vía de acceso que corresponde a tu situación académica.",
+                            question_type: "radio", is_required: true, order: 0, config: {},
+                            options: [
+                                { label: "EvAU / EBAU (Bachillerato + Selectividad)", value: "evau", order: 0 },
+                                { label: "Ciclo Formativo de Grado Superior (FP)", value: "fp", order: 1 },
+                                { label: "Titulado Universitario", value: "titulado", order: 2 },
+                                { label: "Mayores de 25 años", value: "mayores_25", order: 3 },
+                                { label: "Mayores de 40 años", value: "mayores_40", order: 4 },
+                                { label: "Mayores de 45 años", value: "mayores_45", order: 5 },
+                                { label: "Acceso Internacional / Homologación", value: "internacional", order: 6 },
+                            ],
+                        },
+                        { label: "Nota media de Bachillerato o Ciclo Formativo (0,000 – 10,000)", help_text: "", question_type: "number", is_required: false, order: 1, config: { min: 0, max: 10, step: 0.001 }, options: [] },
+                        { label: "Nota de la Fase Obligatoria de la EvAU (0,000 – 10,000)", help_text: "", question_type: "number", is_required: false, order: 2, config: { min: 0, max: 10, step: 0.001 }, options: [] },
+                        { label: "Asignaturas y notas de la Fase Voluntaria de la EvAU (JSON)", help_text: 'Ejemplo: [{"subject":"Matemáticas","grade":8.5}]', question_type: "textarea", is_required: false, order: 3, config: {}, options: [] },
+                    ],
+                },
+                {
+                    title: "Preferencias de Titulaciones",
+                    description: "Selecciona las titulaciones a las que quieres acceder, ordenadas por preferencia (máx. 10).",
+                    order: 1,
+                    questions: [
+                        { label: "Titulaciones por orden de preferencia (máximo 10)", help_text: "", question_type: "career_select", is_required: true, order: 0, config: { max_selections: 10 }, options: [] },
+                    ],
+                },
+                {
+                    title: "Documentación",
+                    description: "Adjunta los documentos requeridos según tu vía de acceso.",
+                    order: 2,
+                    questions: [
+                        { label: "DNI / NIE / Pasaporte", help_text: "", question_type: "file_upload", is_required: true, order: 0, config: { accepted_types: ["pdf","jpg","jpeg","png"], max_size_mb: 10 }, options: [] },
+                        { label: "Credencial EvAU / EBAU (si aplica)", help_text: "", question_type: "file_upload", is_required: false, order: 1, config: { accepted_types: ["pdf","jpg","jpeg","png"], max_size_mb: 10 }, options: [] },
+                        { label: "Certificado de Notas de Bachillerato o FP", help_text: "", question_type: "file_upload", is_required: false, order: 2, config: { accepted_types: ["pdf","jpg","jpeg","png"], max_size_mb: 10 }, options: [] },
+                        { label: "Título Universitario (si aplica)", help_text: "", question_type: "file_upload", is_required: false, order: 3, config: { accepted_types: ["pdf","jpg","jpeg","png"], max_size_mb: 10 }, options: [] },
+                    ],
+                },
+            ],
+        };
+
+        try {
+            const res = await fetch(`${API_URL}/questionnaire/import/`, {
+                method: "POST",
+                headers: authHeaders(),
+                body: JSON.stringify(PREINSCRIPCION_TEMPLATE),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                showToast("error", "Failed", err.detail ?? `Server error ${res.status}.`);
+                return;
+            }
+            const created = await res.json();
+            allQuestionnaires.unshift(created);
+            filterAndRender();
+            showToast("success", "Template created", `"${created.title}" is ready to edit.`);
+        } catch {
+            showToast("error", "Network error", "Could not create from template.");
+        }
+    }
+
+    // ── Escuchadores de eventos ───────────────────────────────────────────────────────
+    el("btn-create").addEventListener("click", openCreateModal);
+    el("btn-import").addEventListener("click", openImportModal);
+    el("btn-from-template").addEventListener("click", createFromTemplate);
+
+    el("modal-close").addEventListener("click", closeModal);
+    el("modal-cancel").addEventListener("click", closeModal);
+    el("modal-save").addEventListener("click", saveQuestionnaire);
+
+    el("modal-backdrop").addEventListener("click", (e) => {
+        if (e.target === el("modal-backdrop")) closeModal();
+    });
+
+    el("import-modal-close").addEventListener("click", closeImportModal);
+    el("import-modal-cancel").addEventListener("click", closeImportModal);
+    el("import-modal-confirm").addEventListener("click", runImport);
+    el("import-modal-backdrop").addEventListener("click", (e) => {
+        if (e.target === el("import-modal-backdrop")) closeImportModal();
+    });
+
+    el("toggle-active").addEventListener("click", () => setActiveToggle(!isActiveToggle));
+
+    el("search-input").addEventListener("input", filterAndRender);
+    el("filter-type").addEventListener("change", filterAndRender);
+
+    // ── Inicialización ──────────────────────────────────────────────────────────────────
+    loadData();
+</script>

@@ -1,0 +1,276 @@
+---
+export const prerender = false;
+import DashboardLayout from "@/layouts/DashboardLayout.astro";
+---
+
+<DashboardLayout title="Enrollment Receipt — Academix" currentPath="/enrollment">
+    <div class="flex items-center justify-between border-b border-border px-6 py-4 print:hidden">
+        <div>
+            <div class="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                <a href="/enrollment" class="hover:text-foreground transition-colors">Enrollment</a>
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                <span class="text-foreground">Receipt</span>
+            </div>
+            <h1 class="text-xl font-semibold text-foreground">Enrollment Receipt</h1>
+        </div>
+        <button onclick="window.print()" class="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Print Receipt
+        </button>
+    </div>
+
+    <div class="p-6 max-w-2xl">
+        <!-- Cargando -->
+        <div id="loading-state" class="space-y-3">
+            <div class="h-48 bg-muted animate-pulse rounded-xl"></div>
+        </div>
+
+        <!-- Contenido del recibo -->
+        <div id="receipt-content" class="hidden">
+            <!-- Tarjeta de recibo — estilos para impresión -->
+            <div class="bg-card border border-border rounded-xl overflow-hidden shadow-sm print:shadow-none print:border-none">
+                <!-- Cabecera del recibo -->
+                <div class="bg-primary/10 border-b border-border px-8 py-6 print:bg-white">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div class="flex items-center gap-2.5 mb-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-primary"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                                <span class="text-lg font-bold text-foreground">academix</span>
+                            </div>
+                            <p class="text-sm text-muted-foreground">Enrollment Receipt</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-muted-foreground">Receipt #</p>
+                            <p id="receipt-id" class="text-lg font-bold text-foreground font-mono">—</p>
+                            <p id="receipt-date" class="text-xs text-muted-foreground mt-1">—</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cuerpo del recibo -->
+                <div class="px-8 py-6 space-y-6">
+                    <!-- Información del estudiante -->
+                    <div class="space-y-1">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Student</p>
+                        <p id="student-name" class="text-base font-semibold text-foreground">—</p>
+                        <p id="student-email" class="text-sm text-muted-foreground">—</p>
+                        <p id="student-id" class="text-xs text-muted-foreground font-mono">—</p>
+                    </div>
+
+                    <div class="border-t border-dashed border-border"></div>
+
+                    <!-- Detalles de matrícula -->
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <p class="text-xs text-muted-foreground">Career</p>
+                            <p id="enrollment-career" class="font-medium text-foreground">—</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-muted-foreground">Period</p>
+                            <p id="enrollment-period" class="font-medium text-foreground">—</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-muted-foreground">Enrollment Date</p>
+                            <p id="enrollment-date" class="font-medium text-foreground">—</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-muted-foreground">Status</p>
+                            <p id="enrollment-status" class="font-medium text-emerald-400">—</p>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-dashed border-border"></div>
+
+                    <!-- Desglose de tasas -->
+                    <div class="space-y-2">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Fee Details</p>
+                        <div id="fee-items" class="space-y-1.5"></div>
+                        <div class="border-t border-border pt-2 mt-2 flex justify-between text-sm font-bold">
+                            <span class="text-foreground">Total Paid</span>
+                            <span id="fee-total" class="text-foreground">—</span>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-dashed border-border"></div>
+
+                    <!-- Clases matriculadas -->
+                    <div id="classes-section" class="hidden space-y-2">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Enrolled Classes</p>
+                        <div id="classes-list" class="space-y-1.5"></div>
+                    </div>
+
+                    <!-- Pie -->
+                    <div class="border-t border-dashed border-border pt-4">
+                        <div class="flex items-center justify-between">
+                            <p class="text-xs text-muted-foreground">This document serves as official proof of enrollment.</p>
+                            <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-emerald-100 text-emerald-700">
+                                ✓ Valid
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error -->
+        <div id="error-state" class="hidden rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+            <p class="text-sm font-medium text-destructive">Failed to load receipt</p>
+            <p id="error-message" class="text-sm text-destructive/80 mt-1"></p>
+        </div>
+    </div>
+</DashboardLayout>
+
+<style>
+    @media print {
+        body { background: white !important; color: black !important; }
+        .print\:hidden { display: none !important; }
+        aside { display: none !important; }
+        main { margin-left: 0 !important; }
+    }
+</style>
+
+<script>
+    const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
+    const token = localStorage.getItem("access_token");
+
+    function getUser(): Record<string, any> | null {
+        try {
+            const stored = localStorage.getItem("user-storage");
+            if (!stored) return null;
+            return JSON.parse(stored)?.state?.user ?? null;
+        } catch { return null; }
+    }
+
+    if (!token) { window.location.replace("/login"); }
+    const user = getUser();
+    if (!user) { window.location.replace("/login"); }
+    if (user?.role !== "s") { window.location.replace("/"); }
+
+    const pathParts = window.location.pathname.split("/").filter(Boolean);
+    const enrollmentId = pathParts[pathParts.length - 1];
+
+    async function apiFetch(path: string) {
+        const res = await fetch(`${API_URL}${path}`, {
+            headers: { "Authorization": `Bearer ${token}`, "Accept": "application/json" },
+        });
+        if (res.status === 401) { window.location.replace("/login"); throw new Error("Unauthorized"); }
+        return res;
+    }
+
+    function escHtml(str: unknown) {
+        const d = document.createElement("div");
+        d.textContent = String(str ?? "");
+        return d.innerHTML;
+    }
+
+    async function loadReceipt() {
+        try {
+            const res = await apiFetch(`/enrollment/career-enrollments/${enrollmentId}/receipt/`);
+
+            document.getElementById("loading-state")?.classList.add("hidden");
+
+            if (!res.ok) {
+                document.getElementById("error-message")!.textContent = `Failed to load receipt (${res.status})`;
+                document.getElementById("error-state")?.classList.remove("hidden");
+                return;
+            }
+
+            const data = await res.json();
+            document.getElementById("receipt-content")?.classList.remove("hidden");
+
+            // Cabecera del recibo — forma del backend: {enrollment: {id, status, enrolled_at}, ...}
+            document.getElementById("receipt-id")!.textContent = `#${data.enrollment?.id ?? enrollmentId}`;
+            const enrolledAt = data.enrollment?.enrolled_at ?? data.issued_at;
+            document.getElementById("receipt-date")!.textContent = enrolledAt
+                ? new Date(enrolledAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+                : new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+
+            // Estudiante — forma del backend: {student: {id, full_name, email, dni}}
+            const student = data.student ?? {};
+            // El backend devuelve full_name directamente; respaldo para forma antigua
+            const fullName = student.full_name ?? (`${student.first_name ?? ""} ${student.last_name ?? ""}`.trim() || student.username || "—");
+            document.getElementById("student-name")!.textContent = fullName;
+            document.getElementById("student-email")!.textContent = student.email ?? "—";
+            document.getElementById("student-id")!.textContent = student.dni ? `DNI: ${student.dni}` : `ID: ${student.id ?? "—"}`;
+
+            // Matrícula — forma del backend: {career: {name}, period: {name}, enrollment: {status, enrolled_at}}
+            document.getElementById("enrollment-career")!.textContent = data.career?.name ?? "—";
+            document.getElementById("enrollment-period")!.textContent = data.period?.name ?? "—";
+            const enrollDateStr = data.enrollment?.enrolled_at ?? data.enrollment_date ?? data.created_at;
+            document.getElementById("enrollment-date")!.textContent = enrollDateStr
+                ? new Date(enrollDateStr).toLocaleDateString()
+                : "—";
+            const enrollStatus = data.enrollment?.status ?? data.status ?? "active";
+            const statusEl = document.getElementById("enrollment-status")!;
+            statusEl.textContent = enrollStatus.charAt(0).toUpperCase() + enrollStatus.slice(1);
+
+            // Tasa — forma del backend: {fee: {base_amount, discount_amount, discount_reason, final_amount, status, paid_at}}
+            const fee = data.fee ?? {};
+            const feeItemsEl = document.getElementById("fee-items")!;
+            const feeRows: string[] = [];
+            if (Array.isArray(fee.line_items) && fee.line_items.length > 0) {
+                fee.line_items.forEach((item: any) => {
+                    const amount = parseFloat(String(item.subtotal ?? item.amount ?? 0));
+                    const label = item.type === "subject"
+                        ? `${item.subject_code ?? ""} ${item.subject_name ?? item.label ?? "Subject"}`
+                        : (item.label ?? "Administrative charge");
+                    const calculation = item.type === "subject" && item.credits && item.price_per_credit
+                        ? `${item.credits} ECTS × €${parseFloat(String(item.price_per_credit)).toFixed(2)}/crédito`
+                        : "";
+                    feeRows.push(`
+                    <div class="flex justify-between gap-4 text-sm">
+                        <span class="text-muted-foreground">
+                            ${escHtml(label)}
+                            ${calculation ? `<span class="block text-xs text-muted-foreground/80">${escHtml(calculation)}</span>` : ""}
+                        </span>
+                        <span class="text-foreground whitespace-nowrap">€${isNaN(amount) ? String(item.subtotal ?? item.amount) : amount.toFixed(2)}</span>
+                    </div>`);
+                });
+            } else if (fee.base_amount !== undefined) {
+                const baseAmt = parseFloat(fee.base_amount);
+                feeRows.push(`
+                    <div class="flex justify-between text-sm">
+                        <span class="text-muted-foreground">Enrollment payment</span>
+                        <span class="text-foreground">€${isNaN(baseAmt) ? fee.base_amount : baseAmt.toFixed(2)}</span>
+                    </div>`);
+            }
+            if (fee.discount_amount !== undefined && parseFloat(fee.discount_amount) > 0) {
+                const discAmt = parseFloat(fee.discount_amount);
+                feeRows.push(`
+                    <div class="flex justify-between text-sm">
+                        <span class="text-muted-foreground">Discount${fee.discount_reason ? ` (${fee.discount_reason})` : ""}</span>
+                        <span class="text-foreground text-emerald-400">-€${isNaN(discAmt) ? fee.discount_amount : discAmt.toFixed(2)}</span>
+                    </div>`);
+            }
+            if (feeRows.length > 0) {
+                feeItemsEl.innerHTML = feeRows.join("");
+            } else {
+                feeItemsEl.innerHTML = `<div class="text-sm text-muted-foreground">Enrollment fee</div>`;
+            }
+
+            // Total — el backend devuelve fee.final_amount
+            const finalAmount = fee.final_amount ?? fee.total ?? data.total_fee ?? "—";
+            const finalAmtNum = parseFloat(String(finalAmount));
+            document.getElementById("fee-total")!.textContent = !isNaN(finalAmtNum) ? `€${finalAmtNum.toFixed(2)}` : String(finalAmount);
+
+            // Clases — forma del backend: classes[]: {class_id, subject_name, subject_credits, teacher_name, classroom, schedules}
+            const classes = data.classes ?? data.enrolled_classes ?? [];
+            if (classes.length > 0) {
+                document.getElementById("classes-section")?.classList.remove("hidden");
+                const classListEl = document.getElementById("classes-list")!;
+                classListEl.innerHTML = classes.map((cls: any) => `
+                    <div class="flex items-center justify-between text-sm py-1 border-b border-border/50 last:border-0">
+                        <span class="text-foreground">${cls.subject_name ?? cls.subject?.name ?? cls.name ?? "Class"}</span>
+                        <span class="text-xs text-muted-foreground">${cls.teacher_name ?? cls.teacher?.full_name ?? ""}</span>
+                    </div>`).join("");
+            }
+
+        } catch {
+            document.getElementById("loading-state")?.classList.add("hidden");
+            document.getElementById("error-message")!.textContent = "Network error. Please check your connection.";
+            document.getElementById("error-state")?.classList.remove("hidden");
+        }
+    }
+
+    loadReceipt();
+</script>

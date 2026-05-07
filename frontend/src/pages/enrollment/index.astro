@@ -1,0 +1,548 @@
+---
+import DashboardLayout from "@/layouts/DashboardLayout.astro";
+---
+
+<DashboardLayout title="Enrollment — Academix" currentPath="/enrollment">
+    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+        <div>
+            <h1 class="text-xl font-semibold text-foreground">Enrollment</h1>
+            <p class="text-sm text-muted-foreground">Manage your career enrollment and subject selection.</p>
+        </div>
+    </div>
+
+    <div class="p-6 space-y-6 max-w-2xl">
+        <!-- Cargando -->
+        <div id="loading-state" class="space-y-3">
+            <div class="h-32 bg-muted animate-pulse rounded-xl"></div>
+            <div class="h-24 bg-muted animate-pulse rounded-xl"></div>
+        </div>
+
+        <!-- Sin admisión confirmada -->
+        <div id="state-no-admission" class="hidden bg-card border border-border rounded-xl p-6 text-center space-y-4">
+            <div class="flex size-14 items-center justify-center rounded-full bg-muted mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div>
+                <h2 class="text-base font-semibold text-foreground">No Confirmed Admission</h2>
+                <p class="text-sm text-muted-foreground mt-1">You need a confirmed admission before enrolling in a career.</p>
+            </div>
+            <a href="/admissions/my-applications" class="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+                View My Applications
+            </a>
+        </div>
+
+        <!-- Tiene admisión confirmada, aún sin matrícula -->
+        <div id="state-start-enrollment" class="hidden bg-card border border-border rounded-xl p-6 space-y-4">
+            <div class="flex items-center gap-3">
+                <div class="flex size-10 items-center justify-center rounded-lg bg-emerald-500/15">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-emerald-400"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <div>
+                    <h2 class="text-base font-semibold text-foreground">Admission Confirmed</h2>
+                    <p class="text-sm text-muted-foreground">You're ready to enroll!</p>
+                </div>
+            </div>
+
+            <div class="rounded-md border border-border bg-muted/30 p-4 text-sm space-y-2">
+                <div class="flex justify-between">
+                    <span class="text-muted-foreground">Career</span>
+                    <span id="admission-career" class="font-medium text-foreground">—</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-muted-foreground">Period</span>
+                    <span id="admission-period" class="font-medium text-foreground">—</span>
+                </div>
+            </div>
+
+            <button id="btn-start-enrollment" class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Start Enrollment
+            </button>
+            <div id="enrollment-error" class="hidden text-sm text-destructive"></div>
+        </div>
+
+        <!-- Tiene matrícula -->
+        <div id="state-enrollment" class="hidden space-y-6">
+            <!-- Información de matrícula -->
+            <div class="bg-card border border-border rounded-xl p-6 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-base font-semibold text-foreground">Career Enrollment</h2>
+                    <span id="enrollment-status-badge" class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"></span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                        <p class="text-muted-foreground">Career</p>
+                        <p id="enrollment-career" class="font-medium text-foreground">—</p>
+                    </div>
+                    <div>
+                        <p class="text-muted-foreground">Period</p>
+                        <p id="enrollment-period" class="font-medium text-foreground">—</p>
+                    </div>
+                    <div>
+                        <p class="text-muted-foreground">Enrolled</p>
+                        <p id="enrollment-date" class="font-medium text-foreground">—</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fee section -->
+            <div class="bg-card border border-border rounded-xl p-6 space-y-4">
+                <h2 class="text-base font-semibold text-foreground">Enrollment Payment</h2>
+
+                <div id="fee-loading" class="space-y-2">
+                    <div class="h-8 bg-muted animate-pulse rounded"></div>
+                    <div class="h-8 bg-muted animate-pulse rounded"></div>
+                </div>
+
+                <div id="fee-content" class="hidden space-y-3">
+                    <div class="space-y-2 text-sm" id="fee-breakdown"></div>
+                    <div class="border-t border-border pt-3 flex justify-between text-sm font-semibold">
+                        <span class="text-foreground">Total</span>
+                        <span id="fee-total" class="text-foreground">—</span>
+                    </div>
+
+                    <!-- No fee yet: subjects must be selected first -->
+                    <div id="fee-missing-action" class="hidden space-y-2">
+                        <p class="text-sm text-muted-foreground">Choose your subjects first. The final payment is calculated from the selected subjects plus configured administrative charges.</p>
+                        <a href="/enrollment/classes" class="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                            Select Subjects
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </a>
+                    </div>
+
+                    <!-- Pay button (pending) -->
+                    <div id="fee-pending-action" class="hidden">
+                        <button id="btn-pay" class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                            Pay Enrollment
+                        </button>
+                        <p class="text-xs text-muted-foreground mt-1">Development uses simulated payment. Production uses Stripe.</p>
+                    </div>
+
+                    <!-- Estado pagado -->
+                    <div id="fee-paid-action" class="hidden space-y-3">
+                        <div class="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3">
+                            <p class="text-sm font-medium text-emerald-400">✅ Enrollment fee paid. Your enrollment is active!</p>
+                        </div>
+                        <div class="flex gap-3">
+                            <a id="link-receipt" href="#" class="inline-flex items-center gap-1.5 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                View Receipt
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pay-error" class="hidden rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"></div>
+        </div>
+
+        <!-- Estado de error -->
+        <div id="error-state" class="hidden rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+            <p class="text-sm font-medium text-destructive">Failed to load enrollment data</p>
+            <p id="error-message" class="text-sm text-destructive/80 mt-1"></p>
+        </div>
+    </div>
+
+    <!-- Stripe payment modal (used only when backend returns production Stripe mode) -->
+    <div id="stripe-backdrop" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+        <div class="w-full max-w-md rounded-xl border border-border bg-background p-5 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="text-base font-semibold text-foreground">Complete Enrollment Payment</h3>
+                <button id="stripe-modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">×</button>
+            </div>
+            <div id="stripe-payment-element"></div>
+            <p id="stripe-error" class="hidden text-xs text-destructive"></p>
+            <button id="stripe-pay-btn" type="button" class="w-full inline-flex items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                Pay with Stripe
+            </button>
+        </div>
+    </div>
+</DashboardLayout>
+
+<script>
+    const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
+    const token = localStorage.getItem("access_token");
+
+    function getUser(): Record<string, any> | null {
+        try {
+            const stored = localStorage.getItem("user-storage");
+            if (!stored) return null;
+            return JSON.parse(stored)?.state?.user ?? null;
+        } catch { return null; }
+    }
+
+    if (!token) { window.location.replace("/login"); }
+    const user = getUser();
+    if (!user) { window.location.replace("/login"); }
+    if (user?.role !== "s") { window.location.replace("/"); }
+
+    async function apiFetch(path: string, opts: RequestInit = {}) {
+        const res = await fetch(`${API_URL}${path}`, {
+            ...opts,
+            headers: { "Authorization": `Bearer ${token}`, "Accept": "application/json", ...(opts.headers || {}) },
+        });
+        if (res.status === 401) { window.location.replace("/login"); throw new Error("Unauthorized"); }
+        return res;
+    }
+
+    function escHtml(str: unknown) {
+        const d = document.createElement("div");
+        d.textContent = String(str ?? "");
+        return d.innerHTML;
+    }
+
+    function hideAll() {
+        ["state-no-admission", "state-start-enrollment", "state-enrollment", "error-state"].forEach(id => {
+            document.getElementById(id)?.classList.add("hidden");
+        });
+    }
+
+    let currentEnrollmentId: number | null = null;
+    let stripeInstance: any = null;
+    let stripeElements: any = null;
+
+    async function loadFee(enrollmentId: number) {
+        document.getElementById("fee-loading")?.classList.remove("hidden");
+        document.getElementById("fee-content")?.classList.add("hidden");
+        document.getElementById("fee-missing-action")?.classList.add("hidden");
+        document.getElementById("fee-pending-action")?.classList.add("hidden");
+        document.getElementById("fee-paid-action")?.classList.add("hidden");
+
+        try {
+            const res = await apiFetch(`/enrollment/career-enrollments/${enrollmentId}/fee/`);
+            document.getElementById("fee-loading")?.classList.add("hidden");
+
+            if (!res.ok) {
+                const breakdown = document.getElementById("fee-breakdown")!;
+                breakdown.innerHTML = "";
+                document.getElementById("fee-total")!.textContent = "Pending subject selection";
+                document.getElementById("fee-content")?.classList.remove("hidden");
+                document.getElementById("fee-missing-action")?.classList.remove("hidden");
+                return;
+            }
+            const fee = await res.json();
+
+            // El backend devuelve: base_amount, discount_amount, discount_reason, final_amount, status, paid_at
+            const breakdown = document.getElementById("fee-breakdown")!;
+            const baseAmt = fee.base_amount ? parseFloat(fee.base_amount) : null;
+            const discAmt = fee.discount_amount ? parseFloat(fee.discount_amount) : 0;
+            const rows: string[] = [];
+            if (Array.isArray(fee.line_items) && fee.line_items.length > 0) {
+                fee.line_items.forEach((item: any) => {
+                    const amount = parseFloat(String(item.subtotal ?? item.amount ?? 0));
+                    const label = item.type === "subject"
+                        ? `${item.subject_code ?? ""} ${item.subject_name ?? item.label ?? "Subject"}`
+                        : (item.label ?? "Administrative charge");
+                    const calculation = item.type === "subject" && item.credits && item.price_per_credit
+                        ? `${item.credits} ECTS × €${parseFloat(String(item.price_per_credit)).toFixed(2)}/crédito`
+                        : "";
+                    rows.push(`
+                        <div class="flex justify-between gap-4 py-1 border-b border-border/50">
+                            <span class="text-muted-foreground">
+                                ${escHtml(label)}
+                                ${calculation ? `<span class="block text-xs text-muted-foreground/80">${escHtml(calculation)}</span>` : ""}
+                            </span>
+                            <span class="text-foreground whitespace-nowrap">€${isNaN(amount) ? String(item.subtotal ?? item.amount) : amount.toFixed(2)}</span>
+                        </div>`);
+                });
+            } else if (baseAmt !== null) {
+                rows.push(`
+                    <div class="flex justify-between py-1 border-b border-border/50">
+                        <span class="text-muted-foreground">Enrollment payment</span>
+                        <span class="text-foreground">€${baseAmt.toFixed(2)}</span>
+                    </div>`);
+            }
+            if (discAmt > 0) {
+                rows.push(`
+                    <div class="flex justify-between py-1 border-b border-border/50">
+                        <span class="text-muted-foreground">Discount${fee.discount_reason ? ` (${fee.discount_reason})` : ""}</span>
+                        <span class="text-foreground text-emerald-400">-€${discAmt.toFixed(2)}</span>
+                    </div>`);
+            }
+            breakdown.innerHTML = rows.join("");
+
+            const finalAmount = fee.final_amount ?? fee.total ?? fee.amount ?? "—";
+            const totalDisplay = typeof finalAmount === "string" && !isNaN(parseFloat(finalAmount))
+                ? `€${parseFloat(finalAmount).toFixed(2)}`
+                : (typeof finalAmount === "number" ? `€${finalAmount.toFixed(2)}` : String(finalAmount));
+            document.getElementById("fee-total")!.textContent = totalDisplay;
+            document.getElementById("fee-content")?.classList.remove("hidden");
+
+            if (fee.status === "paid" || fee.status === "exempted") {
+                document.getElementById("fee-paid-action")?.classList.remove("hidden");
+                document.getElementById("link-receipt")?.setAttribute("href", `/enrollment/receipt/${enrollmentId}`);
+            } else {
+                document.getElementById("fee-pending-action")?.classList.remove("hidden");
+            }
+
+        } catch {
+            document.getElementById("fee-loading")?.classList.add("hidden");
+        }
+    }
+
+    async function loadStripeJs(): Promise<boolean> {
+        return new Promise(resolve => {
+            if ((window as any).Stripe) { resolve(true); return; }
+            const script = document.createElement("script");
+            script.src = "https://js.stripe.com/v3/";
+            script.onload = () => resolve(true);
+            script.onerror = () => resolve(false);
+            document.head.appendChild(script);
+        });
+    }
+
+    async function confirmEnrollmentPayment(enrollmentId: number): Promise<boolean> {
+        const res = await apiFetch(`/enrollment/career-enrollments/${enrollmentId}/confirm-payment/`, { method: "POST" });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(data.detail || `Payment confirmation failed (${res.status})`);
+        }
+        return data.status === "paid";
+    }
+
+    async function showStripePayment(clientSecret: string, amountLabel: string) {
+        if (!currentEnrollmentId) return;
+        const loaded = await loadStripeJs();
+        if (!loaded || !(window as any).Stripe) throw new Error("Stripe could not be loaded.");
+
+        const configRes = await apiFetch("/enrollment/stripe/config/");
+        const config = await configRes.json().catch(() => ({}));
+        const publishableKey = config.publishable_key ?? "";
+        if (!publishableKey) throw new Error("Stripe publishable key is not configured.");
+
+        stripeInstance = (window as any).Stripe(publishableKey);
+        stripeElements = stripeInstance.elements({ clientSecret });
+        const paymentEl = stripeElements.create("payment");
+        document.getElementById("stripe-payment-element")!.innerHTML = "";
+        paymentEl.mount("#stripe-payment-element");
+
+        document.getElementById("stripe-pay-btn")!.textContent = `Pay ${amountLabel}`;
+        document.getElementById("stripe-backdrop")?.classList.remove("hidden");
+    }
+
+    function renderEnrollment(enrollment: any) {
+        currentEnrollmentId = enrollment.id;
+
+        // CareerEnrollmentSerializer devuelve career_name y period_name (cadenas planas)
+        document.getElementById("enrollment-career")!.textContent = enrollment.career_name ?? enrollment.career?.name ?? "—";
+        document.getElementById("enrollment-period")!.textContent = enrollment.period_name ?? enrollment.period?.name ?? enrollment.academic_period?.name ?? "—";
+        document.getElementById("enrollment-date")!.textContent = enrollment.enrolled_at
+            ? new Date(enrollment.enrolled_at).toLocaleDateString()
+            : (enrollment.created_at ? new Date(enrollment.created_at).toLocaleDateString() : "—");
+
+        const badge = document.getElementById("enrollment-status-badge")!;
+        const statusMap: Record<string, string> = {
+            pending: "bg-yellow-100 text-yellow-700",
+            active: "bg-emerald-100 text-emerald-700",
+            completed: "bg-blue-100 text-blue-700",
+            inactive: "bg-gray-100 text-gray-700",
+            dropped: "bg-red-100 text-red-700",
+        };
+        badge.textContent = (enrollment.status ?? "pending").charAt(0).toUpperCase() + (enrollment.status ?? "pending").slice(1);
+        badge.className = `inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${statusMap[enrollment.status] ?? "bg-gray-100 text-gray-700"}`;
+
+        hideAll();
+        document.getElementById("state-enrollment")?.classList.remove("hidden");
+        loadFee(enrollment.id);
+    }
+
+    async function init() {
+        const loading = document.getElementById("loading-state")!;
+
+        try {
+            // Comprueba si existe una matrícula
+            const enrollRes = await apiFetch("/enrollment/career-enrollments/");
+            if (!enrollRes.ok && enrollRes.status !== 404) {
+                loading.classList.add("hidden");
+                hideAll();
+                document.getElementById("error-message")!.textContent = `Failed to load enrollment data (${enrollRes.status})`;
+                document.getElementById("error-state")?.classList.remove("hidden");
+                return;
+            }
+
+            if (enrollRes.ok) {
+                const data = await enrollRes.json();
+                const enrollments = Array.isArray(data) ? data : (data.results ?? []);
+                const activeEnroll = enrollments.find((e: any) => e.status === "pending")
+                    ?? enrollments.find((e: any) => e.status === "active")
+                    ?? enrollments[0]
+                    ?? null;
+
+                if (activeEnroll) {
+                    loading.classList.add("hidden");
+                    renderEnrollment(activeEnroll);
+                    return;
+                }
+            }
+
+            // Sin matrícula — comprueba si hay admisión confirmada
+            const appsRes = await apiFetch("/admissions/applications/?status=confirmed");
+            loading.classList.add("hidden");
+
+            if (appsRes.ok) {
+                const appsData = await appsRes.json();
+                const apps = Array.isArray(appsData) ? appsData : (appsData.results ?? []);
+                const confirmed = apps.find((a: any) => a.status === "confirmed") ?? null;
+
+                hideAll();
+
+                if (confirmed) {
+                    // El serializador de listado devuelve career_name y academic_period_name (cadenas planas)
+                    document.getElementById("admission-career")!.textContent = confirmed.career_name ?? confirmed.career?.name ?? "—";
+                    document.getElementById("admission-period")!.textContent = confirmed.academic_period_name ?? confirmed.academic_period?.name ?? "—";
+                    document.getElementById("state-start-enrollment")?.classList.remove("hidden");
+
+                    // Almacén para creación de matrícula
+                    (window as any).__confirmedApp = confirmed;
+                } else {
+                    document.getElementById("state-no-admission")?.classList.remove("hidden");
+                }
+            } else {
+                hideAll();
+                document.getElementById("state-no-admission")?.classList.remove("hidden");
+            }
+
+        } catch {
+            loading.classList.add("hidden");
+            hideAll();
+            document.getElementById("error-message")!.textContent = "Network error. Please check your connection.";
+            document.getElementById("error-state")?.classList.remove("hidden");
+        }
+    }
+
+    // Inicia matrícula
+    document.getElementById("btn-start-enrollment")?.addEventListener("click", async () => {
+        const btn = document.getElementById("btn-start-enrollment") as HTMLButtonElement;
+        const errEl = document.getElementById("enrollment-error")!;
+        btn.disabled = true;
+        btn.textContent = "Creating enrollment...";
+        errEl.classList.add("hidden");
+
+        const app = (window as any).__confirmedApp;
+        if (!app) {
+            errEl.textContent = "Sin admisión confirmada found.";
+            errEl.classList.remove("hidden");
+            btn.disabled = false;
+            btn.textContent = "Start Enrollment";
+            return;
+        }
+
+        try {
+            const res = await apiFetch("/enrollment/career-enrollments/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    career_id: app.assigned_career_id,
+                    period_id: app.academic_period_id_ro,
+                }),
+            });
+
+            if (!res.ok) {
+                const json = await res.json().catch(() => ({}));
+                errEl.textContent = json.detail || json.error || `Failed (${res.status})`;
+                errEl.classList.remove("hidden");
+                btn.disabled = false;
+                btn.textContent = "Start Enrollment";
+                return;
+            }
+
+            const enrollment = await res.json();
+            renderEnrollment(enrollment);
+
+        } catch {
+            errEl.textContent = "Failed to create enrollment.";
+            errEl.classList.remove("hidden");
+            btn.disabled = false;
+            btn.textContent = "Start Enrollment";
+        }
+    });
+
+    // Pay
+    document.getElementById("btn-pay")?.addEventListener("click", async () => {
+        if (!currentEnrollmentId) return;
+        const btn = document.getElementById("btn-pay") as HTMLButtonElement;
+        const errEl = document.getElementById("pay-error")!;
+        btn.disabled = true;
+        btn.textContent = "Procesando...";
+        errEl.classList.add("hidden");
+
+        try {
+            const res = await apiFetch(`/enrollment/career-enrollments/${currentEnrollmentId}/pay/`, { method: "POST" });
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                errEl.textContent = json.detail || json.error || `Payment failed (${res.status})`;
+                errEl.classList.remove("hidden");
+                btn.disabled = false;
+                btn.textContent = "Pay Enrollment";
+                return;
+            }
+
+            if (json.mode === "stripe") {
+                await showStripePayment(json.client_secret, `€${parseFloat(String(json.amount ?? 0)).toFixed(2)}`);
+                btn.disabled = false;
+                btn.textContent = "Pay Enrollment";
+                return;
+            }
+
+            // Demo/exempted modes complete immediately.
+            document.getElementById("fee-pending-action")?.classList.add("hidden");
+            document.getElementById("fee-paid-action")?.classList.remove("hidden");
+            document.getElementById("link-receipt")?.setAttribute("href", `/enrollment/receipt/${currentEnrollmentId}`);
+
+            // Actualiza la insignia de estado de matrícula
+            const badge = document.getElementById("enrollment-status-badge")!;
+            badge.textContent = "Active";
+            badge.className = "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-emerald-100 text-emerald-700";
+
+        } catch {
+            errEl.textContent = "Payment failed. Please try again.";
+            errEl.classList.remove("hidden");
+            btn.disabled = false;
+            btn.textContent = "Pay Enrollment";
+        }
+    });
+
+    document.getElementById("stripe-pay-btn")?.addEventListener("click", async () => {
+        if (!currentEnrollmentId || !stripeInstance || !stripeElements) return;
+        const btn = document.getElementById("stripe-pay-btn") as HTMLButtonElement;
+        const errEl = document.getElementById("stripe-error")!;
+        btn.disabled = true;
+        errEl.classList.add("hidden");
+        try {
+            const { error } = await stripeInstance.confirmPayment({
+                elements: stripeElements,
+                redirect: "if_required",
+            });
+            if (error) {
+                errEl.textContent = error.message ?? "Payment failed.";
+                errEl.classList.remove("hidden");
+                btn.disabled = false;
+                return;
+            }
+            const paid = await confirmEnrollmentPayment(currentEnrollmentId);
+            if (!paid) {
+                errEl.textContent = "Stripe has not confirmed the payment yet. Please try again shortly.";
+                errEl.classList.remove("hidden");
+                btn.disabled = false;
+                return;
+            }
+            document.getElementById("stripe-backdrop")?.classList.add("hidden");
+            await loadFee(currentEnrollmentId);
+        } catch (err: any) {
+            errEl.textContent = err?.message ?? "Payment confirmation failed.";
+            errEl.classList.remove("hidden");
+            btn.disabled = false;
+        }
+    });
+
+    document.getElementById("stripe-modal-close")?.addEventListener("click", () => {
+        document.getElementById("stripe-backdrop")?.classList.add("hidden");
+        document.getElementById("stripe-payment-element")!.innerHTML = "";
+        stripeInstance = null;
+        stripeElements = null;
+    });
+
+    init();
+</script>

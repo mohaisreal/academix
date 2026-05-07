@@ -1,0 +1,641 @@
+---
+export const prerender = false;
+import DashboardLayout from "@/layouts/DashboardLayout.astro";
+---
+
+<DashboardLayout title="Application Detail — Academix" currentPath="/management/admissions">
+    <div id="page-loading" class="flex items-center justify-center p-20">
+        <svg class="animate-spin text-primary" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+    </div>
+
+    <div id="page-content" class="hidden">
+        <!-- Cabecera -->
+        <div class="flex items-center justify-between border-b border-border px-6 py-4">
+            <div>
+                <div class="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                    <a href="/management/admissions" class="hover:text-foreground transition-colors">Admissions</a>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                    <span class="text-foreground">Application #<span id="app-id-header">—</span></span>
+                </div>
+                <h1 class="text-xl font-semibold text-foreground" id="page-title">Application Detail</h1>
+            </div>
+            <div class="flex items-center gap-3">
+                <span id="app-status-badge" class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"></span>
+                <button id="btn-mark-review" class="hidden inline-flex items-center gap-2 rounded-md bg-yellow-600 px-4 py-2 text-sm font-semibold text-white hover:bg-yellow-700 disabled:opacity-50 transition-colors">
+                    Mark Under Review
+                </button>
+            </div>
+        </div>
+
+        <div class="p-6 space-y-6 max-w-4xl">
+            <!-- Información de estudiante y solicitud -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Información del estudiante -->
+                <div class="bg-card border border-border rounded-xl p-5 space-y-3">
+                    <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Student</h2>
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-2">
+                            <div class="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm" id="student-initials">—</div>
+                            <div>
+                                <p class="text-sm font-medium text-foreground" id="student-name">—</p>
+                                <p class="text-xs text-muted-foreground" id="student-email">—</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-sm mt-2">
+                            <div>
+                                <p class="text-xs text-muted-foreground">Username</p>
+                                <p id="student-username" class="text-foreground font-medium">—</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información de solicitud -->
+                <div class="bg-card border border-border rounded-xl p-5 space-y-3">
+                    <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Application Info</h2>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                            <p class="text-xs text-muted-foreground">Career</p>
+                            <p id="app-career" class="text-foreground font-medium">—</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-muted-foreground">Period</p>
+                            <p id="app-period" class="text-foreground font-medium">—</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-muted-foreground">Created</p>
+                            <p id="app-created" class="text-foreground font-medium">—</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-muted-foreground">Submitted</p>
+                            <p id="app-submitted" class="text-foreground font-medium">—</p>
+                        </div>
+                    </div>
+                    <div id="app-notes-section" class="hidden pt-2 border-t border-border">
+                        <p class="text-xs text-muted-foreground mb-1">Notes</p>
+                        <p id="app-notes" class="text-sm text-foreground"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Academic Data section -->
+            <div id="academic-data-section" class="hidden bg-card border border-border rounded-xl p-5 space-y-3">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Academic Data</h2>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                        <p class="text-xs text-muted-foreground">Access Route</p>
+                        <p id="app-access-route" class="text-foreground font-medium">—</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-muted-foreground">Admission Score</p>
+                        <p id="app-admission-score" class="text-foreground font-medium">—</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-muted-foreground">Bachillerato / FP Grade</p>
+                        <p id="app-bachillerato-grade" class="text-foreground font-medium">—</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-muted-foreground">EvAU Obligatory Grade</p>
+                        <p id="app-evau-grade" class="text-foreground font-medium">—</p>
+                    </div>
+                </div>
+                <div id="app-evau-voluntary-section" class="hidden pt-2 border-t border-border">
+                    <p class="text-xs text-muted-foreground mb-2">EvAU Voluntary Subjects</p>
+                    <div id="app-evau-voluntary-list" class="space-y-1"></div>
+                </div>
+            </div>
+
+            <!-- Sección de preferencias de titulación -->
+            <div id="preferences-section" class="hidden bg-card border border-border rounded-xl p-5 space-y-3">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Career Preferences</h2>
+                <div id="preferences-list" class="space-y-2"></div>
+            </div>
+
+            <!-- Sección de documentos -->
+            <div class="bg-card border border-border rounded-xl p-5 space-y-4">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Documents</h2>
+                <div id="documents-list" class="space-y-3">
+                    <p class="text-sm text-muted-foreground">Loading documents...</p>
+                </div>
+            </div>
+
+            <!-- Sección de respuestas de cuestionario -->
+            <div id="questionnaire-section" class="hidden bg-card border border-border rounded-xl p-5 space-y-4">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Questionnaire Responses</h2>
+                <div id="questionnaire-responses-list" class="space-y-4"></div>
+            </div>
+
+            <!-- Sección de resolución (solo gestión, estados submitted / under_review / provisionales) -->
+            <div id="resolve-section" class="hidden bg-card border border-border rounded-xl p-5 space-y-4">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Resolve Application</h2>
+
+                <!-- Aviso: sin preferencias de titulación -->
+                <div id="no-preferences-warning" class="hidden rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 flex items-start gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber-500 mt-0.5 shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <div>
+                        <p class="text-sm font-semibold text-amber-600">Sin titulaciones registradas</p>
+                        <p class="text-xs text-amber-600/80 mt-0.5">El estudiante no seleccionó ninguna titulación en su preinscripción. No puedes asignarle una plaza hasta que se registren preferencias de carrera.</p>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="space-y-1.5">
+                        <label for="resolve-status" class="text-sm font-medium text-foreground">Decision</label>
+                        <select id="resolve-status" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30">
+                            <option value="admitted">Admitted</option>
+                            <option value="waitlisted">Waitlisted</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <!-- Orden de preferencia — solo obligatorio cuando status es "admitted" -->
+                    <div id="preference-order-wrapper" class="hidden space-y-1.5">
+                        <label for="resolve-preference-order" class="text-sm font-medium text-foreground">
+                            Assign Career Preference
+                        </label>
+                        <select id="resolve-preference-order" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30">
+                            <!-- Se rellena dinámicamente desde las preferencias de la solicitud -->
+                        </select>
+                        <p class="text-xs text-muted-foreground">Select which career preference to assign to this student.</p>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label for="resolve-notes" class="text-sm font-medium text-foreground">Notes (optional)</label>
+                        <textarea id="resolve-notes" rows="3" placeholder="Add notes for the student..."
+                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30 resize-none"></textarea>
+                    </div>
+                    <button id="btn-resolve" class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                        Resolve Application
+                    </button>
+                </div>
+            </div>
+
+            <!-- Feedback -->
+            <div id="action-feedback" class="hidden rounded-lg border p-3 text-sm"></div>
+        </div>
+    </div>
+
+    <!-- Modal de validación de documentos -->
+    <div id="modal-backdrop" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60">
+        <div class="bg-card border border-border rounded-xl p-6 w-full max-w-md shadow-xl space-y-4">
+            <h3 class="text-base font-semibold text-foreground" id="modal-title">Reject Document</h3>
+            <div id="modal-reason-wrapper" class="space-y-1.5 hidden">
+                <label for="modal-reason" class="text-sm font-medium text-foreground">Rejection Reason</label>
+                <textarea id="modal-reason" rows="3" placeholder="Explain why this document is rejected..."
+                    class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30 resize-none"></textarea>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button id="modal-cancel" class="rounded-md border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">Cancel</button>
+                <button id="modal-confirm" class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">Confirm</button>
+            </div>
+        </div>
+    </div>
+</DashboardLayout>
+
+<script>
+    const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
+    const token = localStorage.getItem("access_token");
+
+    function getUser(): Record<string, any> | null {
+        try {
+            const stored = localStorage.getItem("user-storage");
+            if (!stored) return null;
+            return JSON.parse(stored)?.state?.user ?? null;
+        } catch { return null; }
+    }
+
+    if (!token) { window.location.replace("/login"); }
+    const user = getUser();
+    if (!user) { window.location.replace("/login"); }
+    if (!["m", "a"].includes(user?.role)) { window.location.replace("/"); }
+
+    const pathParts = window.location.pathname.split("/").filter(Boolean);
+    const appId = pathParts[pathParts.length - 1];
+
+    const STATUS_BADGES: Record<string, string> = {
+        draft: "bg-gray-100 text-gray-700",
+        submitted: "bg-blue-100 text-blue-700",
+        under_review: "bg-yellow-100 text-yellow-700",
+        admitted: "bg-green-100 text-green-700",
+        waitlisted: "bg-orange-100 text-orange-700",
+        rejected: "bg-red-100 text-red-700",
+        confirmed: "bg-emerald-100 text-emerald-700",
+        withdrawn: "bg-gray-100 text-gray-600",
+        expired: "bg-red-100 text-red-700",
+    };
+
+    const STATUS_LABELS: Record<string, string> = {
+        draft: "Draft", submitted: "Submitted", under_review: "Under Review",
+        admitted: "Admitted", waitlisted: "Waitlisted", rejected: "Rejected",
+        confirmed: "Confirmed", withdrawn: "Withdrawn", expired: "Expired",
+    };
+
+    const DOC_STATUS_CLASSES: Record<string, string> = {
+        pending: "bg-yellow-100 text-yellow-700",
+        validated: "bg-emerald-100 text-emerald-700",
+        rejected: "bg-red-100 text-red-700",
+    };
+
+    async function apiFetch(path: string, opts: RequestInit = {}) {
+        const res = await fetch(`${API_URL}${path}`, {
+            ...opts,
+            headers: { "Authorization": `Bearer ${token}`, "Accept": "application/json", ...(opts.headers || {}) },
+        });
+        if (res.status === 401) { window.location.replace("/login"); throw new Error("Unauthorized"); }
+        return res;
+    }
+
+    function resolveMediaUrl(value: string | null | undefined): string {
+        if (!value) return "#";
+        if (/^https?:\/\//i.test(value)) return value;
+        if (API_URL.startsWith("/")) return value.startsWith("/") ? value : `/${value}`;
+        const apiOrigin = API_URL.replace(/\/api\/?$/, "");
+        return value.startsWith("/") ? `${apiOrigin}${value}` : `${apiOrigin}/${value}`;
+    }
+
+    function showFeedback(message: string, isError = false) {
+        const el = document.getElementById("action-feedback")!;
+        el.textContent = message;
+        el.className = `rounded-lg border p-3 text-sm ${isError ? "border-destructive/30 bg-destructive/10 text-destructive" : "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"}`;
+        el.classList.remove("hidden");
+        setTimeout(() => el.classList.add("hidden"), 5000);
+    }
+
+    // Preferencias de solicitud — se rellenan en loadApplication y se usan en la sección de resolución
+    let appPreferences: { preference_order: number; career_name: string; career_code: string }[] = [];
+
+    // Estado del modal
+    let modalDocId: string | null = null;
+    let modalAction: "validated" | "rejected" | null = null;
+
+    function openModal(docId: string, action: "validated" | "rejected") {
+        modalDocId = docId;
+        modalAction = action;
+        document.getElementById("modal-title")!.textContent = action === "validated" ? "Validate Document" : "Reject Document";
+        document.getElementById("modal-reason-wrapper")?.classList.toggle("hidden", action === "validated");
+        document.getElementById("modal-reason")!.value = "";
+        const backdrop = document.getElementById("modal-backdrop")!;
+        backdrop.classList.remove("hidden");
+        backdrop.classList.add("flex");
+    }
+
+    function closeModal() {
+        const backdrop = document.getElementById("modal-backdrop")!;
+        backdrop.classList.add("hidden");
+        backdrop.classList.remove("flex");
+        modalDocId = null;
+        modalAction = null;
+    }
+
+    document.getElementById("modal-cancel")?.addEventListener("click", closeModal);
+    document.getElementById("modal-backdrop")?.addEventListener("click", (e: Event) => {
+        if (e.target === document.getElementById("modal-backdrop")) closeModal();
+    });
+
+    document.getElementById("modal-confirm")?.addEventListener("click", async () => {
+        if (!modalDocId || !modalAction) return;
+        const reason = (document.getElementById("modal-reason") as HTMLTextAreaElement).value.trim();
+
+        if (modalAction === "rejected" && !reason) {
+            showFeedback("Please provide a rejection reason.", true);
+            return;
+        }
+
+        const body: any = { status: modalAction };
+        if (reason) body.rejection_reason = reason;
+
+        // Captura valores ANTES de cerrar el modal (closeModal los restablece a null)
+        const docId = modalDocId;
+        const action = modalAction;
+
+        closeModal();
+
+        try {
+            const res = await apiFetch(`/admissions/documents/${docId}/validate/`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+            });
+
+            if (!res.ok) {
+                const json = await res.json().catch(() => ({}));
+                showFeedback(json.detail || json.error || `Failed (${res.status})`, true);
+                return;
+            }
+            showFeedback(`Document ${action === "validated" ? "validated" : "rejected"} successfully!`);
+            await loadDocuments();
+        } catch {
+            showFeedback("Action failed. Please try again.", true);
+        }
+    });
+
+    async function loadQuestionnaireResponses() {
+        try {
+            const res = await apiFetch(`/admissions/applications/${appId}/questionnaire-responses/`);
+            if (!res.ok) return;
+            const responses: any[] = await res.json();
+            const section = document.getElementById("questionnaire-section")!;
+            const container = document.getElementById("questionnaire-responses-list")!;
+
+            if (responses.length === 0) return;
+            section.classList.remove("hidden");
+
+            container.innerHTML = responses.map((response: any) => {
+                const statusBadge = response.status === "submitted"
+                    ? `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-emerald-500/10 text-emerald-400">Submitted</span>`
+                    : `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-yellow-500/10 text-yellow-400">Draft</span>`;
+                const submittedAt = response.submitted_at
+                    ? `<span class="text-xs text-muted-foreground">Submitted ${new Date(response.submitted_at).toLocaleDateString()}</span>`
+                    : "";
+                const answers: any[] = response.answers ?? [];
+                const answersHtml = answers.length > 0
+                    ? answers.map((a: any) => {
+                        let valueHtml = "";
+                        if (a.file_value) {
+                            valueHtml = `<a href="${resolveMediaUrl(a.file_value)}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline text-xs">Ver archivo</a>`;
+                        } else if (a.json_value !== null && a.json_value !== undefined) {
+                            if (a.question_type === 'career_select' && Array.isArray(a.career_names)) {
+                                valueHtml = a.career_names.map((name: string, i: number) =>
+                                    `<div class="flex items-center gap-2 py-0.5">
+                                        <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">${i + 1}</span>
+                                        <span class="text-sm text-foreground">${name}</span>
+                                    </div>`
+                                ).join("");
+                            } else {
+                                const val = Array.isArray(a.json_value) ? a.json_value.join(", ") : JSON.stringify(a.json_value);
+                                valueHtml = `<span class="text-sm text-foreground">${val}</span>`;
+                            }
+                        } else {
+                            valueHtml = `<span class="text-sm text-foreground">${a.text_value || "—"}</span>`;
+                        }
+                        return `
+                        <div class="py-2 border-b border-border last:border-0">
+                            <p class="text-xs text-muted-foreground mb-0.5">${a.question_label ?? "—"}</p>
+                            ${valueHtml}
+                        </div>`;
+                    }).join("")
+                    : `<p class="text-sm text-muted-foreground">No answers recorded.</p>`;
+
+                return `
+                <div class="rounded-lg border border-border overflow-hidden">
+                    <div class="flex items-center justify-between px-4 py-3 bg-muted/20 border-b border-border">
+                        <div class="flex items-center gap-2">
+                            <p class="text-sm font-medium text-foreground">${response.questionnaire_title ?? "Questionnaire"}</p>
+                            ${statusBadge}
+                        </div>
+                        ${submittedAt}
+                    </div>
+                    <div class="px-4 divide-y divide-border">${answersHtml}</div>
+                </div>`;
+            }).join("");
+        } catch {
+            // Silenciar errores — la sección permanece oculta
+        }
+    }
+
+    async function loadDocuments() {
+        const container = document.getElementById("documents-list")!;
+        try {
+            const res = await apiFetch(`/admissions/applications/${appId}/documents/`);
+            if (!res.ok) { container.innerHTML = `<p class="text-sm text-muted-foreground">Failed to load documents.</p>`; return; }
+            const docs = await res.json();
+            const docList = Array.isArray(docs) ? docs : (docs.results ?? []);
+
+            if (docList.length === 0) {
+                container.innerHTML = `<p class="text-sm text-muted-foreground">No documents uploaded.</p>`;
+                return;
+            }
+
+            container.innerHTML = docList.map((doc: any) => {
+                const docType = doc.document_type?.replace(/_/g, " ") ?? "Document";
+                const status = doc.status ?? "pending";
+                const badgeClass = DOC_STATUS_CLASSES[status] ?? "bg-gray-100 text-gray-700";
+                const fileName = doc.file_name ?? doc.file ?? "File";
+                const fileUrl = resolveMediaUrl(doc.file);
+                const rejectReason = doc.rejection_reason ? `<p class="text-xs text-red-400 mt-1">Reason: ${doc.rejection_reason}</p>` : "";
+
+                return `
+                <div class="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-medium text-foreground capitalize">${docType}</span>
+                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${badgeClass} capitalize">${status}</span>
+                        </div>
+                        <p class="text-xs text-muted-foreground mt-0.5 truncate">${fileName}</p>
+                        ${rejectReason}
+                    </div>
+                    <div class="flex gap-2 shrink-0">
+                        ${doc.file ? `<a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="text-xs rounded-md border border-border px-2.5 py-1.5 text-foreground hover:bg-muted transition-colors">View</a>` : ""}
+                        <button class="btn-validate text-xs rounded-md bg-emerald-600 px-2.5 py-1.5 text-white hover:bg-emerald-700 transition-colors" data-doc-id="${doc.id}">
+                            Validate
+                        </button>
+                        <button class="btn-reject text-xs rounded-md border border-destructive/40 px-2.5 py-1.5 text-destructive hover:bg-destructive/10 transition-colors" data-doc-id="${doc.id}">
+                            Reject
+                        </button>
+                    </div>
+                </div>`;
+            }).join("");
+
+            container.querySelectorAll(".btn-validate").forEach(btn => {
+                btn.addEventListener("click", () => openModal((btn as HTMLElement).dataset.docId!, "validated"));
+            });
+            container.querySelectorAll(".btn-reject").forEach(btn => {
+                btn.addEventListener("click", () => openModal((btn as HTMLElement).dataset.docId!, "rejected"));
+            });
+        } catch {
+            container.innerHTML = `<p class="text-sm text-muted-foreground">Failed to load documents.</p>`;
+        }
+    }
+
+    async function loadApplication() {
+        try {
+            const res = await apiFetch(`/admissions/applications/${appId}/`);
+            if (!res.ok) {
+                document.getElementById("page-loading")?.classList.add("hidden");
+                showFeedback(`Failed to load application (${res.status})`, true);
+                return;
+            }
+
+            const app = await res.json();
+
+            document.getElementById("page-loading")?.classList.add("hidden");
+            document.getElementById("page-content")?.classList.remove("hidden");
+
+            // Cabecera
+            document.getElementById("app-id-header")!.textContent = String(app.id);
+            document.getElementById("page-title")!.textContent = `Application #${app.id}`;
+
+            const badge = document.getElementById("app-status-badge")!;
+            badge.textContent = STATUS_LABELS[app.status] ?? app.status;
+            badge.className = `inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_BADGES[app.status] ?? "bg-gray-100 text-gray-700"}`;
+
+            // Muestra "Mark Under Review" solo para submitted
+            if (app.status === "submitted") {
+                document.getElementById("btn-mark-review")?.classList.remove("hidden");
+            }
+
+            // Estudiante — el serializador de detalle devuelve campos de texto planos (student_name, student_email)
+            const studentName = app.student_name ?? (app.student
+                ? `${app.student.first_name ?? ""} ${app.student.last_name ?? ""}`.trim() || app.student.username
+                : null);
+            const studentEmail = app.student_email ?? app.student?.email ?? "—";
+            if (studentName) {
+                const nameParts = studentName.split(" ");
+                const initials = nameParts.length >= 2
+                    ? (nameParts[0][0] ?? "") + (nameParts[nameParts.length - 1][0] ?? "")
+                    : studentName.substring(0, 2);
+                document.getElementById("student-name")!.textContent = studentName;
+                document.getElementById("student-email")!.textContent = studentEmail;
+                document.getElementById("student-username")!.textContent = app.student?.username ?? "—";
+                document.getElementById("student-initials")!.textContent = initials.toUpperCase();
+            }
+
+            // Información de solicitud — el serializador de detalle devuelve career_name, academic_period_name y submission_date
+            document.getElementById("app-career")!.textContent = app.career_name ?? app.career?.name ?? "—";
+            document.getElementById("app-period")!.textContent = app.academic_period_name ?? app.academic_period?.name ?? "—";
+            document.getElementById("app-created")!.textContent = app.created_at ? new Date(app.created_at).toLocaleDateString() : "—";
+            document.getElementById("app-submitted")!.textContent = app.submission_date ?? app.submitted_at
+                ? new Date(app.submission_date ?? app.submitted_at).toLocaleDateString()
+                : "—";
+
+            if (app.notes) {
+                document.getElementById("app-notes")!.textContent = app.notes;
+                document.getElementById("app-notes-section")?.classList.remove("hidden");
+            }
+
+            // Datos académicos
+            if (app.access_route) {
+                document.getElementById("academic-data-section")?.classList.remove("hidden");
+                document.getElementById("app-access-route")!.textContent = app.access_route_display ?? app.access_route;
+                document.getElementById("app-bachillerato-grade")!.textContent = app.bachillerato_grade != null ? String(app.bachillerato_grade) : "—";
+                document.getElementById("app-evau-grade")!.textContent = app.evau_obligatory_grade != null ? String(app.evau_obligatory_grade) : "—";
+                document.getElementById("app-admission-score")!.textContent = app.admission_score != null ? String(app.admission_score) : "—";
+                const voluntary: any[] = app.evau_voluntary_subjects ?? [];
+                if (voluntary.length > 0) {
+                    document.getElementById("app-evau-voluntary-section")?.classList.remove("hidden");
+                    document.getElementById("app-evau-voluntary-list")!.innerHTML = voluntary.map((s: any) =>
+                        `<div class="flex justify-between text-sm"><span class="text-muted-foreground">${s.subject ?? s.asignatura ?? "—"}</span><span class="text-foreground font-medium">${s.grade ?? s.nota ?? "—"}</span></div>`
+                    ).join("");
+                }
+            }
+
+            // Preferencias de titulación
+            const prefs: any[] = app.preferences ?? [];
+            appPreferences = prefs.map((p: any) => ({
+                preference_order: p.preference_order,
+                career_name: p.career_name ?? "—",
+                career_code: p.career_code ?? "",
+            }));
+            if (prefs.length > 0) {
+                document.getElementById("preferences-section")?.classList.remove("hidden");
+                document.getElementById("preferences-list")!.innerHTML = prefs.map((p: any) => {
+                    const assigned = p.is_assigned;
+                    return `
+                    <div class="flex items-center gap-3 rounded-lg border ${assigned ? "border-emerald-500/40 bg-emerald-500/5" : "border-border"} p-3">
+                        <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">${p.preference_order}</span>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-foreground">${p.career_name ?? "—"}</p>
+                            <p class="text-xs text-muted-foreground">${p.career_code ?? ""}</p>
+                        </div>
+                        ${assigned ? '<span class="shrink-0 text-xs font-semibold text-emerald-400">Assigned</span>' : ""}
+                    </div>`;
+                }).join("");
+            }
+
+            // Rellena el selector de orden de preferencia del formulario de resolución
+            const prefSelect = document.getElementById("resolve-preference-order") as HTMLSelectElement;
+            if (appPreferences.length > 0) {
+                prefSelect.innerHTML = appPreferences.map(p =>
+                    `<option value="${p.preference_order}">Opción ${p.preference_order} — ${p.career_name}${p.career_code ? " (" + p.career_code + ")" : ""}</option>`
+                ).join("");
+            } else {
+                prefSelect.innerHTML = `<option value="" disabled>Sin titulaciones registradas</option>`;
+                document.getElementById("no-preferences-warning")?.classList.remove("hidden");
+            }
+
+            // Muestra la sección de resolución para submitted, under_review y estados provisionales
+            const resolvableStatuses = ["submitted", "under_review", "provisional_admitted", "provisional_waitlisted", "provisional_rejected"];
+            if (resolvableStatuses.includes(app.status)) {
+                document.getElementById("resolve-section")?.classList.remove("hidden");
+            }
+
+            // Carga documentos y respuestas de cuestionario
+            await loadDocuments();
+            await loadQuestionnaireResponses();
+
+        } catch {
+            document.getElementById("page-loading")?.classList.add("hidden");
+            showFeedback("Failed to load application.", true);
+        }
+    }
+
+    // Muestra/oculta el selector de orden de preferencia según la decisión
+    document.getElementById("resolve-status")?.addEventListener("change", (e: Event) => {
+        const val = (e.target as HTMLSelectElement).value;
+        document.getElementById("preference-order-wrapper")?.classList.toggle("hidden", val !== "admitted");
+    });
+
+    // Marcar en revisión
+    document.getElementById("btn-mark-review")?.addEventListener("click", async () => {
+        const btn = document.getElementById("btn-mark-review") as HTMLButtonElement;
+        btn.disabled = true;
+        try {
+            const res = await apiFetch(`/admissions/applications/${appId}/review/`, { method: "PATCH" });
+            if (!res.ok) {
+                const json = await res.json().catch(() => ({}));
+                showFeedback(json.detail || json.error || "Failed to update status.", true);
+                btn.disabled = false;
+                return;
+            }
+            showFeedback("Application marked as Under Review.");
+            await loadApplication();
+        } catch {
+            showFeedback("Action failed.", true);
+            btn.disabled = false;
+        }
+    });
+
+    // Resolver
+    document.getElementById("btn-resolve")?.addEventListener("click", async () => {
+        const btn = document.getElementById("btn-resolve") as HTMLButtonElement;
+        const resolveStatus = (document.getElementById("resolve-status") as HTMLSelectElement).value;
+        const notes = (document.getElementById("resolve-notes") as HTMLTextAreaElement).value.trim();
+
+        const body: any = { status: resolveStatus };
+        if (notes) body.notes = notes;
+
+        if (resolveStatus === "admitted") {
+            const prefOrderEl = document.getElementById("resolve-preference-order") as HTMLSelectElement;
+            const prefOrderVal = prefOrderEl.value;
+            if (!prefOrderVal) {
+                showFeedback("Please select a career preference to assign.", true);
+                return;
+            }
+            body.preference_order = Number(prefOrderVal);
+        }
+
+        btn.disabled = true;
+
+        try {
+            const res = await apiFetch(`/admissions/applications/${appId}/definitive-resolve/`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+            });
+
+            if (!res.ok) {
+                const json = await res.json().catch(() => ({}));
+                showFeedback(json.detail || json.error || `Resolve failed (${res.status})`, true);
+                btn.disabled = false;
+                return;
+            }
+
+            showFeedback(`Application resolved as: ${resolveStatus}`);
+            await loadApplication();
+        } catch {
+            showFeedback("Action failed.", true);
+            btn.disabled = false;
+        }
+    });
+
+    loadApplication();
+</script>

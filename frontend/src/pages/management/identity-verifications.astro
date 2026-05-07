@@ -1,0 +1,224 @@
+---
+import DashboardLayout from "@/layouts/DashboardLayout.astro";
+---
+
+<DashboardLayout title="Identity Verification — Academix" currentPath="/management/identity-verifications">
+    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+        <div>
+            <h1 class="text-xl font-semibold text-foreground">Identity Verification</h1>
+            <p class="text-sm text-muted-foreground">Review proof files before a newly registered student can access the platform.</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <select id="status-filter" class="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30">
+                <option value="pending">Pending</option>
+                <option value="rejected">Rejected</option>
+                <option value="unsubmitted">Unsubmitted</option>
+                <option value="approved">Approved</option>
+                <option value="all">All</option>
+            </select>
+            <button id="btn-refresh" class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                Refresh
+            </button>
+        </div>
+    </div>
+
+    <div class="p-6 space-y-4">
+        <div id="feedback" class="hidden rounded-xl border px-4 py-3 text-sm"></div>
+
+        <div id="loading" class="space-y-3">
+            <div class="h-28 rounded-xl bg-muted animate-pulse"></div>
+            <div class="h-28 rounded-xl bg-muted animate-pulse"></div>
+        </div>
+
+        <div id="identity-list" class="hidden space-y-4"></div>
+
+        <div id="empty-state" class="hidden rounded-xl border border-border bg-card p-10 text-center">
+            <h2 class="text-base font-semibold text-foreground">No accounts found</h2>
+            <p class="mt-1 text-sm text-muted-foreground">There are no students matching this verification status.</p>
+        </div>
+    </div>
+</DashboardLayout>
+
+<script>
+    const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
+    const token = localStorage.getItem("access_token");
+
+    function getUser(): Record<string, any> | null {
+        try {
+            const stored = localStorage.getItem("user-storage");
+            return stored ? (JSON.parse(stored)?.state?.user ?? null) : null;
+        } catch {
+            return null;
+        }
+    }
+
+    if (!token) window.location.replace("/login");
+    const currentUser = getUser();
+    if (!currentUser || !["m", "a"].includes(currentUser.role)) window.location.replace("/");
+
+    const STATUS_LABELS: Record<string, string> = {
+        unsubmitted: "Unsubmitted",
+        pending: "Pending review",
+        approved: "Approved",
+        rejected: "Rejected",
+    };
+
+    const STATUS_BADGES: Record<string, string> = {
+        unsubmitted: "bg-gray-500/15 text-gray-400 border-gray-500/20",
+        pending: "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
+        approved: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
+        rejected: "bg-red-500/15 text-red-400 border-red-500/20",
+    };
+
+    function resolveMediaUrl(value: string | null | undefined): string {
+        if (!value) return "#";
+        if (/^https?:\/\//i.test(value)) return value;
+        if (API_URL.startsWith("/")) return value.startsWith("/") ? value : `/${value}`;
+        const apiOrigin = API_URL.replace(/\/api\/?$/, "");
+        return value.startsWith("/") ? `${apiOrigin}${value}` : `${apiOrigin}/${value}`;
+    }
+
+    function escapeHtml(value: unknown): string {
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function showFeedback(message: string, variant: "success" | "error" | "info" = "info") {
+        const el = document.getElementById("feedback")!;
+        el.classList.remove("hidden", "border-emerald-500/30", "bg-emerald-500/10", "text-emerald-300", "border-destructive/30", "bg-destructive/10", "text-destructive", "border-border", "bg-muted/40", "text-muted-foreground");
+        const classes = variant === "success"
+            ? ["border-emerald-500/30", "bg-emerald-500/10", "text-emerald-300"]
+            : variant === "error"
+                ? ["border-destructive/30", "bg-destructive/10", "text-destructive"]
+                : ["border-border", "bg-muted/40", "text-muted-foreground"];
+        el.classList.add(...classes);
+        el.textContent = message;
+    }
+
+    async function apiFetch(path: string, options: RequestInit = {}) {
+        const body = options.body;
+        const res = await fetch(`${API_URL}${path}`, {
+            ...options,
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Accept": "application/json",
+                ...(body && !(body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
+                ...((options.headers as Record<string, string> | undefined) ?? {}),
+            },
+        });
+        if (res.status === 401) window.location.replace("/login");
+        return res;
+    }
+
+    function renderUsers(users: any[]) {
+        const loading = document.getElementById("loading")!;
+        const list = document.getElementById("identity-list")!;
+        const empty = document.getElementById("empty-state")!;
+
+        loading.classList.add("hidden");
+        if (users.length === 0) {
+            list.classList.add("hidden");
+            empty.classList.remove("hidden");
+            return;
+        }
+
+        empty.classList.add("hidden");
+        list.classList.remove("hidden");
+
+        list.innerHTML = users.map(user => {
+            const status = user.identity_verification_status ?? "unsubmitted";
+            const badge = STATUS_BADGES[status] ?? STATUS_BADGES.unsubmitted;
+            const fallbackName = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim();
+            const displayName = user.full_name || fallbackName || user.email || "Student";
+            const docs = (user.identity_documents ?? []).map((doc: any) => `
+                <a href="${resolveMediaUrl(doc.file)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-primary hover:bg-muted">
+                    ${escapeHtml(doc.file_name ?? doc.original_filename ?? "Document")}
+                    <span aria-hidden="true">↗</span>
+                </a>
+            `).join("");
+
+            return `
+                <article class="rounded-xl border border-border bg-card p-5 shadow-sm" data-user-id="${user.id}">
+                    <div class="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h2 class="text-base font-semibold text-foreground">${escapeHtml(displayName)}</h2>
+                                <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${badge}">${STATUS_LABELS[status] ?? status}</span>
+                            </div>
+                            <p class="mt-1 text-sm text-muted-foreground">${escapeHtml(user.email)} · DNI: ${escapeHtml(user.dni ?? "—")}</p>
+                            <p class="mt-1 text-xs text-muted-foreground">Email verified: ${user.email_verified ? "yes" : "no"} · Registered: ${user.created_at ? new Date(user.created_at).toLocaleString() : "—"}</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Proof files</p>
+                        <div class="mt-2 flex flex-wrap gap-2">${docs || `<span class="text-sm text-muted-foreground">No documents uploaded.</span>`}</div>
+                    </div>
+
+                    <label class="mt-4 block space-y-1">
+                        <span class="text-xs font-medium text-muted-foreground">Review notes</span>
+                        <textarea data-notes class="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30" placeholder="Explain the decision, especially if rejected.">${escapeHtml(user.identity_verification_notes ?? "")}</textarea>
+                    </label>
+
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <button data-action="approved" class="rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors">Approve account</button>
+                        <button data-action="rejected" class="rounded-md bg-destructive px-3 py-2 text-sm font-semibold text-destructive-foreground hover:bg-destructive/90 transition-colors">Reject</button>
+                    </div>
+                </article>
+            `;
+        }).join("");
+
+        list.querySelectorAll<HTMLButtonElement>("button[data-action]").forEach(button => {
+            button.addEventListener("click", () => reviewUser(button));
+        });
+    }
+
+    async function loadUsers() {
+        document.getElementById("loading")?.classList.remove("hidden");
+        document.getElementById("identity-list")?.classList.add("hidden");
+        document.getElementById("empty-state")?.classList.add("hidden");
+        const status = (document.getElementById("status-filter") as HTMLSelectElement).value;
+
+        try {
+            const res = await apiFetch(`/users/identity-verifications/?status=${encodeURIComponent(status)}`);
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.detail || data.error || `Could not load (${res.status}).`);
+            renderUsers(Array.isArray(data) ? data : (data.results ?? []));
+        } catch (err) {
+            document.getElementById("loading")?.classList.add("hidden");
+            showFeedback(err instanceof Error ? err.message : "Could not load identity reviews.", "error");
+        }
+    }
+
+    async function reviewUser(button: HTMLButtonElement) {
+        const card = button.closest<HTMLElement>("[data-user-id]");
+        if (!card) return;
+        const userId = card.dataset.userId;
+        const decision = button.dataset.action;
+        const notes = (card.querySelector("[data-notes]") as HTMLTextAreaElement | null)?.value ?? "";
+
+        try {
+            button.disabled = true;
+            const res = await apiFetch(`/users/identity-verifications/${userId}/review/`, {
+                method: "POST",
+                body: JSON.stringify({ status: decision, notes }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.detail || data.error || `Review failed (${res.status}).`);
+            showFeedback(decision === "approved" ? "Account approved." : "Account rejected.", "success");
+            await loadUsers();
+        } catch (err) {
+            showFeedback(err instanceof Error ? err.message : "Could not save review.", "error");
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    document.getElementById("status-filter")?.addEventListener("change", loadUsers);
+    document.getElementById("btn-refresh")?.addEventListener("click", loadUsers);
+    loadUsers();
+</script>

@@ -1,0 +1,1321 @@
+---
+export const prerender = false;
+import DashboardLayout from "@/layouts/DashboardLayout.astro";
+---
+
+<DashboardLayout title="Questionnaire — Academix" currentPath="/admissions">
+    <!-- Pantalla de carga -->
+    <div id="loading-screen" class="flex items-center justify-center min-h-[60vh]">
+        <div class="text-center space-y-3">
+            <div class="inline-block size-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-sm text-muted-foreground">Loading questionnaire...</p>
+        </div>
+    </div>
+
+    <!-- Pantalla de error -->
+    <div id="error-screen" class="hidden flex items-center justify-center min-h-[60vh] p-6">
+        <div class="text-center space-y-4 max-w-md">
+            <div class="flex size-16 items-center justify-center rounded-full bg-destructive/10 mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-destructive"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <h2 class="text-lg font-semibold text-foreground">Unable to load questionnaire</h2>
+            <p id="error-message" class="text-sm text-muted-foreground"></p>
+            <a href="/admissions/my-applications" class="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                Back to Applications
+            </a>
+        </div>
+    </div>
+
+    <!-- Correcto screen -->
+    <div id="success-screen" class="hidden flex items-center justify-center min-h-[60vh] p-6">
+        <div class="text-center space-y-6 max-w-md">
+            <div id="confetti-container" class="relative flex size-20 items-center justify-center rounded-full bg-emerald-500/15 mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-emerald-400"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div class="space-y-2">
+                <h2 class="text-2xl font-bold text-foreground">Questionnaire Submitted!</h2>
+                <p class="text-sm text-muted-foreground">Your responses have been recorded successfully. Our team will review your application shortly.</p>
+            </div>
+            <a href="/admissions/my-applications" class="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                View My Applications
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
+        </div>
+    </div>
+
+    <!-- Asistente de cuestionario -->
+    <div id="wizard-screen" class="hidden">
+        <!-- Cabecera de página -->
+        <div class="flex items-center justify-between border-b border-border px-6 py-4">
+            <div class="min-w-0">
+                <div class="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                    <a href="/admissions/my-applications" class="hover:text-foreground transition-colors">My Applications</a>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                    <span>Questionnaire</span>
+                </div>
+                <h1 id="questionnaire-title" class="text-xl font-semibold text-foreground truncate"></h1>
+                <p id="questionnaire-description" class="text-sm text-muted-foreground mt-0.5"></p>
+            </div>
+        </div>
+
+        <div class="p-6 max-w-3xl mx-auto space-y-6">
+            <!-- Progress bar -->
+            <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                    <span id="step-label" class="text-sm font-medium text-foreground"></span>
+                    <span id="step-counter" class="text-sm text-muted-foreground"></span>
+                </div>
+                <div class="h-2 w-full bg-muted rounded-full overflow-hidden">
+                    <div id="progress-bar" class="h-full bg-primary rounded-full transition-all duration-300 ease-out" style="width: 0%"></div>
+                </div>
+                <!-- Step dots -->
+                <div id="step-dots" class="flex items-center gap-1.5 mt-1"></div>
+            </div>
+
+            <!-- Step card -->
+            <div class="rounded-xl border border-border bg-card shadow-sm">
+                <div class="border-b border-border px-6 py-4">
+                    <h2 id="step-title" class="text-base font-semibold text-foreground"></h2>
+                    <p id="step-description" class="text-sm text-muted-foreground mt-0.5"></p>
+                </div>
+                <div id="questions-container" class="px-6 py-5 space-y-6"></div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="flex items-center justify-between pt-2">
+                <button id="btn-prev" type="button" class="inline-flex items-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-40 disabled:pointer-events-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    Previous
+                </button>
+                <button id="btn-next" type="button" class="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:pointer-events-none">
+                    <span id="btn-next-label">Save &amp; Continue</span>
+                    <svg id="btn-next-icon-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    <svg id="btn-next-icon-check" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="hidden"><polyline points="20 6 9 17 4 12"/></svg>
+                    <div id="btn-next-spinner" class="hidden size-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de pago de Stripe -->
+    <div id="stripe-backdrop" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+        <div class="w-full max-w-md rounded-xl border border-border bg-background shadow-2xl">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-border">
+                <h3 id="stripe-modal-title" class="text-base font-semibold text-foreground">Complete Payment</h3>
+                <button id="stripe-modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="px-5 py-4 space-y-4">
+                <div id="stripe-payment-element"></div>
+                <div id="stripe-demo-content" class="hidden space-y-3">
+                    <div class="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-xs text-yellow-400">
+                        Demo mode — no real payment will be processed.
+                    </div>
+                    <button id="stripe-demo-confirm" type="button" class="w-full inline-flex items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                        Simulated Payment — Click to Confirm
+                    </button>
+                </div>
+                <div id="stripe-real-actions" class="hidden space-y-3">
+                    <button id="stripe-pay-btn" type="button" class="w-full inline-flex items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                        Pay Now
+                    </button>
+                </div>
+                <p id="stripe-error" class="hidden text-xs text-destructive"></p>
+            </div>
+        </div>
+    </div>
+</DashboardLayout>
+
+<style is:global>
+    .question-field input[type="text"],
+    .question-field input[type="email"],
+    .question-field input[type="tel"],
+    .question-field input[type="number"],
+    .question-field input[type="date"],
+    .question-field textarea,
+    .question-field select {
+        display: flex;
+        width: 100%;
+        border-radius: 0.375rem;
+        border: 1px solid var(--color-input);
+        background-color: var(--color-background);
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        color: var(--color-foreground);
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .question-field input[type="text"]:focus,
+    .question-field input[type="email"]:focus,
+    .question-field input[type="tel"]:focus,
+    .question-field input[type="number"]:focus,
+    .question-field input[type="date"]:focus,
+    .question-field textarea:focus,
+    .question-field select:focus {
+        border-color: var(--color-ring);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-ring) 30%, transparent);
+    }
+    .question-field textarea { min-height: 100px; resize: vertical; }
+    .career-card { transition: border-color 0.15s, background-color 0.15s; }
+    .career-card.selected { border-color: var(--color-primary); background-color: color-mix(in srgb, var(--color-primary) 8%, transparent); }
+    .subject-item { transition: border-color 0.15s, background-color 0.15s; }
+    .subject-item.selected { border-color: var(--color-primary); background-color: color-mix(in srgb, var(--color-primary) 8%, transparent); }
+    .confetti-particle {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        border-radius: 1px;
+        animation: confettiFall 1.5s ease-out forwards;
+    }
+    @keyframes confettiFall {
+        0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(80px) rotate(720deg) translateX(var(--tx, 0px)); opacity: 0; }
+    }
+</style>
+
+<script>
+    const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
+
+    // ── Utilidades ──────────────────────────────────────────────────────────────
+    function getToken(): string | null { return localStorage.getItem("access_token"); }
+    function getUser(): Record<string, any> | null {
+        try {
+            const s = localStorage.getItem("user-storage");
+            return s ? JSON.parse(s)?.state?.user ?? null : null;
+        } catch { return null; }
+    }
+
+    function authHeaders(isFormData = false): Record<string, string> {
+        const h: Record<string, string> = { "Authorization": `Bearer ${getToken()}` };
+        if (!isFormData) h["Content-Type"] = "application/json";
+        return h;
+    }
+
+    function showToast(variant: "success" | "error" | "warning" | "info", title: string, description?: string) {
+        (window as any).showToast?.(variant, title, description);
+    }
+
+    function el<T extends HTMLElement>(id: string): T {
+        return document.getElementById(id) as T;
+    }
+
+    function show(id: string) { el(id).classList.remove("hidden"); }
+    function hide(id: string) { el(id).classList.add("hidden"); }
+    function setVisible(id: string, visible: boolean) { visible ? show(id) : hide(id); }
+
+    // ── Estado ─────────────────────────────────────────────────────────────────
+    interface QuestionOption { id: number; label: string; value: string; order: number; }
+    interface Question {
+        id: number;
+        label: string;
+        help_text?: string;
+        question_type: string;
+        is_required: boolean;
+        order: number;
+        config: Record<string, any>;
+        options: QuestionOption[];
+        depends_on?: number | null;
+        depends_on_value?: string | null;
+    }
+    interface Step {
+        id: number;
+        title: string;
+        description?: string;
+        order: number;
+        questions: Question[];
+    }
+    interface Questionnaire {
+        id: number;
+        title: string;
+        description?: string;
+        steps: Step[];
+    }
+
+    const state = {
+        questionnaireId: 0,
+        questionnaire: null as Questionnaire | null,
+        responseId: 0,
+        currentStepIndex: 0,
+        answers: {} as Record<number, any>,
+        careers: [] as any[],
+        subjectsByCareer: {} as Record<number, any[]>,
+        stripePaymentQuestionId: null as number | null,
+        stripePaymentAnswerId: null as number | null,
+        stripePaymentAnswerIds: {} as Record<number, number>,
+        stripePendingResolve: null as ((paid: boolean) => void) | null,
+        stripeInstance: null as any,
+        stripeElements: null as any,
+        stripePublishableKey: null as string | null,
+    };
+
+    // ── Arranque ──────────────────────────────────────────────────────────────────
+    const token = getToken();
+    if (!token) { window.location.replace("/login"); throw new Error(); }
+    const user = getUser();
+    if (!user) { window.location.replace("/login"); throw new Error(); }
+    if (user.role !== "s") { window.location.replace("/"); throw new Error(); }
+
+    const pathParts = window.location.pathname.split("/");
+    state.questionnaireId = parseInt(pathParts[pathParts.length - 1], 10);
+    if (isNaN(state.questionnaireId)) {
+        showError("Invalid questionnaire URL.");
+        throw new Error();
+    }
+
+    function showError(msg: string) {
+        hide("loading-screen");
+        el<HTMLElement>("error-message").textContent = msg;
+        show("error-screen");
+    }
+
+    // ── Carga de datos ──────────────────────────────────────────────────────────
+    async function loadCareers() {
+        if (state.careers.length > 0) return;
+        try {
+            const res = await fetch(`${API_URL}/academic/careers/`, { headers: authHeaders() });
+            if (res.ok) {
+                const data = await res.json();
+                state.careers = Array.isArray(data) ? data : (data.results ?? []);
+            }
+        } catch { /* non-fatal */
+ }
+    }
+
+    async function loadSubjects(careerId: number) {
+        if (state.subjectsByCareer[careerId]) return;
+        try {
+            const res = await fetch(`${API_URL}/academic/subjects/?career=${careerId}`, { headers: authHeaders() });
+            if (res.ok) {
+                const data = await res.json();
+                state.subjectsByCareer[careerId] = Array.isArray(data) ? data : (data.results ?? []);
+            }
+        } catch { /* non-fatal */
+ }
+    }
+
+    async function init() {
+        try {
+            // Get questionnaire config
+            const qRes = await fetch(`${API_URL}/questionnaire/questionnaires/${state.questionnaireId}/`, {
+                headers: authHeaders()
+            });
+            if (qRes.status === 401) { window.location.replace("/login"); return; }
+            if (!qRes.ok) { showError(`Questionnaire not found (${qRes.status}).`); return; }
+            state.questionnaire = await qRes.json();
+
+            // Inicia o reanuda la respuesta
+            const startRes = await fetch(`${API_URL}/questionnaire/questionnaires/${state.questionnaireId}/start/`, {
+                method: "POST",
+                headers: authHeaders()
+            });
+            if (!startRes.ok) { showError("Unable to start questionnaire. Please try again."); return; }
+            const responseData = await startRes.json();
+            state.responseId = responseData.id;
+            state.currentStepIndex = responseData.current_step ?? 0;
+
+            // If already submitted
+            if (responseData.status === "submitted") {
+                hide("loading-screen");
+                launchCorrecto();
+                return;
+            }
+
+            // Precarga respuestas existentes si las hay
+            if (responseData.answers && Array.isArray(responseData.answers)) {
+                for (const ans of responseData.answers) {
+                    if (ans.question_type === "stripe_payment") {
+                        state.stripePaymentAnswerIds[ans.question] = ans.id;
+                        state.answers[ans.question] = ans.stripe_payment_status === "paid" ? "paid" : "";
+                    } else if (ans.json_value !== null && ans.json_value !== undefined) {
+                        state.answers[ans.question] = ans.json_value;
+                    } else if (ans.text_value !== null && ans.text_value !== undefined) {
+                        state.answers[ans.question] = ans.text_value;
+                    }
+                }
+            }
+
+            // Precarga titulaciones si existe alguna pregunta career_select
+            const hasCareerSelect = state.questionnaire!.steps.some(s =>
+                s.questions.some(q => q.question_type === "career_select")
+            );
+            if (hasCareerSelect) await loadCareers();
+
+            hide("loading-screen");
+            show("wizard-screen");
+            renderWizard();
+
+        } catch (err) {
+            showError("A network error occurred. Please check your connection.");
+        }
+    }
+
+    // ── Conditional visibility ────────────────────────────────────────────────
+    function isQuestionVisible(q: Question): boolean {
+        if (!q.depends_on) return true;
+        const depAnswer = state.answers[q.depends_on];
+        if (depAnswer === undefined || depAnswer === null || depAnswer === "") return false;
+        if (q.depends_on_value === null || q.depends_on_value === undefined) return true;
+        if (Array.isArray(depAnswer)) return depAnswer.map(String).includes(String(q.depends_on_value));
+        return String(depAnswer) === String(q.depends_on_value);
+    }
+
+    // ── Busca la titulación seleccionada en todos los pasos anteriores ────────────────────────
+    function getSelectedCareerIdFromAnswers(): number | null {
+        const q = state.questionnaire;
+        if (!q) return null;
+        for (const step of q.steps) {
+            for (const question of step.questions) {
+                if (question.question_type === "career_select") {
+                    const val = state.answers[question.id];
+                    if (val) {
+                        const id = Array.isArray(val) ? val[0] : val;
+                        return typeof id === "number" ? id : parseInt(String(id), 10);
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    // ── Utilidades del selector de titulaciones (selección múltiple + ordenación) ────────────────────
+    function getCareerAnswerArray(qid: number): number[] {
+        const val = state.answers[qid];
+        if (Array.isArray(val)) return val.map(Number);
+        if (val !== null && val !== undefined && val !== "") return [Number(val)];
+        return [];
+    }
+
+    function buildCareerSelectorInner(q: Question): string {
+        const selectedIds = getCareerAnswerArray(q.id);
+        const maxSelections = q.config?.max_selections ?? 0;
+        const selectedCareers = selectedIds
+            .map((id: number) => state.careers.find((c: any) => c.id === id))
+            .filter(Boolean) as any[];
+        const availableCareers = state.careers.filter((c: any) => !selectedIds.includes(c.id));
+
+        const selectedHtml = selectedCareers.length > 0 ? `
+            <div class="mb-4 space-y-2">
+                <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                    Preferencias seleccionadas${maxSelections ? ` (${selectedCareers.length}/${maxSelections})` : ""}
+                </p>
+                ${selectedCareers.map((c: any, i: number) => {
+                    const ini = (c.name ?? "").split(" ").slice(0, 2).map((w: string) => w[0]).join("").toUpperCase();
+                    return `<div class="flex items-center gap-3 rounded-xl border border-primary/40 bg-primary/5 px-4 py-3">
+                        <span class="flex size-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shrink-0">${i + 1}</span>
+                        <div class="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-sm shrink-0">
+                            ${c.logo_url ? `<img src="${c.logo_url}" alt="" class="size-9 rounded-lg object-cover" />` : ini}
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-semibold text-foreground truncate">${c.name ?? ""}</p>
+                            <p class="text-xs text-muted-foreground font-mono">${c.code ?? ""}</p>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <button type="button" class="btn-career-up rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors${i === 0 ? " opacity-30 pointer-events-none" : ""}" data-qid="${q.id}" data-career-id="${c.id}" title="Subir prioridad">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+                            </button>
+                            <button type="button" class="btn-career-down rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors${i === selectedCareers.length - 1 ? " opacity-30 pointer-events-none" : ""}" data-qid="${q.id}" data-career-id="${c.id}" title="Bajar prioridad">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                            </button>
+                            <button type="button" class="btn-career-remove rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" data-qid="${q.id}" data-career-id="${c.id}" title="Quitar">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                        </div>
+                    </div>`;
+                }).join("")}
+            </div>` : "";
+
+        const canAddMore = !maxSelections || selectedIds.length < maxSelections;
+        const availableHtml = canAddMore ? `
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                    ${selectedCareers.length > 0 ? "Agregar otra titulación" : "Selecciona una titulación"}
+                    ${maxSelections ? `<span class="ml-1 font-normal text-muted-foreground">(máx. ${maxSelections})</span>` : ""}
+                </p>
+                ${availableCareers.length > 0
+                    ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        ${availableCareers.map((c: any) => {
+                            const ini = (c.name ?? "").split(" ").slice(0, 2).map((w: string) => w[0]).join("").toUpperCase();
+                            return `<div class="career-add-card cursor-pointer rounded-xl border border-border p-4 flex items-start gap-3 hover:border-primary/50 hover:bg-muted/30 transition-all" data-qid="${q.id}" data-career-id="${c.id}">
+                                <div class="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-sm shrink-0">
+                                    ${c.logo_url ? `<img src="${c.logo_url}" alt="" class="size-10 rounded-lg object-cover" />` : ini}
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="text-sm font-semibold text-foreground truncate">${c.name ?? ""}</p>
+                                    <p class="text-xs text-muted-foreground font-mono">${c.code ?? ""}</p>
+                                    ${c.duration_years ? `<p class="text-xs text-muted-foreground mt-0.5">${c.duration_years} año${c.duration_years !== 1 ? "s" : ""}</p>` : ""}
+                                </div>
+                            </div>`;
+                        }).join("")}
+                    </div>`
+                    : `<p class="text-sm text-muted-foreground text-center py-4">Todas las titulaciones disponibles ya fueron seleccionadas.</p>`}
+            </div>`
+            : `<p class="text-sm text-muted-foreground py-2 text-center">Alcanzaste el máximo de ${maxSelections} preferencias.</p>`;
+
+        return selectedHtml + availableHtml;
+    }
+
+    function refreshCareerSelector(qid: number, container: HTMLElement, step: Step) {
+        const wrap = container.querySelector(`#career-selector-wrap-${qid}`);
+        if (!wrap) return;
+        const q = step.questions.find((q: Question) => q.id === qid);
+        if (!q) return;
+        wrap.innerHTML = buildCareerSelectorInner(q);
+        attachCareerSelectorHandlers(container, step);
+    }
+
+    function attachCareerSelectorHandlers(container: HTMLElement, step: Step) {
+        const questions = step.questions.slice().sort((a, b) => a.order - b.order);
+
+        container.querySelectorAll(".career-add-card").forEach(card => {
+            card.addEventListener("click", () => {
+                const qid = parseInt((card as HTMLElement).dataset.qid ?? "0", 10);
+                const careerId = parseInt((card as HTMLElement).dataset.careerId ?? "0", 10);
+                const q = questions.find(q => q.id === qid);
+                const maxSelections = q?.config?.max_selections ?? 0;
+                const current = getCareerAnswerArray(qid);
+                if (!current.includes(careerId) && (!maxSelections || current.length < maxSelections)) {
+                    state.answers[qid] = [...current, careerId];
+                    refreshCareerSelector(qid, container, step);
+                    updateConditionalVisibility(questions);
+                    refreshSubjectSelects(step, container);
+                }
+            });
+        });
+
+        container.querySelectorAll(".btn-career-remove").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const qid = parseInt((btn as HTMLElement).dataset.qid ?? "0", 10);
+                const careerId = parseInt((btn as HTMLElement).dataset.careerId ?? "0", 10);
+                state.answers[qid] = getCareerAnswerArray(qid).filter((id: number) => id !== careerId);
+                refreshCareerSelector(qid, container, step);
+                updateConditionalVisibility(questions);
+            });
+        });
+
+        container.querySelectorAll(".btn-career-up").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const qid = parseInt((btn as HTMLElement).dataset.qid ?? "0", 10);
+                const careerId = parseInt((btn as HTMLElement).dataset.careerId ?? "0", 10);
+                const arr = getCareerAnswerArray(qid);
+                const idx = arr.indexOf(careerId);
+                if (idx > 0) {
+                    [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]];
+                    state.answers[qid] = arr;
+                    refreshCareerSelector(qid, container, step);
+                }
+            });
+        });
+
+        container.querySelectorAll(".btn-career-down").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const qid = parseInt((btn as HTMLElement).dataset.qid ?? "0", 10);
+                const careerId = parseInt((btn as HTMLElement).dataset.careerId ?? "0", 10);
+                const arr = getCareerAnswerArray(qid);
+                const idx = arr.indexOf(careerId);
+                if (idx >= 0 && idx < arr.length - 1) {
+                    [arr[idx], arr[idx + 1]] = [arr[idx + 1], arr[idx]];
+                    state.answers[qid] = arr;
+                    refreshCareerSelector(qid, container, step);
+                }
+            });
+        });
+    }
+
+    // ── Renderizado del asistente ─────────────────────────────────────────────────────────
+    function renderWizard() {
+        const q = state.questionnaire!;
+        const steps = q.steps.slice().sort((a, b) => a.order - b.order);
+        const total = steps.length;
+        const current = state.currentStepIndex;
+        const step = steps[current];
+
+        // Cabecera
+        el("questionnaire-title").textContent = q.title;
+        el("questionnaire-description").textContent = q.description ?? "";
+
+        // Progress
+        el("step-label").textContent = step.title;
+        el("step-counter").textContent = `Step ${current + 1} of ${total}`;
+        const pct = total > 1 ? (current / (total - 1)) * 100 : 100;
+        (el("progress-bar") as HTMLElement).style.width = `${pct}%`;
+
+        // Step dots
+        const dotsContainer = el("step-dots");
+        dotsContainer.innerHTML = steps.map((s, i) => {
+            const isDone = i < current;
+            const isActive = i === current;
+            const cls = isDone
+                ? "size-2 rounded-full bg-primary"
+                : isActive
+                    ? "size-2.5 rounded-full bg-primary ring-2 ring-primary/30"
+                    : "size-2 rounded-full bg-muted-foreground/30";
+            return `<div class="${cls}" title="${s.title}"></div>`;
+        }).join("");
+
+        // Step content
+        el("step-title").textContent = step.title;
+        el("step-description").textContent = step.description ?? "";
+        if (!step.description) el("step-description").classList.add("hidden");
+        else el("step-description").classList.remove("hidden");
+
+        renderQuestions(step);
+
+        // Nav buttons
+        const isFirst = current === 0;
+        const isLast = current === total - 1;
+
+        const btnPrev = el<HTMLButtonElement>("btn-prev");
+        btnPrev.disabled = isFirst;
+
+        const btnNextLabel = el("btn-next-label");
+        const iconArrow = el("btn-next-icon-arrow");
+        const iconCheck = el("btn-next-icon-check");
+
+        if (isLast) {
+            btnNextLabel.textContent = "Submit";
+            iconArrow.classList.add("hidden");
+            iconCheck.classList.remove("hidden");
+        } else {
+            btnNextLabel.textContent = "Save & Continue";
+            iconArrow.classList.remove("hidden");
+            iconCheck.classList.add("hidden");
+        }
+    }
+
+    // ── Renderizadores de preguntas ────────────────────────────────────────────────────
+    function renderQuestions(step: Step) {
+        const container = el("questions-container");
+        const questions = step.questions.slice().sort((a, b) => a.order - b.order);
+
+        container.innerHTML = questions.map(q => {
+            const visible = isQuestionVisible(q);
+            return `<div class="question-field" data-question-id="${q.id}" style="${visible ? "" : "display:none"}">
+                ${renderQuestion(q)}
+            </div>`;
+        }).join("");
+
+        // Adjunta escuchadores de cambio para actualizaciones condicionales
+        container.querySelectorAll("[data-question-id]").forEach(wrapper => {
+            const qid = parseInt((wrapper as HTMLElement).dataset.questionId ?? "0", 10);
+            const question = questions.find(q => q.id === qid);
+            if (!question) return;
+
+            const inputs = wrapper.querySelectorAll("input, select, textarea");
+            inputs.forEach(input => {
+                input.addEventListener("change", () => {
+                    captureAnswer(question, wrapper as HTMLElement);
+                    updateConditionalVisibility(questions);
+                });
+                input.addEventListener("input", () => {
+                    captureAnswer(question, wrapper as HTMLElement);
+                });
+            });
+        });
+
+        // Manejadores del selector de titulaciones (selección múltiple + ordenación)
+        attachCareerSelectorHandlers(container, step);
+
+        // Manejadores de clic de elementos de asignatura
+        attachSubjectHandlers(container, questions);
+
+        // Manejadores del botón de pago de Stripe
+        container.querySelectorAll(".stripe-pay-btn").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const qid = parseInt((btn as HTMLElement).dataset.qid ?? "0", 10);
+                const question = questions.find(q => q.id === qid);
+                if (!question) return;
+                await handleStripePayment(question, btn as HTMLButtonElement);
+            });
+        });
+    }
+
+    function renderQuestion(q: Question): string {
+        const labelHtml = `
+            <label class="text-sm font-medium text-foreground block mb-1.5" for="q-${q.id}">
+                ${q.label}${q.is_required ? '<span class="text-destructive ml-0.5">*</span>' : ''}
+            </label>
+            ${q.help_text ? `<p class="text-xs text-muted-foreground mb-2">${q.help_text}</p>` : ""}
+        `;
+
+        const currentVal = state.answers[q.id];
+
+        switch (q.question_type) {
+            case "text":
+            case "email":
+            case "tel":
+            case "number":
+            case "date":
+                return `${labelHtml}
+                    <input
+                        id="q-${q.id}"
+                        type="${q.question_type}"
+                        value="${currentVal != null ? String(currentVal).replace(/"/g, "&quot;") : ""}"
+                        placeholder="${q.config?.placeholder ?? ""}"
+                        class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                        data-qtype="${q.question_type}"
+                    />`;
+
+            case "textarea":
+                return `${labelHtml}
+                    <textarea
+                        id="q-${q.id}"
+                        placeholder="${q.config?.placeholder ?? ""}"
+                        rows="${q.config?.rows ?? 4}"
+                        class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring resize-y min-h-[100px]"
+                        data-qtype="textarea"
+                    >${currentVal != null ? String(currentVal) : ""}</textarea>`;
+
+            case "select": {
+                const opts = q.options.slice().sort((a, b) => a.order - b.order);
+                return `${labelHtml}
+                    <select id="q-${q.id}" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" data-qtype="select">
+                        <option value="">-- Select an option --</option>
+                        ${opts.map(o => `<option value="${o.value}" ${currentVal === o.value ? "selected" : ""}>${o.label}</option>`).join("")}
+                    </select>`;
+            }
+
+            case "radio": {
+                const opts = q.options.slice().sort((a, b) => a.order - b.order);
+                return `${labelHtml}
+                    <div class="space-y-2">
+                        ${opts.map(o => `
+                            <label class="flex items-center gap-3 rounded-lg border border-border px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                                <input type="radio" name="q-${q.id}" value="${o.value}" ${currentVal === o.value ? "checked" : ""} class="size-4 accent-primary" data-qtype="radio" />
+                                <span class="text-sm text-foreground">${o.label}</span>
+                            </label>
+                        `).join("")}
+                    </div>`;
+            }
+
+            case "checkbox": {
+                const opts = q.options.slice().sort((a, b) => a.order - b.order);
+                const checkedVals: string[] = Array.isArray(currentVal) ? currentVal.map(String) : [];
+                return `${labelHtml}
+                    <div class="space-y-2">
+                        ${opts.map(o => `
+                            <label class="flex items-center gap-3 rounded-lg border border-border px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                                <input type="checkbox" name="q-${q.id}" value="${o.value}" ${checkedVals.includes(String(o.value)) ? "checked" : ""} class="size-4 accent-primary rounded" data-qtype="checkbox" />
+                                <span class="text-sm text-foreground">${o.label}</span>
+                            </label>
+                        `).join("")}
+                    </div>`;
+            }
+
+            case "file_upload": {
+                const accepted = q.config?.accepted_types?.join(",") ?? "";
+                const maxMb = q.config?.max_size_mb ?? 10;
+                return `${labelHtml}
+                    <div class="rounded-lg border-2 border-dashed border-border hover:border-muted-foreground/40 transition-colors p-4">
+                        <input id="q-${q.id}" type="file" accept="${accepted}" class="block w-full text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer" data-qtype="file_upload" />
+                        <p class="text-xs text-muted-foreground mt-1.5">Max file size: ${maxMb}MB${accepted ? ` · Accepted: ${accepted}` : ""}</p>
+                    </div>`;
+            }
+
+            case "career_select": {
+                if (state.careers.length === 0) {
+                    return `${labelHtml}<p class="text-sm text-muted-foreground">Loading careers...</p>`;
+                }
+                return `${labelHtml}<div id="career-selector-wrap-${q.id}">${buildCareerSelectorInner(q)}</div>`;
+            }
+
+            case "subject_select": {
+                const careerId = getSelectedCareerIdFromAnswers();
+                if (!careerId) {
+                    return `${labelHtml}
+                        <div class="rounded-lg border border-border bg-muted/30 p-4 text-center text-sm text-muted-foreground">
+                            Please select a career first to view available subjects.
+                        </div>`;
+                }
+                const subjects = state.subjectsByCareer[careerId] ?? [];
+                return renderSubjectSelect(q, subjects, careerId);
+            }
+
+            case "stripe_payment": {
+                const amount = q.config?.amount ?? 0;
+                const currency = (q.config?.currency ?? "USD").toUpperCase();
+                const desc = q.config?.description ?? "Application fee";
+                const isPaid = state.answers[q.id] === "paid";
+                return `${labelHtml}
+                    <div class="rounded-xl border border-border bg-muted/20 p-5 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-foreground">${desc}</p>
+                                <p class="text-xs text-muted-foreground mt-0.5">One-time payment</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-2xl font-bold text-foreground">${currency} ${Number(amount).toFixed(2)}</p>
+                            </div>
+                        </div>
+                        ${isPaid
+                            ? `<div class="flex items-center gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-emerald-400"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span class="text-xs font-medium text-emerald-400">Payment completed</span>
+                               </div>`
+                            : `<button class="stripe-pay-btn w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors" data-qid="${q.id}" type="button">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                                Pay ${currency} ${Number(amount).toFixed(2)}
+                               </button>`
+                        }
+                    </div>`;
+            }
+
+            case "info":
+                return `<div class="prose prose-sm prose-invert max-w-none rounded-lg border border-border bg-muted/20 p-4 text-sm text-foreground [&_a]:text-primary [&_a]:underline [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm" data-info-content="${encodeURIComponent(q.config?.content ?? "")}"></div>`;
+
+            default:
+                return `${labelHtml}<p class="text-xs text-muted-foreground">Unsupported question type: ${q.question_type}</p>`;
+        }
+    }
+
+    function renderSubjectSelect(q: Question, subjects: any[], careerId: number): string {
+        const labelHtml = `
+            <label class="text-sm font-medium text-foreground block mb-1.5">
+                ${q.label}${q.is_required ? '<span class="text-destructive ml-0.5">*</span>' : ''}
+            </label>
+            ${q.help_text ? `<p class="text-xs text-muted-foreground mb-2">${q.help_text}</p>` : ""}
+        `;
+
+        if (subjects.length === 0) {
+            return `${labelHtml}
+                <div class="rounded-lg border border-border bg-muted/30 p-4 text-center text-sm text-muted-foreground" data-subject-select-loading="true" data-qid="${q.id}" data-career-id="${careerId}">
+                    Loading subjects...
+                </div>`;
+        }
+
+        const selectedIds: number[] = Array.isArray(state.answers[q.id]) ? state.answers[q.id].map(Number) : [];
+        const allowPastYears = q.config?.allow_past_years ?? false;
+        const maxSelections = q.config?.max_selections ?? 0;
+
+        // Group by year_level
+        const byYear: Record<number, any[]> = {};
+        for (const s of subjects) {
+            const yr = s.year_level ?? 1;
+            if (!byYear[yr]) byYear[yr] = [];
+            byYear[yr].push(s);
+        }
+
+        const years = Object.keys(byYear).map(Number).sort();
+        const maxYear = Math.max(...years);
+
+        const grouped = years.map(yr => {
+            const subs = byYear[yr].slice().sort((a: any, b: any) => (a.name ?? "").localeCompare(b.name ?? ""));
+            const isCurrentYear = yr === maxYear;
+            if (!allowPastYears && !isCurrentYear) return "";
+
+            return `
+                <div class="space-y-2">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Year ${yr}</p>
+                    ${subs.map((s: any) => {
+                        const isSelected = selectedIds.includes(s.id);
+                        const semLabel = s.semester ? `Semester ${s.semester}` : "";
+                        return `<label class="subject-item cursor-pointer flex items-start gap-3 rounded-lg border border-border p-3 hover:bg-muted/50 transition-colors ${isSelected ? "selected" : ""}" data-subject-id="${s.id}">
+                            <input type="checkbox" name="q-${q.id}-subjects" value="${s.id}" ${isSelected ? "checked" : ""} class="size-4 accent-primary rounded mt-0.5 shrink-0" data-qtype="subject_checkbox" data-qid="${q.id}" />
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-medium text-foreground">${s.name ?? ""}</p>
+                                <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+                                    ${s.code ? `<span class="text-xs font-mono text-muted-foreground">${s.code}</span>` : ""}
+                                    ${semLabel ? `<span class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">${semLabel}</span>` : ""}
+                                </div>
+                            </div>
+                        </label>`;
+                    }).join("")}
+                </div>`;
+        }).join("");
+
+        return `${labelHtml}
+            <div class="space-y-4" data-subject-select="true" data-qid="${q.id}" data-max-selections="${maxSelections}">
+                ${grouped || `<p class="text-sm text-muted-foreground text-center py-4">No subjects available for the selected career.</p>`}
+            </div>
+            ${maxSelections > 0 ? `<p class="text-xs text-muted-foreground mt-1">Maximum ${maxSelections} subject${maxSelections !== 1 ? "s" : ""} allowed.</p>` : ""}`;
+    }
+
+    function attachSubjectHandlers(container: HTMLElement, questions: Question[]) {
+        container.querySelectorAll("[data-subject-select]").forEach(wrapper => {
+            const qid = parseInt((wrapper as HTMLElement).dataset.qid ?? "0", 10);
+            const maxSelections = parseInt((wrapper as HTMLElement).dataset.maxSelections ?? "0", 10);
+
+            wrapper.querySelectorAll("input[data-qtype='subject_checkbox']").forEach(cb => {
+                cb.addEventListener("change", () => {
+                    const checked = Array.from(wrapper.querySelectorAll("input[data-qtype='subject_checkbox']:checked"))
+                        .map(i => parseInt((i as HTMLInputElement).value, 10));
+
+                    if (maxSelections > 0 && checked.length > maxSelections) {
+                        (cb as HTMLInputElement).checked = false;
+                        showToast("warning", "Selection limit reached", `You can select at most ${maxSelections} subject${maxSelections !== 1 ? "s" : ""}.`);
+                        return;
+                    }
+
+                    state.answers[qid] = checked;
+
+                    // Actualiza el estado visual de selección
+                    wrapper.querySelectorAll("label[data-subject-id]").forEach(lbl => {
+                        const sid = parseInt((lbl as HTMLElement).dataset.subjectId ?? "0", 10);
+                        if (checked.includes(sid)) lbl.classList.add("selected");
+                        else lbl.classList.remove("selected");
+                    });
+                });
+            });
+        });
+
+        // Info blocks: decode HTML
+        container.querySelectorAll("[data-info-content]").forEach(div => {
+            div.innerHTML = decodeURIComponent((div as HTMLElement).dataset.infoContent ?? "");
+        });
+    }
+
+    async function refreshSubjectSelects(step: Step, container: HTMLElement) {
+        const careerId = getSelectedCareerIdFromAnswers();
+        if (!careerId) return;
+
+        const subjectQuestions = step.questions.filter(q => q.question_type === "subject_select");
+        if (subjectQuestions.length === 0) return;
+
+        await loadSubjects(careerId);
+
+        for (const q of subjectQuestions) {
+            const wrapper = container.querySelector(`[data-question-id="${q.id}"]`);
+            if (!wrapper) continue;
+            wrapper.innerHTML = renderSubjectSelect(q, state.subjectsByCareer[careerId] ?? [], careerId);
+            attachSubjectHandlers(container, step.questions);
+        }
+    }
+
+    // ── Captura la respuesta desde el DOM ───────────────────────────────────────────────
+    function captureAnswer(q: Question, wrapper: HTMLElement) {
+        switch (q.question_type) {
+            case "text": case "email": case "tel": case "number": case "date": case "textarea": case "select": {
+                const input = wrapper.querySelector(`[id="q-${q.id}"]`) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
+                state.answers[q.id] = input?.value ?? "";
+                break;
+            }
+            case "radio": {
+                const checked = wrapper.querySelector(`input[name="q-${q.id}"]:checked`) as HTMLInputElement | null;
+                state.answers[q.id] = checked?.value ?? "";
+                break;
+            }
+            case "checkbox": {
+                const checked = Array.from(wrapper.querySelectorAll(`input[name="q-${q.id}"]:checked`))
+                    .map(i => (i as HTMLInputElement).value);
+                state.answers[q.id] = checked;
+                break;
+            }
+            case "file_upload": {
+                const input = wrapper.querySelector(`[id="q-${q.id}"]`) as HTMLInputElement | null;
+                state.answers[q.id] = input?.files?.[0] ?? null;
+                break;
+            }
+        }
+    }
+
+    function captureAllAnswersOnCurrentStep() {
+        const q = state.questionnaire!;
+        const steps = q.steps.slice().sort((a, b) => a.order - b.order);
+        const step = steps[state.currentStepIndex];
+        const container = el("questions-container");
+
+        step.questions.forEach(question => {
+            const wrapper = container.querySelector(`[data-question-id="${question.id}"]`) as HTMLElement | null;
+            if (wrapper) captureAnswer(question, wrapper);
+        });
+    }
+
+    // ── Actualización de visibilidad condicional ─────────────────────────────────────────
+    function updateConditionalVisibility(questions: Question[]) {
+        const container = el("questions-container");
+        questions.forEach(q => {
+            const wrapper = container.querySelector(`[data-question-id="${q.id}"]`) as HTMLElement | null;
+            if (!wrapper) return;
+            const visible = isQuestionVisible(q);
+            wrapper.style.display = visible ? "" : "none";
+        });
+    }
+
+    // ── Validation ────────────────────────────────────────────────────────────
+    function validateCurrentStep(): string[] {
+        const q = state.questionnaire!;
+        const steps = q.steps.slice().sort((a, b) => a.order - b.order);
+        const step = steps[state.currentStepIndex];
+        const errors: string[] = [];
+
+        for (const question of step.questions) {
+            if (!isQuestionVisible(question)) continue;
+            if (!question.is_required) continue;
+            if (question.question_type === "info") continue;
+
+            const val = state.answers[question.id];
+            if (val === null || val === undefined || val === "") {
+                errors.push(question.label);
+            } else if (Array.isArray(val) && val.length === 0) {
+                errors.push(question.label);
+            }
+        }
+
+        return errors;
+    }
+
+    // ── Save answers ──────────────────────────────────────────────────────────
+    async function saveAnswers(): Promise<boolean> {
+        const q = state.questionnaire!;
+        const steps = q.steps.slice().sort((a, b) => a.order - b.order);
+        const step = steps[state.currentStepIndex];
+
+        const textPayload: Array<{ question: number; text_value?: string; json_value?: any }> = [];
+        const fileQuestions: Array<{ question: Question; file: File }> = [];
+
+        for (const question of step.questions) {
+            if (!isQuestionVisible(question)) continue;
+            if (question.question_type === "info") continue;
+            if (question.question_type === "stripe_payment") continue;
+
+            const val = state.answers[question.id];
+            if (val === undefined || val === null || val === "") continue;
+
+            if (question.question_type === "file_upload") {
+                if (val instanceof File) {
+                    fileQuestions.push({ question, file: val });
+                }
+                continue;
+            }
+
+            if (
+                question.question_type === "checkbox" ||
+                question.question_type === "subject_select" ||
+                question.question_type === "career_select"
+            ) {
+                textPayload.push({ question: question.id, json_value: Array.isArray(val) ? val : [val] });
+            } else {
+                textPayload.push({ question: question.id, text_value: String(val) });
+            }
+        }
+
+        // Bulk-save text answers
+        if (textPayload.length > 0) {
+            const res = await fetch(`${API_URL}/questionnaire/responses/${state.responseId}/answers/`, {
+                method: "POST",
+                headers: authHeaders(),
+                body: JSON.stringify(textPayload),
+            });
+            if (!res.ok) {
+                showToast("error", "Save failed", "Could not save answers. Please try again.");
+                return false;
+            }
+        }
+
+        // Save file answers individually via FormData
+        for (const { question, file } of fileQuestions) {
+            const fd = new FormData();
+            fd.append("question", String(question.id));
+            fd.append("file_value", file);
+            const res = await fetch(`${API_URL}/questionnaire/responses/${state.responseId}/answers/`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${getToken()}` },
+                body: fd,
+            });
+            if (!res.ok) {
+                showToast("error", "File upload failed", `Could not upload file for "${question.label}".`);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // ── Navigation ────────────────────────────────────────────────────────────
+    async function goToNextStep() {
+        captureAllAnswersOnCurrentStep();
+
+        const errors = validateCurrentStep();
+        if (errors.length > 0) {
+            showToast("error", "Required fields missing", `Please fill in: ${errors.slice(0, 3).join(", ")}${errors.length > 3 ? ` and ${errors.length - 3} more` : ""}.`);
+            return;
+        }
+
+        setButtonLoading(true);
+
+        const saved = await saveAnswers();
+        if (!saved) {
+            setButtonLoading(false);
+            return;
+        }
+
+        const q = state.questionnaire!;
+        const steps = q.steps.slice().sort((a, b) => a.order - b.order);
+        const isLast = state.currentStepIndex === steps.length - 1;
+
+        if (isLast) {
+            // Submit
+            const res = await fetch(`${API_URL}/questionnaire/responses/${state.responseId}/submit/`, {
+                method: "POST",
+                headers: authHeaders(),
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                showToast("error", "Submission failed", data?.detail ?? "Could not submit questionnaire.");
+                setButtonLoading(false);
+                return;
+            }
+            setButtonLoading(false);
+            launchCorrecto();
+        } else {
+            const nextIndex = state.currentStepIndex + 1;
+            // Actualiza current_step en el servidor
+            await fetch(`${API_URL}/questionnaire/responses/${state.responseId}/`, {
+                method: "PATCH",
+                headers: authHeaders(),
+                body: JSON.stringify({ current_step: nextIndex }),
+            });
+            state.currentStepIndex = nextIndex;
+            setButtonLoading(false);
+            renderWizard();
+
+            // Carga asignaturas si hace falta
+            const nextStep = steps[nextIndex];
+            const hasSubjectSelect = nextStep.questions.some(q => q.question_type === "subject_select");
+            if (hasSubjectSelect) {
+                const careerId = getSelectedCareerIdFromAnswers();
+                if (careerId) {
+                    await loadSubjects(careerId);
+                    renderWizard();
+                }
+            }
+
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    }
+
+    function goToPrevStep() {
+        captureAllAnswersOnCurrentStep();
+        if (state.currentStepIndex > 0) {
+            state.currentStepIndex--;
+            renderWizard();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    }
+
+    function setButtonLoading(loading: boolean) {
+        const btn = el<HTMLButtonElement>("btn-next");
+        const spinner = el("btn-next-spinner");
+        const label = el("btn-next-label");
+        btn.disabled = loading;
+        if (loading) {
+            spinner.classList.remove("hidden");
+            label.classList.add("opacity-0");
+        } else {
+            spinner.classList.add("hidden");
+            label.classList.remove("opacity-0");
+        }
+    }
+
+    // ── Pago de Stripe ────────────────────────────────────────────────────────
+    async function handleStripePayment(question: Question, btn: HTMLButtonElement) {
+        state.stripePaymentQuestionId = question.id;
+        state.stripePaymentAnswerId = state.stripePaymentAnswerIds[question.id] ?? null;
+
+        btn.disabled = true;
+        btn.textContent = "Loading payment...";
+
+        try {
+            // Obtiene el intento de pago
+            const res = await fetch(`${API_URL}/questionnaire/responses/${state.responseId}/questions/${question.id}/payment-intent/`, {
+                method: "POST",
+                headers: authHeaders(),
+            });
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                showToast("error", "Payment unavailable", data?.detail ?? "Could not initialize payment.");
+                btn.disabled = false;
+                btn.textContent = `Pay ${(question.config?.currency ?? "USD").toUpperCase()} ${Number(question.config?.amount ?? 0).toFixed(2)}`;
+                return;
+            }
+
+            const data = await res.json();
+            if (data.answer_id) {
+                state.stripePaymentAnswerId = Number(data.answer_id);
+                state.stripePaymentAnswerIds[question.id] = Number(data.answer_id);
+            }
+            showStripeModal(question, data.client_secret ?? null);
+        } catch (error) {
+            showToast("error", "Payment unavailable", "Could not connect to the payment service.");
+        }
+
+        btn.disabled = false;
+        btn.textContent = `Pay ${(question.config?.currency ?? "USD").toUpperCase()} ${Number(question.config?.amount ?? 0).toFixed(2)}`;
+    }
+
+    async function confirmStripePayment(answerId: number): Promise<boolean> {
+        const res = await fetch(`${API_URL}/questionnaire/answers/${answerId}/confirm-payment/`, {
+            method: "POST",
+            headers: authHeaders(),
+        });
+        if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            showToast("error", "Payment confirmation failed", data?.detail ?? "Could not confirm the payment.");
+            return false;
+        }
+        const data = await res.json();
+        if (data.status !== "paid") {
+            showToast("warning", "Payment pending", "Stripe has not confirmed the payment yet. Please try again shortly.");
+            return false;
+        }
+        return true;
+    }
+
+    async function getStripePublishableKey(): Promise<string> {
+        if (state.stripePublishableKey !== null) return state.stripePublishableKey;
+        const res = await fetch(`${API_URL}/questionnaire/stripe/config/`, {
+            method: "GET",
+            headers: authHeaders(),
+        });
+        if (!res.ok) {
+            state.stripePublishableKey = "";
+            return "";
+        }
+        const data = await res.json();
+        const key = data.publishable_key ?? "";
+        state.stripePublishableKey = key;
+        return key;
+    }
+
+    function showStripeModal(question: Question, clientSecret: string | null) {
+        const isDemo = !clientSecret;
+        const amount = question.config?.amount ?? 0;
+        const currency = (question.config?.currency ?? "USD").toUpperCase();
+
+        el("stripe-modal-title").textContent = question.config?.description ?? "Complete Payment";
+        show("stripe-backdrop");
+
+        if (isDemo) {
+            show("stripe-demo-content");
+            hide("stripe-real-actions");
+            hide("stripe-payment-element");
+
+            el("stripe-demo-confirm").onclick = async () => {
+                if (state.stripePaymentQuestionId !== null && state.stripePaymentAnswerId !== null) {
+                    const confirmed = await confirmStripePayment(state.stripePaymentAnswerId);
+                    if (!confirmed) return;
+                    state.answers[state.stripePaymentQuestionId] = "paid";
+                }
+                hide("stripe-backdrop");
+                showToast("success", "Payment confirmed", "Your simulated payment was processed.");
+                renderWizard();
+            };
+        } else {
+            hide("stripe-demo-content");
+            show("stripe-real-actions");
+            show("stripe-payment-element");
+
+            // Carga Stripe.js de forma diferida
+            loadStripeJs().then(async stripeLoaded => {
+                if (!stripeLoaded || !(window as any).Stripe) {
+                    showToast("error", "Stripe unavailable", "Payment processor failed to load. Please refresh.");
+                    return;
+                }
+
+                const publishableKey = await getStripePublishableKey();
+                if (!publishableKey) {
+                    showToast("error", "Stripe not configured", "Production payments require STRIPE_PUBLIC_KEY on the backend.");
+                    hide("stripe-backdrop");
+                    return;
+                }
+
+                state.stripeInstance = (window as any).Stripe(publishableKey);
+                state.stripeElements = state.stripeInstance.elements({ clientSecret });
+
+                const paymentEl = state.stripeElements.create("payment");
+                paymentEl.mount("#stripe-payment-element");
+
+                el("stripe-pay-btn").textContent = `Pay ${currency} ${Number(amount).toFixed(2)}`;
+                el("stripe-pay-btn").onclick = async () => {
+                    el<HTMLButtonElement>("stripe-pay-btn").disabled = true;
+                    el("stripe-error").classList.add("hidden");
+
+                    const { error } = await state.stripeInstance.confirmPayment({
+                        elements: state.stripeElements,
+                        confirmParams: { return_url: window.location.href },
+                        redirect: "if_required",
+                    });
+
+                    if (error) {
+                        el("stripe-error").textContent = error.message ?? "Payment failed.";
+                        el("stripe-error").classList.remove("hidden");
+                        el<HTMLButtonElement>("stripe-pay-btn").disabled = false;
+                    } else {
+                        if (state.stripePaymentQuestionId !== null && state.stripePaymentAnswerId !== null) {
+                            const confirmed = await confirmStripePayment(state.stripePaymentAnswerId);
+                            if (!confirmed) {
+                                el<HTMLButtonElement>("stripe-pay-btn").disabled = false;
+                                return;
+                            }
+                            state.answers[state.stripePaymentQuestionId] = "paid";
+                        }
+                        hide("stripe-backdrop");
+                        showToast("success", "Payment completed", "Your payment was processed successfully.");
+                        renderWizard();
+                    }
+                };
+            });
+        }
+    }
+
+    async function loadStripeJs(): Promise<boolean> {
+        return new Promise(resolve => {
+            if ((window as any).Stripe) { resolve(true); return; }
+            const script = document.createElement("script");
+            script.src = "https://js.stripe.com/v3/";
+            script.onload = () => resolve(true);
+            script.onerror = () => resolve(false);
+            document.head.appendChild(script);
+        });
+    }
+
+    // ── Correcto screen ────────────────────────────────────────────────────────
+    function launchCorrecto() {
+        hide("wizard-screen");
+        show("success-screen");
+
+        // Confetti animation
+        const container = el("confetti-container");
+        const colors = ["#6366f1", "#22c55e", "#f59e0b", "#ec4899", "#3b82f6"];
+        for (let i = 0; i < 18; i++) {
+            const particle = document.createElement("div");
+            particle.className = "confetti-particle";
+            const tx = (Math.random() - 0.5) * 120;
+            particle.style.cssText = `
+                background-color: ${colors[i % colors.length]};
+                left: ${40 + Math.random() * 20}%;
+                top: 50%;
+                --tx: ${tx}px;
+                animation-delay: ${Math.random() * 0.4}s;
+                animation-duration: ${1 + Math.random() * 0.8}s;
+                border-radius: ${Math.random() > 0.5 ? "50%" : "2px"};
+            `;
+            container.appendChild(particle);
+        }
+    }
+
+    // ── Escuchadores de eventos ───────────────────────────────────────────────────────
+    el("btn-next").addEventListener("click", goToNextStep);
+    el("btn-prev").addEventListener("click", goToPrevStep);
+
+    el("stripe-modal-close").addEventListener("click", () => {
+        hide("stripe-backdrop");
+        state.stripeInstance = null;
+        state.stripeElements = null;
+        el("stripe-payment-element").innerHTML = "";
+    });
+
+    el("stripe-backdrop").addEventListener("click", (e) => {
+        if (e.target === el("stripe-backdrop")) {
+            hide("stripe-backdrop");
+            state.stripeInstance = null;
+            state.stripeElements = null;
+            el("stripe-payment-element").innerHTML = "";
+        }
+    });
+
+    // ── Inicialización ──────────────────────────────────────────────────────────────────
+    init();
+</script>
