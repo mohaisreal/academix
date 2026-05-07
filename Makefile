@@ -1,13 +1,13 @@
 .PHONY: help dev-up dev-down dev-logs dev-build dev-rebuild prod-up prod-down prod-logs prod-build prod-rebuild backend-shell frontend-shell migrate collectstatic clean
 
-# Color output
+# Salida con color
 CYAN := \033[0;36m
 GREEN := \033[0;32m
 YELLOW := \033[0;33m
 RED := \033[0;31m
 NC := \033[0m # No Color
 
-# Docker Compose commands
+# Comandos de Docker Compose
 DOCKER_COMPOSE_DEV := docker compose -f docker-compose.dev.yml
 DOCKER_COMPOSE_PROD := docker compose -f docker-compose.prod.yml
 
@@ -44,7 +44,7 @@ help:
 	@echo ""
 
 # ============================================================================
-# Development Commands
+# Comandos de desarrollo
 # ============================================================================
 
 dev-up:
@@ -78,7 +78,7 @@ dev-rebuild:
 	@echo "$(GREEN)Development images rebuilt!$(NC)"
 
 # ============================================================================
-# Production Commands
+# Comandos de producción
 # ============================================================================
 
 prod-up:
@@ -121,7 +121,7 @@ prod-createsuperuser:
 	$(DOCKER_COMPOSE_PROD) exec backend python manage.py createsuperuser
 
 # ============================================================================
-# Container Shell Access
+# Acceso a shells de contenedor
 # ============================================================================
 
 backend-shell:
@@ -133,7 +133,7 @@ frontend-shell:
 	$(DOCKER_COMPOSE_DEV) exec frontend bash
 
 # ============================================================================
-# Django Management Commands
+# Comandos de administración de Django
 # ============================================================================
 
 migrate:
@@ -151,7 +151,7 @@ createsuperuser:
 	$(DOCKER_COMPOSE_DEV) exec backend python manage.py createsuperuser
 
 # ============================================================================
-# Maintenance Commands
+# Comandos de mantenimiento
 # ============================================================================
 
 clean:
@@ -167,7 +167,7 @@ clean:
 	fi
 
 # ============================================================================
-# Status and Info Commands
+# Comandos de estado e información
 # ============================================================================
 
 status-dev:

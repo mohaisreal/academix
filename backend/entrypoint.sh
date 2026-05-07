@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-# Wait for PostgreSQL to be ready (only in production with DATABASE_URL)
+# Espera a que PostgreSQL esté listo (solo en producción con DATABASE_URL)
 if [ -n "$DATABASE_URL" ]; then
     echo "Waiting for PostgreSQL..."
     until python -c "
@@ -26,7 +26,7 @@ except Exception as e:
     done
     echo "PostgreSQL is ready."
 else
-    # SQLite: ensure data directory exists
+    # SQLite: asegura que exista el directorio de datos
     DB_DIR=$(dirname "${DATABASE_PATH:-/app/db.sqlite3}")
     mkdir -p "$DB_DIR"
 fi

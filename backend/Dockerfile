@@ -1,6 +1,6 @@
-# Multi-stage Dockerfile for Django backend
+# Dockerfile multietapa para el backend de Django
 
-# Stage 1: Base — installs all dependencies
+# Etapa 1: base — instala todas las dependencias
 FROM python:3.11-slim AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -21,24 +21,24 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY entrypoint.sh /entrypoint.sh
 RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
-# Stage 2: Development
+# Etapa 2: desarrollo
 FROM base AS development
 
 ENV DJANGO_ENV=development
 
-# Source code will be mounted as a volume for hot-reloading
-# Only copy entrypoint script which is already in base stage
+# El código fuente se montará como volumen para recarga en caliente
+# Copia únicamente el script de entrada, que ya está en la etapa base
 EXPOSE 8000
 ENTRYPOINT ["/entrypoint.sh"]
 
-# Stage 3: Production
+# Etapa 3: producción
 FROM base AS production
 
 ENV DJANGO_ENV=production
 
 COPY . .
 
-# Create non-root user
+# Crea un usuario sin privilegios de root
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser
 

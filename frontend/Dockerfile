@@ -1,51 +1,51 @@
-# Multi-stage Dockerfile for Astro frontend
+# Dockerfile multietapa para el frontend de Astro
 
-# Stage 1: Builder stage
+# Etapa 1: etapa de construcción
 FROM node:20-alpine as builder
 
 WORKDIR /app
 
-# Copy package files
+# Copia los ficheros de paquetes
 COPY package*.json ./
 
-# Install dependencies
+# Instala dependencias
 RUN npm ci
 
-# Copy source code
+# Copia el código fuente
 COPY . .
 
-# Build the static site
+# Construye el sitio estático
 RUN npm run build
 
-# Stage 2: Development stage
+# Etapa 2: etapa de desarrollo
 FROM node:20-alpine as development
 
 WORKDIR /app
 
-# Copy package files only (source will be mounted as volume)
+# Copia solo los ficheros de paquetes (el código fuente se montará como volumen)
 COPY package*.json ./
 
-# Install dependencies
+# Instala dependencias
 RUN npm ci
 
-# Expose port 4321 for Astro dev server
+# Expone el puerto 4321 para el servidor de desarrollo de Astro
 EXPOSE 4321
 
-# Start Astro dev server with --host to listen on all interfaces
-# Source code will be mounted as a volume for hot-reloading
+# Arranca el servidor de desarrollo de Astro con --host para escuchar en todas las interfaces
+# El código fuente se montará como volumen para recarga en caliente
 CMD ["npm", "run", "dev", "--", "--host"]
 
-# Stage 3: Production stage (Nginx)
+# Etapa 3: etapa de producción (Nginx)
 FROM nginx:1.27-alpine as production
 
-# Copy nginx configuration
+# Copia la configuración de Nginx
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Copy built static files from builder stage
+# Copia los ficheros estáticos construidos desde la etapa de construcción
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Expose port 80
 EXPOSE 80
 
-# Start Nginx
+# Arranca Nginx
 CMD ["nginx", "-g", "daemon off;"]
