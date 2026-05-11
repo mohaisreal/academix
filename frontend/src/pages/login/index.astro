@@ -6,14 +6,14 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/starwind/alert
 import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
 ---
 
-<html lang="en" class="dark">
+<html lang="es" class="dark">
     <head>
         <meta charset="utf-8" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="icon" href="/favicon.ico" />
         <meta name="viewport" content="width=device-width" />
         <meta name="generator" content={Astro.generator} />
-        <title>Login — Academix</title>
+        <title>Iniciar sesión — Academix</title>
         <style>
             /* Cuadrícula sutil de puntos para el panel de marca */
             .dot-grid {
@@ -102,7 +102,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
                                 </div>
                                 <div>
                                     <p class="text-sm font-medium text-foreground">Gestión de cursos</p>
-                                    <p class="text-sm text-muted-foreground">Create, organize, and deliver curriculum with built-in tools.</p>
+                                    <p class="text-sm text-muted-foreground">Crea, organiza y entrega contenido académico con herramientas integradas.</p>
                                 </div>
                             </div>
                             <div class="fade-up flex items-start gap-3">
@@ -152,7 +152,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
 
             <!-- Panel derecho: formulario de inicio de sesión -->
             <div class="flex flex-col p-6 md:p-10">
-                <!-- Mobile logo -->
+                <!-- Logo móvil -->
                 <div class="lg:hidden mb-8">
                     <div class="flex items-center gap-2.5">
                         <div class="flex size-8 items-center justify-center rounded-lg bg-primary/10">
@@ -170,7 +170,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
                         <!-- Heading -->
                         <div class="mb-8">
                             <h2 class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                                Welcome back
+                                Bienvenido de nuevo
                             </h2>
                             <p class="mt-2 text-sm text-muted-foreground">
                                 Sign in to your account to continue
@@ -182,7 +182,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
                             <Alert variant="error">
                                 <AlertTitle>Authentication failed</AlertTitle>
                                 <AlertDescription id="login-error-message">
-                                    Invalid username or password. Please try again.
+                                    Usuario o contraseña inválidos. Inténtalo de nuevo.
                                 </AlertDescription>
                             </Alert>
                         </div>
@@ -190,7 +190,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
                         <!-- Alerta de éxito (oculta por defecto) -->
                         <div id="login-success" class="mb-6 hidden">
                             <Alert variant="success">
-                                <AlertTitle>Login successful</AlertTitle>
+                                <AlertTitle>Inicio de sesión exitoso</AlertTitle>
                                 <AlertDescription>
                                     Redirecting you to the dashboard...
                                 </AlertDescription>
@@ -241,7 +241,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
                                     <button
                                         type="button"
                                         id="toggle-password"
-                                        aria-label="Toggle password visibility"
+                                        aria-label="Alternar visibilidad de contraseña"
                                         class="absolute right-1 top-1/2 -translate-y-1/2 flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                                     >
                                         <!-- Icono de ojo (se muestra cuando la contraseña está oculta) -->
@@ -297,7 +297,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
                                 />
                             </div>
 
-                            <!-- Submit button -->
+                            <!-- Botón de envío -->
                             <Button
                                 type="submit"
                                 id="login-submit"
@@ -331,7 +331,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
                                 href="/register"
                                 class="font-medium text-foreground underline underline-offset-4 transition-colors hover:text-primary"
                             >
-                                Create one
+                                Crear una cuenta
                             </a>
                         </p>
                     </div>
@@ -443,7 +443,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
             localStorage.setItem(TOKEN_KEYS.ACCESS, access);
             localStorage.setItem(TOKEN_KEYS.REFRESH, refresh);
         } catch (err) {
-            console.error("Failed to store tokens:", err);
+            console.error("No se pudieron guardar los tokens:", err);
         }
     }
 
@@ -453,7 +453,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
             const zustandState = { state: { user }, version: 0 };
             localStorage.setItem(TOKEN_KEYS.USER, JSON.stringify(zustandState));
         } catch (err) {
-            console.error("Failed to store user:", err);
+            console.error("No se pudo guardar el usuario:", err);
         }
     }
 
@@ -492,7 +492,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
             data = await response.json();
         } else {
             const text = await response.text();
-            data = { error: text || "An unexpected error occurred." };
+            data = { error: text || "Ocurrió un error inesperado." };
         }
 
         if (!response.ok) {
@@ -557,7 +557,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
                 window.location.href = "/";
             }, 800);
         } catch (err: unknown) {
-            let message = "An unexpected error occurred. Please try again.";
+            let message = "Ocurrió un error inesperado. Please try again.";
 
             if (err instanceof TypeError) {
                 // Network failure (fetch rejected)

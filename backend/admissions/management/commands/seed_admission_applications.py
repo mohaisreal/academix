@@ -65,7 +65,7 @@ VOLUNTARY_SUBJECTS = [
 
 
 class Command(BaseCommand):
-    help = "Create submitted admission applications for every active career."
+    help = "Crea solicitudes de admisión enviadas para cada carrera activa."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -321,7 +321,7 @@ class Command(BaseCommand):
         self.stdout.write(f"  Period:                 {period.name} ({period.code})")
         self.stdout.write(f"  Careers:                {len(careers)}")
         self.stdout.write(f"  Applications expected:  {total_expected}")
-        self.stdout.write(f"  Users created/updated:  {created_users}/{updated_users}")
+        self.stdout.write(f"  Usuarios creados/actualizados:  {created_users}/{updated_users}")
         self.stdout.write(f"  Apps created/updated:   {created_apps}/{updated_apps}")
         self.stdout.write("")
         self.stdout.write("  Credential pattern:")
@@ -336,4 +336,4 @@ class Command(BaseCommand):
             self.stdout.write(f"    {career_code:<8} {username:<24} / {password:<18} score={score}")
             seen.add(career_code)
         self.stdout.write("=" * 72)
-        self.stdout.write(self.style.SUCCESS("✓ Submitted admission applications seeded successfully."))
+        self.stdout.write(self.style.SUCCESS("✓ Submitted admission applications seeded exitosaly."))

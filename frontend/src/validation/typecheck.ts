@@ -38,7 +38,7 @@ const validateTypes = () => {
     password: 'password',
   };
 
-  // Register data
+  // Datos de registro
   const registerData: UserRegisterData = {
     email: 'test@test.com',
     password: 'password',
@@ -54,7 +54,7 @@ const validateTypes = () => {
     status: 400,
   };
 
-  console.log('All types validated successfully');
+  console.log('All types validated exitosaly');
 };
 
 // Store validation
@@ -86,7 +86,7 @@ const validateStore = async () => {
   const hookError = useError();
   const hookIsAuthenticated = useIsAuthenticated();
 
-  console.log('Store validation successful');
+  console.log('Validación del store exitosa');
 };
 
 // API Client validation
@@ -110,12 +110,12 @@ const validateApiClient = async () => {
   await api.delete('/users/1/');
 
   // ApiErrorClass
-  const error = new ApiErrorClass('Error message', 400, {});
+  const error = new ApiErrorClass('Mensaje de error', 400, {});
   const message: string = error.message;
   const status: number | undefined = error.status;
   const errors: Record<string, string[]> | undefined = error.errors;
 
-  console.log('API client validation successful');
+  console.log('Validación del cliente API exitosa');
 };
 
 // Token manager validation
@@ -137,7 +137,7 @@ const validateTokenManager = () => {
   const expired: boolean = isTokenExpired('token');
   const needsRefresh: boolean = needsTokenRefresh();
 
-  console.log('Token manager validation successful');
+  console.log('Validación del gestor de tokens exitosa');
 };
 
 // Validación del hook de autenticación
@@ -173,7 +173,7 @@ const validateAuthHook = async () => {
   logout();
   cleanError();
 
-  console.log('Validación del hook de autenticación successful');
+  console.log('Validación del hook de autenticación exitosa');
 };
 
 export { validateTypes, validateStore, validateApiClient, validateTokenManager, validateAuthHook };

@@ -47,7 +47,7 @@ def _unique_student_id(fmt: str) -> str:
 
 class UserSerializer(serializers.ModelSerializer):
     """
-    Serializer for User model with all fields.
+    Serializador para el modelo Usuario con todos los campos.
     Used for retrieving user information.
     """
     full_name = serializers.CharField(source='get_full_name', read_only=True)
@@ -199,7 +199,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        """Create user. Student ID (username) is assigned on first enrollment."""
+        """Crea un usuario. El ID de estudiante (username) se asigna en la primera matrícula."""
         validated_data.pop('password2')
 
         # Usa el correo como nombre de usuario temporal hasta que la primera matrícula asigne un ID permanente de estudiante.
@@ -395,7 +395,7 @@ class ChangePasswordSerializer(serializers.Serializer):
         return value
 
     def save(self, **kwargs):
-        """Update user password"""
+        """Actualiza la contraseña del usuario"""
         user = self.context['request'].user
         user.set_password(self.validated_data['new_password'])
         user.save()

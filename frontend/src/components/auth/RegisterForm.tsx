@@ -60,7 +60,7 @@ export function RegisterForm({ onSuccess, redirectUrl = '/' }: RegisterFormProps
       }
     } catch (err) {
       // El error ya está establecido en el almacén de estado
-      console.error('Registration failed:', err);
+      console.error('No se pudo completar el registro:', err);
     }
   };
 

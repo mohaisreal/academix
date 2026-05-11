@@ -1,7 +1,7 @@
 ---
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
-<DashboardLayout title="Messages — Academix" currentPath="/messages">
+<DashboardLayout title="Mensajes — Academix" currentPath="/messages">
   <div id="page-loading" class="p-6 space-y-4">
     <div class="flex gap-4" style="height:calc(100vh - 80px)">
       <div class="w-80 bg-card rounded-xl border border-border animate-pulse"></div>
@@ -55,28 +55,28 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   <div id="compose-backdrop" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-start justify-end">
     <div class="w-96 h-full bg-card border-l border-border p-6 overflow-y-auto shadow-xl">
       <div class="flex items-center justify-between mb-6">
-        <h2 class="text-lg font-semibold text-foreground">New Message</h2>
+        <h2 class="text-lg font-semibold text-foreground">Nuevo mensaje</h2>
         <button id="close-compose-btn" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       <form id="compose-form" class="space-y-4">
         <div>
-          <label class="text-xs font-medium text-muted-foreground">To (User ID or username) *</label>
+          <label class="text-xs font-medium text-muted-foreground">Para (ID de usuario o nombre de usuario) *</label>
           <input id="compose-to" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Username or user ID" />
         </div>
         <div>
           <label class="text-xs font-medium text-muted-foreground">Subject *</label>
-          <input id="compose-subject" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Message subject" />
+          <input id="compose-subject" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Asunto del mensaje" />
         </div>
         <div>
-          <label class="text-xs font-medium text-muted-foreground">Message *</label>
+          <label class="text-xs font-medium text-muted-foreground">Mensaje *</label>
           <textarea id="compose-body" rows="6" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none" placeholder="Write your message..."></textarea>
         </div>
         <div id="compose-error" class="hidden text-xs text-red-400"></div>
         <div id="compose-success" class="hidden text-xs text-green-400"></div>
         <div class="flex gap-3 pt-2">
-          <button type="button" id="cancel-compose-btn" class="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
+          <button type="button" id="cancel-compose-btn" class="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancelar</button>
           <button type="submit" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Send</button>
         </div>
       </form>
@@ -137,9 +137,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   }
 
   function userDisplayName(value) {
-    if (!value) return 'Unknown';
+    if (!value) return 'Desconocido';
     if (typeof value === 'string') return value;
-    return value.full_name || value.username || [value.first_name, value.last_name].filter(Boolean).join(' ') || `User #${value.id}`;
+    return value.full_name || value.username || [value.first_name, value.last_name].filter(Boolean).join(' ') || `Usuario #${value.id}`;
   }
 
   function userId(value) {
@@ -195,14 +195,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   async function loadMessages() {
     const list = document.getElementById('message-list');
-    if (list) list.innerHTML = '<div class="p-4 text-sm text-muted-foreground text-center">Loading...</div>';
+    if (list) list.innerHTML = '<div class="p-4 text-sm text-muted-foreground text-center">Cargando...</div>';
     try {
       const endpoint = activeTab === 'inbox' ? '/messaging/inbox/' : '/messaging/sent/';
       const data = await apiFetch(endpoint);
       const messages = Array.isArray(data) ? data : (data.results || data.messages || []);
       renderMessageList(messages);
     } catch {
-      if (list) list.innerHTML = '<div class="p-4 text-sm text-red-400 text-center">Failed to load messages</div>';
+      if (list) list.innerHTML = '<div class="p-4 text-sm text-red-400 text-center">No se pudieron cargar los mensajes</div>';
     }
   }
 
@@ -214,7 +214,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
     const header = document.getElementById('thread-header');
     const msgs = document.getElementById('thread-messages');
-    if (header) header.innerHTML = '<div class="text-sm text-muted-foreground">Loading...</div>';
+    if (header) header.innerHTML = '<div class="text-sm text-muted-foreground">Cargando...</div>';
     if (msgs) msgs.innerHTML = '';
 
     try {
@@ -252,7 +252,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         msgs.scrollTop = msgs.scrollHeight;
       }
     } catch {
-      if (header) header.innerHTML = '<div class="text-sm text-red-400">Failed to load thread</div>';
+      if (header) header.innerHTML = '<div class="text-sm text-red-400">No se pudo cargar la conversación</div>';
     }
   }
 
@@ -286,7 +286,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       });
       (document.getElementById('reply-body') as HTMLTextAreaElement).value = '';
       loadThread(selectedMessageId);
-    } catch { (window as any).showToast?.('error', 'Failed to send reply'); }
+    } catch { (window as any).showToast?.('error', 'No se pudo enviar la respuesta'); }
   });
 
   // Compose
@@ -325,13 +325,13 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         body: JSON.stringify(bodyPayload),
       });
       successEl?.classList.remove('hidden');
-      if (successEl) successEl.textContent = 'Message sent!';
+      if (successEl) successEl.textContent = '¡Mensaje enviado!';
       errEl?.classList.add('hidden');
       setTimeout(closeCompose, 1200);
       if (activeTab === 'sent') loadMessages();
     } catch (err: any) {
       errEl?.classList.remove('hidden');
-      if (errEl) errEl.textContent = err?.recipient || err?.recipient_id || err?.detail || err?.error || 'Failed to send message';
+      if (errEl) errEl.textContent = err?.recipient || err?.recipient_id || err?.detail || err?.error || 'No se pudo enviar el mensaje';
     }
   });
 

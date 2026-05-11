@@ -1,7 +1,7 @@
 ---
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
-<DashboardLayout title="System Settings — Academix" currentPath="/management/system">
+<DashboardLayout title="Configuración del sistema — Academix" currentPath="/management/system">
   <!-- Esqueleto de carga -->
   <div id="page-loading" class="p-6 space-y-4">
     <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
@@ -13,7 +13,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   <div id="page-content" class="hidden">
     <!-- Top bar -->
     <div class="border-b border-border px-6 py-4">
-      <h1 class="text-xl font-semibold text-foreground">System Settings</h1>
+      <h1 class="text-xl font-semibold text-foreground">Configuración del sistema</h1>
       <p class="text-sm text-muted-foreground">Gestiona notificaciones por correo, marca y plantillas</p>
     </div>
 
@@ -78,7 +78,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
               <tr class="border-b border-border bg-muted/50">
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Name</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Description</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Status</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Estado</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Last Updated</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Actions</th>
               </tr>
@@ -87,7 +87,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           </table>
         </div>
         <div id="templates-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No se han encontrado plantillas de correo</div>
-        <div id="templates-loading" class="py-10 text-center text-sm text-muted-foreground">Loading templates...</div>
+        <div id="templates-loading" class="py-10 text-center text-sm text-muted-foreground">Cargando plantillas...</div>
       </section>
 
     </div>
@@ -189,8 +189,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       </div>
       <!-- Pie fijo -->
       <div class="flex items-center justify-end gap-3 px-5 py-4 border-t border-border shrink-0">
-        <button type="button" id="cancel-template-btn" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
-        <button type="button" id="save-template-btn" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">Save</button>
+        <button type="button" id="cancel-template-btn" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancelar</button>
+        <button type="button" id="save-template-btn" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">Guardar</button>
       </div>
     </div>
   </div>
@@ -226,10 +226,10 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         ...(options.body ? { "Content-Type": "application/json" } : {}),
       };
       const res = await fetch(`${API_URL}${path}`, { ...options, headers: { ...headers, ...(options.headers as Record<string,string> ?? {}) } });
-      if (res.status === 401) { window.location.href = "/login"; throw new Error("Unauthorized"); }
+      if (res.status === 401) { window.location.href = "/login"; throw new Error("No autorizado"); }
       if (res.status === 204) return {};
       if (!res.ok) {
-        let msg = `Request failed (${res.status})`;
+        let msg = `La solicitud falló (${res.status})`;
         try { const j = await res.json(); msg = j.detail || JSON.stringify(j) || msg; } catch {}
         throw new Error(msg);
       }
@@ -301,12 +301,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           document.getElementById("access-denied")?.classList.remove("hidden");
           return;
         }
-        if (!res.ok) throw new Error("Failed to load settings");
+        if (!res.ok) throw new Error("No se pudo cargar la configuración");
         const data = await res.json();
         systemEnabled = data.email_notifications_enabled;
         updateToggleUI(systemEnabled, toggle);
       } catch {
-        showStatus("Failed to load system settings", true);
+        showStatus("No se pudo cargar la configuración del sistema", true);
       } finally {
         document.getElementById("page-loading")?.classList.add("hidden");
         document.getElementById("page-content")?.classList.remove("hidden");
@@ -322,7 +322,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
           body: JSON.stringify({ email_notifications_enabled: newValue }),
         });
-        if (!res.ok) throw new Error("Failed to update");
+        if (!res.ok) throw new Error("No se pudo actualizar");
         const data = await res.json();
         systemEnabled = data.email_notifications_enabled;
         updateToggleUI(systemEnabled, toggle);
@@ -333,7 +333,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           false
         );
       } catch {
-        showStatus("Failed to update system settings", true);
+        showStatus("No se pudo actualizar system settings", true);
       } finally {
         toggle.disabled = false;
       }
@@ -372,8 +372,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <td class="px-5 py-3 text-sm text-muted-foreground">${formatDate(t.updated_at)}</td>
           <td class="px-5 py-3">
             <div class="flex items-center gap-2">
-              <button class="tpl-edit-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors" data-id="${t.id}">Edit</button>
-              <button class="tpl-delete-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-colors" data-id="${t.id}">Delete</button>
+              <button class="tpl-edit-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors" data-id="${t.id}">Editar</button>
+              <button class="tpl-delete-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-colors" data-id="${t.id}">Eliminar</button>
             </div>
           </td>
         </tr>`;
@@ -397,9 +397,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         allTemplates = Array.isArray(data) ? data : (data?.results ?? []);
         renderTemplates();
       } catch (err) {
-        console.error("Failed to load templates:", err);
+        console.error("No se pudieron cargar las plantillas:", err);
         const loadingEl = document.getElementById("templates-loading") as HTMLElement;
-        loadingEl.textContent = "Failed to load templates.";
+        loadingEl.textContent = "No se pudieron cargar las plantillas.";
       }
     }
 
@@ -409,14 +409,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       window.confirmAction({
         title: `Delete "${tpl.name}"`,
         description: "This action cannot be undone.",
-        confirmLabel: "Delete",
+        confirmLabel: "Eliminar",
         variant: "destructive",
         onConfirm: async () => {
           try {
             await apiFetch(`/notifications/email-templates/${id}/`, { method: "DELETE" });
             await loadTemplates();
           } catch (err: any) {
-            toast.error(`Failed to delete template: ${err.message}`);
+            toast.error(`No se pudo eliminar la plantilla: ${err.message}`);
           }
         },
       });
@@ -439,7 +439,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       const sendTestBtn = document.getElementById("tpl-send-test-btn") as HTMLButtonElement;
 
       if (tpl) {
-        panelTitle.textContent = "Edit Template";
+        panelTitle.textContent = "Editar plantilla";
         (document.getElementById("tpl-id") as HTMLInputElement).value = tpl.id;
         (document.getElementById("tpl-name") as HTMLInputElement).value = tpl.name ?? "";
         (document.getElementById("tpl-description") as HTMLInputElement).value = tpl.description ?? "";
@@ -512,7 +512,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         showTemplateError(err.message || "No se ha podido guardar template");
       } finally {
         saveBtn.disabled = false;
-        saveBtn.textContent = "Save";
+        saveBtn.textContent = "Guardar";
       }
     });
 
@@ -524,7 +524,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
       const btn = document.getElementById("tpl-preview-btn") as HTMLButtonElement;
       btn.disabled = true;
-      btn.textContent = "Loading...";
+      btn.textContent = "Cargando...";
 
       try {
         const data = await apiFetch(`/notifications/email-templates/${id}/preview/`, {
@@ -533,7 +533,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         });
         openPreviewModal(data.subject, data.html);
       } catch (err: any) {
-        showTemplateError(`Preview failed: ${err.message}`);
+        showTemplateError(`La vista previa falló: ${err.message}`);
       } finally {
         btn.disabled = false;
         btn.textContent = "Preview";
@@ -578,7 +578,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         await apiFetch(`/notifications/email-templates/${id}/send-test/`, { method: "POST" });
         showStatus("Correo de prueba enviado a tu bandeja de entrada", false);
       } catch (err: any) {
-        showTemplateError(`Send test failed: ${err.message}`);
+        showTemplateError(`Falló el envío de prueba: ${err.message}`);
       } finally {
         btn.disabled = false;
         btn.textContent = "Send Test";

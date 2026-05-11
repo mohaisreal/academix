@@ -194,7 +194,7 @@ class UserLoginView(APIView):
 
         if not user or not user.check_password(password):
             return Response({
-                'error': 'Invalid credentials.'
+                'error': 'Credenciales inválidas.'
             }, status=status.HTTP_401_UNAUTHORIZED)
 
         denial = _student_access_denial(user)
@@ -219,7 +219,7 @@ class UserLoginView(APIView):
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
             },
-            'message': 'Login successful.'
+            'message': 'Inicio de sesión exitoso.'
         }, status=status.HTTP_200_OK)
 
 
@@ -242,12 +242,12 @@ class UserLogoutView(APIView):
             token.blacklist()
 
             return Response({
-                'message': 'Logout successful.'
+                'message': 'Cierre de sesión exitoso.'
             }, status=status.HTTP_200_OK)
 
         except Exception as e:
             return Response({
-                'error': 'Invalid token or token already blacklisted.'
+                'error': 'Token inválido o ya bloqueado.'
             }, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -283,7 +283,7 @@ class ChangePasswordView(generics.UpdateAPIView):
         serializer.save()
 
         return Response({
-            'message': 'Contraseña changed successfully.'
+            'message': 'Contraseña changed exitosaly.'
         }, status=status.HTTP_200_OK)
 
 
@@ -402,7 +402,7 @@ def health_check(request):
     return Response({
         'status': 'healthy',
         'user': request.user.username,
-        'message': 'API is running successfully.'
+        'message': 'API is running exitosaly.'
     })
 
 

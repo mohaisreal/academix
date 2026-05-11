@@ -8,9 +8,9 @@ Scale targets:
   - 10 classrooms (5 lecture + 5 lab)
   - 50 classes (25 per period), ClassSchedules (2 slots each)
   - 500 CareerEnrollments (1 per student), ~2500 ClassEnrollments (4-6 per student)
-  - 150 Evaluations (3 per class), Grades for all enrolled students
-  - Notifications (welcome + grade) per user/student
-  - Up to 100 Messages (teacher -> student)
+  - 150 Evaluations (3 per class), Calificaciones de todos los estudiantes inscritos
+  - Notificaciones (bienvenida + calificación) por usuario/estudiante
+  - Up to 100 Mensajes (teacher -> student)
 """
 
 import datetime
@@ -89,7 +89,7 @@ SUBJECTS_DATA = {
         ("Engineering Maths",    "ENG101", 4, 6),
         ("Statics",              "ENG102", 3, 4),
         ("Thermodynamics",       "ENG103", 3, 4),
-        ("Materials Science",    "ENG104", 3, 5),
+        ("Ciencia de materiales",    "ENG104", 3, 5),
         ("Fluid Mechanics",      "ENG105", 3, 4),
     ],
     "MED": [
@@ -138,7 +138,7 @@ class Command(BaseCommand):
             self._seed_notifications()
             self._seed_messages()
             self._print_summary()
-        self.stdout.write(self.style.SUCCESS("\nSeed completed successfully."))
+        self.stdout.write(self.style.SUCCESS("\nSeed completed exitosaly."))
 
     # ------------------------------------------------------------------
     # Usuarios
@@ -177,7 +177,7 @@ class Command(BaseCommand):
             if c:
                 created_count += 1
 
-        # Teachers: teacher01..teacher20
+        # Profesores: teacher01..teacher20
         self._teachers = []
         for i in range(1, 21):
             uname = f"teacher{i:02d}"
@@ -189,7 +189,7 @@ class Command(BaseCommand):
                 created_count += 1
             self._teachers.append(user)
 
-        # Students: student001..student500
+        # Estudiantes: student001..student500
         self._students = []
         for i in range(1, 501):
             uname = f"student{i:03d}"
@@ -203,7 +203,7 @@ class Command(BaseCommand):
 
         total = 1 + 2 + 20 + 500
         self.stdout.write(self.style.SUCCESS(
-            f"  Users: {created_count} created, {total - created_count} already existed "
+            f"  Usuarios: {created_count} creados, {total - created_count} ya existían "
             f"(total target: {total})."
         ))
 
@@ -487,7 +487,7 @@ class Command(BaseCommand):
         )
 
     # ------------------------------------------------------------------
-    # Evaluations + Grades
+    # Evaluations + Calificaciones
     # ------------------------------------------------------------------
     def _seed_grades(self):
         self.stdout.write("Seeding evaluations and grades...")
@@ -553,7 +553,7 @@ class Command(BaseCommand):
             f"  Evaluations: {len(evals_to_create)} new, total {eval_total}."
         ))
 
-        # --- Grades ---
+        # --- Calificaciones ---
         # Para cada ClassEnrollment con status=enrolled, califica las 3 evaluaciones
         # Puntuación: distribución normal centrada en el 70% de max_score, desv.=15%
         # Usa el profesor de la clase como graded_by
@@ -603,11 +603,11 @@ class Command(BaseCommand):
 
         grade_total = GradeModel.objects.count()
         self.stdout.write(self.style.SUCCESS(
-            f"  Grades: {len(new_grades)} new rows attempted (total in DB: {grade_total})."
+            f"  Calificaciones: {len(new_grades)} new rows attempted (total in DB: {grade_total})."
         ))
 
     # ------------------------------------------------------------------
-    # Notifications
+    # Notificaciones
     # ------------------------------------------------------------------
     def _seed_notifications(self):
         self.stdout.write("Seeding notifications...")
@@ -616,7 +616,7 @@ class Command(BaseCommand):
 
         # Notificaciones de bienvenida: usa (user_id, title) como clave de unicidad
         existing_welcome = set(
-            Notification.objects.filter(title="Welcome to Academix").values_list("user_id", flat=True)
+            Notification.objects.filter(title="Bienvenido a Academix").values_list("user_id", flat=True)
         )
 
         welcome_notifs = []
@@ -624,7 +624,7 @@ class Command(BaseCommand):
             if user.id not in existing_welcome:
                 welcome_notifs.append(Notification(
                     user=user,
-                    title="Welcome to Academix",
+                    title="Bienvenido a Academix",
                     message=(
                         f"Hello {user.first_name or user.username}, welcome to the Academix "
                         "academic management system. We hope you have a great experience."
@@ -648,7 +648,7 @@ class Command(BaseCommand):
         existing_grade_notif_pairs = set(
             Notification.objects.filter(
                 user__role="s",
-                title__startswith="Grades available for",
+                title__startswith="Calificaciones disponibles para",
             ).values_list("user_id", "title")
         )
 
@@ -656,13 +656,13 @@ class Command(BaseCommand):
         for enrollment in self._enrolled_class_enrollments:
             student = enrollment.student
             subject_name = enrollment.cls.subject.name
-            title = f"Grades available for {subject_name}"
+            title = f"Calificaciones disponibles para {subject_name}"
             if (student.id, title) not in existing_grade_notif_pairs:
                 is_read = rng.random() < 0.5
                 grade_notifs.append(Notification(
                     user=student,
                     title=title,
-                    message=f"Grades are now available for {subject_name}. Please log in to review your results.",
+                    message=f"Las calificaciones ya están disponibles para {subject_name}. Inicia sesión para revisar tus resultados.",
                     type="info",
                     is_read=is_read,
                 ))
@@ -678,7 +678,7 @@ class Command(BaseCommand):
 
         notif_total = Notification.objects.count()
         self.stdout.write(self.style.SUCCESS(
-            f"  Grade notifications: {len(grade_notifs)} new (total in DB: {notif_total})."
+            f"  Notificaciones de calificaciones: {len(grade_notifs)} nuevas (total en BD: {notif_total})."
         ))
 
     # ------------------------------------------------------------------
@@ -703,7 +703,7 @@ class Command(BaseCommand):
         all_pairs = sorted(pair_subject.keys())[:100]
 
         # Obtén mensajes existentes por (sender_id, recipient_id, subject)
-        msg_subject_str = "Course Update"
+        msg_subject_str = "Actualización de curso"
         existing_msg_pairs = set(
             Message.objects.filter(subject=msg_subject_str).values_list("sender_id", "recipient_id")
         )
@@ -737,7 +737,7 @@ class Command(BaseCommand):
 
         msg_total = Message.objects.count()
         self.stdout.write(self.style.SUCCESS(
-            f"  Messages: {len(new_messages)} new (total in DB: {msg_total})."
+            f"  Mensajes: {len(new_messages)} nuevos (total en BD: {msg_total})."
         ))
 
     # ------------------------------------------------------------------
@@ -751,13 +751,13 @@ class Command(BaseCommand):
         self.stdout.write("=" * 60)
 
         rows = [
-            ("Users",             User.objects.count()),
+            ("Usuarios",             User.objects.count()),
             ("  - admin",         User.objects.filter(role="a").count()),
             ("  - management",    User.objects.filter(role="m").count()),
             ("  - teachers",      User.objects.filter(role="t").count()),
             ("  - students",      User.objects.filter(role="s").count()),
             ("Careers",           Career.objects.count()),
-            ("Subjects",          Subject.objects.count()),
+            ("Asignaturas",          Subject.objects.count()),
             ("AcademicPeriods",   AcademicPeriod.objects.count()),
             ("Classrooms",        Classroom.objects.count()),
             ("Classes",           Class.objects.count()),
@@ -765,9 +765,9 @@ class Command(BaseCommand):
             ("CareerEnrollments", CareerEnrollment.objects.count()),
             ("ClassEnrollments",  ClassEnrollment.objects.count()),
             ("Evaluations",       EvalModel.objects.count()),
-            ("Grades",            GradeModel.objects.count()),
-            ("Notifications",     Notification.objects.count()),
-            ("Messages",          Message.objects.count()),
+            ("Calificaciones",            GradeModel.objects.count()),
+            ("Notificaciones",     Notification.objects.count()),
+            ("Mensajes",          Message.objects.count()),
         ]
 
         for label, count in rows:

@@ -60,7 +60,7 @@ class AcademicPeriodAdmissionWindowModelTests(TestCase):
         self.assertIsNotNone(period.admission_close_date)
 
     def test_admission_window_can_coexist_with_academic_dates(self):
-        """Admission window fields are independent of start_date/end_date."""
+        """Los campos de ventana de admisión son independientes de start_date/end_date."""
         period = make_period(
             start_date='2026-01-01', end_date='2026-06-30',
             admission_open_date='2025-11-01T00:00:00Z',

@@ -63,7 +63,7 @@ class Question(models.Model):
         ('text', 'Text'),
         ('textarea', 'Textarea'),
         ('email', 'Email'),
-        ('tel', 'Phone'),
+        ('tel', 'Teléfono'),
         ('number', 'Number'),
         ('date', 'Date'),
         # Choice inputs
@@ -74,7 +74,7 @@ class Question(models.Model):
         ('file_upload', 'File Upload'),
         ('career_select', 'Career Select'),
         ('subject_select', 'Subject Select'),
-        ('stripe_payment', 'Stripe Payment'),
+        ('stripe_payment', 'Pago con Stripe'),
         ('info', 'Info'),
     ]
 
@@ -167,7 +167,7 @@ class QuestionAnswer(models.Model):
     STRIPE_STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('paid', 'Paid'),
-        ('failed', 'Failed'),
+        ('failed', 'Fallido'),
     ]
 
     response = models.ForeignKey(

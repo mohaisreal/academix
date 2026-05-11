@@ -23,10 +23,10 @@ class User(AbstractUser):
         ('rejected', 'Rejected'),
     ]
 
-    # Phone number validator - allows international format
+    # Teléfono number validator - allows international format
     phone_regex = RegexValidator(
         regex=r'^\+?1?\d{9,15}$',
-        message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed."
+        message="Teléfono number must be entered in the format: '+999999999'. Up to 15 digits allowed."
     )
 
     role = models.CharField(max_length=1, choices=ROLE_CHOICES, default='s')
@@ -51,7 +51,7 @@ class User(AbstractUser):
         max_length=17,
         blank=True,
         null=True,
-        help_text="Phone number in international format"
+        help_text="Teléfono number in international format"
     )
     address = models.TextField(blank=True, null=True)
     date_of_birth = models.DateField(blank=True, null=True)
@@ -61,8 +61,8 @@ class User(AbstractUser):
 
     class Meta:
         db_table = 'users'
-        verbose_name = 'User'
-        verbose_name_plural = 'Users'
+        verbose_name = 'Usuario'
+        verbose_name_plural = 'Usuarios'
         ordering = ['-created_at']
 
     def __str__(self):

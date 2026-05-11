@@ -13,7 +13,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     <div class="flex items-center justify-between border-b border-border px-6 py-4">
       <div>
         <h1 class="text-xl font-semibold text-foreground">Marking</h1>
-        <p class="text-sm text-muted-foreground">Grade student evaluations</p>
+        <p class="text-sm text-muted-foreground">Califica evaluaciones de estudiantes</p>
       </div>
     </div>
 
@@ -81,8 +81,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         </div>
         <div id="eval-form-error" class="hidden text-xs text-red-400"></div>
         <div class="flex gap-3 pt-2">
-          <button type="button" id="cancel-eval-btn" class="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
-          <button type="submit" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Create</button>
+          <button type="button" id="cancel-eval-btn" class="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancelar</button>
+          <button type="submit" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Crear</button>
         </div>
       </form>
     </div>
@@ -163,14 +163,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const section = document.getElementById('eval-section');
     const list = document.getElementById('eval-list');
     section?.classList.remove('hidden');
-    if (list) list.innerHTML = '<div class="text-xs text-muted-foreground">Loading...</div>';
+    if (list) list.innerHTML = '<div class="text-xs text-muted-foreground">Cargando...</div>';
 
     try {
       const data = await apiFetch(`/grades/evaluations/?class=${classId}`);
       const evals = Array.isArray(data) ? data : (data.results || []);
       renderEvalList(evals);
     } catch {
-      if (list) list.innerHTML = '<div class="text-xs text-red-400">Failed to load evaluations</div>';
+      if (list) list.innerHTML = '<div class="text-xs text-red-400">No se pudieron cargar las evaluaciones</div>';
     }
   }
 
@@ -178,7 +178,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const list = document.getElementById('eval-list');
     if (!list) return;
     if (evals.length === 0) {
-      list.innerHTML = '<div class="text-xs text-muted-foreground py-2">No evaluations yet. Create one.</div>';
+      list.innerHTML = '<div class="text-xs text-muted-foreground py-2">No evaluations yet. Crear una cuenta.</div>';
       return;
     }
     list.innerHTML = evals.map(e => {
@@ -209,7 +209,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const panel = document.getElementById('grading-panel');
     empty?.classList.add('hidden');
     panel?.classList.remove('hidden');
-    if (panel) panel.innerHTML = '<div class="text-sm text-muted-foreground">Loading students...</div>';
+    if (panel) panel.innerHTML = '<div class="text-sm text-muted-foreground">Cargando estudiantes...</div>';
     gradeMap = {};
 
     try {
@@ -230,18 +230,18 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             </div>
           </div>
           <button id="bulk-save-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-            Save All Grades
+            Save All Calificaciones
           </button>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead>
               <tr class="border-b border-border">
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Student</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Estudiante</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Current Score</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Score</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Feedback</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Save</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Guardar</th>
               </tr>
             </thead>
             <tbody id="grading-table-body">
@@ -265,7 +265,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                     <input type="text" class="feedback-input w-40 bg-input border border-border rounded-lg px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" data-student-id="${sId}" value="${escHtml(feedback)}" placeholder="Optional feedback" />
                   </td>
                   <td class="py-3">
-                    <button class="save-single-btn inline-flex items-center rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors" data-student-id="${sId}">Save</button>
+                    <button class="save-single-btn inline-flex items-center rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors" data-student-id="${sId}">Guardar</button>
                   </td>
                 </tr>`;
               }).join('')}
@@ -307,7 +307,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       });
 
     } catch {
-      if (panel) panel.innerHTML = '<div class="text-sm text-red-400 p-4">Failed to load grading data</div>';
+      if (panel) panel.innerHTML = '<div class="text-sm text-red-400 p-4">No se pudieron cargar los datos de calificación</div>';
     }
   }
 
@@ -350,7 +350,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       loadEvaluations(selectedClassId);
     } catch {
       errEl?.classList.remove('hidden');
-      if (errEl) errEl.textContent = 'Failed to create evaluation';
+      if (errEl) errEl.textContent = 'No se pudo crear la evaluación';
     }
   });
 

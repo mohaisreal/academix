@@ -40,12 +40,12 @@ The main Zustand store that manages user state and authentication.
 
 **State:**
 - `user`: Current user object or null
-- `isLoading`: Loading state for async operations
-- `error`: Error message from failed operations
+- `isLoading`: Estado de carga para operaciones asíncronas
+- `error`: Mensaje de error de operaciones fallidas
 
 **Actions:**
 - `login(email, password)`: Authenticate user
-- `register(userData)`: Register new user
+- `register(userData)`: Registrar nuevo usuario
 - `logout()`: Clear user session
 - `fetchUser(userId)`: Fetch user by ID
 - `cleanError()`: Clear error state
@@ -63,7 +63,7 @@ Handles all API requests with automatic JWT token management.
 **Features:**
 - Automatic token injection in Authorization header
 - Automatic token refresh when expired
-- Error handling and parsing
+- Manejo de errores and parsing
 - TypeScript generics for type-safe responses
 
 **Usage:**
@@ -166,7 +166,7 @@ interface User {
 
 ## Usage Examples
 
-### 1. Login Form
+### 1. Formulario de inicio de sesión
 
 ```typescript
 import { useAuth } from '@/hooks/useAuth';
@@ -181,7 +181,7 @@ function LoginPage() {
       // Redirect on success
       window.location.href = '/dashboard';
     } catch (err) {
-      // Error is automatically set in store
+      // El error se establece automáticamente en el store
     }
   };
 
@@ -190,7 +190,7 @@ function LoginPage() {
       {error && <div>{error}</div>}
       {/* form fields */}
       <button disabled={isLoading}>
-        {isLoading ? 'Logging in...' : 'Login'}
+        {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
       </button>
     </form>
   );
@@ -211,8 +211,8 @@ function Dashboard() {
 
   return (
     <div>
-      <h1>Welcome, {user?.first_name}!</h1>
-      {/* Dashboard content */}
+      <h1>¡Bienvenido, {user?.first_name}!</h1>
+      {/* Panel content */}
     </div>
   );
 }
@@ -238,7 +238,7 @@ function RegisterPage() {
       });
       window.location.href = '/dashboard';
     } catch (err) {
-      // Error handling
+      // Manejo de errores
     }
   };
 
@@ -272,16 +272,16 @@ try {
 
 ## Token Flow
 
-1. **Login/Register**: User provides credentials
+1. **Inicio de sesión/Registro**: El usuario proporciona credenciales
 2. **Token Receipt**: Backend returns access + refresh tokens
 3. **Token Storage**: Tokens stored in localStorage
 4. **API Requests**: Access token added to Authorization header
 5. **Token Expiry**: When token expires (detected before request)
 6. **Token Refresh**: Refresh token used to get new access token
 7. **Request Retry**: Original request retried with new token
-8. **Logout**: All tokens cleared from storage
+8. **Logout**: Todos los tokens se eliminan del almacenamiento
 
-## Error Handling
+## Manejo de errores
 
 All API errors are wrapped in `ApiErrorClass`:
 
@@ -289,7 +289,7 @@ All API errors are wrapped in `ApiErrorClass`:
 class ApiErrorClass extends Error {
   status?: number;           // HTTP status code
   errors?: Record<string, string[]>; // Field-specific errors
-  message: string;           // Error message
+  message: string;           // Mensaje de error
 }
 ```
 

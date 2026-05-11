@@ -25,7 +25,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <p class="text-sm text-muted-foreground mt-1">Choose a class from the left panel</p>
       </div>
 
-      <!-- Report content -->
+      <!-- Contenido del reporte -->
       <div id="report-content" class="hidden p-6 space-y-6"></div>
     </div>
   </div>
@@ -82,7 +82,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     document.getElementById('reports-empty')?.classList.add('hidden');
     const content = document.getElementById('report-content');
     content?.classList.remove('hidden');
-    if (content) content.innerHTML = '<div class="text-sm text-muted-foreground">Loading report...</div>';
+    if (content) content.innerHTML = '<div class="text-sm text-muted-foreground">Cargando reporte...</div>';
 
     try {
       const data = await apiFetch(`/grades/reports/${classId}/`);
@@ -115,7 +115,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <!-- KPI row -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           ${[
-            { label: 'Total Students', value: totalStudents, color: 'text-primary' },
+            { label: 'Total de estudiantes', value: totalStudents, color: 'text-primary' },
             { label: 'Mean Score', value: mean + (mean !== '-' ? '%' : ''), color: 'text-blue-400' },
             { label: 'Pass Rate', value: passRate + (passRate !== '-' ? '%' : ''), color: 'text-green-400' },
             { label: 'Fail Count', value: failCount, color: 'text-red-400' },
@@ -148,7 +148,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <!-- Top/Bottom students -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
-            <h2 class="text-lg font-semibold text-foreground mb-4">Top 5 Students</h2>
+            <h2 class="text-lg font-semibold text-foreground mb-4">Mejores 5 estudiantes</h2>
             <table class="w-full">
               <thead><tr class="border-b border-border">
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-2">Name</th>
@@ -164,7 +164,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             </table>
           </div>
           <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
-            <h2 class="text-lg font-semibold text-foreground mb-4">Bottom 5 Students</h2>
+            <h2 class="text-lg font-semibold text-foreground mb-4">Últimos 5 estudiantes</h2>
             <table class="w-full">
               <thead><tr class="border-b border-border">
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-2">Name</th>
@@ -212,7 +212,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         </div>
       `;
     } catch {
-      if (content) content.innerHTML = '<div class="p-6 text-sm text-red-400">Failed to load report data</div>';
+      if (content) content.innerHTML = '<div class="p-6 text-sm text-red-400">No se pudieron cargar los datos del reporte</div>';
     }
   }
 

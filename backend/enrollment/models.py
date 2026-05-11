@@ -65,7 +65,7 @@ class EnrollmentFee(models.Model):
         ('pending', 'Pending'),
         ('paid', 'Paid'),
         ('exempted', 'Exempted'),
-        ('failed', 'Failed'),
+        ('failed', 'Fallido'),
     ]
     career_enrollment = models.OneToOneField(
         CareerEnrollment,

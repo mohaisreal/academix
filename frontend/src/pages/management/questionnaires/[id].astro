@@ -1,5 +1,5 @@
 ---
-// NOTA: esta página está enlazada desde /management/questionnaires (index.astro) mediante botones "Edit".
+// NOTA: esta página está enlazada desde /management/questionnaires (index.astro) mediante botones "Editar".
 // El enlace de navegación /management/questionnaires ya existe en DashboardLayout.astro.
 export const prerender = false;
 import DashboardLayout from "@/layouts/DashboardLayout.astro";
@@ -10,7 +10,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     <div id="loading-screen" class="flex items-center justify-center min-h-[60vh]">
         <div class="text-center space-y-3">
             <div class="inline-block size-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-            <p class="text-sm text-muted-foreground">Loading builder...</p>
+            <p class="text-sm text-muted-foreground">Cargando constructor...</p>
         </div>
     </div>
 
@@ -21,7 +21,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             <p id="error-message" class="text-sm text-muted-foreground"></p>
             <a href="/management/questionnaires" class="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-                Back to Questionnaires
+                Volver a cuestionarios
             </a>
         </div>
     </div>
@@ -80,7 +80,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                             <h2 class="text-sm font-semibold text-foreground uppercase tracking-wider">Step Details</h2>
                             <button id="btn-delete-step" type="button" class="inline-flex items-center gap-1.5 rounded-md border border-destructive/30 px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                                Delete Step
+                                Eliminar paso
                             </button>
                         </div>
                         <div class="grid grid-cols-1 gap-4">
@@ -95,7 +95,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                         </div>
                         <div class="flex justify-end">
                             <button id="btn-save-step-meta" type="button" class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-                                <span id="btn-save-step-meta-label">Save Step</span>
+                                <span id="btn-save-step-meta-label">Guardar paso</span>
                                 <div id="btn-save-step-meta-spinner" class="hidden size-3 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
                             </button>
                         </div>
@@ -107,14 +107,14 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                             <h3 class="text-sm font-semibold text-foreground">Questions</h3>
                             <button id="btn-add-question" type="button" class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                Add Question
+                                Agregar pregunta
                             </button>
                         </div>
 
                         <div id="questions-list" class="space-y-2"></div>
 
                         <div id="no-questions" class="hidden rounded-xl border border-dashed border-border p-8 text-center">
-                            <p class="text-sm text-muted-foreground">No questions yet. Click "Add Question" to create one.</p>
+                            <p class="text-sm text-muted-foreground">No questions yet. Click "Agregar pregunta" to create one.</p>
                         </div>
                     </div>
                 </div>
@@ -142,9 +142,9 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 </div>
             </div>
             <div class="flex items-center justify-end gap-3 px-5 py-4 border-t border-border">
-                <button id="step-modal-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
+                <button id="step-modal-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancelar</button>
                 <button id="step-modal-save" type="button" class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-                    <span>Create Step</span>
+                    <span>Crear paso</span>
                     <div id="step-modal-spinner" class="hidden size-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
                 </button>
             </div>
@@ -155,7 +155,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     <div id="question-modal-backdrop" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
         <div class="w-full max-w-2xl rounded-xl border border-border bg-background shadow-2xl max-h-[92vh] flex flex-col">
             <div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-                <h2 id="question-modal-title" class="text-base font-semibold text-foreground">Add Question</h2>
+                <h2 id="question-modal-title" class="text-base font-semibold text-foreground">Agregar pregunta</h2>
                 <button id="question-modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
@@ -179,7 +179,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                             <option value="text">Text (single line)</option>
                             <option value="textarea">Text (multi-line)</option>
                             <option value="email">Email</option>
-                            <option value="tel">Phone</option>
+                            <option value="tel">Teléfono</option>
                             <option value="number">Number</option>
                             <option value="date">Date</option>
                             <option value="select">Dropdown (select)</option>
@@ -204,7 +204,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                         class="relative inline-flex h-6 w-11 items-center rounded-full border-2 border-transparent bg-muted-foreground/30 transition-colors focus:outline-none focus:ring-2 focus:ring-ring">
                         <span id="qm-required-thumb" class="pointer-events-none inline-block size-4 translate-x-0.5 rounded-full bg-white shadow-lg transition-transform duration-200"></span>
                     </button>
-                    <label class="text-sm font-medium text-foreground cursor-pointer">Required field</label>
+                    <label class="text-sm font-medium text-foreground cursor-pointer">Campo obligatorio</label>
                 </div>
 
                 <!-- Visualización condicional -->
@@ -240,7 +240,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
                 <!-- Configuración de Stripe -->
                 <div id="cfg-stripe" class="hidden rounded-lg border border-border p-4 space-y-3">
-                    <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Payment Configuration</p>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Configuración de pago</p>
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1.5">
                             <label class="text-xs text-muted-foreground" for="cfg-stripe-amount">Amount</label>
@@ -252,8 +252,8 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                         </div>
                     </div>
                     <div class="space-y-1.5">
-                        <label class="text-xs text-muted-foreground" for="cfg-stripe-desc">Payment description</label>
-                        <input id="cfg-stripe-desc" type="text" placeholder="e.g. Application processing fee" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
+                        <label class="text-xs text-muted-foreground" for="cfg-stripe-desc">Descripción del pago</label>
+                        <input id="cfg-stripe-desc" type="text" placeholder="Ej.: cargo por procesamiento de solicitud" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
                     </div>
                 </div>
 
@@ -305,9 +305,9 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             </div>
 
             <div class="flex items-center justify-end gap-3 px-5 py-4 border-t border-border shrink-0">
-                <button id="question-modal-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
+                <button id="question-modal-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancelar</button>
                 <button id="question-modal-save" type="button" class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-                    <span id="question-modal-save-label">Save Question</span>
+                    <span id="question-modal-save-label">Guardar pregunta</span>
                     <div id="question-modal-save-spinner" class="hidden size-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
                 </button>
             </div>
@@ -385,7 +385,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     const parts = window.location.pathname.split("/");
     state.questionnaireId = parseInt(parts[parts.length - 1], 10);
     if (isNaN(state.questionnaireId)) {
-        el("error-message").textContent = "Invalid questionnaire URL.";
+        el("error-message").textContent = "URL de cuestionario inválida.";
         hide("loading-screen");
         show("error-screen");
         throw new Error();
@@ -428,7 +428,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         el("builder-title").textContent = q.title;
 
         const typeEl = el("builder-flow-type");
-        const label = q.flow_type === "admissions" ? "Admissions" : "Enrollment";
+        const label = q.flow_type === "admissions" ? "Admisiones" : "Matrícula";
         const cls = q.flow_type === "admissions"
             ? "bg-blue-500/10 text-blue-400 border-blue-500/20 border"
             : "bg-violet-500/10 text-violet-400 border-violet-500/20 border";
@@ -527,10 +527,10 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     <button type="button" class="btn-move-down rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors ${qi === questions.length - 1 ? "opacity-30 pointer-events-none" : ""}" data-qi="${qi}" title="Move down">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                     </button>
-                    <button type="button" class="btn-edit-question rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" data-qi="${qi}" title="Edit question">
+                    <button type="button" class="btn-edit-question rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" data-qi="${qi}" title="Editar pregunta">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                     </button>
-                    <button type="button" class="btn-delete-question rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" data-qi="${qi}" title="Delete question">
+                    <button type="button" class="btn-delete-question rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" data-qi="${qi}" title="Eliminar pregunta">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
                     </button>
                 </div>
@@ -550,9 +550,9 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 const step = state.questionnaire!.steps[state.selectedStepIndex];
                 const q = step.questions[qi];
                 (window as any).confirmAction?.({
-                    title: "Delete Question",
-                    description: `Delete "${q.label}"? This cannot be undone.`,
-                    confirmLabel: "Delete",
+                    title: "Eliminar pregunta",
+                    description: `¿Eliminar "${q.label}"? Esta acción no se puede deshacer.`,
+                    confirmLabel: "Eliminar",
                     variant: "destructive",
                     onConfirm: () => deleteQuestion(qi),
                 });
@@ -576,10 +576,10 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
     function getTypeLabel(type: string): string {
         const map: Record<string, string> = {
-            text: "Text", textarea: "Textarea", email: "Email", tel: "Phone",
+            text: "Text", textarea: "Textarea", email: "Email", tel: "Teléfono",
             number: "Number", date: "Date", select: "Select", radio: "Radio",
             checkbox: "Checkbox", file_upload: "File", career_select: "Career",
-            subject_select: "Subjects", stripe_payment: "Payment", info: "Info",
+            subject_select: "Asignaturas", stripe_payment: "Pago", info: "Información",
         };
         return map[type] ?? type;
     }
@@ -606,7 +606,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
-                showToast("error", "Failed to create step", Object.values(err).flat().join(" ") || `Error ${res.status}`);
+                showToast("error", "No se pudo crear el paso", Object.values(err).flat().join(" ") || `Error ${res.status}`);
                 return false;
             }
             const newStep = await res.json();
@@ -640,7 +640,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 body: JSON.stringify({ title, description }),
             });
             if (!res.ok) {
-                showToast("error", "Save failed", `Error ${res.status}`);
+                showToast("error", "No se pudo guardar", `Error ${res.status}`);
                 return;
             }
             step.title = title;
@@ -650,7 +650,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         } catch {
             showToast("error", "Network error", "Could not save step.");
         } finally {
-            el("btn-save-step-meta-label").textContent = "Save Step";
+            el("btn-save-step-meta-label").textContent = "Guardar paso";
             el("btn-save-step-meta-spinner").classList.add("hidden");
             el<HTMLButtonElement>("btn-save-step-meta").disabled = false;
         }
@@ -661,9 +661,9 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         if (!step) return;
 
         (window as any).confirmAction?.({
-            title: "Delete Step",
-            description: `Delete step "${step.title}" and all its questions? This cannot be undone.`,
-            confirmLabel: "Delete",
+            title: "Eliminar paso",
+            description: `¿Eliminar el paso "${step.title}" y todas sus preguntas? Esta acción no se puede deshacer.`,
+            confirmLabel: "Eliminar",
             variant: "destructive",
             onConfirm: async () => {
                 if (!step.id) {
@@ -688,7 +688,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                         show("no-step-selected");
                         showToast("success", "Deleted", "Step removed.");
                     } else {
-                        showToast("error", "Delete failed", `Error ${res.status}`);
+                        showToast("error", "No se pudo eliminar", `Error ${res.status}`);
                     }
                 } catch {
                     showToast("error", "Network error", "Could not delete step.");
@@ -714,7 +714,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         const step = state.questionnaire!.steps[state.selectedStepIndex];
         const q: Question | undefined = step.questions[qi];
 
-        el("question-modal-title").textContent = qi === -1 ? "Add Question" : "Edit Question";
+        el("question-modal-title").textContent = qi === -1 ? "Agregar pregunta" : "Editar pregunta";
 
         if (q) {
             (el<HTMLInputElement>("qm-label")).value = q.label;
@@ -904,7 +904,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
-                showToast("error", isEdit ? "Update failed" : "Create failed", Object.values(err).flat().join(" ") || `Error ${res.status}`);
+                showToast("error", isEdit ? "No se pudo actualizar" : "No se pudo crear", Object.values(err).flat().join(" ") || `Error ${res.status}`);
                 return;
             }
 
@@ -933,7 +933,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         } catch {
             showToast("error", "Network error", "Could not save question.");
         } finally {
-            el("question-modal-save-label").textContent = "Save Question";
+            el("question-modal-save-label").textContent = "Guardar pregunta";
             el("question-modal-save-spinner").classList.add("hidden");
             el<HTMLButtonElement>("question-modal-save").disabled = false;
         }
@@ -992,7 +992,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     headers: authHeaders(),
                 });
                 if (!res.ok && res.status !== 204) {
-                    showToast("error", "Delete failed", `Error ${res.status}`);
+                    showToast("error", "No se pudo eliminar", `Error ${res.status}`);
                     return;
                 }
             } catch {

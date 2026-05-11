@@ -262,7 +262,7 @@ class EnrollmentStatusView(APIView):
         new_status = request.data.get('status')
         valid = [c[0] for c in CareerEnrollment.STATUS_CHOICES]
         if new_status not in valid:
-            return Response({'error': f'Invalid status. Must be one of: {valid}'}, status=400)
+            return Response({'error': f'Estado inválido. Debe ser uno de: {valid}'}, status=400)
         enrollment.status = new_status
         enrollment.save()
         return Response(CareerEnrollmentSerializer(enrollment).data)
@@ -821,7 +821,7 @@ def _build_designed_receipt_pdf(data):
     line(48, 722, 547, 722, (0.19, 0.19, 0.22), 1)
     book_logo(74, 770, 0.95)
     text(94, 773, 'academix', 13, (1, 1, 1), True)
-    text(74, 752, 'Enrollment Receipt', 9, (0.78, 0.80, 0.86))
+    text(74, 752, 'Comprobante de matrícula', 9, (0.78, 0.80, 0.86))
 
     text(477, 780, 'Receipt #', 7, (0.78, 0.80, 0.86))
     text(493, 763, f"#{enrollment.get('id') or '-'}", 13, (1, 1, 1), True)
@@ -839,9 +839,9 @@ def _build_designed_receipt_pdf(data):
     text(74, 599, _truncate_pdf_text(career.get('name') or '-', 32), 9, (1, 1, 1), True)
     text(274, 612, 'Period', 7, (0.72, 0.72, 0.76))
     text(274, 599, _truncate_pdf_text(period.get('name') or '-', 24), 9, (1, 1, 1), True)
-    text(74, 574, 'Enrollment Date', 7, (0.72, 0.72, 0.76))
+    text(74, 574, 'Fecha de matrícula', 7, (0.72, 0.72, 0.76))
     text(74, 561, _format_pdf_date(enrollment.get('enrolled_at')), 9, (1, 1, 1), True)
-    text(274, 574, 'Status', 7, (0.72, 0.72, 0.76))
+    text(274, 574, 'Estado', 7, (0.72, 0.72, 0.76))
     text(274, 561, 'Active' if enrollment.get('status') == 'active' else str(enrollment.get('status') or '-').title(), 9, (0.15, 0.95, 0.55), True)
 
     line(74, 536, 520, 536, (0.17, 0.17, 0.18), 1)

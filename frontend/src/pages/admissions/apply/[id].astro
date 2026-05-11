@@ -3,7 +3,7 @@ export const prerender = false;
 import DashboardLayout from "@/layouts/DashboardLayout.astro";
 ---
 
-<DashboardLayout title="Apply for Admission — Academix" currentPath="/admissions">
+<DashboardLayout title="Solicita admisión — Academix" currentPath="/admissions">
     <div id="page-loading" class="flex items-center justify-center p-20">
         <svg class="animate-spin text-primary" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
     </div>
@@ -18,7 +18,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
                     <span id="career-name-breadcrumb" class="text-foreground">Career</span>
                 </div>
-                <h1 class="text-xl font-semibold text-foreground" id="page-title">Admission Application</h1>
+                <h1 class="text-xl font-semibold text-foreground" id="page-title">Solicitud de admisión</h1>
                 <p class="text-sm text-muted-foreground" id="period-info"></p>
             </div>
             <a href="/admissions/my-applications" class="text-sm text-primary hover:underline">My Applications →</a>
@@ -34,23 +34,23 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-primary"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                         </div>
                         <div>
-                            <h2 class="text-base font-semibold text-foreground">Start Your Application</h2>
-                            <p class="text-sm text-muted-foreground">Create a draft to begin the admission process.</p>
+                            <h2 class="text-base font-semibold text-foreground">Inicia tu solicitud</h2>
+                            <p class="text-sm text-muted-foreground">Crea un borrador para iniciar el proceso de admisión.</p>
                         </div>
                     </div>
                     <button id="btn-create" class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        Create Draft Application
+                        Crear borrador de solicitud
                     </button>
                     <div id="create-error" class="hidden text-sm text-destructive"></div>
                 </div>
 
-                <!-- Application exists -->
+                <!-- La solicitud existe -->
                 <div id="has-application" class="hidden space-y-4">
                     <div class="flex items-start justify-between">
                         <div>
-                            <h2 class="text-base font-semibold text-foreground">Your Application</h2>
-                            <p class="text-sm text-muted-foreground mt-0.5">Application #<span id="app-id">—</span></p>
+                            <h2 class="text-base font-semibold text-foreground">Tu solicitud</h2>
+                            <p class="text-sm text-muted-foreground mt-0.5">Solicitud #<span id="app-id">—</span></p>
                         </div>
                         <span id="app-status-badge" class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"></span>
                     </div>
@@ -76,7 +76,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     <div id="actions-draft" class="hidden">
                         <button id="btn-submit-app" class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                            Submit Application
+                            Enviar solicitud
                         </button>
                         <p class="text-xs text-muted-foreground mt-2">Upload required documents before submitting.</p>
                     </div>
@@ -107,7 +107,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     <div id="actions-confirmed" class="hidden rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3">
                         <p class="text-sm font-medium text-emerald-400">✅ Place confirmed! Proceed to enrollment.</p>
                         <a href="/enrollment" class="inline-flex items-center gap-1.5 mt-3 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors">
-                            Go to Enrollment
+                            Ir a matrícula
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                         </a>
                     </div>
@@ -124,7 +124,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             <!-- Sección de documentos -->
             <div id="documents-section" class="hidden bg-card border border-border rounded-xl p-6 shadow-sm space-y-4">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-base font-semibold text-foreground">Required Documents</h2>
+                    <h2 class="text-base font-semibold text-foreground">Documentos obligatorios</h2>
                     <span class="text-xs text-muted-foreground">Upload all required documents</span>
                 </div>
 
@@ -196,7 +196,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 ...(opts.headers || {}),
             },
         });
-        if (res.status === 401) { window.location.replace("/login"); throw new Error("Unauthorized"); }
+        if (res.status === 401) { window.location.replace("/login"); throw new Error("No autorizado"); }
         return res;
     }
 
@@ -224,7 +224,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 expired: "This application has expired.",
                 waitlisted: "You are on the waiting list. We'll notify you if a spot opens.",
             };
-            document.getElementById("final-message")!.textContent = messages[status] ?? "Application closed.";
+            document.getElementById("final-message")!.textContent = messages[status] ?? "Solicitud cerrada.";
             final.classList.remove("hidden");
         }
 
@@ -352,14 +352,14 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
             if (!res.ok) {
                 const json = await res.json().catch(() => ({}));
-                docError.textContent = json.detail || json.error || `Upload failed (${res.status})`;
+                docError.textContent = json.detail || json.error || `La carga falló (${res.status})`;
                 docError.classList.remove("hidden");
                 return;
             }
 
             await loadDocuments(appId);
         } catch {
-            docError.textContent = "Upload failed. Please try again.";
+            docError.textContent = "La carga falló. Inténtalo de nuevo.";
             docError.classList.remove("hidden");
         }
     }
@@ -369,13 +369,13 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         try {
             const res = await apiFetch(`/admissions/applications/${appId}/documents/${docId}/`, { method: "DELETE" });
             if (!res.ok) {
-                docError.textContent = "Delete failed.";
+                docError.textContent = "No se pudo eliminar.";
                 docError.classList.remove("hidden");
                 return;
             }
             await loadDocuments(appId);
         } catch {
-            docError.textContent = "Delete failed.";
+            docError.textContent = "No se pudo eliminar.";
             docError.classList.remove("hidden");
         }
     }
@@ -393,7 +393,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
             if (!res.ok) {
                 const json = await res.json().catch(() => ({}));
-                actionError.textContent = json.detail || json.error || `Action failed (${res.status})`;
+                actionError.textContent = json.detail || json.error || `La acción falló (${res.status})`;
                 actionError.classList.remove("hidden");
                 return;
             }
@@ -402,7 +402,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             if (updated) renderApplication(updated);
 
         } catch {
-            actionError.textContent = "Action failed. Please try again.";
+            actionError.textContent = "La acción falló. Inténtalo de nuevo.";
             actionError.classList.remove("hidden");
         }
     }
@@ -465,7 +465,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     createError.textContent = "No active academic period found.";
                     createError.classList.remove("hidden");
                     btn.disabled = false;
-                    btn.textContent = "Create Draft Application";
+                    btn.textContent = "Crear borrador de solicitud";
                     return;
                 }
 
@@ -478,10 +478,10 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
                     if (!res.ok) {
                         const json = await res.json().catch(() => ({}));
-                        createError.textContent = json.detail || json.error || `Failed (${res.status})`;
+                        createError.textContent = json.detail || json.error || `Falló (${res.status})`;
                         createError.classList.remove("hidden");
                         btn.disabled = false;
-                        btn.textContent = "Create Draft Application";
+                        btn.textContent = "Crear borrador de solicitud";
                         return;
                     }
 
@@ -489,10 +489,10 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     renderApplication(app);
                     await loadDocuments(app.id);
                 } catch {
-                    createError.textContent = "Failed to create application. Please try again.";
+                    createError.textContent = "No se pudo crear la solicitud. Inténtalo de nuevo.";
                     createError.classList.remove("hidden");
                     btn.disabled = false;
-                    btn.textContent = "Create Draft Application";
+                    btn.textContent = "Crear borrador de solicitud";
                 }
             });
 
@@ -514,7 +514,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             await performAction(`/admissions/applications/${appId}/confirm/`);
         } else if (target.id === "btn-withdraw" || target.closest("#btn-withdraw")) {
             window.confirmAction({
-                title: "Withdraw Application",
+                title: "Retirar solicitud",
                 description: "Are you sure you want to withdraw your application? This action cannot be undone.",
                 confirmLabel: "Withdraw",
                 variant: "destructive",

@@ -3,7 +3,7 @@ export const prerender = false;
 import DashboardLayout from "@/layouts/DashboardLayout.astro";
 ---
 
-<DashboardLayout title="Application Detail — Academix" currentPath="/management/admissions">
+<DashboardLayout title="Detalle de solicitud — Academix" currentPath="/management/admissions">
     <div id="page-loading" class="flex items-center justify-center p-20">
         <svg class="animate-spin text-primary" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
     </div>
@@ -15,9 +15,9 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 <div class="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                     <a href="/management/admissions" class="hover:text-foreground transition-colors">Admissions</a>
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-                    <span class="text-foreground">Application #<span id="app-id-header">—</span></span>
+                    <span class="text-foreground">Solicitud #<span id="app-id-header">—</span></span>
                 </div>
-                <h1 class="text-xl font-semibold text-foreground" id="page-title">Application Detail</h1>
+                <h1 class="text-xl font-semibold text-foreground" id="page-title">Detalle de solicitud</h1>
             </div>
             <div class="flex items-center gap-3">
                 <span id="app-status-badge" class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"></span>
@@ -32,7 +32,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Información del estudiante -->
                 <div class="bg-card border border-border rounded-xl p-5 space-y-3">
-                    <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Student</h2>
+                    <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Estudiante</h2>
                     <div class="space-y-2">
                         <div class="flex items-center gap-2">
                             <div class="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm" id="student-initials">—</div>
@@ -52,7 +52,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
                 <!-- Información de solicitud -->
                 <div class="bg-card border border-border rounded-xl p-5 space-y-3">
-                    <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Application Info</h2>
+                    <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Información de la solicitud</h2>
                     <div class="grid grid-cols-2 gap-3 text-sm">
                         <div>
                             <p class="text-xs text-muted-foreground">Career</p>
@@ -87,7 +87,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                         <p id="app-access-route" class="text-foreground font-medium">—</p>
                     </div>
                     <div>
-                        <p class="text-xs text-muted-foreground">Admission Score</p>
+                        <p class="text-xs text-muted-foreground">Puntaje de admisión</p>
                         <p id="app-admission-score" class="text-foreground font-medium">—</p>
                     </div>
                     <div>
@@ -127,7 +127,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
             <!-- Sección de resolución (solo gestión, estados submitted / under_review / provisionales) -->
             <div id="resolve-section" class="hidden bg-card border border-border rounded-xl p-5 space-y-4">
-                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Resolve Application</h2>
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Resolver solicitud</h2>
 
                 <!-- Aviso: sin preferencias de titulación -->
                 <div id="no-preferences-warning" class="hidden rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 flex items-start gap-2">
@@ -158,13 +158,13 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                         <p class="text-xs text-muted-foreground">Select which career preference to assign to this student.</p>
                     </div>
                     <div class="space-y-1.5">
-                        <label for="resolve-notes" class="text-sm font-medium text-foreground">Notes (optional)</label>
+                        <label for="resolve-notes" class="text-sm font-medium text-foreground">Notas (opcional)</label>
                         <textarea id="resolve-notes" rows="3" placeholder="Add notes for the student..."
                             class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30 resize-none"></textarea>
                     </div>
                     <button id="btn-resolve" class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-                        Resolve Application
+                        Resolver solicitud
                     </button>
                 </div>
             </div>
@@ -184,7 +184,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30 resize-none"></textarea>
             </div>
             <div class="flex justify-end gap-3">
-                <button id="modal-cancel" class="rounded-md border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">Cancel</button>
+                <button id="modal-cancel" class="rounded-md border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">Cancelar</button>
                 <button id="modal-confirm" class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">Confirm</button>
             </div>
         </div>
@@ -240,7 +240,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             ...opts,
             headers: { "Authorization": `Bearer ${token}`, "Accept": "application/json", ...(opts.headers || {}) },
         });
-        if (res.status === 401) { window.location.replace("/login"); throw new Error("Unauthorized"); }
+        if (res.status === 401) { window.location.replace("/login"); throw new Error("No autorizado"); }
         return res;
     }
 
@@ -318,13 +318,13 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
             if (!res.ok) {
                 const json = await res.json().catch(() => ({}));
-                showFeedback(json.detail || json.error || `Failed (${res.status})`, true);
+                showFeedback(json.detail || json.error || `Falló (${res.status})`, true);
                 return;
             }
-            showFeedback(`Document ${action === "validated" ? "validated" : "rejected"} successfully!`);
+            showFeedback(`Document ${action === "validated" ? "validated" : "rejected"} exitosaly!`);
             await loadDocuments();
         } catch {
-            showFeedback("Action failed. Please try again.", true);
+            showFeedback("La acción falló. Inténtalo de nuevo.", true);
         }
     });
 
@@ -396,7 +396,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         const container = document.getElementById("documents-list")!;
         try {
             const res = await apiFetch(`/admissions/applications/${appId}/documents/`);
-            if (!res.ok) { container.innerHTML = `<p class="text-sm text-muted-foreground">Failed to load documents.</p>`; return; }
+            if (!res.ok) { container.innerHTML = `<p class="text-sm text-muted-foreground">No se pudieron cargar los documentos.</p>`; return; }
             const docs = await res.json();
             const docList = Array.isArray(docs) ? docs : (docs.results ?? []);
 
@@ -442,7 +442,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 btn.addEventListener("click", () => openModal((btn as HTMLElement).dataset.docId!, "rejected"));
             });
         } catch {
-            container.innerHTML = `<p class="text-sm text-muted-foreground">Failed to load documents.</p>`;
+            container.innerHTML = `<p class="text-sm text-muted-foreground">No se pudieron cargar los documentos.</p>`;
         }
     }
 
@@ -451,7 +451,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             const res = await apiFetch(`/admissions/applications/${appId}/`);
             if (!res.ok) {
                 document.getElementById("page-loading")?.classList.add("hidden");
-                showFeedback(`Failed to load application (${res.status})`, true);
+                showFeedback(`No se pudo cargar la solicitud (${res.status})`, true);
                 return;
             }
 
@@ -462,7 +462,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
             // Cabecera
             document.getElementById("app-id-header")!.textContent = String(app.id);
-            document.getElementById("page-title")!.textContent = `Application #${app.id}`;
+            document.getElementById("page-title")!.textContent = `Solicitud #${app.id}`;
 
             const badge = document.getElementById("app-status-badge")!;
             badge.textContent = STATUS_LABELS[app.status] ?? app.status;
@@ -564,7 +564,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
         } catch {
             document.getElementById("page-loading")?.classList.add("hidden");
-            showFeedback("Failed to load application.", true);
+            showFeedback("No se pudo cargar la solicitud.", true);
         }
     }
 
@@ -582,14 +582,14 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             const res = await apiFetch(`/admissions/applications/${appId}/review/`, { method: "PATCH" });
             if (!res.ok) {
                 const json = await res.json().catch(() => ({}));
-                showFeedback(json.detail || json.error || "Failed to update status.", true);
+                showFeedback(json.detail || json.error || "No se pudo actualizar status.", true);
                 btn.disabled = false;
                 return;
             }
-            showFeedback("Application marked as Under Review.");
+            showFeedback("Solicitud marcada como en revisión.");
             await loadApplication();
         } catch {
-            showFeedback("Action failed.", true);
+            showFeedback("La acción falló.", true);
             btn.disabled = false;
         }
     });
@@ -629,10 +629,10 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 return;
             }
 
-            showFeedback(`Application resolved as: ${resolveStatus}`);
+            showFeedback(`Solicitud resuelta como: ${resolveStatus}`);
             await loadApplication();
         } catch {
-            showFeedback("Action failed.", true);
+            showFeedback("La acción falló.", true);
             btn.disabled = false;
         }
     });

@@ -3,7 +3,7 @@ export const prerender = false;
 import DashboardLayout from "@/layouts/DashboardLayout.astro";
 ---
 
-<DashboardLayout title="Enrollment Receipt — Academix" currentPath="/enrollment">
+<DashboardLayout title="Comprobante de matrícula — Academix" currentPath="/enrollment">
     <div class="flex items-center justify-between border-b border-border px-6 py-4 print:hidden">
         <div>
             <div class="flex items-center gap-2 text-sm text-muted-foreground mb-1">
@@ -11,7 +11,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
                 <span class="text-foreground">Receipt</span>
             </div>
-            <h1 class="text-xl font-semibold text-foreground">Enrollment Receipt</h1>
+            <h1 class="text-xl font-semibold text-foreground">Comprobante de matrícula</h1>
         </div>
         <button onclick="window.print()" class="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
@@ -37,7 +37,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-primary"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
                                 <span class="text-lg font-bold text-foreground">academix</span>
                             </div>
-                            <p class="text-sm text-muted-foreground">Enrollment Receipt</p>
+                            <p class="text-sm text-muted-foreground">Comprobante de matrícula</p>
                         </div>
                         <div class="text-right">
                             <p class="text-xs text-muted-foreground">Receipt #</p>
@@ -51,7 +51,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 <div class="px-8 py-6 space-y-6">
                     <!-- Información del estudiante -->
                     <div class="space-y-1">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Student</p>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Estudiante</p>
                         <p id="student-name" class="text-base font-semibold text-foreground">—</p>
                         <p id="student-email" class="text-sm text-muted-foreground">—</p>
                         <p id="student-id" class="text-xs text-muted-foreground font-mono">—</p>
@@ -70,11 +70,11 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                             <p id="enrollment-period" class="font-medium text-foreground">—</p>
                         </div>
                         <div>
-                            <p class="text-xs text-muted-foreground">Enrollment Date</p>
+                            <p class="text-xs text-muted-foreground">Fecha de matrícula</p>
                             <p id="enrollment-date" class="font-medium text-foreground">—</p>
                         </div>
                         <div>
-                            <p class="text-xs text-muted-foreground">Status</p>
+                            <p class="text-xs text-muted-foreground">Estado</p>
                             <p id="enrollment-status" class="font-medium text-emerald-400">—</p>
                         </div>
                     </div>
@@ -114,7 +114,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
         <!-- Error -->
         <div id="error-state" class="hidden rounded-lg border border-destructive/30 bg-destructive/10 p-4">
-            <p class="text-sm font-medium text-destructive">Failed to load receipt</p>
+            <p class="text-sm font-medium text-destructive">No se pudo cargar el comprobante</p>
             <p id="error-message" class="text-sm text-destructive/80 mt-1"></p>
         </div>
     </div>
@@ -153,7 +153,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         const res = await fetch(`${API_URL}${path}`, {
             headers: { "Authorization": `Bearer ${token}`, "Accept": "application/json" },
         });
-        if (res.status === 401) { window.location.replace("/login"); throw new Error("Unauthorized"); }
+        if (res.status === 401) { window.location.replace("/login"); throw new Error("No autorizado"); }
         return res;
     }
 
@@ -170,7 +170,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             document.getElementById("loading-state")?.classList.add("hidden");
 
             if (!res.ok) {
-                document.getElementById("error-message")!.textContent = `Failed to load receipt (${res.status})`;
+                document.getElementById("error-message")!.textContent = `No se pudo cargar el comprobante (${res.status})`;
                 document.getElementById("error-state")?.classList.remove("hidden");
                 return;
             }
@@ -230,7 +230,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 const baseAmt = parseFloat(fee.base_amount);
                 feeRows.push(`
                     <div class="flex justify-between text-sm">
-                        <span class="text-muted-foreground">Enrollment payment</span>
+                        <span class="text-muted-foreground">Pago de matrícula</span>
                         <span class="text-foreground">€${isNaN(baseAmt) ? fee.base_amount : baseAmt.toFixed(2)}</span>
                     </div>`);
             }
@@ -245,7 +245,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             if (feeRows.length > 0) {
                 feeItemsEl.innerHTML = feeRows.join("");
             } else {
-                feeItemsEl.innerHTML = `<div class="text-sm text-muted-foreground">Enrollment fee</div>`;
+                feeItemsEl.innerHTML = `<div class="text-sm text-muted-foreground">Cargo de matrícula</div>`;
             }
 
             // Total — el backend devuelve fee.final_amount

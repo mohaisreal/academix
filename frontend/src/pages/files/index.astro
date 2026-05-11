@@ -16,7 +16,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <p class="text-sm text-muted-foreground">Academic records and performance overview</p>
       </div>
       <div class="flex items-center gap-3">
-        <input id="search-input" type="text" placeholder="Search students..." class="w-64 bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+        <input id="search-input" type="text" placeholder="Buscar estudiantes..." class="w-64 bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
       </div>
     </div>
 
@@ -37,11 +37,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <table class="w-full">
             <thead>
               <tr class="border-b border-border">
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Student</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Estudiante</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Career</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Period</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">GPA</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Status</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Estado</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Actions</th>
               </tr>
             </thead>
@@ -134,7 +134,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     }
     empty?.classList.add('hidden');
     tbody.innerHTML = files.map(f => {
-      const name = f.student_name || `${f.first_name || ''} ${f.last_name || ''}`.trim() || f.username || 'Unknown';
+      const name = f.student_name || `${f.first_name || ''} ${f.last_name || ''}`.trim() || f.username || 'Desconocido';
       const career = f.career_name || f.career || '-';
       const period = f.period_name || f.period || '-';
       const gpa = f.gpa ?? f.average_grade ?? '-';
@@ -165,7 +165,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   async function openPanel(studentId) {
     const content = document.getElementById('panel-content');
     document.getElementById('modal-backdrop')?.classList.remove('hidden');
-    if (content) content.innerHTML = '<div class="text-sm text-muted-foreground">Loading...</div>';
+    if (content) content.innerHTML = '<div class="text-sm text-muted-foreground">Cargando...</div>';
 
     try {
       const data = await apiFetch(`/grades/files/${studentId}/`);
@@ -207,8 +207,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                     <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Subject</th>
                     <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Code</th>
                     <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Credits</th>
-                    <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Grade</th>
-                    <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Status</th>
+                    <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Calificar</th>
+                    <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Estado</th>
                   </tr></thead>
                   <tbody>
                     ${(p.subjects || p.grades || []).map(s => `
@@ -237,7 +237,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         });
       });
     } catch {
-      if (content) content.innerHTML = '<div class="text-sm text-red-400">Failed to load student file.</div>';
+      if (content) content.innerHTML = '<div class="text-sm text-red-400">No se pudo cargar el expediente del estudiante.</div>';
     }
   }
 

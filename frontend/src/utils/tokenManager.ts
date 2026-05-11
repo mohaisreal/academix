@@ -16,7 +16,7 @@ export function setTokens(tokens: AuthTokens): void {
     localStorage.setItem(TOKEN_KEYS.ACCESS, tokens.access);
     localStorage.setItem(TOKEN_KEYS.REFRESH, tokens.refresh);
   } catch (error) {
-    console.error('Failed to store tokens:', error);
+    console.error('No se pudieron guardar los tokens:', error);
   }
 }
 
@@ -27,7 +27,7 @@ export function getAccessToken(): string | null {
   try {
     return localStorage.getItem(TOKEN_KEYS.ACCESS);
   } catch (error) {
-    console.error('Failed to get access token:', error);
+    console.error('No se pudo obtener el token de acceso:', error);
     return null;
   }
 }
@@ -39,7 +39,7 @@ export function getRefreshToken(): string | null {
   try {
     return localStorage.getItem(TOKEN_KEYS.REFRESH);
   } catch (error) {
-    console.error('Failed to get refresh token:', error);
+    console.error('No se pudo obtener el token de actualización:', error);
     return null;
   }
 }
@@ -52,7 +52,7 @@ export function clearTokens(): void {
     localStorage.removeItem(TOKEN_KEYS.ACCESS);
     localStorage.removeItem(TOKEN_KEYS.REFRESH);
   } catch (error) {
-    console.error('Failed to clear tokens:', error);
+    console.error('No se pudieron limpiar los tokens:', error);
   }
 }
 
@@ -78,7 +78,7 @@ export function getTokenExpiration(token: string): number | null {
     const payload = JSON.parse(atob(token.split('.')[1]));
     return payload.exp ? payload.exp * 1000 : null;
   } catch (error) {
-    console.error('Failed to decode token:', error);
+    console.error('No se pudo decodificar el token:', error);
     return null;
   }
 }

@@ -33,6 +33,6 @@ export default {
   Ellipsis: PaginationEllipsis,
   Item: PaginationItem,
   Link: PaginationLink,
-  Next: PaginationNext,
+  Siguiente: PaginationNext,
   Previous: PaginationPrevious,
 };

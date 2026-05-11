@@ -30,7 +30,7 @@ export function LoginForm({ onSuccess, redirectUrl = '/' }: LoginFormProps) {
       }
     } catch (err) {
       // El error ya está establecido en el almacén de estado
-      console.error('Login failed:', err);
+      console.error('Falló el inicio de sesión:', err);
     }
   };
 

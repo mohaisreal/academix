@@ -2,7 +2,7 @@
 import "@/styles/starwind.css";
 ---
 
-<html lang="en" class="dark">
+<html lang="es" class="dark">
     <head>
         <meta charset="utf-8" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -63,7 +63,7 @@ import "@/styles/starwind.css";
                         <p class="text-sm font-medium text-emerald-300">Proofs received.</p>
                         <p class="mt-1 text-xs text-muted-foreground">Gestión revisará tu identidad. Solo podrás iniciar sesión tras la aprobación.</p>
                         <a href="/login" class="mt-4 inline-flex items-center justify-center rounded-md border border-border px-5 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
-                            Back to Sign In
+                            Volver al inicio de sesión
                         </a>
                     </div>
                 </div>
@@ -77,11 +77,11 @@ import "@/styles/starwind.css";
                             <line x1="12" y1="16" x2="12.01" y2="16"/>
                         </svg>
                     </div>
-                    <h2 class="text-xl font-semibold text-foreground">Verification failed</h2>
+                    <h2 class="text-xl font-semibold text-foreground">La verificación falló</h2>
                     <p id="error-detail" class="text-sm text-muted-foreground">The verification link may be invalid or expired.</p>
                     <div class="flex flex-col gap-2 items-center">
                         <a href="/login" class="inline-flex items-center justify-center rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-                            Back to Sign In
+                            Volver al inicio de sesión
                         </a>
                         <p class="text-xs text-muted-foreground">Need help? Contact support.</p>
                     </div>
@@ -96,7 +96,7 @@ import "@/styles/starwind.css";
                             <line x1="12" y1="17" x2="12.01" y2="17"/>
                         </svg>
                     </div>
-                    <h2 class="text-xl font-semibold text-foreground">Invalid link</h2>
+                    <h2 class="text-xl font-semibold text-foreground">Enlace inválido</h2>
                     <p class="text-sm text-muted-foreground">A este enlace de verificación le faltan parámetros obligatorios. Usa el enlace de tu correo electrónico.</p>
                     <a href="/login" class="inline-flex items-center justify-center rounded-md border border-border px-6 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors">
                         Go to Sign In
@@ -149,7 +149,7 @@ import "@/styles/starwind.css";
                 const json = await res.json().catch(() => ({}));
                 const detail = document.getElementById("error-detail");
                 if (detail) {
-                    detail.textContent = json.detail || json.error || json.message || `Verification failed (${res.status}).`;
+                    detail.textContent = json.detail || json.error || json.message || `La verificación falló (${res.status}).`;
                 }
                 show("state-error");
             }
@@ -194,13 +194,13 @@ import "@/styles/starwind.css";
             });
             const json = await res.json().catch(() => ({}));
             if (!res.ok) {
-                throw new Error(json.detail || json.error || `Upload failed (${res.status}).`);
+                throw new Error(json.detail || json.error || `La carga falló (${res.status}).`);
             }
 
             document.getElementById("identity-upload-form")?.classList.add("hidden");
             document.getElementById("identity-upload-success")?.classList.remove("hidden");
         } catch (err) {
-            showUploadError(err instanceof Error ? err.message : "Could not upload identity proofs.");
+            showUploadError(err instanceof Error ? err.message : "No se pudieron subir los comprobantes de identidad.");
         } finally {
             if (button) {
                 button.disabled = false;

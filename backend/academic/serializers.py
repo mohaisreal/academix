@@ -70,7 +70,7 @@ class AcademicPeriodSerializer(serializers.ModelSerializer):
         end = attrs.get('admission_close_date', getattr(self.instance, 'admission_close_date', None))
         if start and end and start >= end:
             raise serializers.ValidationError({
-                'admission_close_date': 'Admission close date must be after admission open date.'
+                'admission_close_date': 'La fecha de cierre de admisión debe ser posterior a la fecha de apertura.'
             })
         return attrs
 

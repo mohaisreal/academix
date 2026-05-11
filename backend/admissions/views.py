@@ -269,7 +269,7 @@ class AdmissionApplicationViewSet(
         prefs = app.preferences.all()
         return Response(AdmissionPreferenceSerializer(prefs, many=True).data)
 
-    # ---- Submit ----
+    # ---- Enviar ----
 
     @action(detail=True, methods=['patch'], url_path='submit')
     def submit(self, request, pk=None):

@@ -87,8 +87,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       </div>
       <!-- Pie fijo -->
       <div class="flex items-center justify-end gap-3 px-5 py-4 border-t border-border shrink-0">
-        <button id="modal-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
-        <button id="modal-save" type="submit" form="classroom-form" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">Save</button>
+        <button id="modal-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancelar</button>
+        <button id="modal-save" type="submit" form="classroom-form" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">Guardar</button>
       </div>
     </div>
   </div>
@@ -163,8 +163,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         </td>
         <td class="py-3">
           <div class="flex items-center gap-2">
-            <button class="edit-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors" data-id="${c.id}">Edit</button>
-            <button class="delete-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-colors" data-id="${c.id}">Delete</button>
+            <button class="edit-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors" data-id="${c.id}">Editar</button>
+            <button class="delete-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-colors" data-id="${c.id}">Eliminar</button>
           </div>
         </td>
       </tr>`;
@@ -181,15 +181,15 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       btn.addEventListener('click', () => {
         const id = (btn as HTMLElement).dataset.id;
         window.confirmAction({
-          title: "Delete Classroom",
+          title: "Eliminar aula",
           description: "This action cannot be undone.",
-          confirmLabel: "Delete",
+          confirmLabel: "Eliminar",
           variant: "destructive",
           onConfirm: async () => {
             try {
               await apiFetch(`/academic/classrooms/${id}/`, { method: 'DELETE' });
               await loadClassrooms();
-            } catch { toast.error('Failed to delete classroom'); }
+            } catch { toast.error('No se pudo eliminar el aula'); }
           },
         });
       });

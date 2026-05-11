@@ -167,7 +167,7 @@ class StartResponseView(APIView):
     """
     POST /api/questionnaire/questionnaires/<pk>/start/
 
-    Create or retrieve the student's QuestionnaireResponse for this
+    Crea o recupera el QuestionnaireResponse del estudiante para este
     questionnaire. For admissions flow, links the latest admitted/confirmed
     AdmissionApplication automatically.
     """
@@ -421,7 +421,7 @@ def _create_admission_from_questionnaire(response_obj):
         ),
     ).exists():
         logger.info(
-            "Student=%s already has a blocking application for period=%s — skipping",
+            "El estudiante=%s ya tiene una solicitud bloqueante para el periodo=%s — se omite",
             student.pk, period.pk,
         )
         return
@@ -762,7 +762,7 @@ class CreatePaymentIntentView(APIView):
     """
     POST /api/questionnaire/answers/<pk>/payment-intent/
 
-    Creates a Stripe PaymentIntent for stripe_payment answers.
+    Creates a Pago con StripeIntent for stripe_payment answers.
     In development (DEBUG=True), returns demo mode instead of contacting Stripe.
     """
 
@@ -787,7 +787,7 @@ class CreateResponseQuestionPaymentIntentView(APIView):
     POST /api/questionnaire/responses/<response_pk>/questions/<question_pk>/payment-intent/
 
     Creates or reuses the QuestionAnswer for a payment question, then creates a
-    production Stripe PaymentIntent or a development demo intent.
+    production Pago con StripeIntent or a development demo intent.
     """
 
     permission_classes = [IsStudent]
@@ -813,7 +813,7 @@ class CreateResponseQuestionPaymentIntentView(APIView):
             )
         except Question.DoesNotExist:
             return Response(
-                {'detail': 'Payment question not found for this response.'},
+                {'detail': 'No se encontró una pregunta de pago para esta respuesta.'},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -876,7 +876,7 @@ class ConfirmPaymentView(APIView):
 
         if not answer.stripe_payment_intent_id:
             return Response(
-                {'detail': 'No Stripe PaymentIntent exists for this answer.'},
+                {'detail': 'No Pago con StripeIntent exists for this answer.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

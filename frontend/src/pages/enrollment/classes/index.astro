@@ -28,7 +28,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             <div id="completion-meta" class="text-sm text-muted-foreground"></div>
 
             <a href="/" class="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-                Go to Dashboard
+                Go to Panel
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </a>
         </div>
@@ -56,7 +56,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         <div id="state-no-enrollment" class="hidden text-center py-16">
             <p class="text-sm text-muted-foreground">You need to start an enrollment before selecting subjects.</p>
             <a href="/enrollment" class="inline-flex items-center gap-2 mt-4 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-                Go to Enrollment
+                Ir a matrícula
             </a>
         </div>
 
@@ -117,7 +117,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
         <!-- Error -->
         <div id="error-state" class="hidden rounded-lg border border-destructive/30 bg-destructive/10 p-4">
-            <p class="text-sm font-medium text-destructive">Failed to load classes</p>
+            <p class="text-sm font-medium text-destructive">No se pudieron cargar las clases</p>
             <p id="error-message" class="text-sm text-destructive/80 mt-1"></p>
         </div>
 
@@ -148,7 +148,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             ...opts,
             headers: { "Authorization": `Bearer ${token}`, "Accept": "application/json", ...(opts.headers || {}) },
         });
-        if (res.status === 401) { window.location.replace("/login"); throw new Error("Unauthorized"); }
+        if (res.status === 401) { window.location.replace("/login"); throw new Error("No autorizado"); }
         return res;
     }
 
@@ -227,7 +227,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
         const bySubject = new Map<string, any[]>();
         classes.forEach(cls => {
-            const subjectKey = cls.subject?.name ?? cls.subject_name ?? "Unknown Subject";
+            const subjectKey = cls.subject?.name ?? cls.subject_name ?? "Desconocido Subject";
             if (!bySubject.has(subjectKey)) bySubject.set(subjectKey, []);
             bySubject.get(subjectKey)!.push(cls);
         });
@@ -408,7 +408,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     originalEnrollIds.add(classId);
                 } else {
                     const json = await res.json().catch(() => ({}));
-                    showFeedback(json.detail || json.error || `Failed to enroll in class (${res.status})`, true);
+                    showFeedback(json.detail || json.error || `No se pudo inscribir en la clase (${res.status})`, true);
                     resetBtn();
                     return;
                 }
@@ -431,7 +431,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
             if (!res.ok) {
                 const json = await res.json().catch(() => ({}));
-                showFeedback(json.detail || json.error || `Failed to complete enrollment (${res.status})`, true);
+                showFeedback(json.detail || json.error || `No se pudo completar la matrícula (${res.status})`, true);
                 resetBtn();
                 return;
             }
@@ -445,7 +445,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
         } catch (err) {
             console.error("finishEnrollment error:", err);
-            showFeedback("Failed to complete enrollment. Please try again.", true);
+            showFeedback("No se pudo completar la matrícula. Please try again.", true);
             resetBtn();
         }
     }
@@ -511,7 +511,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             document.getElementById("loading-state")?.classList.add("hidden");
 
             if (!classesRes.ok) {
-                document.getElementById("error-message")!.textContent = `Failed to load classes (${classesRes.status})`;
+                document.getElementById("error-message")!.textContent = `No se pudieron cargar las clases (${classesRes.status})`;
                 document.getElementById("error-state")?.classList.remove("hidden");
                 return;
             }

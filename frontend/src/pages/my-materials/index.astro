@@ -1,7 +1,7 @@
 ---
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
-<DashboardLayout title="My Materials — Academix" currentPath="/my-materials">
+<DashboardLayout title="Mis materiales — Academix" currentPath="/my-materials">
   <div id="page-loading" class="p-6 space-y-4">
     <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
     <div class="h-10 bg-card rounded-xl border border-border animate-pulse w-1/2"></div>
@@ -15,7 +15,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   <div id="page-content" class="hidden">
     <div class="flex items-center justify-between border-b border-border px-6 py-4">
       <div>
-        <h1 class="text-xl font-semibold text-foreground">My Materials</h1>
+        <h1 class="text-xl font-semibold text-foreground">Mis materiales</h1>
         <p class="text-sm text-muted-foreground">Resources uploaded by your teachers</p>
       </div>
     </div>
@@ -26,7 +26,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <button class="class-tab active-class-tab px-4 py-2 text-sm font-medium text-foreground border-b-2 border-primary -mb-px whitespace-nowrap" data-class="">All Classes</button>
       </div>
 
-      <!-- Materials grid -->
+      <!-- Cuadrícula de materiales -->
       <div id="materials-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
       <div id="materials-empty" class="hidden flex flex-col items-center justify-center py-16 text-center">
         <div class="flex size-16 items-center justify-center rounded-full bg-muted mb-4">

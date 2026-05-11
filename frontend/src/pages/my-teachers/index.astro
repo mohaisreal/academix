@@ -1,7 +1,7 @@
 ---
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
-<DashboardLayout title="My Teachers — Academix" currentPath="/my-teachers">
+<DashboardLayout title="Mis profesores — Academix" currentPath="/my-teachers">
   <div id="page-loading" class="p-6 space-y-4">
     <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
     <div class="h-64 bg-card rounded-xl border border-border animate-pulse"></div>
@@ -10,8 +10,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   <div id="page-content" class="hidden">
     <div class="flex items-center justify-between border-b border-border px-6 py-4">
       <div>
-        <h1 class="text-xl font-semibold text-foreground">My Teachers</h1>
-        <p class="text-sm text-muted-foreground">Teachers for your current enrollment</p>
+        <h1 class="text-xl font-semibold text-foreground">Mis profesores</h1>
+        <p class="text-sm text-muted-foreground">Profesores de tu matrícula actual</p>
       </div>
     </div>
 
@@ -21,10 +21,10 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <table class="w-full">
             <thead>
               <tr class="border-b border-border">
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Teacher</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Profesor</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Correo electrónico</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Phone</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Subjects</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Teléfono</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Asignaturas</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Actions</th>
               </tr>
             </thead>
@@ -96,7 +96,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       }
 
       tbody.innerHTML = teachers.map(t => {
-        const name = t.teacher_name || t.full_name || `${t.first_name || ''} ${t.last_name || ''}`.trim() || t.username || 'Unknown';
+        const name = t.teacher_name || t.full_name || `${t.first_name || ''} ${t.last_name || ''}`.trim() || t.username || 'Desconocido';
         const email = t.email || '-';
         const phone = t.phone || t.phone_number || '-';
         const subjects = t.subjects || t.teaching_subjects || [];
@@ -119,7 +119,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <td class="py-3">
             <a href="/messages" class="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-              Send Message
+              Enviar mensaje
             </a>
           </td>
         </tr>`;

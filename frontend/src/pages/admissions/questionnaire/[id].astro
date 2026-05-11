@@ -35,7 +35,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             </div>
             <div class="space-y-2">
                 <h2 class="text-2xl font-bold text-foreground">Questionnaire Submitted!</h2>
-                <p class="text-sm text-muted-foreground">Your responses have been recorded successfully. Our team will review your application shortly.</p>
+                <p class="text-sm text-muted-foreground">Your responses have been recorded exitosaly. Our team will review your application shortly.</p>
             </div>
             <a href="/admissions/my-applications" class="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
                 View My Applications
@@ -260,7 +260,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     const pathParts = window.location.pathname.split("/");
     state.questionnaireId = parseInt(pathParts[pathParts.length - 1], 10);
     if (isNaN(state.questionnaireId)) {
-        showError("Invalid questionnaire URL.");
+        showError("URL de cuestionario inválida.");
         throw new Error();
     }
 
@@ -715,7 +715,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
             case "career_select": {
                 if (state.careers.length === 0) {
-                    return `${labelHtml}<p class="text-sm text-muted-foreground">Loading careers...</p>`;
+                    return `${labelHtml}<p class="text-sm text-muted-foreground">Cargando carreras...</p>`;
                 }
                 return `${labelHtml}<div id="career-selector-wrap-${q.id}">${buildCareerSelectorInner(q)}</div>`;
             }
@@ -998,7 +998,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 body: JSON.stringify(textPayload),
             });
             if (!res.ok) {
-                showToast("error", "Save failed", "Could not save answers. Please try again.");
+                showToast("error", "No se pudo guardar", "Could not save answers. Please try again.");
                 return false;
             }
         }
@@ -1028,7 +1028,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
         const errors = validateCurrentStep();
         if (errors.length > 0) {
-            showToast("error", "Required fields missing", `Please fill in: ${errors.slice(0, 3).join(", ")}${errors.length > 3 ? ` and ${errors.length - 3} more` : ""}.`);
+            showToast("error", "Campo obligatorios missing", `Please fill in: ${errors.slice(0, 3).join(", ")}${errors.length > 3 ? ` and ${errors.length - 3} more` : ""}.`);
             return;
         }
 
@@ -1239,7 +1239,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     });
 
                     if (error) {
-                        el("stripe-error").textContent = error.message ?? "Payment failed.";
+                        el("stripe-error").textContent = error.message ?? "El pago falló.";
                         el("stripe-error").classList.remove("hidden");
                         el<HTMLButtonElement>("stripe-pay-btn").disabled = false;
                     } else {
@@ -1252,7 +1252,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                             state.answers[state.stripePaymentQuestionId] = "paid";
                         }
                         hide("stripe-backdrop");
-                        showToast("success", "Payment completed", "Your payment was processed successfully.");
+                        showToast("success", "Payment completed", "Your payment was processed exitosaly.");
                         renderWizard();
                     }
                 };

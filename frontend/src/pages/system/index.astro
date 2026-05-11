@@ -19,7 +19,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <div class="flex items-center justify-between px-5 py-4 border-b border-border">
           <div>
             <h2 class="text-sm font-semibold text-foreground">Gestión de usuarios</h2>
-            <p class="text-xs text-muted-foreground mt-0.5">Create and manage all system users</p>
+            <p class="text-xs text-muted-foreground mt-0.5">Crea y gestiona todos los usuarios del sistema</p>
           </div>
           <button id="new-user-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -31,12 +31,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <div class="px-5 py-3 border-b border-border flex flex-wrap gap-3">
           <div class="relative flex-1 min-w-48">
             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
-            <input id="user-search" type="text" placeholder="Search by name or email..." class="pl-9 pr-4 py-2 w-full bg-input border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+            <input id="user-search" type="text" placeholder="Buscar por nombre o correo..." class="pl-9 pr-4 py-2 w-full bg-input border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
           <select id="role-filter" class="bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
             <option value="">All Roles</option>
-            <option value="s">Student</option>
-            <option value="t">Teacher</option>
+            <option value="s">Estudiante</option>
+            <option value="t">Profesor</option>
             <option value="m">Gestión</option>
             <option value="a">Admin</option>
           </select>
@@ -49,7 +49,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">User</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Correo electrónico</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Role</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Status</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Estado</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Actions</th>
               </tr>
             </thead>
@@ -62,7 +62,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       <!-- Formato de ID de estudiante -->
       <section class="bg-card text-card-foreground rounded-xl border border-border overflow-hidden">
         <div class="px-5 py-4 border-b border-border">
-          <h2 class="text-sm font-semibold text-foreground">Student ID Format</h2>
+          <h2 class="text-sm font-semibold text-foreground">Formato de ID de estudiante</h2>
           <p class="text-xs text-muted-foreground mt-0.5">Configure the auto-generated student ID pattern for new registrations</p>
         </div>
         <div class="px-5 py-4 space-y-4">
@@ -78,7 +78,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           </div>
           <div class="flex items-center gap-3">
             <button id="save-student-id-format" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-              Save Format
+              Guardar formato
             </button>
             <span id="student-id-format-status" class="hidden text-xs text-emerald-400">Saved</span>
           </div>
@@ -88,7 +88,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       <!-- Cobros de matrícula -->
       <section class="bg-card text-card-foreground rounded-xl border border-border overflow-hidden">
         <div class="px-5 py-4 border-b border-border">
-          <h2 class="text-sm font-semibold text-foreground">Enrollment Payment Charges</h2>
+          <h2 class="text-sm font-semibold text-foreground">Cargos de pago de matrícula</h2>
           <p class="text-xs text-muted-foreground mt-0.5">Configure administrative charges added after subject selection</p>
         </div>
         <div class="px-5 py-4 space-y-4">
@@ -114,7 +114,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           </div>
           <div class="flex items-center gap-3">
             <button id="save-enrollment-charges" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-              Save Enrollment Charges
+              Guardar cargos de matrícula
             </button>
             <span id="enrollment-charges-status" class="hidden text-xs"></span>
           </div>
@@ -139,11 +139,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <input id="edit-id" type="hidden" value="" />
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="text-xs font-medium text-muted-foreground">First Name *</label>
+              <label class="text-xs font-medium text-muted-foreground">Nombre *</label>
               <input id="user-first" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
             </div>
             <div>
-              <label class="text-xs font-medium text-muted-foreground">Last Name *</label>
+              <label class="text-xs font-medium text-muted-foreground">Apellido *</label>
               <input id="user-last" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
             </div>
           </div>
@@ -162,14 +162,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <div>
             <label class="text-xs font-medium text-muted-foreground">Role *</label>
             <select id="user-role" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-              <option value="s">Student</option>
-              <option value="t">Teacher</option>
+              <option value="s">Estudiante</option>
+              <option value="t">Profesor</option>
               <option value="m">Gestión</option>
               <option value="a">Administration</option>
             </select>
           </div>
           <div>
-            <label class="text-xs font-medium text-muted-foreground">Phone</label>
+            <label class="text-xs font-medium text-muted-foreground">Teléfono</label>
             <input id="user-phone" type="tel" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
           <div class="flex items-center gap-3">
@@ -181,8 +181,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       </div>
       <!-- Pie fijo -->
       <div class="flex items-center justify-end gap-3 px-5 py-4 border-t border-border shrink-0">
-        <button id="modal-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
-        <button id="modal-save" type="submit" form="user-form" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">Save</button>
+        <button id="modal-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancelar</button>
+        <button id="modal-save" type="submit" form="user-form" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">Guardar</button>
       </div>
     </div>
   </div>
@@ -210,7 +210,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     });
     if (res.status === 401) { window.location.replace('/login'); throw new Error('Unauthorized'); }
     if (res.status === 204) return {};
-    if (!res.ok) throw new Error(`Request failed (${res.status})`);
+    if (!res.ok) throw new Error(`La solicitud falló (${res.status})`);
     return res.json();
   }
 
@@ -283,7 +283,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         </td>
         <td class="px-5 py-3">
           <div class="flex items-center gap-2">
-            <button class="edit-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors" data-id="${u.id}">Edit</button>
+            <button class="edit-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors" data-id="${u.id}">Editar</button>
             ${!isSelf ? `<button class="toggle-btn rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${active ? 'border-border text-red-400 hover:bg-red-500/10 hover:border-red-500/30' : 'border-border text-green-400 hover:bg-green-500/10 hover:border-green-500/30'}" data-id="${u.id}" data-active="${active}">${active ? 'Deactivate' : 'Activate'}</button>` : ''}
           </div>
         </td>
@@ -313,9 +313,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       allUsers = Array.isArray(data) ? data : (data?.results ?? []);
       renderTable();
     } catch (err) {
-      console.error('Failed to load users:', err);
+      console.error('No se pudieron cargar los usuarios:', err);
       const empty = document.getElementById('users-empty');
-      if (empty) { empty.textContent = 'Failed to load users.'; empty.classList.remove('hidden'); }
+      if (empty) { empty.textContent = 'No se pudieron cargar los usuarios.'; empty.classList.remove('hidden'); }
     } finally {
       document.getElementById('page-loading')?.classList.add('hidden');
       document.getElementById('page-content')?.classList.remove('hidden');
@@ -328,7 +328,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const pwHint = document.getElementById('pw-hint');
     const pwInput = document.getElementById('user-password') as HTMLInputElement;
     if (u) {
-      if (title) title.textContent = 'Edit User';
+      if (title) title.textContent = 'Editar usuario';
       if (pwHint) pwHint.textContent = '(leave blank to keep current)';
       pwInput.removeAttribute('required');
       (document.getElementById('edit-id') as HTMLInputElement).value = u.id;
@@ -441,10 +441,10 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
     try {
       parsedExtras = extraCharges?.value?.trim() ? JSON.parse(extraCharges.value) : [];
-      if (!Array.isArray(parsedExtras)) throw new Error('Extra charges must be a JSON array.');
+      if (!Array.isArray(parsedExtras)) throw new Error('Los cargos extra deben ser un arreglo JSON.');
     } catch (err: any) {
       if (status) {
-        status.textContent = err?.message ?? 'Invalid JSON.';
+        status.textContent = err?.message ?? 'JSON inválido.';
         status.className = 'text-xs text-red-400';
         status.classList.remove('hidden');
       }

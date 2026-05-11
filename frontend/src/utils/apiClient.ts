@@ -179,7 +179,7 @@ export async function apiRequest<T>(
 
     // Gestiona otros errores
     throw new ApiErrorClass(
-      error instanceof Error ? error.message : 'An unexpected error occurred'
+      error instanceof Error ? error.message : 'Ocurrió un error inesperado'
     );
   }
 }

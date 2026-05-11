@@ -2,7 +2,7 @@
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
 
-<DashboardLayout title="Profile Settings — Academix" currentPath="/notifications/preferences">
+<DashboardLayout title="Configuración de perfil — Academix" currentPath="/notifications/preferences">
   <!-- Esqueleto de carga -->
   <div id="page-loading" class="p-6 space-y-4">
     <div class="h-14 bg-card rounded-xl border border-border animate-pulse"></div>
@@ -311,9 +311,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       });
       if (res.status === 401) {
         window.location.href = "/login";
-        throw new Error("Unauthorized");
+        throw new Error("No autorizado");
       }
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      if (!res.ok) throw new Error(`La solicitud falló (${res.status})`);
       return res.json();
     }
 

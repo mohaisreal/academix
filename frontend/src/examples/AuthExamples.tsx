@@ -25,7 +25,7 @@ export function SimpleLoginExample() {
       window.location.href = '/dashboard';
     } catch (err) {
       // El error lo gestiona automáticamente el almacén de estado
-      console.error('Login failed:', err);
+      console.error('Falló el inicio de sesión:', err);
     }
   };
 
@@ -45,7 +45,7 @@ export function SimpleLoginExample() {
         placeholder="Contraseña"
       />
       <button type="submit" disabled={isLoading}>
-        {isLoading ? 'Iniciando sesión...' : 'Login'}
+        {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
       </button>
     </form>
   );
@@ -71,7 +71,7 @@ export function ProtectedDashboard() {
 
   return (
     <div>
-      <h1>Welcome, {user?.first_name}!</h1>
+      <h1>¡Bienvenido, {user?.first_name}!</h1>
       <p>Correo electrónico: {user?.email}</p>
       <p>Role: {user?.role}</p>
       <button onClick={logout}>Cerrar sesión</button>
@@ -108,16 +108,16 @@ export function UserProfileExample() {
     }
   };
 
-  const handleUpdatePhone = async () => {
-    const newPhone = prompt('Enter new phone number:');
-    if (newPhone) {
-      await updateProfile({ phone: newPhone });
+  const handleUpdateTeléfono = async () => {
+    const newTeléfono = prompt('Enter new phone number:');
+    if (newTeléfono) {
+      await updateProfile({ phone: newTeléfono });
     }
   };
 
   return (
     <div>
-      <h2>User Profile</h2>
+      <h2>Perfil de usuario</h2>
       {updateError && <div className="error">{updateError}</div>}
 
       <div>
@@ -127,11 +127,11 @@ export function UserProfileExample() {
         <strong>Correo electrónico:</strong> {user?.email}
       </div>
       <div>
-        <strong>Phone:</strong> {user?.phone || 'Not set'}
+        <strong>Teléfono:</strong> {user?.phone || 'Not set'}
       </div>
 
-      <button onClick={handleUpdatePhone} disabled={isUpdating}>
-        {isUpdating ? 'Updating...' : 'Update Phone'}
+      <button onClick={handleUpdateTeléfono} disabled={isUpdating}>
+        {isUpdating ? 'Actualizando...' : 'Actualizar teléfono'}
       </button>
     </div>
   );
@@ -172,7 +172,7 @@ export function RegistrationExample() {
       await register({ ...registerData, password2: confirmPassword });
       window.location.href = '/dashboard';
     } catch (err) {
-      console.error('Registration failed:', err);
+      console.error('No se pudo completar el registro:', err);
     }
   };
 
@@ -229,7 +229,7 @@ export function RegistrationExample() {
       />
 
       <button type="submit" disabled={isLoading}>
-        {isLoading ? 'Creando cuenta...' : 'Register'}
+        {isLoading ? 'Creando cuenta...' : 'Registrarse'}
       </button>
     </form>
   );
@@ -295,7 +295,7 @@ export function DirectAPIExample() {
         {users.map(user => (
           <li key={user.id}>
             {user.first_name} {user.last_name} - {user.email}
-            <button onClick={() => deleteUser(user.id)}>Delete</button>
+            <button onClick={() => deleteUser(user.id)}>Eliminar</button>
           </li>
         ))}
       </ul>
@@ -320,8 +320,8 @@ export function ConditionalRenderingExample() {
       ) : (
         <div>
           <p>Please log in to continue</p>
-          <a href="/login">Login</a>
-          <a href="/register">Register</a>
+          <a href="/login">Iniciar sesión</a>
+          <a href="/register">Registrarse</a>
         </div>
       )}
     </div>
@@ -345,12 +345,12 @@ export function RoleBasedExample() {
 
   return (
     <div>
-      <h1>Dashboard</h1>
+      <h1>Panel</h1>
 
       {/* Disponible para todos los usuarios autenticados */
 }
       <section>
-        <h2>My Profile</h2>
+        <h2>Mi perfil</h2>
         <p>Name: {user?.first_name} {user?.last_name}</p>
       </section>
 
@@ -358,7 +358,7 @@ export function RoleBasedExample() {
 }
       {isTeacher && (
         <section>
-          <h2>Teacher Dashboard</h2>
+          <h2>Panel de profesor</h2>
           <p>Manage your classes and students</p>
         </section>
       )}
@@ -376,7 +376,7 @@ export function RoleBasedExample() {
 }
       {isStudent && (
         <section>
-          <h2>My Courses</h2>
+          <h2>Mis cursos</h2>
           <p>View your enrolled courses</p>
         </section>
       )}
@@ -404,7 +404,7 @@ export function ErrorHandlingExample() {
         // Gestiona códigos de estado concretos
         switch (err.status) {
           case 401:
-            alert('Invalid credentials. Please try again.');
+            alert('Credenciales inválidas. Inténtalo de nuevo.');
             break;
           case 429:
             alert('Too many login attempts. Please try again later.');
@@ -438,7 +438,7 @@ export function ErrorHandlingExample() {
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
-      <button type="submit">Login</button>
+      <button type="submit">Iniciar sesión</button>
     </form>
   );
 }

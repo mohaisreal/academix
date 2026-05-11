@@ -113,9 +113,9 @@ class Notification(models.Model):
 
 class UserEmailPreference(models.Model):
     DELIVERY_CHOICES = [
-        (NOTIFICATION_DELIVERY_PROFILE, 'Profile only'),
+        (NOTIFICATION_DELIVERY_PROFILE, 'Solo perfil'),
         (NOTIFICATION_DELIVERY_EMAIL, 'Email only'),
-        (NOTIFICATION_DELIVERY_BOTH, 'Profile and email'),
+        (NOTIFICATION_DELIVERY_BOTH, 'Perfil y correo electrónico'),
     ]
     THEME_CHOICES = [
         (NOTIFICATION_THEME_DARK, 'Dark'),
@@ -193,8 +193,8 @@ class SystemSettings(models.Model):
     )
 
     class Meta:
-        verbose_name = 'System Settings'
-        verbose_name_plural = 'System Settings'
+        verbose_name = 'Configuración del sistema'
+        verbose_name_plural = 'Configuración del sistema'
 
     def save(self, *args, **kwargs):
         self.pk = 1

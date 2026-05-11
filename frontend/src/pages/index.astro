@@ -3,14 +3,14 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 import Button from "@/components/starwind/button/Button.astro";
 ---
 
-<DashboardLayout title="Dashboard — Academix" currentPath="/">
+<DashboardLayout title="Panel — Academix" currentPath="/">
 
     <!-- ─── PANEL DE ESTUDIANTE ─────────────────────────────────────────── -->
     <div id="dashboard-student" class="hidden">
         <div class="flex items-center justify-between border-b border-border px-6 py-4">
             <div>
-                <h1 class="text-xl font-semibold text-foreground">Student Dashboard</h1>
-                <p id="stu-subtitle" class="text-sm text-muted-foreground">Welcome back. Here is your learning overview.</p>
+                <h1 class="text-xl font-semibold text-foreground">Panel de estudiante</h1>
+                <p id="stu-subtitle" class="text-sm text-muted-foreground">Bienvenido de nuevo. Here is your learning overview.</p>
             </div>
         </div>
         <div class="p-6 space-y-6">
@@ -38,7 +38,7 @@ import Button from "@/components/starwind/button/Button.astro";
                 <!-- Admissions quick summary (always useful even sin matrícula) -->
                 <div class="mt-6 bg-card text-card-foreground rounded-xl border border-border p-5">
                     <div class="flex items-center justify-between mb-3">
-                        <h2 class="text-base font-semibold text-foreground">Admission Applications</h2>
+                        <h2 class="text-base font-semibold text-foreground">Solicitudes de admisión</h2>
                         <a href="/admissions/my-applications" class="text-sm text-primary hover:underline">View all →</a>
                     </div>
                     <div id="stu-admissions-summary-pre" class="space-y-2 text-sm">
@@ -76,7 +76,7 @@ import Button from "@/components/starwind/button/Button.astro";
                     </div>
                     <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
                         <div class="flex items-center justify-between">
-                            <p class="text-sm text-muted-foreground">Teachers</p>
+                            <p class="text-sm text-muted-foreground">Profesores</p>
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground/50"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
                         </div>
                         <p id="stu-teachers-count" class="text-3xl font-bold text-foreground mt-2">—</p>
@@ -100,10 +100,10 @@ import Button from "@/components/starwind/button/Button.astro";
                     </div>
                 </div>
 
-                <!-- Recent Grades -->
+                <!-- Calificaciones recientes -->
                 <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
                     <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-lg font-semibold text-foreground">Recent Grades</h2>
+                        <h2 class="text-lg font-semibold text-foreground">Calificaciones recientes</h2>
                         <a href="/grades" class="text-sm text-primary hover:underline">View all →</a>
                     </div>
                     <div id="stu-recent-grades" class="flex gap-3 overflow-x-auto pb-1 min-h-[112px]">
@@ -159,7 +159,7 @@ import Button from "@/components/starwind/button/Button.astro";
     <div id="dashboard-teacher" class="hidden">
         <div class="flex items-center justify-between border-b border-border px-6 py-4">
             <div>
-                <h1 class="text-xl font-semibold text-foreground">Teacher Dashboard</h1>
+                <h1 class="text-xl font-semibold text-foreground">Panel de profesor</h1>
                 <p class="text-sm text-muted-foreground">Manage your courses and track student progress.</p>
             </div>
             <a href="/marking">
@@ -177,12 +177,12 @@ import Button from "@/components/starwind/button/Button.astro";
                     <p class="text-xs text-muted-foreground mt-1">Current period</p>
                 </div>
                 <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
-                    <p class="text-sm text-muted-foreground">Total Students</p>
+                    <p class="text-sm text-muted-foreground">Total de estudiantes</p>
                     <p id="tch-students" class="text-3xl font-bold text-foreground mt-2">—</p>
                     <p class="text-xs text-success mt-1">Across all classes</p>
                 </div>
                 <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
-                    <p class="text-sm text-muted-foreground">Pending Grades</p>
+                    <p class="text-sm text-muted-foreground">Calificaciones pendientes</p>
                     <p id="tch-pending" class="text-3xl font-bold text-foreground mt-2">—</p>
                     <p class="text-xs text-warning mt-1">To be graded</p>
                 </div>
@@ -202,7 +202,7 @@ import Button from "@/components/starwind/button/Button.astro";
                     <thead>
                         <tr class="border-b border-border">
                             <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Course</th>
-                            <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Students</th>
+                            <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Estudiantes</th>
                             <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Pending</th>
                             <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Avg Score</th>
                             <th class="text-right text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Action</th>
@@ -235,14 +235,14 @@ import Button from "@/components/starwind/button/Button.astro";
         <div class="p-6 space-y-6">
             <div class="grid grid-cols-4 gap-4">
                 <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
-                    <p class="text-sm text-muted-foreground">Estudiantes Totales</p>
+                    <p class="text-sm text-muted-foreground">Total de estudiantes</p>
                     <p id="mgmt-students" class="text-3xl font-bold text-foreground mt-2">—</p>
-                    <p class="text-xs text-success mt-1">Estudiantes Activos</p>
+                    <p class="text-xs text-success mt-1">Estudiantes activos</p>
                 </div>
                 <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
-                    <p class="text-sm text-muted-foreground">Profesores Totales</p>
+                    <p class="text-sm text-muted-foreground">Total de profesores</p>
                     <p id="mgmt-teachers" class="text-3xl font-bold text-foreground mt-2">—</p>
-                    <p class="text-xs text-success mt-1">Profesores Activos</p>
+                    <p class="text-xs text-success mt-1">Profesores activos</p>
                 </div>
                 <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
                     <p class="text-sm text-muted-foreground">Clases Activas</p>
@@ -266,7 +266,7 @@ import Button from "@/components/starwind/button/Button.astro";
                     <thead>
                         <tr class="border-b border-border">
                             <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Career</th>
-                            <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Students</th>
+                            <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Estudiantes</th>
                             <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Classes</th>
                             <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Avg GPA</th>
                         </tr>
@@ -292,7 +292,7 @@ import Button from "@/components/starwind/button/Button.astro";
                     <div class="flex size-10 items-center justify-center rounded-lg bg-primary/15 mb-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
                     </div>
-                    <p class="text-sm font-medium text-foreground">Users</p>
+                    <p class="text-sm font-medium text-foreground">Usuarios</p>
                     <p class="text-xs text-muted-foreground mt-1">Create and manage accounts by role</p>
                 </a>
                 <a href="/files" class="bg-card text-card-foreground rounded-xl border border-border p-5 hover:bg-muted/50 transition-colors block">
@@ -306,7 +306,7 @@ import Button from "@/components/starwind/button/Button.astro";
                     <div class="flex size-10 items-center justify-center rounded-lg bg-info/15 mb-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-info"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                     </div>
-                    <p class="text-sm font-medium text-foreground">Statistics</p>
+                    <p class="text-sm font-medium text-foreground">Estadísticas</p>
                     <p class="text-xs text-muted-foreground mt-1">Platform analytics & reports</p>
                 </a>
             </div>
@@ -347,7 +347,7 @@ import Button from "@/components/starwind/button/Button.astro";
         document.getElementById(divId)?.classList.remove("hidden");
         if (role === "a") {
             const t = document.getElementById("mgmt-title");
-            if (t) t.textContent = "Admin Dashboard";
+            if (t) t.textContent = "Admin Panel";
         }
     }
 
@@ -646,7 +646,7 @@ import Button from "@/components/starwind/button/Button.astro";
                             </div>
                             <div>
                                 <div class="flex justify-between text-xs text-muted-foreground mb-1">
-                                    <span>Grade</span><span class="${gradeColor(grade)}">${formatGrade(grade)}</span>
+                                    <span>Calificar</span><span class="${gradeColor(grade)}">${formatGrade(grade)}</span>
                                 </div>
                                 <div class="h-1.5 bg-muted rounded-full overflow-hidden">
                                     <div class="h-full bg-primary rounded-full transition-all" style="width:${gradeProgress}%"></div>
@@ -698,7 +698,7 @@ import Button from "@/components/starwind/button/Button.astro";
                                 <p class="text-xs text-muted-foreground truncate mt-1">${escHtml(g.subject)}</p>
                             </div>
                             <div class="flex items-end justify-between gap-3">
-                                <span class="text-xs text-muted-foreground">Grade</span>
+                                <span class="text-xs text-muted-foreground">Calificar</span>
                                 <span class="text-2xl font-bold ${gradeColor(g.score)}">${formatGrade(g.score)}</span>
                             </div>
                         </div>
@@ -767,7 +767,7 @@ import Button from "@/components/starwind/button/Button.astro";
                                 <td class="py-3 text-sm text-muted-foreground">${c.pending_grades ?? 0}</td>
                                 <td class="py-3 text-sm font-medium ${scoreClass}">${avgStr}</td>
                                 <td class="py-3 text-right">
-                                    <a href="/marking?class=${c.id}" class="text-xs text-primary hover:underline">Grade</a>
+                                    <a href="/marking?class=${c.id}" class="text-xs text-primary hover:underline">Calificar</a>
                                 </td>
                             </tr>`;
                     }).join('');

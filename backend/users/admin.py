@@ -21,7 +21,7 @@ class CustomUserChangeForm(UserChangeForm):
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     """
-    Custom admin interface for User model extending Django's UserAdmin
+    Interfaz administrativa personalizada para el modelo Usuario que extiende UserAdmin
     with proper password handling and custom fields
     """
     form = CustomUserChangeForm
@@ -39,7 +39,7 @@ class UserAdmin(BaseUserAdmin):
         'created_at'
     ]
 
-    # Filter options
+    # Opciones de filtro
     list_filter = [
         'role',
         'is_active',

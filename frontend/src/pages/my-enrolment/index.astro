@@ -36,11 +36,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
               <tr class="border-b border-border">
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Subject</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Code</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Teacher</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Profesor</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Schedule</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Classroom</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Credits</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Status</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Estado</th>
               </tr>
             </thead>
             <tbody id="classes-table-body"></tbody>
@@ -130,8 +130,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         statusCard.innerHTML = `
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-xl font-bold text-foreground">${escHtml(enrollment.career_name || enrollment.career?.name || 'Unknown Career')}</p>
-              <p class="text-sm text-muted-foreground mt-1">${escHtml(enrollment.period_name || enrollment.period?.name || 'Unknown Period')}</p>
+              <p class="text-xl font-bold text-foreground">${escHtml(enrollment.career_name || enrollment.career?.name || 'Desconocido Career')}</p>
+              <p class="text-sm text-muted-foreground mt-1">${escHtml(enrollment.period_name || enrollment.period?.name || 'Desconocido Period')}</p>
               <p class="text-xs text-muted-foreground mt-1">Enrolled: ${formatDate(enrollment.enrolled_at || enrollment.created_at)}</p>
             </div>
             <span class="inline-flex items-center rounded-full ${statusColor} px-3 py-1 text-sm font-medium capitalize">${escHtml(enrollment.status || 'unknown')}</span>
@@ -147,7 +147,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         statsRow.innerHTML = [
           { label: 'Total Credits', value: totalCredits, icon: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>' },
           { label: 'Total Classes', value: classes.length, icon: '<path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 6 3 6 3s3 0 6-3v-5"/>' },
-          { label: 'Status', value: enrollment.status || '-', icon: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>' },
+          { label: 'Estado', value: enrollment.status || '-', icon: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>' },
         ].map(s => `
           <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
             <div class="flex items-center gap-3">

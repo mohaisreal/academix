@@ -133,7 +133,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             const status = user.identity_verification_status ?? "unsubmitted";
             const badge = STATUS_BADGES[status] ?? STATUS_BADGES.unsubmitted;
             const fallbackName = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim();
-            const displayName = user.full_name || fallbackName || user.email || "Student";
+            const displayName = user.full_name || fallbackName || user.email || "Estudiante";
             const docs = (user.identity_documents ?? []).map((doc: any) => `
                 <a href="${resolveMediaUrl(doc.file)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-primary hover:bg-muted">
                     ${escapeHtml(doc.file_name ?? doc.original_filename ?? "Document")}
@@ -150,7 +150,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                                 <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${badge}">${STATUS_LABELS[status] ?? status}</span>
                             </div>
                             <p class="mt-1 text-sm text-muted-foreground">${escapeHtml(user.email)} · DNI: ${escapeHtml(user.dni ?? "—")}</p>
-                            <p class="mt-1 text-xs text-muted-foreground">Email verified: ${user.email_verified ? "yes" : "no"} · Registered: ${user.created_at ? new Date(user.created_at).toLocaleString() : "—"}</p>
+                            <p class="mt-1 text-xs text-muted-foreground">Email verified: ${user.email_verified ? "yes" : "no"} · Registrado: ${user.created_at ? new Date(user.created_at).toLocaleString() : "—"}</p>
                         </div>
                     </div>
 
@@ -186,11 +186,11 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         try {
             const res = await apiFetch(`/users/identity-verifications/?status=${encodeURIComponent(status)}`);
             const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.detail || data.error || `Could not load (${res.status}).`);
+            if (!res.ok) throw new Error(data.detail || data.error || `No se pudo cargar (${res.status}).`);
             renderUsers(Array.isArray(data) ? data : (data.results ?? []));
         } catch (err) {
             document.getElementById("loading")?.classList.add("hidden");
-            showFeedback(err instanceof Error ? err.message : "Could not load identity reviews.", "error");
+            showFeedback(err instanceof Error ? err.message : "No se pudieron cargar las revisiones de identidad.", "error");
         }
     }
 
@@ -208,11 +208,11 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 body: JSON.stringify({ status: decision, notes }),
             });
             const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.detail || data.error || `Review failed (${res.status}).`);
+            if (!res.ok) throw new Error(data.detail || data.error || `La revisión falló (${res.status}).`);
             showFeedback(decision === "approved" ? "Account approved." : "Account rejected.", "success");
             await loadUsers();
         } catch (err) {
-            showFeedback(err instanceof Error ? err.message : "Could not save review.", "error");
+            showFeedback(err instanceof Error ? err.message : "No se pudo guardar la revisión.", "error");
         } finally {
             button.disabled = false;
         }

@@ -10,7 +10,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     <div class="flex items-center justify-between border-b border-border px-6 py-4">
         <div>
             <h1 class="text-xl font-semibold text-foreground">Questionnaires</h1>
-            <p class="text-sm text-muted-foreground">Create and manage admission and enrollment questionnaires.</p>
+            <p class="text-sm text-muted-foreground">Crea y gestiona cuestionarios de admisión y matrícula.</p>
         </div>
         <div class="flex items-center gap-3">
             <span id="total-count" class="text-sm text-muted-foreground bg-muted px-3 py-1.5 rounded-full hidden"></span>
@@ -34,7 +34,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         <div class="flex flex-wrap items-center gap-3">
             <div class="relative">
                 <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input id="search-input" type="text" placeholder="Search questionnaires..." class="pl-8 pr-3 py-2 rounded-md border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30 w-64" />
+                <input id="search-input" type="text" placeholder="Buscar cuestionarios..." class="pl-8 pr-3 py-2 rounded-md border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30 w-64" />
             </div>
             <select id="filter-type" class="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30">
                 <option value="">All Types</option>
@@ -73,12 +73,12 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/></svg>
             </div>
             <h3 class="text-base font-medium text-foreground">No questionnaires yet</h3>
-            <p class="text-sm text-muted-foreground mt-1">Create your first questionnaire to get started.</p>
+            <p class="text-sm text-muted-foreground mt-1">Crea tu primer cuestionario para comenzar.</p>
         </div>
 
         <!-- Estado de error -->
         <div id="error-state" class="hidden rounded-lg border border-destructive/30 bg-destructive/10 p-4">
-            <p class="text-sm font-medium text-destructive">Failed to load questionnaires</p>
+            <p class="text-sm font-medium text-destructive">No se pudieron cargar los cuestionarios</p>
             <p id="error-message" class="text-sm text-destructive/80 mt-1"></p>
         </div>
     </div>
@@ -102,7 +102,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 <div id="import-error" class="hidden rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"></div>
             </div>
             <div class="flex items-center justify-end gap-3 px-5 py-4 border-t border-border">
-                <button id="import-modal-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancel</button>
+                <button id="import-modal-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancelar</button>
                 <button id="import-modal-confirm" type="button" class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
                     <span id="import-confirm-label">Import</span>
                     <div id="import-confirm-spinner" class="hidden size-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
@@ -115,7 +115,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     <div id="modal-backdrop" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
         <div class="w-full max-w-lg rounded-xl border border-border bg-background shadow-2xl max-h-[90vh] flex flex-col">
             <div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-                <h2 id="modal-title" class="text-base font-semibold text-foreground">Create Questionnaire</h2>
+                <h2 id="modal-title" class="text-base font-semibold text-foreground">Crear cuestionario</h2>
                 <button id="modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
@@ -131,7 +131,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                         <input
                             id="form-title"
                             type="text"
-                            placeholder="e.g., Undergraduate Admission 2025"
+                            placeholder="e.g., Admisión de pregrado 2025"
                             required
                             class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
                         />
@@ -193,7 +193,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     Cancel
                 </button>
                 <button id="modal-save" type="button" class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-                    <span id="modal-save-label">Create</span>
+                    <span id="modal-save-label">Crear</span>
                     <div id="modal-save-spinner" class="hidden size-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
                 </button>
             </div>
@@ -255,7 +255,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
         const body = el("table-body");
         body.innerHTML = items.map(q => {
-            const typeLabel = q.flow_type === "admissions" ? "Admissions" : "Enrollment";
+            const typeLabel = q.flow_type === "admissions" ? "Admisiones" : "Matrícula";
             const typeColor = q.flow_type === "admissions"
                 ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
                 : "bg-violet-500/10 text-violet-400 border-violet-500/20";
@@ -341,9 +341,9 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 const id = parseInt((btn as HTMLElement).dataset.id ?? "0", 10);
                 const title = (btn as HTMLElement).dataset.title ?? "this questionnaire";
                 (window as any).confirmAction?.({
-                    title: "Delete Questionnaire",
+                    title: "Eliminar preguntanaire",
                     description: `Are you sure you want to delete "${title}"? All steps, questions, and student responses will be permanently removed.`,
-                    confirmLabel: "Delete",
+                    confirmLabel: "Eliminar",
                     variant: "destructive",
                     onConfirm: () => deleteQuestionnaire(id),
                 });
@@ -387,7 +387,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
             if (!qRes.ok) {
                 hide("loading-state");
-                el("error-message").textContent = `Failed to load (${qRes.status}).`;
+                el("error-message").textContent = `No se pudo cargar (${qRes.status}).`;
                 show("error-state");
                 return;
             }
@@ -458,7 +458,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 showToast("success", newActive ? "Activated" : "Deactivated",
                     newActive ? "Questionnaire is now active." : "Questionnaire is now inactive.");
             } else {
-                showToast("error", "Error", `Could not update status (${res.status}).`);
+                showToast("error", "Error", `No se pudo actualizar el estado (${res.status}).`);
             }
         } catch {
             showToast("error", "Network error", "Could not update questionnaire status.");
@@ -474,9 +474,9 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             if (res.ok || res.status === 204) {
                 allQuestionnaires = allQuestionnaires.filter(q => q.id !== id);
                 filterAndRender();
-                showToast("success", "Deleted", "Questionnaire removed successfully.");
+                showToast("success", "Deleted", "Questionnaire removed exitosaly.");
             } else {
-                showToast("error", "Delete failed", `Server responded with ${res.status}.`);
+                showToast("error", "No se pudo eliminar", `El servidor respondió con ${res.status}.`);
             }
         } catch {
             showToast("error", "Network error", "Could not delete questionnaire.");
@@ -491,8 +491,8 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         el<HTMLSelectElement>("form-flow-type").value = "";
         el<HTMLSelectElement>("form-career").value = "";
         setActiveToggle(true);
-        el("modal-title").textContent = "Create Questionnaire";
-        el("modal-save-label").textContent = "Create";
+        el("modal-title").textContent = "Crear cuestionario";
+        el("modal-save-label").textContent = "Crear";
         show("modal-backdrop");
     }
 
@@ -561,7 +561,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
                 const msg = Object.values(err).flat().join(" ") || `Server error ${res.status}.`;
-                showToast("error", isEdit ? "Update failed" : "Create failed", msg);
+                showToast("error", isEdit ? "No se pudo actualizar" : "No se pudo crear", msg);
                 return;
             }
 
@@ -569,10 +569,10 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
             if (isEdit) {
                 allQuestionnaires = allQuestionnaires.map(q => q.id === saved.id ? { ...q, ...saved } : q);
-                showToast("success", "Updated", "Questionnaire updated successfully.");
+                showToast("success", "Updated", "Questionnaire updated exitosaly.");
             } else {
                 allQuestionnaires.unshift(saved);
-                showToast("success", "Created", "Questionnaire created successfully.");
+                showToast("success", "Created", "Questionnaire created exitosaly.");
             }
 
             filterAndRender();
@@ -581,7 +581,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         } catch {
             showToast("error", "Network error", "Could not save questionnaire.");
         } finally {
-            el("modal-save-label").textContent = isEdit ? "Save" : "Create";
+            el("modal-save-label").textContent = isEdit ? "Guardar" : "Crear";
             el("modal-save-spinner").classList.add("hidden");
             el<HTMLButtonElement>("modal-save").disabled = false;
         }
@@ -592,7 +592,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         try {
             const res = await fetch(`${API_URL}/questionnaire/questionnaires/${id}/export/`, { headers: authHeaders() });
             if (!res.ok) {
-                showToast("error", "Export failed", `Server responded with ${res.status}.`);
+                showToast("error", "La exportación falló", `El servidor respondió con ${res.status}.`);
                 return;
             }
             const data = await res.json();
@@ -632,7 +632,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         try {
             parsed = JSON.parse(await file.text());
         } catch {
-            el("import-error").textContent = "Invalid JSON file. Please check the file and try again.";
+            el("import-error").textContent = "Archivo JSON inválido. Revisa el archivo e inténtalo de nuevo.";
             el("import-error").classList.remove("hidden");
             return;
         }
@@ -650,7 +650,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
-                el("import-error").textContent = err.detail ?? `Import failed (${res.status}).`;
+                el("import-error").textContent = err.detail ?? `La importación falló (${res.status}).`;
                 el("import-error").classList.remove("hidden");
                 return;
             }
@@ -659,7 +659,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             allQuestionnaires.unshift(created);
             filterAndRender();
             closeImportModal();
-            showToast("success", "Imported", `"${created.title}" was created successfully.`);
+            showToast("success", "Imported", `"${created.title}" was created exitosaly.`);
         } catch {
             el("import-error").textContent = "Network error. Could not import questionnaire.";
             el("import-error").classList.remove("hidden");
@@ -730,7 +730,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
-                showToast("error", "Failed", err.detail ?? `Server error ${res.status}.`);
+                showToast("error", "Error", err.detail ?? `Server error ${res.status}.`);
                 return;
             }
             const created = await res.json();

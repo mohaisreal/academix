@@ -153,12 +153,12 @@ def create_notification(
     context=None,
 ):
     """
-    Creates a profile Notification and/or sends an email according to the
+    Crea una notificación de perfil y/o envía un correo según la
     user's notification preferences.
 
     Args:
         user: The target user.
-        title: Notification title and default email subject.
+        title: Título de notificación y asunto predeterminado del correo.
         message: Plain-text notification body.
         notif_type: One of 'info', 'success', 'warning', 'error'.
         event_type: Optional free-text event classifier stored on the record.
@@ -242,6 +242,6 @@ def create_notification(
             fail_silently=True,
         )
     except Exception:
-        logger.exception('Failed to send email to %s', user.email)
+        logger.exception('No se pudo enviar el correo a %s', user.email)
 
     return notif

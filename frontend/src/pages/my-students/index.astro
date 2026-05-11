@@ -1,7 +1,7 @@
 ---
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
-<DashboardLayout title="My Students — Academix" currentPath="/my-students">
+<DashboardLayout title="Mis estudiantes — Academix" currentPath="/my-students">
   <div id="page-loading" class="p-6 space-y-4">
     <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
     <div class="h-64 bg-card rounded-xl border border-border animate-pulse"></div>
@@ -10,14 +10,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   <div id="page-content" class="hidden">
     <div class="flex items-center justify-between border-b border-border px-6 py-4">
       <div>
-        <h1 class="text-xl font-semibold text-foreground">My Students</h1>
-        <p class="text-sm text-muted-foreground">Students enrolled in your classes</p>
+        <h1 class="text-xl font-semibold text-foreground">Mis estudiantes</h1>
+        <p class="text-sm text-muted-foreground">Estudiantes inscritos en tus clases</p>
       </div>
       <div class="flex items-center gap-3">
         <select id="class-filter" class="bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
           <option value="">All Classes</option>
         </select>
-        <input id="search-input" type="text" placeholder="Search students..." class="w-52 bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+        <input id="search-input" type="text" placeholder="Buscar estudiantes..." class="w-52 bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
       </div>
     </div>
 
@@ -27,7 +27,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <table class="w-full">
             <thead>
               <tr class="border-b border-border">
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Student</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Estudiante</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Career</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Avg Grade</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Actions</th>
@@ -105,7 +105,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     }
     empty?.classList.add('hidden');
     tbody.innerHTML = students.map(s => {
-      const name = s.student_name || `${s.first_name || ''} ${s.last_name || ''}`.trim() || s.username || 'Unknown';
+      const name = s.student_name || `${s.first_name || ''} ${s.last_name || ''}`.trim() || s.username || 'Desconocido';
       const email = s.email || '-';
       const career = s.career_name || s.career || '-';
       const avg = s.gpa ?? s.average_grade ?? s.avg_grade;

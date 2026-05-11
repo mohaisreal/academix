@@ -117,7 +117,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 ...(opts.headers || {}),
             },
         });
-        if (res.status === 401) { window.location.replace("/login"); throw new Error("Unauthorized"); }
+        if (res.status === 401) { window.location.replace("/login"); throw new Error("No autorizado"); }
         return res;
     }
 

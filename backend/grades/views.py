@@ -170,7 +170,7 @@ class StudentFileDetailView(APIView):
         try:
             student = User.objects.get(pk=student_id, role='s')
         except User.DoesNotExist:
-            return Response({'error': 'Student not found'}, status=404)
+            return Response({'error': 'Estudiante no encontrado'}, status=404)
 
         enrollments = (
             CareerEnrollment.objects
@@ -290,7 +290,7 @@ class MarkingView(APIView):
         try:
             student = User.objects.get(pk=student_id, role='s')
         except User.DoesNotExist:
-            return Response({'error': 'Student not found'}, status=404)
+            return Response({'error': 'Estudiante no encontrado'}, status=404)
 
         previous_grade = Grade.objects.filter(student=student, evaluation=evaluation).first()
         previous_score = previous_grade.score if previous_grade else None

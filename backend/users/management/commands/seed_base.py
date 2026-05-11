@@ -17,11 +17,11 @@ Academic structure:
   - 3 evaluations per class (Midterm, Assignment 1, Quiz 1)
 
 What it does NOT create:
-  - Students
+  - Estudiantes
   - CareerEnrollments / ClassEnrollments
-  - Grades
-  - Notifications
-  - Messages
+  - Calificaciones
+  - Notificaciones
+  - Mensajes
   - AdmissionApplications
 
 Usage:
@@ -63,7 +63,7 @@ SUBJECTS_DATA = {
         ("Engineering Maths", "ENG101", 4, 6),
         ("Statics",           "ENG102", 3, 4),
         ("Thermodynamics",    "ENG103", 3, 4),
-        ("Materials Science", "ENG104", 3, 5),
+        ("Ciencia de materiales", "ENG104", 3, 5),
         ("Fluid Mechanics",   "ENG105", 3, 4),
     ],
 }
@@ -112,14 +112,14 @@ class Command(BaseCommand):
             self._seed_academic()
             self._seed_evaluations()
             self._print_summary()
-        self.stdout.write(self.style.SUCCESS("\n✓ seed_base completed successfully."))
+        self.stdout.write(self.style.SUCCESS("\n✓ seed_base completed exitosaly."))
         self.stdout.write("")
         self.stdout.write("  Credentials:")
         self.stdout.write("    admin    / admin123   (role: admin)")
         self.stdout.write("    mgmt1    / mgmt1123   (role: management)")
         self.stdout.write("    teacher01/ teacher01123 (role: teacher)")
         self.stdout.write("")
-        self.stdout.write("  Register a student at /register to test the full enrollment flow.")
+        self.stdout.write("  Registra un estudiante en /register para probar el flujo completo de matrícula.")
 
     # ------------------------------------------------------------------
     # Wipe
@@ -194,7 +194,7 @@ class Command(BaseCommand):
 
         total = User.objects.count()
         self.stdout.write(self.style.SUCCESS(
-            f"  Users: 1 admin, 2 management, {len(self._teachers)} teachers "
+            f"  Usuarios: 1 admin, 2 gestión, {len(self._teachers)} profesores "
             f"— {total} total in DB."
         ))
 
@@ -378,10 +378,10 @@ class Command(BaseCommand):
         rows = [
             ("Admins",            User.objects.filter(role="a").count()),
             ("Gestión",        User.objects.filter(role="m").count()),
-            ("Teachers",          User.objects.filter(role="t").count()),
-            ("Students",          User.objects.filter(role="s").count()),
+            ("Profesores",          User.objects.filter(role="t").count()),
+            ("Estudiantes",          User.objects.filter(role="s").count()),
             ("Careers",           Career.objects.count()),
-            ("Subjects",          Subject.objects.count()),
+            ("Asignaturas",          Subject.objects.count()),
             ("Academic Periods",  AcademicPeriod.objects.count()),
             ("Classrooms",        Classroom.objects.count()),
             ("Classes",           Class.objects.count()),
