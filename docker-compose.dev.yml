@@ -47,6 +47,8 @@ services:
       # Volumen anónimo para evitar sincronizar node_modules con el anfitrión
       # Esto garantiza que se usen las dependencias instaladas en el contenedor
       - /app/node_modules
+      # Volumen para cachear el store de pnpm dentro del contenedor
+      - pnpm_store:/pnpm/store
       # Excluye artefactos de compilación y directorios de caché
       - /app/.astro
       - /app/dist
@@ -69,3 +71,7 @@ services:
 networks:
   academix-network:
     driver: bridge
+
+volumes:
+  pnpm_store:
+    driver: local

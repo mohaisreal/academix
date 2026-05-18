@@ -140,6 +140,8 @@ In production, Nginx serves the static frontend and acts as a reverse proxy to t
 ## Prerequisites
 
 - [Docker](https://www.docker.com/) and Docker Compose v2
+- [Node.js](https://nodejs.org/) 20+ (for local frontend workflow)
+- Corepack enabled (`corepack enable`) to use the pinned pnpm version from `frontend/package.json`
 - `make` (optional but recommended for Makefile commands)
 
 ---
