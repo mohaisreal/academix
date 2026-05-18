@@ -1,6 +1,6 @@
 """
-TDD tests for admission window fields on AcademicPeriod.
-RED phase — written before model/serializer changes.
+Pruebas TDD para los campos de ventana de admisión en AcademicPeriod.
+Fase RED: escritas antes de cambios en modelo/serializador.
 """
 from django.test import TestCase
 from rest_framework.test import APIClient
@@ -40,17 +40,17 @@ def make_period(**kwargs):
 class AcademicPeriodAdmissionWindowModelTests(TestCase):
 
     def test_admission_open_date_field_exists_and_is_nullable(self):
-        """AcademicPeriod MUST have admission_open_date as nullable DateTimeField."""
+        """AcademicPeriod DEBE tener admission_open_date como DateTimeField anulable."""
         period = make_period()
         self.assertIsNone(period.admission_open_date)
 
     def test_admission_close_date_field_exists_and_is_nullable(self):
-        """AcademicPeriod MUST have admission_close_date as nullable DateTimeField."""
+        """AcademicPeriod DEBE tener admission_close_date como DateTimeField anulable."""
         period = make_period()
         self.assertIsNone(period.admission_close_date)
 
     def test_admission_window_can_be_set(self):
-        """Both datetime fields MUST accept and persist datetime values."""
+        """Ambos campos datetime DEBEN aceptar y persistir valores datetime."""
         period = make_period(
             admission_open_date='2026-01-15T09:00:00Z',
             admission_close_date='2026-02-28T23:59:00Z',
@@ -78,21 +78,21 @@ class AcademicPeriodAdmissionWindowModelTests(TestCase):
 class AcademicPeriodSerializerAdmissionWindowTests(TestCase):
 
     def test_serializer_includes_admission_open_date(self):
-        """AcademicPeriodSerializer MUST expose admission_open_date."""
+        """AcademicPeriodSerializer DEBE exponer admission_open_date."""
         period = make_period(admission_open_date='2026-01-15T09:00:00Z')
         data = AcademicPeriodSerializer(period).data
         self.assertIn('admission_open_date', data)
         self.assertIsNotNone(data['admission_open_date'])
 
     def test_serializer_includes_admission_close_date(self):
-        """AcademicPeriodSerializer MUST expose admission_close_date."""
+        """AcademicPeriodSerializer DEBE exponer admission_close_date."""
         period = make_period(admission_close_date='2026-02-28T23:59:00Z')
         data = AcademicPeriodSerializer(period).data
         self.assertIn('admission_close_date', data)
         self.assertIsNotNone(data['admission_close_date'])
 
     def test_serializer_returns_null_when_dates_not_set(self):
-        """Serializer MUST return null for unset admission dates (not omit the key)."""
+        """El serializador DEBE devolver null para fechas de admisión no definidas (sin omitir la clave)."""
         period = make_period()
         data = AcademicPeriodSerializer(period).data
         self.assertIn('admission_open_date', data)
@@ -101,7 +101,7 @@ class AcademicPeriodSerializerAdmissionWindowTests(TestCase):
         self.assertIsNone(data['admission_close_date'])
 
     def test_serializer_accepts_admission_dates_on_write(self):
-        """Serializer MUST accept admission_open_date and admission_close_date on create."""
+        """El serializador DEBE aceptar admission_open_date y admission_close_date al crear."""
         payload = {
             'name': 'Write Test Period', 'code': 'WTP2026',
             'start_date': '2026-01-01', 'end_date': '2026-06-30',
@@ -127,7 +127,7 @@ class AcademicPeriodAPIAdmissionWindowTests(TestCase):
         self.client.force_authenticate(user=self.manager)
 
     def test_api_list_returns_admission_window_fields(self):
-        """GET /api/academic/periods/ MUST include admission dates in response."""
+        """GET /api/academic/periods/ DEBE incluir fechas de admisión en la respuesta."""
         make_period(
             admission_open_date='2026-01-15T09:00:00Z',
             admission_close_date='2026-02-28T23:59:00Z',
@@ -142,7 +142,7 @@ class AcademicPeriodAPIAdmissionWindowTests(TestCase):
         self.assertIn('admission_close_date', periods[0])
 
     def test_api_create_period_with_admission_window(self):
-        """POST /api/academic/periods/ MUST save admission window datetimes."""
+        """POST /api/academic/periods/ DEBE guardar datetimes de la ventana de admisión."""
         payload = {
             'name': 'Spring 2026', 'code': 'SP2026',
             'start_date': '2026-01-01', 'end_date': '2026-06-30',

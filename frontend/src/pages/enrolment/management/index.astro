@@ -11,11 +11,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     <div class="flex items-center justify-between border-b border-border px-6 py-4">
       <div>
         <h1 class="text-xl font-semibold text-foreground">Gestión de matrículas</h1>
-        <p class="text-sm text-muted-foreground">Manage student career enrolments</p>
+        <p class="text-sm text-muted-foreground">Gestioná las matrículas de carrera de estudiantes</p>
       </div>
       <button id="new-enrolment-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        New Enrolment
+        Nueva matrícula
       </button>
     </div>
 
@@ -23,14 +23,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       <!-- Filtros -->
       <div class="flex flex-wrap gap-3">
         <select id="filter-status" class="bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="">All Statuses</option>
-          <option value="pending">Pending Review</option>
-          <option value="active">Active</option>
-          <option value="completed">Completed</option>
-          <option value="dropped">Dropped</option>
+          <option value="">Todos los estados</option>
+          <option value="pending">Pendiente de revisión</option>
+          <option value="active">Activa</option>
+          <option value="completed">Completada</option>
+          <option value="dropped">Baja</option>
         </select>
         <select id="filter-career" class="bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="">All Careers</option>
+          <option value="">Todas las carreras</option>
         </select>
       </div>
 
@@ -40,16 +40,16 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <thead>
               <tr class="border-b border-border bg-muted/50">
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Estudiante</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Career</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Period</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Carrera</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Período</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Estado</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Actions</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Acciones</th>
               </tr>
             </thead>
             <tbody id="enrolments-table"></tbody>
           </table>
         </div>
-        <div id="enrolments-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No enrolments found</div>
+        <div id="enrolments-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No se encontraron matrículas</div>
       </div>
     </div>
   </div>
@@ -59,7 +59,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     <div class="w-full max-w-lg rounded-xl border border-border bg-background shadow-2xl max-h-[90vh] flex flex-col">
       <!-- Cabecera -->
       <div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-        <h2 id="modal-title" class="text-base font-semibold text-foreground">New Enrolment</h2>
+        <h2 id="modal-title" class="text-base font-semibold text-foreground">Nueva matrícula</h2>
         <button id="modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -69,30 +69,30 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <form id="enrolment-form" class="space-y-4">
           <input id="edit-id" type="hidden" value="" />
           <div>
-            <label class="text-xs font-medium text-muted-foreground">Student *</label>
+            <label class="text-xs font-medium text-muted-foreground">Estudiante *</label>
             <select id="enrolment-student" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-              <option value="">Select student...</option>
+              <option value="">Seleccioná un estudiante...</option>
             </select>
           </div>
           <div>
-            <label class="text-xs font-medium text-muted-foreground">Career *</label>
+            <label class="text-xs font-medium text-muted-foreground">Carrera *</label>
             <select id="enrolment-career" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-              <option value="">Select career...</option>
+              <option value="">Seleccioná una carrera...</option>
             </select>
           </div>
           <div>
-            <label class="text-xs font-medium text-muted-foreground">Period *</label>
+            <label class="text-xs font-medium text-muted-foreground">Período *</label>
             <select id="enrolment-period" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-              <option value="">Select period...</option>
+              <option value="">Seleccioná un período...</option>
             </select>
           </div>
           <div>
             <label class="text-xs font-medium text-muted-foreground">Estado</label>
             <select id="enrolment-status" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-              <option value="pending">Pending Review</option>
-              <option value="active">Active</option>
-              <option value="completed">Completed</option>
-              <option value="dropped">Dropped</option>
+              <option value="pending">Pendiente de revisión</option>
+              <option value="active">Activa</option>
+              <option value="completed">Completada</option>
+              <option value="dropped">Baja</option>
             </select>
           </div>
           <div id="form-error" class="hidden text-xs text-red-400"></div>
@@ -147,10 +147,10 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   };
 
   const STATUS_LABELS: Record<string, string> = {
-    pending: 'Pending Review',
-    active: 'Active',
-    completed: 'Completed',
-    dropped: 'Dropped',
+    pending: 'Pendiente de revisión',
+    active: 'Activa',
+    completed: 'Completada',
+    dropped: 'Baja',
   };
 
   let enrolments: any[] = [], careers: any[] = [], periods: any[] = [], students: any[] = [];
@@ -176,8 +176,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     empty?.classList.add('hidden');
     tbody.innerHTML = filtered.map(e => {
       const studentName = e.student?.full_name ?? (`${e.student?.first_name ?? ''} ${e.student?.last_name ?? ''}`.trim() || `Student #${e.student?.id ?? '?'}`);
-      const careerName = e.career_name ?? `Career #?`;
-      const periodName = e.period_name ?? `Period #?`;
+      const careerName = e.career_name ?? `Carrera #?`;
+      const periodName = e.period_name ?? `Período #?`;
       const colorClass = STATUS_COLORS[e.status] ?? 'bg-muted text-muted-foreground';
       return `<tr class="border-b border-border hover:bg-muted/40 transition-colors">
         <td class="px-4 py-3 text-sm font-medium text-foreground">${escHtml(studentName)}</td>
@@ -189,8 +189,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <td class="px-4 py-3">
           <div class="flex items-center gap-2">
             ${e.status === 'pending' ? `
-              <button class="approve-btn rounded-lg bg-green-500/15 border border-green-500/30 px-2.5 py-1 text-xs font-medium text-green-400 hover:bg-green-500/25 transition-colors" data-id="${e.id}">Approve</button>
-              <button class="reject-btn rounded-lg bg-red-500/15 border border-red-500/30 px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/25 transition-colors" data-id="${e.id}">Reject</button>
+              <button class="approve-btn rounded-lg bg-green-500/15 border border-green-500/30 px-2.5 py-1 text-xs font-medium text-green-400 hover:bg-green-500/25 transition-colors" data-id="${e.id}">Aprobar</button>
+              <button class="reject-btn rounded-lg bg-red-500/15 border border-red-500/30 px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/25 transition-colors" data-id="${e.id}">Rechazar</button>
             ` : ''}
             <button class="edit-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors" data-id="${e.id}">Editar</button>
             <button class="delete-btn rounded-lg border border-red-500/30 px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors" data-id="${e.id}">Eliminar</button>
@@ -218,9 +218,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       btn.addEventListener('click', () => {
         const id = btn.dataset.id;
         window.confirmAction({
-          title: "Reject Enrolment",
-          description: "This will mark the enrolment as dropped.",
-          confirmLabel: "Reject",
+          title: "Rechazar matrícula",
+          description: "Esto marcará la matrícula como baja.",
+          confirmLabel: "Rechazar",
           variant: "destructive",
           onConfirm: async () => {
             await apiFetch(`/enrollment/review/${id}/reject/`, { method: 'PATCH' });
@@ -233,8 +233,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       btn.addEventListener('click', () => {
         const id = btn.dataset.id;
         window.confirmAction({
-          title: "Delete Enrolment",
-          description: "This action cannot be undone.",
+          title: "Eliminar matrícula",
+          description: "Esta acción no se puede deshacer.",
           confirmLabel: "Eliminar",
           variant: "destructive",
           onConfirm: async () => {
@@ -258,7 +258,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
     const careerFilter = document.getElementById('filter-career') as HTMLSelectElement;
     if (careerFilter) {
-      careerFilter.innerHTML = '<option value="">All Careers</option>';
+      careerFilter.innerHTML = '<option value="">Todas las carreras</option>';
       careers.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c.id; opt.textContent = c.name;
@@ -268,7 +268,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
     const careerSel = document.getElementById('enrolment-career') as HTMLSelectElement;
     if (careerSel) {
-      careerSel.innerHTML = '<option value="">Select career...</option>';
+      careerSel.innerHTML = '<option value="">Seleccioná una carrera...</option>';
       careers.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c.id; opt.textContent = c.name;
@@ -278,7 +278,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
     const periodSel = document.getElementById('enrolment-period') as HTMLSelectElement;
     if (periodSel) {
-      periodSel.innerHTML = '<option value="">Select period...</option>';
+      periodSel.innerHTML = '<option value="">Seleccioná un período...</option>';
       periods.forEach(p => {
         const opt = document.createElement('option');
         opt.value = p.id; opt.textContent = p.name;
@@ -295,7 +295,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     document.getElementById('form-error')?.classList.add('hidden');
     const title = document.getElementById('modal-title');
     if (enrolment) {
-      if (title) title.textContent = 'Edit Enrolment';
+      if (title) title.textContent = 'Editar matrícula';
       (document.getElementById('edit-id') as HTMLInputElement).value = enrolment.id;
       (document.getElementById('enrolment-student') as HTMLSelectElement).value = String(enrolment.student?.id ?? enrolment.student);
       const careerId = careers.find(c => c.name === enrolment.career_name)?.id ?? '';
@@ -304,7 +304,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       (document.getElementById('enrolment-period') as HTMLSelectElement).value = String(periodId);
       (document.getElementById('enrolment-status') as HTMLSelectElement).value = enrolment.status;
     } else {
-      if (title) title.textContent = 'New Enrolment';
+      if (title) title.textContent = 'Nueva matrícula';
       (document.getElementById('edit-id') as HTMLInputElement).value = '';
       (document.getElementById('enrolment-form') as HTMLFormElement)?.reset();
     }
@@ -321,7 +321,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     students = Array.isArray(sData) ? sData : (sData?.results ?? []);
     const sel = document.getElementById('enrolment-student') as HTMLSelectElement;
     if (sel) {
-      sel.innerHTML = '<option value="">Select student...</option>';
+      sel.innerHTML = '<option value="">Seleccioná un estudiante...</option>';
       students.forEach(s => {
         const opt = document.createElement('option');
         opt.value = s.id;

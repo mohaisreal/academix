@@ -21,7 +21,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
                 background-size: 24px 24px;
             }
 
-            /* Ambient glow — decorative depth */
+            /* Brillo ambiental: profundidad decorativa */
             .ambient-glow {
                 background: radial-gradient(
                     ellipse 60% 50% at 50% 50%,
@@ -59,15 +59,15 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
     <body class="bg-background text-foreground">
         <div class="grid min-h-svh lg:grid-cols-[1fr_minmax(480px,1fr)]">
 
-            <!-- Left panel: branding + value proposition -->
+            <!-- Panel izquierdo: marca + propuesta de valor -->
             <div class="relative hidden overflow-hidden border-r border-border lg:flex lg:flex-col">
-                <!-- Background layers -->
+                <!-- Capas de fondo -->
                 <div class="dot-grid absolute inset-0"></div>
                 <div class="ambient-glow absolute inset-0"></div>
 
-                <!-- Content -->
+                <!-- Contenido -->
                 <div class="relative z-10 flex flex-1 flex-col justify-between p-10 xl:p-14">
-                    <!-- Top: brand -->
+                    <!-- Arriba: marca -->
                     <div>
                         <div class="flex items-center gap-3">
                             <div class="flex size-9 items-center justify-center rounded-lg bg-primary/10">
@@ -80,18 +80,18 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
                         </div>
                     </div>
 
-                    <!-- Center: hero message + features -->
+                    <!-- Centro: mensaje principal + funcionalidades -->
                     <div class="max-w-md">
                         <h1 class="text-4xl font-bold leading-tight tracking-tight text-foreground xl:text-5xl">
-                            Everything your<br/>
-                            <span class="text-primary">institution</span> needs<br/>
-                            to teach and learn.
+                            Todo lo que tu<br/>
+                            <span class="text-primary">institución</span> necesita<br/>
+                            para enseñar y aprender.
                         </h1>
                         <p class="mt-4 text-base leading-relaxed text-muted-foreground">
-                            One platform for coursework, grading, communication, and analytics — built for students, teachers, and administrators.
+                            Una plataforma para cursos, calificaciones, comunicación y analítica: pensada para estudiantes, docentes y administradores.
                         </p>
 
-                        <!-- Feature highlights -->
+                        <!-- Funcionalidades destacadas -->
                         <div class="mt-10 space-y-5">
                             <div class="fade-up flex items-start gap-3">
                                 <div class="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
@@ -116,8 +116,8 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
                                     </svg>
                                 </div>
                                 <div>
-                                    <p class="text-sm font-medium text-foreground">Assignments & Grading</p>
-                                    <p class="text-sm text-muted-foreground">Streamlined submission, rubrics, and grade book in one place.</p>
+                                    <p class="text-sm font-medium text-foreground">Tareas y calificaciones</p>
+                                    <p class="text-sm text-muted-foreground">Entrega simplificada, rúbricas y libro de calificaciones en un solo lugar.</p>
                                 </div>
                             </div>
                             <div class="fade-up flex items-start gap-3">
@@ -129,14 +129,14 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
                                     </svg>
                                 </div>
                                 <div>
-                                    <p class="text-sm font-medium text-foreground">Analytics & Insights</p>
-                                    <p class="text-sm text-muted-foreground">Track progress and engagement across your entire institution.</p>
+                                    <p class="text-sm font-medium text-foreground">Analítica e información clave</p>
+                                    <p class="text-sm text-muted-foreground">Sigue el progreso y la participación en toda tu institución.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Bottom: role indicators -->
+                    <!-- Abajo: indicadores de roles -->
                     <div class="flex items-center gap-4 border-t border-border pt-6">
                         <div class="flex -space-x-2">
                             <div class="flex size-8 items-center justify-center rounded-full border-2 border-background bg-blue-600 text-xs font-bold text-white">S</div>
@@ -144,7 +144,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
                             <div class="flex size-8 items-center justify-center rounded-full border-2 border-background bg-amber-600 text-xs font-bold text-white">A</div>
                         </div>
                         <p class="text-sm text-muted-foreground">
-                            Used by <span class="font-medium text-foreground">students</span>, <span class="font-medium text-foreground">teachers</span>, and <span class="font-medium text-foreground">admins</span>
+                            Usado por <span class="font-medium text-foreground">estudiantes</span>, <span class="font-medium text-foreground">docentes</span> y <span class="font-medium text-foreground">administradores</span>
                         </p>
                     </div>
                 </div>
@@ -167,20 +167,20 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
 
                 <div class="flex flex-1 items-center justify-center">
                     <div class="w-full max-w-sm">
-                        <!-- Heading -->
+                        <!-- Encabezado -->
                         <div class="mb-8">
                             <h2 class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                                 Bienvenido de nuevo
                             </h2>
                             <p class="mt-2 text-sm text-muted-foreground">
-                                Sign in to your account to continue
+                                Inicia sesión en tu cuenta para continuar
                             </p>
                         </div>
 
                         <!-- Alerta de error (oculta por defecto) -->
                         <div id="login-error" class="mb-6 hidden">
                             <Alert variant="error">
-                                <AlertTitle>Authentication failed</AlertTitle>
+                                <AlertTitle>Autenticación fallida</AlertTitle>
                                 <AlertDescription id="login-error-message">
                                     Usuario o contraseña inválidos. Inténtalo de nuevo.
                                 </AlertDescription>
@@ -192,27 +192,27 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
                             <Alert variant="success">
                                 <AlertTitle>Inicio de sesión exitoso</AlertTitle>
                                 <AlertDescription>
-                                    Redirecting you to the dashboard...
+                                    Redirigiéndote al panel...
                                 </AlertDescription>
                             </Alert>
                         </div>
 
                         <!-- Formulario de inicio de sesión -->
                         <form id="login-form" novalidate class="space-y-5">
-                            <!-- Username field -->
+                            <!-- Campo de nombre de usuario -->
                             <div class="space-y-2">
-                                <Label for="username" size="sm">Username</Label>
+                                <Label for="username" size="sm">Nombre de usuario</Label>
                                 <input
                                     id="username"
                                     name="username"
                                     type="text"
                                     autocomplete="username"
                                     required
-                                    placeholder="Enter your username"
+                                    placeholder="Ingresa tu nombre de usuario"
                                     class="w-full min-h-11 rounded-md border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:focus:ring-destructive/30"
                                 />
                                 <p id="username-error" class="text-xs text-destructive hidden">
-                                    Please enter your username.
+                                    Por favor, ingresa tu nombre de usuario.
                                 </p>
                             </div>
 
@@ -224,7 +224,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
                                         href="#"
                                         class="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus-visible:underline"
                                     >
-                                        Forgot password?
+                                        ¿Olvidaste tu contraseña?
                                     </a>
                                 </div>
                                 <div class="relative">
@@ -234,7 +234,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
                                         type="password"
                                         autocomplete="current-password"
                                         required
-                                        placeholder="Enter your password"
+                                        placeholder="Ingresa tu contraseña"
                                         class="w-full min-h-11 rounded-md border border-input bg-background px-3.5 py-2.5 pr-11 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:focus:ring-destructive/30"
                                     />
                                     <!-- Alternar visibilidad de contraseña -->
@@ -282,16 +282,16 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
                                     </button>
                                 </div>
                                 <p id="password-error" class="text-xs text-destructive hidden">
-                                    Please enter your password.
+                                    Por favor, ingresa tu contraseña.
                                 </p>
                             </div>
 
-                            <!-- Remember me -->
+                            <!-- Recuérdame -->
                             <div class="flex items-center">
                                 <Checkbox
                                     id="remember-me"
                                     name="remember_me"
-                                    label="Remember me"
+                                    label="Recuérdame"
                                     variant="default"
                                     size="sm"
                                 />
@@ -305,7 +305,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
                                 size="md"
                                 class="w-full mt-2"
                             >
-                                <span id="btn-label">Sign in</span>
+                                <span id="btn-label">Iniciar sesión</span>
                                 <svg
                                     id="btn-spinner"
                                     class="hidden animate-spin ml-2"
@@ -326,7 +326,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
 
                         <!-- Pie -->
                         <p class="mt-6 text-center text-sm text-muted-foreground">
-                            Don't have an account?{" "}
+                            ¿No tienes una cuenta?{" "}
                             <a
                                 href="/register"
                                 class="font-medium text-foreground underline underline-offset-4 transition-colors hover:text-primary"
@@ -343,7 +343,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                     </svg>
-                    <span>Secured with TLS encryption</span>
+                    <span>Protegido con cifrado TLS</span>
                 </div>
             </div>
         </div>
@@ -351,7 +351,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
 </html>
 
 <script>
-    // ─── Constants ───────────────────────────────────────────────────────────────
+    // ─── Constantes ──────────────────────────────────────────────────────────────
 
     const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
     const TOKEN_KEYS = {
@@ -360,7 +360,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
         USER: "user-storage",
     } as const;
 
-    // ─── DOM references ──────────────────────────────────────────────────────────
+    // ─── Referencias del DOM ─────────────────────────────────────────────────────
 
     const form = document.getElementById("login-form") as HTMLFormElement;
     const usernameInput = document.getElementById("username") as HTMLInputElement;
@@ -402,7 +402,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
         submitBtn.disabled = loading;
         usernameInput.disabled = loading;
         passwordInput.disabled = loading;
-        btnLabel.textContent = loading ? "Signing in..." : "Sign in";
+        btnLabel.textContent = loading ? "Iniciando sesión..." : "Iniciar sesión";
         btnSpinner.classList.toggle("hidden", !loading);
     }
 
@@ -436,7 +436,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
         passwordError.classList.add("hidden");
     }
 
-    // ─── Token storage ───────────────────────────────────────────────────────────
+    // ─── Almacenamiento de tokens ────────────────────────────────────────────────
 
     function storeTokens(access: string, refresh: string): void {
         try {
@@ -457,7 +457,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
         }
     }
 
-    // ─── API call ─────────────────────────────────────────────────────────────────
+    // ─── Llamada a la API ─────────────────────────────────────────────────────────
 
     interface LoginSuccessResponse {
         user: Record<string, unknown>;
@@ -500,14 +500,14 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
             const message =
                 errData.error ||
                 errData.detail ||
-                `Authentication failed (${response.status}).`;
+                `La autenticación falló (${response.status}).`;
             throw new Error(message);
         }
 
         return data as LoginSuccessResponse;
     }
 
-    // ─── Form validation ─────────────────────────────────────────────────────────
+    // ─── Validación del formulario ───────────────────────────────────────────────
 
     function validateForm(): boolean {
         let valid = true;
@@ -526,7 +526,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
         return valid;
     }
 
-    // ─── Form submission ─────────────────────────────────────────────────────────
+    // ─── Envío del formulario ────────────────────────────────────────────────────
 
     form.addEventListener("submit", async (event: Event) => {
         event.preventDefault();
@@ -544,7 +544,7 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
         try {
             const data = await loginUser(username, password);
 
-            // Persist JWT tokens
+            // Persiste los tokens JWT
             storeTokens(data.tokens.access, data.tokens.refresh);
 
             // Persiste los datos de usuario para que Zustand pueda rehidratarse en la página siguiente
@@ -557,12 +557,12 @@ import Checkbox from "@/components/starwind/checkbox/Checkbox.astro";
                 window.location.href = "/";
             }, 800);
         } catch (err: unknown) {
-            let message = "Ocurrió un error inesperado. Please try again.";
+            let message = "Ocurrió un error inesperado. Inténtalo de nuevo.";
 
             if (err instanceof TypeError) {
-                // Network failure (fetch rejected)
+                // Fallo de red (fetch rechazado)
                 message =
-                    "Unable to reach the server. Please check your internet connection and try again.";
+                    "No se pudo conectar con el servidor. Revisa tu conexión a internet e inténtalo de nuevo.";
             } else if (err instanceof Error) {
                 message = err.message;
             }

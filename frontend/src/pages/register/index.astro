@@ -224,8 +224,8 @@ import "@/styles/starwind.css";
                         </form>
 
                         <p class="mt-6 text-center text-sm text-muted-foreground">
-                            Already have an account?{" "}
-                            <a href="/login" class="font-medium text-foreground underline underline-offset-4 transition-colors hover:text-primary">Sign in</a>
+                            ¿Ya tienes una cuenta?{" "}
+                            <a href="/login" class="font-medium text-foreground underline underline-offset-4 transition-colors hover:text-primary">Iniciar sesión</a>
                         </p>
                     </div>
                 </div>
@@ -305,7 +305,7 @@ import "@/styles/starwind.css";
             if (input) data[f] = input.value.trim();
         }
 
-        // Client-side validation
+        // Validación del lado del cliente
         let hasError = false;
         if (!data.first_name) { showFieldError("first_name", ["Obligatorio"]); hasError = true; }
         if (!data.last_name) { showFieldError("last_name", ["Obligatorio"]); hasError = true; }
@@ -313,7 +313,7 @@ import "@/styles/starwind.css";
         if (!data.dni) { showFieldError("dni", ["Obligatorio"]); hasError = true; }
         if (!data.date_of_birth) { showFieldError("date_of_birth", ["Obligatorio"]); hasError = true; }
         if (data.date_of_birth && data.date_of_birth > new Date().toISOString().split("T")[0]) {
-            showFieldError("date_of_birth", ["Date of birth cannot be in the future"]);
+            showFieldError("date_of_birth", ["La fecha de nacimiento no puede estar en el futuro"]);
             hasError = true;
         }
         if (!data.password) { showFieldError("password", ["Obligatorio"]); hasError = true; }
@@ -359,8 +359,8 @@ import "@/styles/starwind.css";
 
         } catch (err) {
             errorMsg.textContent = err instanceof TypeError
-                ? "Unable to reach the server. Check your connection."
-                : "Ocurrió un error inesperado. Please try again.";
+                ? "No se pudo conectar con el servidor. Verificá tu conexión."
+                : "Ocurrió un error inesperado. Intentá nuevamente.";
             errorBanner.classList.remove("hidden");
             setLoading(false);
         }

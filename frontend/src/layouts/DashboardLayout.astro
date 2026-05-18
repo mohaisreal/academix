@@ -224,7 +224,7 @@ const { title, currentPath } = Astro.props;
                         </a>
                     </div>
 
-                    <!-- ADMIN/MANAGEMENT GROUP -->
+                    <!-- GRUPO DE ADMINISTRACIÓN/GESTIÓN -->
                     <div id="nav-admin" class="hidden">
                         <p class="px-3 mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Académico</p>
                         <a href="/careers" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
@@ -308,17 +308,17 @@ const { title, currentPath } = Astro.props;
 
         </div>
 
-        <!-- Global Confirm Dialog -->
+        <!-- Diálogo global de confirmación -->
         <div id="global-confirm-dialog">
             <div id="confirm-backdrop" class="fixed inset-0 z-50 hidden bg-black/50 data-[state=open]:animate-in data-[state=open]:fade-in data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:fill-mode-forwards" data-state="closed" style="animation-duration:200ms"></div>
             <dialog id="confirm-dialog" class="fixed top-[50%] left-[50%] z-50 w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] rounded-lg border bg-background p-6 shadow-lg sm:max-w-md data-[state=open]:animate-in data-[state=open]:fade-in data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95 data-[state=closed]:fill-mode-forwards" data-state="closed" role="alertdialog" style="animation-duration:200ms">
                 <div class="space-y-2">
-                    <h2 id="confirm-dialog-title" class="text-lg font-semibold text-foreground">Confirm</h2>
-                    <p id="confirm-dialog-description" class="text-sm text-muted-foreground">Are you sure?</p>
+                    <h2 id="confirm-dialog-title" class="text-lg font-semibold text-foreground">Confirmar</h2>
+                    <p id="confirm-dialog-description" class="text-sm text-muted-foreground">¿Estás seguro?</p>
                 </div>
                 <div class="flex justify-end gap-3 mt-6">
                     <button id="confirm-dialog-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors">Cancelar</button>
-                    <button id="confirm-dialog-action" type="button" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors">Confirm</button>
+                    <button id="confirm-dialog-action" type="button" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors">Confirmar</button>
                 </div>
             </dialog>
         </div>
@@ -515,7 +515,7 @@ const { title, currentPath } = Astro.props;
         navConfigLabel?.classList.remove("hidden");
     }
 
-    // Active link highlight
+    // Resaltado de enlace activo
     const currentPath = document.body.dataset.currentPath ?? "";
     document.querySelectorAll(".nav-link").forEach((link) => {
         const href = link.getAttribute("href") ?? "";
@@ -570,7 +570,7 @@ const { title, currentPath } = Astro.props;
  }
     })();
 
-    // ─── Sidebar toggle (mobile) ──────────────────────────────────────────────
+    // ─── Conmutador de barra lateral (móvil) ──────────────────────────────────
     const sidebar = document.getElementById("sidebar") as HTMLElement;
     const sidebarBackdrop = document.getElementById("sidebar-backdrop") as HTMLElement;
     const sidebarOpenBtn = document.getElementById("sidebar-open-btn") as HTMLElement;
@@ -599,7 +599,7 @@ const { title, currentPath } = Astro.props;
         });
     });
 
-    // ─── Global Confirm Dialog ────────────────────────────────────────────────
+    // ─── Diálogo global de confirmación ───────────────────────────────────────
     const confirmDialog = document.getElementById("confirm-dialog") as HTMLDialogElement;
     const confirmBackdrop = document.getElementById("confirm-backdrop") as HTMLElement;
     const confirmTitle = document.getElementById("confirm-dialog-title") as HTMLElement;
@@ -628,7 +628,7 @@ const { title, currentPath } = Astro.props;
     });
     confirmAction?.addEventListener("click", () => { _onConfirm?.(); closeConfirmDialog(); });
 
-    // ─── Global Toast Helper ──────────────────────────────────────────────────
+    // ─── Helper global de toast ───────────────────────────────────────────────
     (window as any).showToast = function (variant: string, title: string, description?: string) {
         const manager = (window as any).__starwind__?.toast;
         if (!manager) return;
@@ -639,7 +639,7 @@ const { title, currentPath } = Astro.props;
         if (!confirmDialog || !confirmBackdrop) return;
         confirmTitle.textContent = opts.title;
         confirmDesc.textContent = opts.description;
-        confirmAction.textContent = opts.confirmLabel ?? "Confirm";
+        confirmAction.textContent = opts.confirmLabel ?? "Confirmar";
         confirmCancel.textContent = opts.cancelLabel ?? "Cancelar";
         if (opts.variant === "destructive") {
             confirmAction.className = "inline-flex items-center justify-center rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground shadow-sm hover:bg-destructive/90 transition-colors";

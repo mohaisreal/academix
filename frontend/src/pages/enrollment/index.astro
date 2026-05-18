@@ -2,11 +2,11 @@
 import DashboardLayout from "@/layouts/DashboardLayout.astro";
 ---
 
-<DashboardLayout title="Enrollment — Academix" currentPath="/enrollment">
+<DashboardLayout title="Matrícula — Academix" currentPath="/enrollment">
     <div class="flex items-center justify-between border-b border-border px-6 py-4">
         <div>
-            <h1 class="text-xl font-semibold text-foreground">Enrollment</h1>
-            <p class="text-sm text-muted-foreground">Manage your career enrollment and subject selection.</p>
+            <h1 class="text-xl font-semibold text-foreground">Matrícula</h1>
+            <p class="text-sm text-muted-foreground">Gestioná tu matrícula de carrera y la selección de asignaturas.</p>
         </div>
     </div>
 
@@ -23,11 +23,11 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             </div>
             <div>
-                <h2 class="text-base font-semibold text-foreground">No Confirmed Admission</h2>
-                <p class="text-sm text-muted-foreground mt-1">You need a confirmed admission before enrolling in a career.</p>
+                <h2 class="text-base font-semibold text-foreground">No hay admisión confirmada</h2>
+                <p class="text-sm text-muted-foreground mt-1">Necesitás una admisión confirmada antes de matricularte en una carrera.</p>
             </div>
             <a href="/admissions/my-applications" class="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
-                View My Applications
+                Ver mis solicitudes
             </a>
         </div>
 
@@ -38,25 +38,25 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-emerald-400"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                 </div>
                 <div>
-                    <h2 class="text-base font-semibold text-foreground">Admission Confirmed</h2>
-                    <p class="text-sm text-muted-foreground">You're ready to enroll!</p>
+                    <h2 class="text-base font-semibold text-foreground">Admisión confirmada</h2>
+                    <p class="text-sm text-muted-foreground">¡Ya podés matricularte!</p>
                 </div>
             </div>
 
             <div class="rounded-md border border-border bg-muted/30 p-4 text-sm space-y-2">
                 <div class="flex justify-between">
-                    <span class="text-muted-foreground">Career</span>
+                    <span class="text-muted-foreground">Carrera</span>
                     <span id="admission-career" class="font-medium text-foreground">—</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-muted-foreground">Period</span>
+                    <span class="text-muted-foreground">Período</span>
                     <span id="admission-period" class="font-medium text-foreground">—</span>
                 </div>
             </div>
 
             <button id="btn-start-enrollment" class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Start Enrollment
+                Iniciar matrícula
             </button>
             <div id="enrollment-error" class="hidden text-sm text-destructive"></div>
         </div>
@@ -66,29 +66,29 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             <!-- Información de matrícula -->
             <div class="bg-card border border-border rounded-xl p-6 space-y-4">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-base font-semibold text-foreground">Career Enrollment</h2>
+                    <h2 class="text-base font-semibold text-foreground">Matrícula de carrera</h2>
                     <span id="enrollment-status-badge" class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"></span>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                        <p class="text-muted-foreground">Career</p>
+                        <p class="text-muted-foreground">Carrera</p>
                         <p id="enrollment-career" class="font-medium text-foreground">—</p>
                     </div>
                     <div>
-                        <p class="text-muted-foreground">Period</p>
+                        <p class="text-muted-foreground">Período</p>
                         <p id="enrollment-period" class="font-medium text-foreground">—</p>
                     </div>
                     <div>
-                        <p class="text-muted-foreground">Enrolled</p>
+                        <p class="text-muted-foreground">Matriculado</p>
                         <p id="enrollment-date" class="font-medium text-foreground">—</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Fee section -->
+            <!-- Sección de arancel -->
             <div class="bg-card border border-border rounded-xl p-6 space-y-4">
-                <h2 class="text-base font-semibold text-foreground">Enrollment Payment</h2>
+                <h2 class="text-base font-semibold text-foreground">Pago de matrícula</h2>
 
                 <div id="fee-loading" class="space-y-2">
                     <div class="h-8 bg-muted animate-pulse rounded"></div>
@@ -102,33 +102,33 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                         <span id="fee-total" class="text-foreground">—</span>
                     </div>
 
-                    <!-- No fee yet: subjects must be selected first -->
+                    <!-- Sin arancel aún: primero hay que seleccionar asignaturas -->
                     <div id="fee-missing-action" class="hidden space-y-2">
-                        <p class="text-sm text-muted-foreground">Choose your subjects first. The final payment is calculated from the selected subjects plus configured administrative charges.</p>
+                        <p class="text-sm text-muted-foreground">Primero elegí tus asignaturas. El pago final se calcula con las asignaturas seleccionadas más los cargos administrativos configurados.</p>
                         <a href="/enrollment/classes" class="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-                            Select Subjects
+                            Seleccionar asignaturas
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                         </a>
                     </div>
 
-                    <!-- Pay button (pending) -->
+                    <!-- Botón de pago (pendiente) -->
                     <div id="fee-pending-action" class="hidden">
                         <button id="btn-pay" class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                            Pay Enrollment
+                            Pagar matrícula
                         </button>
-                        <p class="text-xs text-muted-foreground mt-1">Development uses simulated payment. Production uses Stripe.</p>
+                        <p class="text-xs text-muted-foreground mt-1">En desarrollo se usa pago simulado. En producción se usa Stripe.</p>
                     </div>
 
                     <!-- Estado pagado -->
                     <div id="fee-paid-action" class="hidden space-y-3">
                         <div class="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3">
-                            <p class="text-sm font-medium text-emerald-400">✅ Cargo de matrícula paid. Your enrollment is active!</p>
+                            <p class="text-sm font-medium text-emerald-400">✅ Cargo de matrícula pagado. ¡Tu matrícula está activa!</p>
                         </div>
                         <div class="flex gap-3">
                             <a id="link-receipt" href="#" class="inline-flex items-center gap-1.5 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                                View Receipt
+                                Ver comprobante
                             </a>
                         </div>
                     </div>
@@ -145,17 +145,17 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         </div>
     </div>
 
-    <!-- Stripe payment modal (used only when backend returns production Stripe mode) -->
+    <!-- Modal de pago con Stripe (se usa solo cuando el backend devuelve modo Stripe de producción) -->
     <div id="stripe-backdrop" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
         <div class="w-full max-w-md rounded-xl border border-border bg-background p-5 shadow-2xl space-y-4">
             <div class="flex items-center justify-between">
-                <h3 class="text-base font-semibold text-foreground">Complete Enrollment Payment</h3>
+                <h3 class="text-base font-semibold text-foreground">Completar pago de matrícula</h3>
                 <button id="stripe-modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">×</button>
             </div>
             <div id="stripe-payment-element"></div>
             <p id="stripe-error" class="hidden text-xs text-destructive"></p>
             <button id="stripe-pay-btn" type="button" class="w-full inline-flex items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-                Pay with Stripe
+                Pagar con Stripe
             </button>
         </div>
     </div>
@@ -217,7 +217,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             if (!res.ok) {
                 const breakdown = document.getElementById("fee-breakdown")!;
                 breakdown.innerHTML = "";
-                document.getElementById("fee-total")!.textContent = "Pending subject selection";
+                document.getElementById("fee-total")!.textContent = "Selección de asignaturas pendiente";
                 document.getElementById("fee-content")?.classList.remove("hidden");
                 document.getElementById("fee-missing-action")?.classList.remove("hidden");
                 return;
@@ -233,8 +233,8 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 fee.line_items.forEach((item: any) => {
                     const amount = parseFloat(String(item.subtotal ?? item.amount ?? 0));
                     const label = item.type === "subject"
-                        ? `${item.subject_code ?? ""} ${item.subject_name ?? item.label ?? "Subject"}`
-                        : (item.label ?? "Administrative charge");
+                        ? `${item.subject_code ?? ""} ${item.subject_name ?? item.label ?? "Asignatura"}`
+                        : (item.label ?? "Cargo administrativo");
                     const calculation = item.type === "subject" && item.credits && item.price_per_credit
                         ? `${item.credits} ECTS × €${parseFloat(String(item.price_per_credit)).toFixed(2)}/crédito`
                         : "";
@@ -257,7 +257,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             if (discAmt > 0) {
                 rows.push(`
                     <div class="flex justify-between py-1 border-b border-border/50">
-                        <span class="text-muted-foreground">Discount${fee.discount_reason ? ` (${fee.discount_reason})` : ""}</span>
+                        <span class="text-muted-foreground">Descuento${fee.discount_reason ? ` (${fee.discount_reason})` : ""}</span>
                         <span class="text-foreground text-emerald-400">-€${discAmt.toFixed(2)}</span>
                     </div>`);
             }
@@ -297,7 +297,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         const res = await apiFetch(`/enrollment/career-enrollments/${enrollmentId}/confirm-payment/`, { method: "POST" });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-            throw new Error(data.detail || `Payment confirmation failed (${res.status})`);
+            throw new Error(data.detail || `Falló la confirmación de pago (${res.status})`);
         }
         return data.status === "paid";
     }
@@ -305,12 +305,12 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     async function showStripePayment(clientSecret: string, amountLabel: string) {
         if (!currentEnrollmentId) return;
         const loaded = await loadStripeJs();
-        if (!loaded || !(window as any).Stripe) throw new Error("Stripe could not be loaded.");
+        if (!loaded || !(window as any).Stripe) throw new Error("No se pudo cargar Stripe.");
 
         const configRes = await apiFetch("/enrollment/stripe/config/");
         const config = await configRes.json().catch(() => ({}));
         const publishableKey = config.publishable_key ?? "";
-        if (!publishableKey) throw new Error("Stripe publishable key is not configured.");
+        if (!publishableKey) throw new Error("La clave publicable de Stripe no está configurada.");
 
         stripeInstance = (window as any).Stripe(publishableKey);
         stripeElements = stripeInstance.elements({ clientSecret });
@@ -318,7 +318,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         document.getElementById("stripe-payment-element")!.innerHTML = "";
         paymentEl.mount("#stripe-payment-element");
 
-        document.getElementById("stripe-pay-btn")!.textContent = `Pay ${amountLabel}`;
+        document.getElementById("stripe-pay-btn")!.textContent = `Pagar ${amountLabel}`;
         document.getElementById("stripe-backdrop")?.classList.remove("hidden");
     }
 
@@ -407,7 +407,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         } catch {
             loading.classList.add("hidden");
             hideAll();
-            document.getElementById("error-message")!.textContent = "Network error. Please check your connection.";
+            document.getElementById("error-message")!.textContent = "Error de red. Verificá tu conexión.";
             document.getElementById("error-state")?.classList.remove("hidden");
         }
     }
@@ -417,12 +417,12 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         const btn = document.getElementById("btn-start-enrollment") as HTMLButtonElement;
         const errEl = document.getElementById("enrollment-error")!;
         btn.disabled = true;
-        btn.textContent = "Creating enrollment...";
+        btn.textContent = "Creando matrícula...";
         errEl.classList.add("hidden");
 
         const app = (window as any).__confirmedApp;
         if (!app) {
-            errEl.textContent = "Sin admisión confirmada found.";
+            errEl.textContent = "No se encontró una admisión confirmada.";
             errEl.classList.remove("hidden");
             btn.disabled = false;
             btn.textContent = "Iniciar matrícula";
@@ -459,7 +459,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         }
     });
 
-    // Pay
+    // Pagar
     document.getElementById("btn-pay")?.addEventListener("click", async () => {
         if (!currentEnrollmentId) return;
         const btn = document.getElementById("btn-pay") as HTMLButtonElement;
@@ -493,7 +493,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
             // Actualiza la insignia de estado de matrícula
             const badge = document.getElementById("enrollment-status-badge")!;
-            badge.textContent = "Active";
+            badge.textContent = "Activa";
             badge.className = "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-emerald-100 text-emerald-700";
 
         } catch {
@@ -523,7 +523,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             }
             const paid = await confirmEnrollmentPayment(currentEnrollmentId);
             if (!paid) {
-                errEl.textContent = "Stripe has not confirmed the payment yet. Please try again shortly.";
+                errEl.textContent = "Stripe todavía no confirmó el pago. Intentá nuevamente en breve.";
                 errEl.classList.remove("hidden");
                 btn.disabled = false;
                 return;

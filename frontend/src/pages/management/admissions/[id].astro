@@ -13,7 +13,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         <div class="flex items-center justify-between border-b border-border px-6 py-4">
             <div>
                 <div class="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                    <a href="/management/admissions" class="hover:text-foreground transition-colors">Admissions</a>
+                    <a href="/management/admissions" class="hover:text-foreground transition-colors">Admisiones</a>
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
                     <span class="text-foreground">Solicitud #<span id="app-id-header">—</span></span>
                 </div>
@@ -22,7 +22,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             <div class="flex items-center gap-3">
                 <span id="app-status-badge" class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"></span>
                 <button id="btn-mark-review" class="hidden inline-flex items-center gap-2 rounded-md bg-yellow-600 px-4 py-2 text-sm font-semibold text-white hover:bg-yellow-700 disabled:opacity-50 transition-colors">
-                    Mark Under Review
+                    Marcar en revisión
                 </button>
             </div>
         </div>
@@ -43,7 +43,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                         </div>
                         <div class="grid grid-cols-2 gap-2 text-sm mt-2">
                             <div>
-                                <p class="text-xs text-muted-foreground">Username</p>
+                                <p class="text-xs text-muted-foreground">Usuario</p>
                                 <p id="student-username" class="text-foreground font-medium">—</p>
                             </div>
                         </div>
@@ -55,35 +55,35 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Información de la solicitud</h2>
                     <div class="grid grid-cols-2 gap-3 text-sm">
                         <div>
-                            <p class="text-xs text-muted-foreground">Career</p>
+                            <p class="text-xs text-muted-foreground">Carrera</p>
                             <p id="app-career" class="text-foreground font-medium">—</p>
                         </div>
                         <div>
-                            <p class="text-xs text-muted-foreground">Period</p>
+                            <p class="text-xs text-muted-foreground">Período</p>
                             <p id="app-period" class="text-foreground font-medium">—</p>
                         </div>
                         <div>
-                            <p class="text-xs text-muted-foreground">Created</p>
+                            <p class="text-xs text-muted-foreground">Creada</p>
                             <p id="app-created" class="text-foreground font-medium">—</p>
                         </div>
                         <div>
-                            <p class="text-xs text-muted-foreground">Submitted</p>
+                            <p class="text-xs text-muted-foreground">Enviada</p>
                             <p id="app-submitted" class="text-foreground font-medium">—</p>
                         </div>
                     </div>
                     <div id="app-notes-section" class="hidden pt-2 border-t border-border">
-                        <p class="text-xs text-muted-foreground mb-1">Notes</p>
+                        <p class="text-xs text-muted-foreground mb-1">Notas</p>
                         <p id="app-notes" class="text-sm text-foreground"></p>
                     </div>
                 </div>
             </div>
 
-            <!-- Academic Data section -->
+            <!-- Sección de datos académicos -->
             <div id="academic-data-section" class="hidden bg-card border border-border rounded-xl p-5 space-y-3">
-                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Academic Data</h2>
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Datos académicos</h2>
                 <div class="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                        <p class="text-xs text-muted-foreground">Access Route</p>
+                        <p class="text-xs text-muted-foreground">Vía de acceso</p>
                         <p id="app-access-route" class="text-foreground font-medium">—</p>
                     </div>
                     <div>
@@ -91,37 +91,37 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                         <p id="app-admission-score" class="text-foreground font-medium">—</p>
                     </div>
                     <div>
-                        <p class="text-xs text-muted-foreground">Bachillerato / FP Grade</p>
+                        <p class="text-xs text-muted-foreground">Nota de Bachillerato / FP</p>
                         <p id="app-bachillerato-grade" class="text-foreground font-medium">—</p>
                     </div>
                     <div>
-                        <p class="text-xs text-muted-foreground">EvAU Obligatory Grade</p>
+                        <p class="text-xs text-muted-foreground">Nota obligatoria de EvAU</p>
                         <p id="app-evau-grade" class="text-foreground font-medium">—</p>
                     </div>
                 </div>
                 <div id="app-evau-voluntary-section" class="hidden pt-2 border-t border-border">
-                    <p class="text-xs text-muted-foreground mb-2">EvAU Voluntary Subjects</p>
+                    <p class="text-xs text-muted-foreground mb-2">Materias voluntarias de EvAU</p>
                     <div id="app-evau-voluntary-list" class="space-y-1"></div>
                 </div>
             </div>
 
             <!-- Sección de preferencias de titulación -->
             <div id="preferences-section" class="hidden bg-card border border-border rounded-xl p-5 space-y-3">
-                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Career Preferences</h2>
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Preferencias de carrera</h2>
                 <div id="preferences-list" class="space-y-2"></div>
             </div>
 
             <!-- Sección de documentos -->
             <div class="bg-card border border-border rounded-xl p-5 space-y-4">
-                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Documents</h2>
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Documentos</h2>
                 <div id="documents-list" class="space-y-3">
-                    <p class="text-sm text-muted-foreground">Loading documents...</p>
+                    <p class="text-sm text-muted-foreground">Cargando documentos...</p>
                 </div>
             </div>
 
             <!-- Sección de respuestas de cuestionario -->
             <div id="questionnaire-section" class="hidden bg-card border border-border rounded-xl p-5 space-y-4">
-                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Questionnaire Responses</h2>
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Respuestas del cuestionario</h2>
                 <div id="questionnaire-responses-list" class="space-y-4"></div>
             </div>
 
@@ -140,26 +140,26 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
                 <div class="space-y-3">
                     <div class="space-y-1.5">
-                        <label for="resolve-status" class="text-sm font-medium text-foreground">Decision</label>
+                        <label for="resolve-status" class="text-sm font-medium text-foreground">Decisión</label>
                         <select id="resolve-status" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30">
-                            <option value="admitted">Admitted</option>
-                            <option value="waitlisted">Waitlisted</option>
-                            <option value="rejected">Rejected</option>
+                            <option value="admitted">Admitida</option>
+                            <option value="waitlisted">En lista de espera</option>
+                            <option value="rejected">Rechazada</option>
                         </select>
                     </div>
                     <!-- Orden de preferencia — solo obligatorio cuando status es "admitted" -->
                     <div id="preference-order-wrapper" class="hidden space-y-1.5">
                         <label for="resolve-preference-order" class="text-sm font-medium text-foreground">
-                            Assign Career Preference
+                            Asignar preferencia de carrera
                         </label>
                         <select id="resolve-preference-order" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30">
                             <!-- Se rellena dinámicamente desde las preferencias de la solicitud -->
                         </select>
-                        <p class="text-xs text-muted-foreground">Select which career preference to assign to this student.</p>
+                        <p class="text-xs text-muted-foreground">Selecciona qué preferencia de carrera asignar a este estudiante.</p>
                     </div>
                     <div class="space-y-1.5">
                         <label for="resolve-notes" class="text-sm font-medium text-foreground">Notas (opcional)</label>
-                        <textarea id="resolve-notes" rows="3" placeholder="Add notes for the student..."
+                        <textarea id="resolve-notes" rows="3" placeholder="Agregar notas para el estudiante..."
                             class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30 resize-none"></textarea>
                     </div>
                     <button id="btn-resolve" class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
@@ -177,15 +177,15 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     <!-- Modal de validación de documentos -->
     <div id="modal-backdrop" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60">
         <div class="bg-card border border-border rounded-xl p-6 w-full max-w-md shadow-xl space-y-4">
-            <h3 class="text-base font-semibold text-foreground" id="modal-title">Reject Document</h3>
+            <h3 class="text-base font-semibold text-foreground" id="modal-title">Rechazar documento</h3>
             <div id="modal-reason-wrapper" class="space-y-1.5 hidden">
-                <label for="modal-reason" class="text-sm font-medium text-foreground">Rejection Reason</label>
-                <textarea id="modal-reason" rows="3" placeholder="Explain why this document is rejected..."
+                <label for="modal-reason" class="text-sm font-medium text-foreground">Motivo del rechazo</label>
+                <textarea id="modal-reason" rows="3" placeholder="Explica por qué este documento fue rechazado..."
                     class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30 resize-none"></textarea>
             </div>
             <div class="flex justify-end gap-3">
                 <button id="modal-cancel" class="rounded-md border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">Cancelar</button>
-                <button id="modal-confirm" class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">Confirm</button>
+                <button id="modal-confirm" class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">Confirmar</button>
             </div>
         </div>
     </div>
@@ -224,9 +224,9 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     };
 
     const STATUS_LABELS: Record<string, string> = {
-        draft: "Draft", submitted: "Submitted", under_review: "Under Review",
-        admitted: "Admitted", waitlisted: "Waitlisted", rejected: "Rejected",
-        confirmed: "Confirmed", withdrawn: "Withdrawn", expired: "Expired",
+        draft: "Borrador", submitted: "Enviada", under_review: "En revisión",
+        admitted: "Admitida", waitlisted: "En lista de espera", rejected: "Rechazada",
+        confirmed: "Confirmada", withdrawn: "Retirada", expired: "Vencida",
     };
 
     const DOC_STATUS_CLASSES: Record<string, string> = {
@@ -270,7 +270,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     function openModal(docId: string, action: "validated" | "rejected") {
         modalDocId = docId;
         modalAction = action;
-        document.getElementById("modal-title")!.textContent = action === "validated" ? "Validate Document" : "Reject Document";
+        document.getElementById("modal-title")!.textContent = action === "validated" ? "Validar documento" : "Rechazar documento";
         document.getElementById("modal-reason-wrapper")?.classList.toggle("hidden", action === "validated");
         document.getElementById("modal-reason")!.value = "";
         const backdrop = document.getElementById("modal-backdrop")!;
@@ -296,7 +296,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         const reason = (document.getElementById("modal-reason") as HTMLTextAreaElement).value.trim();
 
         if (modalAction === "rejected" && !reason) {
-            showFeedback("Please provide a rejection reason.", true);
+            showFeedback("Por favor, agrega un motivo de rechazo.", true);
             return;
         }
 
@@ -321,7 +321,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 showFeedback(json.detail || json.error || `Falló (${res.status})`, true);
                 return;
             }
-            showFeedback(`Document ${action === "validated" ? "validated" : "rejected"} exitosaly!`);
+            showFeedback(`Documento ${action === "validated" ? "validado" : "rechazado"} correctamente.`);
             await loadDocuments();
         } catch {
             showFeedback("La acción falló. Inténtalo de nuevo.", true);
@@ -341,10 +341,10 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
             container.innerHTML = responses.map((response: any) => {
                 const statusBadge = response.status === "submitted"
-                    ? `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-emerald-500/10 text-emerald-400">Submitted</span>`
-                    : `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-yellow-500/10 text-yellow-400">Draft</span>`;
+                    ? `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-emerald-500/10 text-emerald-400">Enviada</span>`
+                    : `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-yellow-500/10 text-yellow-400">Borrador</span>`;
                 const submittedAt = response.submitted_at
-                    ? `<span class="text-xs text-muted-foreground">Submitted ${new Date(response.submitted_at).toLocaleDateString()}</span>`
+                    ? `<span class="text-xs text-muted-foreground">Enviada ${new Date(response.submitted_at).toLocaleDateString()}</span>`
                     : "";
                 const answers: any[] = response.answers ?? [];
                 const answersHtml = answers.length > 0
@@ -373,13 +373,13 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                             ${valueHtml}
                         </div>`;
                     }).join("")
-                    : `<p class="text-sm text-muted-foreground">No answers recorded.</p>`;
+                    : `<p class="text-sm text-muted-foreground">No hay respuestas registradas.</p>`;
 
                 return `
                 <div class="rounded-lg border border-border overflow-hidden">
                     <div class="flex items-center justify-between px-4 py-3 bg-muted/20 border-b border-border">
                         <div class="flex items-center gap-2">
-                            <p class="text-sm font-medium text-foreground">${response.questionnaire_title ?? "Questionnaire"}</p>
+                            <p class="text-sm font-medium text-foreground">${response.questionnaire_title ?? "Cuestionario"}</p>
                             ${statusBadge}
                         </div>
                         ${submittedAt}
@@ -401,17 +401,17 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             const docList = Array.isArray(docs) ? docs : (docs.results ?? []);
 
             if (docList.length === 0) {
-                container.innerHTML = `<p class="text-sm text-muted-foreground">No documents uploaded.</p>`;
+                container.innerHTML = `<p class="text-sm text-muted-foreground">No se subieron documentos.</p>`;
                 return;
             }
 
             container.innerHTML = docList.map((doc: any) => {
-                const docType = doc.document_type?.replace(/_/g, " ") ?? "Document";
+                const docType = doc.document_type?.replace(/_/g, " ") ?? "Documento";
                 const status = doc.status ?? "pending";
                 const badgeClass = DOC_STATUS_CLASSES[status] ?? "bg-gray-100 text-gray-700";
-                const fileName = doc.file_name ?? doc.file ?? "File";
+                const fileName = doc.file_name ?? doc.file ?? "Archivo";
                 const fileUrl = resolveMediaUrl(doc.file);
-                const rejectReason = doc.rejection_reason ? `<p class="text-xs text-red-400 mt-1">Reason: ${doc.rejection_reason}</p>` : "";
+                const rejectReason = doc.rejection_reason ? `<p class="text-xs text-red-400 mt-1">Motivo: ${doc.rejection_reason}</p>` : "";
 
                 return `
                 <div class="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
@@ -424,12 +424,12 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                         ${rejectReason}
                     </div>
                     <div class="flex gap-2 shrink-0">
-                        ${doc.file ? `<a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="text-xs rounded-md border border-border px-2.5 py-1.5 text-foreground hover:bg-muted transition-colors">View</a>` : ""}
+                        ${doc.file ? `<a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="text-xs rounded-md border border-border px-2.5 py-1.5 text-foreground hover:bg-muted transition-colors">Ver</a>` : ""}
                         <button class="btn-validate text-xs rounded-md bg-emerald-600 px-2.5 py-1.5 text-white hover:bg-emerald-700 transition-colors" data-doc-id="${doc.id}">
-                            Validate
+                            Validar
                         </button>
                         <button class="btn-reject text-xs rounded-md border border-destructive/40 px-2.5 py-1.5 text-destructive hover:bg-destructive/10 transition-colors" data-doc-id="${doc.id}">
-                            Reject
+                            Rechazar
                         </button>
                     </div>
                 </div>`;
@@ -468,7 +468,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             badge.textContent = STATUS_LABELS[app.status] ?? app.status;
             badge.className = `inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_BADGES[app.status] ?? "bg-gray-100 text-gray-700"}`;
 
-            // Muestra "Mark Under Review" solo para submitted
+            // Muestra "Marcar en revisión" solo para submitted
             if (app.status === "submitted") {
                 document.getElementById("btn-mark-review")?.classList.remove("hidden");
             }
@@ -536,7 +536,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                             <p class="text-sm font-medium text-foreground">${p.career_name ?? "—"}</p>
                             <p class="text-xs text-muted-foreground">${p.career_code ?? ""}</p>
                         </div>
-                        ${assigned ? '<span class="shrink-0 text-xs font-semibold text-emerald-400">Assigned</span>' : ""}
+                        ${assigned ? '<span class="shrink-0 text-xs font-semibold text-emerald-400">Asignada</span>' : ""}
                     </div>`;
                 }).join("");
             }
@@ -582,7 +582,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             const res = await apiFetch(`/admissions/applications/${appId}/review/`, { method: "PATCH" });
             if (!res.ok) {
                 const json = await res.json().catch(() => ({}));
-                showFeedback(json.detail || json.error || "No se pudo actualizar status.", true);
+                showFeedback(json.detail || json.error || "No se pudo actualizar el estado.", true);
                 btn.disabled = false;
                 return;
             }
@@ -607,7 +607,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             const prefOrderEl = document.getElementById("resolve-preference-order") as HTMLSelectElement;
             const prefOrderVal = prefOrderEl.value;
             if (!prefOrderVal) {
-                showFeedback("Please select a career preference to assign.", true);
+                showFeedback("Selecciona una preferencia de carrera para asignar.", true);
                 return;
             }
             body.preference_order = Number(prefOrderVal);
@@ -624,7 +624,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
             if (!res.ok) {
                 const json = await res.json().catch(() => ({}));
-                showFeedback(json.detail || json.error || `Resolve failed (${res.status})`, true);
+                showFeedback(json.detail || json.error || `Falló la resolución (${res.status})`, true);
                 btn.disabled = false;
                 return;
             }

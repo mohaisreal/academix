@@ -9,25 +9,25 @@ from .models import IdentityVerificationDocument, User
 
 def _generate_student_id(fmt: str) -> str:
     """
-    Generate a student ID string from a simple format pattern.
+    Genera una cadena de ID de estudiante a partir de un patrón de formato simple.
 
-    Supported tokens:
-      \\d{N}    → N random decimal digits
-      [A-Z]{N} → N random uppercase ASCII letters
+    Tokens soportados:
+      \\d{N}    → N dígitos decimales aleatorios
+      [A-Z]{N} → N letras ASCII mayúsculas aleatorias
 
-    Everything else is treated as a literal prefix/suffix.
-    Example formats:
+    Todo lo demás se trata como prefijo/sufijo literal.
+    Formatos de ejemplo:
       \\d{6}         → "483920"
       STU-\\d{6}    → "STU-483920"
       [A-Z]{2}\\d{4} → "KJ7823"
     """
     result = fmt
-    # Replace \d{N}
+    # Reemplaza \d{N}
     for m in re.finditer(r'\\d\{(\d+)\}', fmt):
         n = int(m.group(1))
         digits = ''.join(random.choices('0123456789', k=n))
         result = result.replace(m.group(0), digits, 1)
-    # Replace [A-Z]{N}
+    # Reemplaza [A-Z]{N}
     for m in re.finditer(r'\[A-Z\]\{(\d+)\}', result):
         n = int(m.group(1))
         letters = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ', k=n))
@@ -36,7 +36,7 @@ def _generate_student_id(fmt: str) -> str:
 
 
 def _unique_student_id(fmt: str) -> str:
-    """Keep generating until the username is unique."""
+    """Sigue generando hasta que el nombre de usuario sea único."""
     for _ in range(50):
         candidate = _generate_student_id(fmt)
         if not User.objects.filter(username=candidate).exists():
@@ -48,7 +48,7 @@ def _unique_student_id(fmt: str) -> str:
 class UserSerializer(serializers.ModelSerializer):
     """
     Serializador para el modelo Usuario con todos los campos.
-    Used for retrieving user information.
+    Se usa para recuperar información del usuario.
     """
     full_name = serializers.CharField(source='get_full_name', read_only=True)
     role_display = serializers.CharField(source='get_role_display', read_only=True)
@@ -147,8 +147,8 @@ class IdentityVerificationUserSerializer(serializers.ModelSerializer):
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     """
-    Serializer for user registration with password validation.
-    Username is auto-generated from the system student_id_format setting.
+    Serializador para registro de usuarios con validación de contraseña.
+    El nombre de usuario se genera automáticamente a partir de la configuración student_id_format del sistema.
     """
     password = serializers.CharField(
         write_only=True,
@@ -185,7 +185,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, attrs):
-        """Validate that passwords match"""
+        """Valida que las contraseñas coincidan."""
         if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError({
                 "password": "Datos de inicio de sesión incorrectos."
@@ -193,7 +193,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return attrs
 
     def validate_email(self, value):
-        """Validate that email is unique"""
+        """Valida que el correo electrónico sea único."""
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("A user with this email already exists.")
         return value
@@ -222,8 +222,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     """
-    Serializer for updating user profile.
-    Contraseña updates are handled separately.
+    Serializador para actualizar el perfil de usuario.
+    Las actualizaciones de contraseña se manejan por separado.
     """
     class Meta:
         model = User
@@ -239,7 +239,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         ]
 
     def validate_email(self, value):
-        """Validate that email is unique (excluding current user)"""
+        """Valida que el correo electrónico sea único (excluyendo al usuario actual)."""
         instance = getattr(self, 'instance', None)
         qs = User.objects.filter(email=value)
         if instance is not None:
@@ -251,9 +251,9 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
 class AdminUserWriteSerializer(serializers.ModelSerializer):
     """
-    Serializer for management/admin user creation and administrative updates.
-    This is intentionally separate from UserUpdateSerializer so regular profile
-    updates cannot silently mutate role, active status, or password.
+    Serializador para creación de usuarios de gestión/admin y actualizaciones administrativas.
+    Está intencionalmente separado de UserUpdateSerializer para que las actualizaciones
+    de perfil regulares no modifiquen silenciosamente rol, estado activo o contraseña.
     """
     password = serializers.CharField(
         write_only=True,
@@ -347,8 +347,8 @@ class StudentListSerializer(serializers.ModelSerializer):
 
 class TeacherListSerializer(serializers.ModelSerializer):
     """
-    Serializer for the teacher list endpoint.
-    Includes annotated active_classes_count field.
+    Serializador para el endpoint de listado de docentes.
+    Incluye el campo anotado active_classes_count.
     """
     active_classes_count = serializers.IntegerField(default=0)
 
@@ -359,7 +359,7 @@ class TeacherListSerializer(serializers.ModelSerializer):
 
 class ChangePasswordSerializer(serializers.Serializer):
     """
-    Serializer for password change endpoint.
+    Serializador para el endpoint de cambio de contraseña.
     """
     old_password = serializers.CharField(
         required=True,
@@ -380,7 +380,7 @@ class ChangePasswordSerializer(serializers.Serializer):
     )
 
     def validate(self, attrs):
-        """Validate that new passwords match"""
+        """Valida que las nuevas contraseñas coincidan."""
         if attrs['new_password'] != attrs['new_password2']:
             raise serializers.ValidationError({
                 "new_password": "Datos de inicio de sesión incorrectos."
@@ -388,7 +388,7 @@ class ChangePasswordSerializer(serializers.Serializer):
         return attrs
 
     def validate_old_password(self, value):
-        """Validate that old password is correct"""
+        """Valida que la contraseña anterior sea correcta."""
         user = self.context['request'].user
         if not user.check_password(value):
             raise serializers.ValidationError("Contraseña antigua incorrecta.")

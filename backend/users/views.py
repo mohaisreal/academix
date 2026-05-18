@@ -30,21 +30,21 @@ from .serializers import (
 
 
 class IsManagementOrAdmin(permissions.BasePermission):
-    """Allow access only to users with role 'm' (management) or 'a' (administration)."""
+    """Permite acceso solo a usuarios con rol 'm' (gestión) o 'a' (administración)."""
 
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.role in ['m', 'a']
 
 
 class IsManagementAdminOrTeacher(permissions.BasePermission):
-    """Allow access only to users with role 'm', 'a', or 't'."""
+    """Permite acceso solo a usuarios con rol 'm', 'a' o 't'."""
 
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.role in ['m', 'a', 't']
 
 
 def _resolve_user_from_email_token(uid, token):
-    """Resolve and validate the same signed token used by the email verification link."""
+    """Resuelve y valida el mismo token firmado usado por el enlace de verificación de correo."""
     if not uid or not token:
         return None
     try:
@@ -61,8 +61,8 @@ def _resolve_user_from_email_token(uid, token):
 
 def _student_access_denial(user):
     """
-    Return a user-facing reason when a student cannot access the platform yet.
-    This is intentionally explicit: a security gate must teach the user what is missing.
+    Devuelve un motivo visible para el usuario cuando un estudiante aún no puede acceder a la plataforma.
+    Es intencionalmente explícito: una barrera de seguridad debe indicar qué falta.
     """
     if user.role != 's':
         return None
@@ -102,7 +102,7 @@ def _send_email_verification(user):
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
-    Custom JWT serializer to include user data in the token response
+    Serializador JWT personalizado para incluir datos del usuario en la respuesta del token
     """
     def validate(self, attrs):
         identifier = attrs.get(self.username_field)
@@ -124,7 +124,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             from rest_framework_simplejwt.exceptions import AuthenticationFailed
             raise AuthenticationFailed(denial, code='account_not_ready')
 
-        # Add custom claims
+        # Agrega claims personalizados
         data['user'] = UserSerializer(self.user).data
 
         return data
@@ -132,14 +132,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     """
-    Custom JWT token view to return user data along with tokens
+    Vista JWT personalizada para devolver datos del usuario junto con los tokens
     """
     serializer_class = CustomTokenObtainPairSerializer
 
 
 class UserRegistrationView(generics.CreateAPIView):
     """
-    API endpoint for user registration.
+    Endpoint de API para registro de usuarios.
     POST /api/users/register/
     """
     queryset = User.objects.all()
@@ -176,7 +176,7 @@ class UserRegistrationView(generics.CreateAPIView):
 
 class UserLoginView(APIView):
     """
-    API endpoint for user login with JWT tokens.
+    Endpoint de API para inicio de sesión de usuarios con tokens JWT.
     POST /api/users/login/
     """
     permission_classes = [permissions.AllowAny]
@@ -210,7 +210,7 @@ class UserLoginView(APIView):
                 'error': 'Account is disabled.'
             }, status=status.HTTP_403_FORBIDDEN)
 
-        # Generate JWT tokens
+        # Genera tokens JWT
         refresh = RefreshToken.for_user(user)
 
         return Response({
@@ -225,7 +225,7 @@ class UserLoginView(APIView):
 
 class UserLogoutView(APIView):
     """
-    API endpoint for user logout (blacklist refresh token).
+    Endpoint de API para cierre de sesión de usuarios (lista negra del refresh token).
     POST /api/users/logout/
     """
     permission_classes = [permissions.IsAuthenticated]
@@ -253,7 +253,7 @@ class UserLogoutView(APIView):
 
 class CurrentUserView(generics.RetrieveUpdateAPIView):
     """
-    API endpoint to get and update current authenticated user.
+    Endpoint de API para obtener y actualizar el usuario autenticado actual.
     GET /api/users/me/
     PUT/PATCH /api/users/me/
     """
@@ -264,14 +264,14 @@ class CurrentUserView(generics.RetrieveUpdateAPIView):
         return self.request.user
 
     def retrieve(self, request, *args, **kwargs):
-        """Get current user details"""
+        """Obtiene los detalles del usuario actual."""
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
 
 
 class ChangePasswordView(generics.UpdateAPIView):
     """
-    API endpoint for changing user password.
+    Endpoint de API para cambiar la contraseña del usuario.
     POST /api/users/change-password/
     """
     serializer_class = ChangePasswordSerializer
@@ -289,7 +289,7 @@ class ChangePasswordView(generics.UpdateAPIView):
 
 class UserListView(generics.ListCreateAPIView):
     """
-    API endpoint to list/create users (management / admin only).
+    Endpoint de API para listar/crear usuarios (solo gestión / administración).
     GET  /api/users/
     POST /api/users/
     """
@@ -311,7 +311,7 @@ class UserListView(generics.ListCreateAPIView):
 
 class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    API endpoint for user detail, update, and delete (admin or owner only).
+    Endpoint de API para detalle, actualización y eliminación de usuarios (solo admin o propietario).
     GET /api/users/<id>/
     PUT/PATCH /api/users/<id>/
     DELETE /api/users/<id>/
@@ -329,7 +329,7 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_permissions(self):
         """
-        Gestión/admin can access all users, regular users can only access themselves
+        Gestión/admin puede acceder a todos los usuarios; los usuarios regulares solo pueden acceder a sí mismos.
         """
         if self.request.method == 'DELETE':
             return [IsManagement()]
@@ -337,7 +337,7 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def check_object_permissions(self, request, obj):
         """
-        Check if user has permission to access this object
+        Verifica si el usuario tiene permiso para acceder a este objeto.
         """
         super().check_object_permissions(request, obj)
 
@@ -351,9 +351,9 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class StudentListView(generics.ListAPIView):
     """
-    API endpoint to list all students with career and GPA data.
+    Endpoint de API para listar todos los estudiantes con datos de carrera y GPA.
     GET /api/users/students/
-    Accessible by management, administration, and teachers.
+    Accesible por gestión, administración y docentes.
     """
     serializer_class = StudentListSerializer
     permission_classes = [permissions.IsAuthenticated, IsManagementAdminOrTeacher]

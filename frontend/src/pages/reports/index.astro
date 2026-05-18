@@ -1,7 +1,7 @@
 ---
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
-<DashboardLayout title="Reports — Academix" currentPath="/reports">
+<DashboardLayout title="Reportes — Academix" currentPath="/reports">
   <div id="page-loading" class="p-6 space-y-4">
     <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
     <div class="h-96 bg-card rounded-xl border border-border animate-pulse"></div>
@@ -10,19 +10,19 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   <div id="page-content" class="hidden flex" style="height:calc(100vh - 64px)">
     <!-- Barra lateral: lista de clases -->
     <div class="w-64 shrink-0 border-r border-border overflow-y-auto p-4">
-      <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Classes</p>
+      <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Clases</p>
       <div id="class-list" class="space-y-2"></div>
     </div>
 
-    <!-- Main area -->
+    <!-- Área principal -->
     <div class="flex-1 overflow-y-auto">
       <!-- Estado vacío -->
       <div id="reports-empty" class="flex flex-col items-center justify-center h-full text-center">
         <div class="flex size-16 items-center justify-center rounded-full bg-muted mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         </div>
-        <p class="text-lg font-medium text-foreground">Select a class to view reports</p>
-        <p class="text-sm text-muted-foreground mt-1">Choose a class from the left panel</p>
+        <p class="text-lg font-medium text-foreground">Seleccioná una clase para ver reportes</p>
+        <p class="text-sm text-muted-foreground mt-1">Elegí una clase del panel izquierdo</p>
       </div>
 
       <!-- Contenido del reporte -->
@@ -92,7 +92,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       const passRate = data.pass_rate != null ? parseFloat(data.pass_rate).toFixed(1) : '-';
       const failCount = data.fail_count ?? data.failed_count ?? '-';
 
-      // Distribution
+      // Distribución
       const allScores = data.student_scores || data.scores || [];
       const distCounts = DIST_RANGES.map(r => ({
         ...r,
@@ -116,9 +116,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           ${[
             { label: 'Total de estudiantes', value: totalStudents, color: 'text-primary' },
-            { label: 'Mean Score', value: mean + (mean !== '-' ? '%' : ''), color: 'text-blue-400' },
-            { label: 'Pass Rate', value: passRate + (passRate !== '-' ? '%' : ''), color: 'text-green-400' },
-            { label: 'Fail Count', value: failCount, color: 'text-red-400' },
+            { label: 'Puntaje promedio', value: mean + (mean !== '-' ? '%' : ''), color: 'text-blue-400' },
+            { label: 'Tasa de aprobación', value: passRate + (passRate !== '-' ? '%' : ''), color: 'text-green-400' },
+            { label: 'Cantidad de reprobados', value: failCount, color: 'text-red-400' },
           ].map(k => `
             <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
               <p class="text-sm text-muted-foreground mb-2">${k.label}</p>
@@ -127,9 +127,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           `).join('')}
         </div>
 
-        <!-- Score distribution -->
+        <!-- Distribución de puntajes -->
         <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
-          <h2 class="text-lg font-semibold text-foreground mb-4">Score Distribution</h2>
+          <h2 class="text-lg font-semibold text-foreground mb-4">Distribución de puntajes</h2>
           <div class="space-y-3">
             ${distCounts.map(d => `
               <div class="flex items-center gap-3">
@@ -145,21 +145,21 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           </div>
         </div>
 
-        <!-- Top/Bottom students -->
+        <!-- Mejores/peores estudiantes -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
             <h2 class="text-lg font-semibold text-foreground mb-4">Mejores 5 estudiantes</h2>
             <table class="w-full">
               <thead><tr class="border-b border-border">
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-2">Name</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-2">Avg</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-2">Nombre</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-2">Prom.</th>
               </tr></thead>
               <tbody>
                 ${top5.map(s => `<tr class="border-b border-border hover:bg-muted/40">
                   <td class="py-2 text-sm text-foreground">${escHtml(s.student_name || s.name || '-')}</td>
                   <td class="py-2"><span class="text-sm font-semibold text-green-400">${parseFloat(s.average || s.avg || 0).toFixed(1)}%</span></td>
                 </tr>`).join('')}
-                ${top5.length === 0 ? '<tr><td colspan="2" class="py-4 text-center text-xs text-muted-foreground">No data</td></tr>' : ''}
+                ${top5.length === 0 ? '<tr><td colspan="2" class="py-4 text-center text-xs text-muted-foreground">Sin datos</td></tr>' : ''}
               </tbody>
             </table>
           </div>
@@ -167,30 +167,30 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <h2 class="text-lg font-semibold text-foreground mb-4">Últimos 5 estudiantes</h2>
             <table class="w-full">
               <thead><tr class="border-b border-border">
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-2">Name</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-2">Avg</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-2">Nombre</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-2">Prom.</th>
               </tr></thead>
               <tbody>
                 ${bottom5.map(s => `<tr class="border-b border-border hover:bg-muted/40">
                   <td class="py-2 text-sm text-foreground">${escHtml(s.student_name || s.name || '-')}</td>
                   <td class="py-2"><span class="text-sm font-semibold text-red-400">${parseFloat(s.average || s.avg || 0).toFixed(1)}%</span></td>
                 </tr>`).join('')}
-                ${bottom5.length === 0 ? '<tr><td colspan="2" class="py-4 text-center text-xs text-muted-foreground">No data</td></tr>' : ''}
+                ${bottom5.length === 0 ? '<tr><td colspan="2" class="py-4 text-center text-xs text-muted-foreground">Sin datos</td></tr>' : ''}
               </tbody>
             </table>
           </div>
         </div>
 
-        <!-- Evaluations performance -->
+        <!-- Rendimiento de evaluaciones -->
         <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
-          <h2 class="text-lg font-semibold text-foreground mb-4">Evaluations Performance</h2>
+          <h2 class="text-lg font-semibold text-foreground mb-4">Rendimiento de evaluaciones</h2>
           <div class="overflow-x-auto">
             <table class="w-full">
               <thead><tr class="border-b border-border">
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Evaluation</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Type</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Avg Score</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Submission Rate</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Evaluación</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Tipo</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Puntaje prom.</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Tasa de entrega</th>
               </tr></thead>
               <tbody>
                 ${evalPerf.map(e => {
@@ -205,7 +205,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                     <td class="py-3 text-sm text-muted-foreground">${rate}</td>
                   </tr>`;
                 }).join('')}
-                ${evalPerf.length === 0 ? '<tr><td colspan="4" class="py-4 text-center text-xs text-muted-foreground">No evaluation data</td></tr>' : ''}
+                ${evalPerf.length === 0 ? '<tr><td colspan="4" class="py-4 text-center text-xs text-muted-foreground">Sin datos de evaluaciones</td></tr>' : ''}
               </tbody>
             </table>
           </div>
@@ -226,7 +226,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       const list = document.getElementById('class-list');
       if (list) {
         list.innerHTML = classes.map(c => {
-          const subject = c.subject_name || c.subject?.name || 'Class';
+          const subject = c.subject_name || c.subject?.name || 'Clase';
           const period = c.period_name || c.period?.name || '';
           return `<div class="class-item cursor-pointer rounded-lg border border-border p-3 hover:border-primary/50 hover:bg-muted/40 transition-colors" data-id="${c.id}" data-name="${escHtml(subject)}" data-period="${escHtml(period)}">
             <p class="text-sm font-medium text-foreground">${escHtml(subject)}</p>

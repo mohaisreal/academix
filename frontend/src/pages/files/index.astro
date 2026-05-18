@@ -1,7 +1,7 @@
 ---
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
-<DashboardLayout title="Student Files — Academix" currentPath="/files">
+<DashboardLayout title="Expedientes de estudiantes — Academix" currentPath="/files">
   <div id="page-loading" class="p-6 space-y-4">
     <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
     <div class="h-10 bg-card rounded-xl border border-border animate-pulse"></div>
@@ -9,11 +9,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   </div>
 
   <div id="page-content" class="hidden">
-    <!-- Shared top bar -->
+    <!-- Barra superior compartida -->
     <div class="flex items-center justify-between border-b border-border px-6 py-4">
       <div>
-        <h1 class="text-xl font-semibold text-foreground">Student Files</h1>
-        <p class="text-sm text-muted-foreground">Academic records and performance overview</p>
+        <h1 class="text-xl font-semibold text-foreground">Expedientes de estudiantes</h1>
+        <p class="text-sm text-muted-foreground">Historial académico y resumen de rendimiento</p>
       </div>
       <div class="flex items-center gap-3">
         <input id="search-input" type="text" placeholder="Buscar estudiantes..." class="w-64 bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
@@ -24,10 +24,10 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       <!-- Filtros de administración -->
       <div id="admin-filters" class="hidden flex gap-3">
         <select id="career-filter" class="bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="">All Careers</option>
+          <option value="">Todas las carreras</option>
         </select>
         <select id="period-filter" class="bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="">All Periods</option>
+          <option value="">Todos los períodos</option>
         </select>
       </div>
 
@@ -38,17 +38,17 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <thead>
               <tr class="border-b border-border">
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Estudiante</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Career</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Period</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Carrera</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Período</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">GPA</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Estado</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Actions</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Acciones</th>
               </tr>
             </thead>
             <tbody id="files-table-body"></tbody>
           </table>
         </div>
-        <div id="files-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No student files found</div>
+        <div id="files-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No se encontraron expedientes de estudiantes</div>
       </div>
     </div>
   </div>
@@ -58,7 +58,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     <div class="w-full max-w-2xl rounded-xl border border-border bg-background shadow-2xl max-h-[90vh] flex flex-col">
       <!-- Cabecera -->
       <div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-        <h2 class="text-base font-semibold text-foreground">Student File</h2>
+        <h2 class="text-base font-semibold text-foreground">Expediente del estudiante</h2>
         <button id="modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -152,7 +152,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <td class="py-3 pr-4">${gpaBadge(gpa)}</td>
         <td class="py-3 pr-4"><span class="inline-flex items-center rounded-full ${statusColor} px-2 py-0.5 text-xs font-medium capitalize">${escHtml(status)}</span></td>
         <td class="py-3">
-          <button class="view-file-btn text-sm text-primary hover:underline font-medium" data-id="${f.student_id || f.id}">View File</button>
+          <button class="view-file-btn text-sm text-primary hover:underline font-medium" data-id="${f.student_id || f.id}">Ver expediente</button>
         </td>
       </tr>`;
     }).join('');
@@ -171,7 +171,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       const data = await apiFetch(`/grades/files/${studentId}/`);
       if (!content) return;
 
-      const name = data.student_name || `${data.first_name || ''} ${data.last_name || ''}`.trim() || 'Student';
+      const name = data.student_name || `${data.first_name || ''} ${data.last_name || ''}`.trim() || 'Estudiante';
       const initials = name.split(' ').map(p => p[0]).join('').toUpperCase().substring(0, 2);
       const periods = data.periods || data.academic_records || [];
 
@@ -185,7 +185,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           </div>
         </div>
         <div class="mb-6 flex items-center justify-between">
-          <span class="text-sm text-muted-foreground">Overall GPA</span>
+          <span class="text-sm text-muted-foreground">Promedio general</span>
           ${gpaBadge(data.overall_gpa || data.gpa)}
         </div>
         <div class="space-y-3" id="periods-accordion">
@@ -193,7 +193,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <div class="border border-border rounded-lg overflow-hidden">
               <button class="accordion-btn w-full flex items-center justify-between p-4 text-left hover:bg-muted/40 transition-colors" data-index="${i}">
                 <div>
-                  <p class="font-medium text-foreground">${escHtml(p.period_name || p.period || 'Period')}</p>
+                  <p class="font-medium text-foreground">${escHtml(p.period_name || p.period || 'Período')}</p>
                   <p class="text-xs text-muted-foreground">${escHtml(p.career_name || p.career || '')}</p>
                 </div>
                 <div class="flex items-center gap-2">
@@ -204,9 +204,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
               <div class="accordion-body hidden border-t border-border">
                 <table class="w-full">
                   <thead><tr class="border-b border-border bg-muted/20">
-                    <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Subject</th>
-                    <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Code</th>
-                    <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Credits</th>
+                    <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Asignatura</th>
+                    <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Código</th>
+                    <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Créditos</th>
                     <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Calificar</th>
                     <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Estado</th>
                   </tr></thead>
@@ -217,7 +217,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                         <td class="p-3 text-sm text-muted-foreground">${escHtml(s.code || '-')}</td>
                         <td class="p-3 text-sm text-muted-foreground">${s.credits || '-'}</td>
                         <td class="p-3 text-sm text-foreground font-medium">${s.final_grade ?? s.grade ?? '-'}</td>
-                        <td class="p-3"><span class="inline-flex items-center rounded-full ${(s.passed || s.status === 'passed') ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'} px-2 py-0.5 text-xs font-medium">${(s.passed || s.status === 'passed') ? 'Pass' : 'Fail'}</span></td>
+                        <td class="p-3"><span class="inline-flex items-center rounded-full ${(s.passed || s.status === 'passed') ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'} px-2 py-0.5 text-xs font-medium">${(s.passed || s.status === 'passed') ? 'Aprobado' : 'Reprobado'}</span></td>
                       </tr>
                     `).join('')}
                   </tbody>

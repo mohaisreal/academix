@@ -10,7 +10,7 @@ import Button from "@/components/starwind/button/Button.astro";
         <div class="flex items-center justify-between border-b border-border px-6 py-4">
             <div>
                 <h1 class="text-xl font-semibold text-foreground">Panel de estudiante</h1>
-                <p id="stu-subtitle" class="text-sm text-muted-foreground">Bienvenido de nuevo. Here is your learning overview.</p>
+                <p id="stu-subtitle" class="text-sm text-muted-foreground">Bienvenido de nuevo. Aquí tienes un resumen de tu aprendizaje.</p>
             </div>
         </div>
         <div class="p-6 space-y-6">
@@ -22,24 +22,24 @@ import Button from "@/components/starwind/button/Button.astro";
                         <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 6 3 6 3s3 0 6-3v-5"/></svg>
                     </div>
                     <div>
-                        <h2 class="text-base font-semibold text-foreground">You are not enrolled yet</h2>
-                        <p class="text-sm text-muted-foreground mt-1">Apply to a career to get started with your academic journey.</p>
+                        <h2 class="text-base font-semibold text-foreground">Aún no estás inscrito</h2>
+                        <p class="text-sm text-muted-foreground mt-1">Postúlate a una carrera para comenzar tu trayectoria académica.</p>
                     </div>
                     <div class="flex gap-3 mt-2">
                         <a href="/admissions" class="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-                            Browse Careers
+                            Ver carreras
                         </a>
                         <a href="/admissions/my-applications" class="inline-flex items-center gap-1.5 rounded-md border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            My Applications
+                            Mis solicitudes
                         </a>
                     </div>
                 </div>
 
-                <!-- Admissions quick summary (always useful even sin matrícula) -->
+                <!-- Resumen rápido de admisiones (siempre útil incluso sin matrícula) -->
                 <div class="mt-6 bg-card text-card-foreground rounded-xl border border-border p-5">
                     <div class="flex items-center justify-between mb-3">
                         <h2 class="text-base font-semibold text-foreground">Solicitudes de admisión</h2>
-                        <a href="/admissions/my-applications" class="text-sm text-primary hover:underline">View all →</a>
+                        <a href="/admissions/my-applications" class="text-sm text-primary hover:underline">Ver todo →</a>
                     </div>
                     <div id="stu-admissions-summary-pre" class="space-y-2 text-sm">
                         <div class="h-6 bg-muted animate-pulse rounded"></div>
@@ -52,27 +52,27 @@ import Button from "@/components/starwind/button/Button.astro";
                 <div class="grid grid-cols-4 gap-4">
                     <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
                         <div class="flex items-center justify-between">
-                            <p class="text-sm text-muted-foreground">Active Courses</p>
+                            <p class="text-sm text-muted-foreground">Cursos activos</p>
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground/50"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 6 3 6 3s3 0 6-3v-5"/></svg>
                         </div>
                         <p id="stu-active-courses" class="text-3xl font-bold text-foreground mt-2">—</p>
-                        <p class="text-xs text-success mt-1">Current period</p>
+                        <p class="text-xs text-success mt-1">Período actual</p>
                     </div>
                     <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
                         <div class="flex items-center justify-between">
-                            <p class="text-sm text-muted-foreground">Assignments Due</p>
+                            <p class="text-sm text-muted-foreground">Tareas por entregar</p>
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground/50"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                         </div>
                         <p id="stu-pending-evals" class="text-3xl font-bold text-foreground mt-2">—</p>
-                        <p class="text-xs text-warning mt-1">Pending evaluations</p>
+                        <p class="text-xs text-warning mt-1">Evaluaciones pendientes</p>
                     </div>
                     <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
                         <div class="flex items-center justify-between">
-                            <p class="text-sm text-muted-foreground">Average Grade</p>
+                            <p class="text-sm text-muted-foreground">Promedio</p>
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground/50"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                         </div>
                         <p id="stu-avg-grade" class="text-3xl font-bold text-foreground mt-2">—</p>
-                        <p class="text-xs text-success mt-1">Current period</p>
+                        <p class="text-xs text-success mt-1">Período actual</p>
                     </div>
                     <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
                         <div class="flex items-center justify-between">
@@ -80,18 +80,18 @@ import Button from "@/components/starwind/button/Button.astro";
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground/50"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
                         </div>
                         <p id="stu-teachers-count" class="text-3xl font-bold text-foreground mt-2">—</p>
-                        <p class="text-xs text-muted-foreground mt-1">This period</p>
+                        <p class="text-xs text-muted-foreground mt-1">Este período</p>
                     </div>
                 </div>
 
                 <!-- Clase actual -->
                 <div id="stu-current-class" class="hidden"></div>
 
-                <!-- My Subjects -->
+                <!-- Mis asignaturas -->
                 <div>
                     <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-lg font-semibold text-foreground">My Subjects</h2>
-                        <a href="/my-subjects" class="text-sm text-primary hover:underline">View all →</a>
+                        <h2 class="text-lg font-semibold text-foreground">Mis asignaturas</h2>
+                        <a href="/my-subjects" class="text-sm text-primary hover:underline">Ver todas →</a>
                     </div>
                     <div id="stu-subjects-grid" class="grid grid-cols-3 gap-4">
                         <div class="bg-card rounded-xl border border-border p-5 h-32 animate-pulse"></div>
@@ -104,7 +104,7 @@ import Button from "@/components/starwind/button/Button.astro";
                 <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-lg font-semibold text-foreground">Calificaciones recientes</h2>
-                        <a href="/grades" class="text-sm text-primary hover:underline">View all →</a>
+                        <a href="/grades" class="text-sm text-primary hover:underline">Ver todas →</a>
                     </div>
                     <div id="stu-recent-grades" class="flex gap-3 overflow-x-auto pb-1 min-h-[112px]">
                         <div class="h-28 min-w-[220px] bg-muted animate-pulse rounded-lg"></div>
@@ -117,35 +117,35 @@ import Button from "@/components/starwind/button/Button.astro";
                 <div id="stu-academic-actions" class="grid grid-cols-2 gap-4">
                     <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
                         <div class="flex items-center justify-between mb-3">
-                            <h2 class="text-base font-semibold text-foreground">Admissions</h2>
-                            <a href="/admissions/my-applications" class="text-sm text-primary hover:underline">View all →</a>
+                            <h2 class="text-base font-semibold text-foreground">Admisiones</h2>
+                            <a href="/admissions/my-applications" class="text-sm text-primary hover:underline">Ver todas →</a>
                         </div>
                         <div id="stu-admissions-summary" class="space-y-2 text-sm">
                             <div class="h-6 bg-muted animate-pulse rounded"></div>
                         </div>
                         <div class="mt-4 flex gap-2">
                             <a href="/admissions/my-applications" class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                                My Applications
+                                Mis solicitudes
                             </a>
                             <a href="/admissions" class="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
-                                Browse Careers
+                                Explorar carreras
                             </a>
                         </div>
                     </div>
                     <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
                         <div class="flex items-center justify-between mb-3">
-                            <h2 class="text-base font-semibold text-foreground">Enrollment</h2>
-                            <a href="/enrollment" class="text-sm text-primary hover:underline">Manage →</a>
+                            <h2 class="text-base font-semibold text-foreground">Matrícula</h2>
+                            <a href="/enrollment" class="text-sm text-primary hover:underline">Gestionar →</a>
                         </div>
                         <div id="stu-enrollment-summary" class="space-y-2 text-sm">
                             <div class="h-6 bg-muted animate-pulse rounded"></div>
                         </div>
                         <div class="mt-4 flex gap-2">
                             <a href="/enrollment" class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                                Enrollment
+                                Matrícula
                             </a>
                             <a href="/enrollment/classes" class="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
-                                Select Subjects
+                                Seleccionar asignaturas
                             </a>
                         </div>
                     </div>
@@ -155,62 +155,62 @@ import Button from "@/components/starwind/button/Button.astro";
         </div>
     </div>
 
-    <!-- ─── TEACHER DASHBOARD ─────────────────────────────────────────── -->
+    <!-- ─── PANEL DE PROFESOR ─────────────────────────────────────────── -->
     <div id="dashboard-teacher" class="hidden">
         <div class="flex items-center justify-between border-b border-border px-6 py-4">
             <div>
                 <h1 class="text-xl font-semibold text-foreground">Panel de profesor</h1>
-                <p class="text-sm text-muted-foreground">Manage your courses and track student progress.</p>
+                <p class="text-sm text-muted-foreground">Gestiona tus cursos y sigue el progreso estudiantil.</p>
             </div>
             <a href="/marking">
                 <Button variant="primary" size="sm">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    Grade Assignments
+                    Calificar tareas
                 </Button>
             </a>
         </div>
         <div class="p-6 space-y-6">
             <div class="grid grid-cols-4 gap-4">
                 <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
-                    <p class="text-sm text-muted-foreground">Active Classes</p>
+                    <p class="text-sm text-muted-foreground">Clases activas</p>
                     <p id="tch-classes" class="text-3xl font-bold text-foreground mt-2">—</p>
-                    <p class="text-xs text-muted-foreground mt-1">Current period</p>
+                    <p class="text-xs text-muted-foreground mt-1">Período actual</p>
                 </div>
                 <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
                     <p class="text-sm text-muted-foreground">Total de estudiantes</p>
                     <p id="tch-students" class="text-3xl font-bold text-foreground mt-2">—</p>
-                    <p class="text-xs text-success mt-1">Across all classes</p>
+                    <p class="text-xs text-success mt-1">En todas las clases</p>
                 </div>
                 <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
                     <p class="text-sm text-muted-foreground">Calificaciones pendientes</p>
                     <p id="tch-pending" class="text-3xl font-bold text-foreground mt-2">—</p>
-                    <p class="text-xs text-warning mt-1">To be graded</p>
+                    <p class="text-xs text-warning mt-1">Por calificar</p>
                 </div>
                 <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
-                    <p class="text-sm text-muted-foreground">Avg Class Score</p>
+                    <p class="text-sm text-muted-foreground">Promedio de clase</p>
                     <p id="tch-avg-score" class="text-3xl font-bold text-foreground mt-2">—</p>
-                    <p class="text-xs text-success mt-1">Current period</p>
+                    <p class="text-xs text-success mt-1">Período actual</p>
                 </div>
             </div>
 
             <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold text-foreground">My Classes</h2>
-                    <a href="/my-classes" class="text-sm text-primary hover:underline">View all →</a>
+                    <h2 class="text-lg font-semibold text-foreground">Mis clases</h2>
+                    <a href="/my-classes" class="text-sm text-primary hover:underline">Ver todas →</a>
                 </div>
                 <table class="w-full">
                     <thead>
                         <tr class="border-b border-border">
-                            <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Course</th>
+                            <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Curso</th>
                             <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Estudiantes</th>
-                            <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Pending</th>
-                            <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Avg Score</th>
-                            <th class="text-right text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Action</th>
+                            <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Pendiente</th>
+                            <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Promedio</th>
+                            <th class="text-right text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Acción</th>
                         </tr>
                     </thead>
                     <tbody id="tch-classes-table">
                         <tr class="border-b border-border">
-                            <td colspan="5" class="py-8 text-center text-sm text-muted-foreground">Loading classes...</td>
+                            <td colspan="5" class="py-8 text-center text-sm text-muted-foreground">Cargando clases...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -218,17 +218,17 @@ import Button from "@/components/starwind/button/Button.astro";
         </div>
     </div>
 
-    <!-- ─── MANAGEMENT / ADMIN DASHBOARD ──────────────────────────────── -->
+    <!-- ─── PANEL DE GESTIÓN / ADMINISTRACIÓN ─────────────────────────── -->
     <div id="dashboard-management" class="hidden">
         <div class="flex items-center justify-between border-b border-border px-6 py-4">
             <div>
                 <h1 class="text-xl font-semibold text-foreground" id="mgmt-title">Panel de gestión</h1>
-                <p class="text-sm text-muted-foreground">Institutional overview and platform analytics.</p>
+                <p class="text-sm text-muted-foreground">Resumen institucional y analítica de la plataforma.</p>
             </div>
             <a href="/enrolment/management">
                 <Button variant="primary" size="sm">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    Manage Enrolments
+                    Gestionar matrículas
                 </Button>
             </a>
         </div>
@@ -252,62 +252,62 @@ import Button from "@/components/starwind/button/Button.astro";
                 <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
                     <p class="text-sm text-muted-foreground">Ratio de Aprobados</p>
                     <p id="mgmt-pass-rate" class="text-3xl font-bold text-foreground mt-2">—</p>
-                    <p class="text-xs text-muted-foreground mt-1">Platform-wide</p>
+                    <p class="text-xs text-muted-foreground mt-1">En toda la plataforma</p>
                 </div>
             </div>
 
             <!-- Estadísticas de titulaciones -->
             <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold text-foreground">Career Overview</h2>
-                    <a href="/careers" class="text-sm text-primary hover:underline">Manage →</a>
+                    <h2 class="text-lg font-semibold text-foreground">Resumen de carreras</h2>
+                    <a href="/careers" class="text-sm text-primary hover:underline">Gestionar →</a>
                 </div>
                 <table class="w-full">
                     <thead>
                         <tr class="border-b border-border">
-                            <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Career</th>
+                            <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Carrera</th>
                             <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Estudiantes</th>
-                            <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Classes</th>
-                            <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Avg GPA</th>
+                            <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Clases</th>
+                            <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Promedio GPA</th>
                         </tr>
                     </thead>
                     <tbody id="mgmt-careers-table">
                         <tr class="border-b border-border">
-                            <td colspan="4" class="py-8 text-center text-sm text-muted-foreground">Loading data...</td>
+                            <td colspan="4" class="py-8 text-center text-sm text-muted-foreground">Cargando datos...</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- Quick Actions -->
+            <!-- Acciones rápidas -->
             <div class="grid grid-cols-4 gap-4">
                 <a href="/enrolment/management" class="bg-card text-card-foreground rounded-xl border border-border p-5 hover:bg-muted/50 transition-colors block">
                     <div class="flex size-10 items-center justify-center rounded-lg bg-warning/15 mb-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-warning"><path d="M9 11l3 3L22 4"/></svg>
                     </div>
-                    <p class="text-sm font-medium text-foreground">Enrolments</p>
-                    <p class="text-xs text-muted-foreground mt-1">Manage and review enrolment requests</p>
+                    <p class="text-sm font-medium text-foreground">Matrículas</p>
+                    <p class="text-xs text-muted-foreground mt-1">Gestionar y revisar solicitudes de matrícula</p>
                 </a>
                 <a href="/system" id="quick-users-card" class="bg-card text-card-foreground rounded-xl border border-border p-5 hover:bg-muted/50 transition-colors block">
                     <div class="flex size-10 items-center justify-center rounded-lg bg-primary/15 mb-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
                     </div>
                     <p class="text-sm font-medium text-foreground">Usuarios</p>
-                    <p class="text-xs text-muted-foreground mt-1">Create and manage accounts by role</p>
+                    <p class="text-xs text-muted-foreground mt-1">Crear y gestionar cuentas por rol</p>
                 </a>
                 <a href="/files" class="bg-card text-card-foreground rounded-xl border border-border p-5 hover:bg-muted/50 transition-colors block">
                     <div class="flex size-10 items-center justify-center rounded-lg bg-success/15 mb-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-success"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                     </div>
-                    <p class="text-sm font-medium text-foreground">Student Files</p>
-                    <p class="text-xs text-muted-foreground mt-1">Academic records and files</p>
+                    <p class="text-sm font-medium text-foreground">Archivos estudiantiles</p>
+                    <p class="text-xs text-muted-foreground mt-1">Expedientes y archivos académicos</p>
                 </a>
                 <a href="/statistics" class="bg-card text-card-foreground rounded-xl border border-border p-5 hover:bg-muted/50 transition-colors block">
                     <div class="flex size-10 items-center justify-center rounded-lg bg-info/15 mb-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-info"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                     </div>
                     <p class="text-sm font-medium text-foreground">Estadísticas</p>
-                    <p class="text-xs text-muted-foreground mt-1">Platform analytics & reports</p>
+                    <p class="text-xs text-muted-foreground mt-1">Analítica y reportes de la plataforma</p>
                 </a>
             </div>
         </div>
@@ -347,7 +347,7 @@ import Button from "@/components/starwind/button/Button.astro";
         document.getElementById(divId)?.classList.remove("hidden");
         if (role === "a") {
             const t = document.getElementById("mgmt-title");
-            if (t) t.textContent = "Admin Panel";
+            if (t) t.textContent = "Panel de administración";
         }
     }
 
@@ -440,7 +440,7 @@ import Button from "@/components/starwind/button/Button.astro";
     }
 
     function formatGrade(value: number | null | undefined): string {
-        if (value === null || value === undefined || Number.isNaN(Number(value))) return "Not graded yet";
+        if (value === null || value === undefined || Number.isNaN(Number(value))) return "Sin calificar";
         return `${Number(value).toFixed(1)}%`;
     }
 
@@ -494,9 +494,9 @@ import Button from "@/components/starwind/button/Button.astro";
             return;
         }
 
-        const subjectName = current.subject.subject_name ?? current.subject.subject?.name ?? "Subject";
-        const teacher = current.subject.teacher_name ?? current.subject.teacher?.full_name ?? current.subject.teacher?.username ?? "Teacher pending";
-        const classroom = current.subject.classroom ?? current.subject.classroom_name ?? "Classroom pending";
+        const subjectName = current.subject.subject_name ?? current.subject.subject?.name ?? "Asignatura";
+        const teacher = current.subject.teacher_name ?? current.subject.teacher?.full_name ?? current.subject.teacher?.username ?? "Profesor pendiente";
+        const classroom = current.subject.classroom ?? current.subject.classroom_name ?? "Aula pendiente";
         currentEl.innerHTML = `
             <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
                 <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -533,9 +533,9 @@ import Button from "@/components/starwind/button/Button.astro";
     if (role === "s") {
         (async () => {
             const STATUS_LABELS: Record<string, string> = {
-                draft: "Draft", submitted: "Submitted", under_review: "Under Review",
-                admitted: "Admitted", waitlisted: "Waitlisted", rejected: "Rejected",
-                confirmed: "Confirmed", completed: "Completed", withdrawn: "Withdrawn", expired: "Expired",
+                draft: "Borrador", submitted: "Enviada", under_review: "En revisión",
+                admitted: "Admitida", waitlisted: "En lista de espera", rejected: "Rechazada",
+                confirmed: "Confirmada", completed: "Completada", withdrawn: "Retirada", expired: "Vencida",
             };
             const STATUS_BADGES: Record<string, string> = {
                 draft: "bg-gray-500/20 text-gray-300",
@@ -568,23 +568,23 @@ import Button from "@/components/starwind/button/Button.astro";
                 // ── Sin matrícula activa: mostrar panel de bienvenida + admissions ──
                 document.getElementById("stu-no-enrollment")?.classList.remove("hidden");
                 const subtitle = document.getElementById("stu-subtitle");
-                if (subtitle) subtitle.textContent = "Complete your admission process to get started.";
+                if (subtitle) subtitle.textContent = "Completá tu proceso de admisión para comenzar.";
 
                 const admissions = await apiFetch("/admissions/applications/");
                 const preSummaryEl = document.getElementById("stu-admissions-summary-pre")!;
                 if (admissions) {
                     const apps = listFromApi(admissions);
                     if (apps.length === 0) {
-                        preSummaryEl.innerHTML = `<p class="text-sm text-muted-foreground">No applications yet. Browse careers to apply.</p>`;
+                        preSummaryEl.innerHTML = `<p class="text-sm text-muted-foreground">Aún no hay solicitudes. Explora carreras para postularte.</p>`;
                     } else {
                         preSummaryEl.innerHTML = apps.slice(0, 4).map((app: any) => `
                             <div class="flex items-center justify-between py-1.5 border-b border-border last:border-0">
-                                <span class="text-sm text-foreground truncate max-w-[180px]">${escHtml(app.career_name ?? app.career?.name ?? "Career")}</span>
+                                <span class="text-sm text-foreground truncate max-w-[180px]">${escHtml(app.career_name ?? app.career?.name ?? "Carrera")}</span>
                                 <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGES[app.status] ?? "bg-gray-500/20 text-gray-300"}">${STATUS_LABELS[app.status] ?? app.status}</span>
                             </div>`).join("");
                     }
                 } else {
-                    preSummaryEl.innerHTML = `<p class="text-sm text-muted-foreground">Unable to load applications.</p>`;
+                    preSummaryEl.innerHTML = `<p class="text-sm text-muted-foreground">No se pudieron cargar las solicitudes.</p>`;
                 }
                 return;
             }
@@ -602,7 +602,7 @@ import Button from "@/components/starwind/button/Button.astro";
                 apiFetch("/admissions/applications/"),
             ]);
 
-            // KPI: active courses
+            // KPI: cursos activos
             const subjectList = listFromApi(subjects);
             const gradeList = listFromApi(grades);
             const teachersList = listFromApi(teachers);
@@ -627,15 +627,15 @@ import Button from "@/components/starwind/button/Button.astro";
                 renderCurrentClass(orderedSubjects);
 
                 if (orderedSubjects.length === 0) {
-                    grid.innerHTML = `<p class="col-span-3 text-sm text-muted-foreground py-4">No subjects enrolled.</p>`;
+                    grid.innerHTML = `<p class="col-span-3 text-sm text-muted-foreground py-4">No hay asignaturas matriculadas.</p>`;
                 } else {
                     grid.innerHTML = orderedSubjects.slice(0, 3).map((s: any) => {
                         const classId = getClassId(s);
-                        const name = s.subject_name ?? s.subject?.name ?? s.name ?? "Subject";
+                        const name = s.subject_name ?? s.subject?.name ?? s.name ?? "Asignatura";
                         const code = s.subject_code ?? s.subject?.code ?? s.code ?? "";
-                        const teacher = s.teacher_name ?? s.teacher?.full_name ?? s.teacher?.username ?? "Teacher pending";
+                        const teacher = s.teacher_name ?? s.teacher?.full_name ?? s.teacher?.username ?? "Profesor pendiente";
                         const credits = s.credits ?? s.subject?.credits ?? 0;
-                        const classroom = s.classroom ?? s.classroom_name ?? "Classroom pending";
+                        const classroom = s.classroom ?? s.classroom_name ?? "Aula pendiente";
                         const grade = s.current_grade ?? gradeByClass.get(classId) ?? null;
                         const gradeProgress = grade !== null ? Math.max(0, Math.min(100, Number(grade))) : 0;
                         return `
@@ -646,13 +646,13 @@ import Button from "@/components/starwind/button/Button.astro";
                             </div>
                             <div>
                                 <div class="flex justify-between text-xs text-muted-foreground mb-1">
-                                    <span>Calificar</span><span class="${gradeColor(grade)}">${formatGrade(grade)}</span>
+                                    <span>Calificación</span><span class="${gradeColor(grade)}">${formatGrade(grade)}</span>
                                 </div>
                                 <div class="h-1.5 bg-muted rounded-full overflow-hidden">
                                     <div class="h-full bg-primary rounded-full transition-all" style="width:${gradeProgress}%"></div>
                                 </div>
                             </div>
-                            <p class="text-xs text-muted-foreground truncate">${escHtml(credits)} credits · ${escHtml(classroom)}</p>
+                            <p class="text-xs text-muted-foreground truncate">${escHtml(credits)} créditos · ${escHtml(classroom)}</p>
                         </a>`;
                     }).join('');
                     grid.querySelectorAll("[data-subject-class-id]").forEach((el) => {
@@ -661,7 +661,7 @@ import Button from "@/components/starwind/button/Button.astro";
                 }
             }
 
-            // KPI: grades + pending
+            // KPI: calificaciones + pendientes
             if (grades) {
                 const allScores: number[] = [];
                 let pending = 0;
@@ -689,7 +689,7 @@ import Button from "@/components/starwind/button/Button.astro";
                 recents.sort((a, b) => (Date.parse(b.gradedAt ?? "") || 0) - (Date.parse(a.gradedAt ?? "") || 0));
                 const recentEl = document.getElementById("stu-recent-grades")!;
                 if (recents.length === 0) {
-                    recentEl.innerHTML = `<div class="flex min-h-[112px] items-center text-sm text-muted-foreground">No grades yet.</div>`;
+                    recentEl.innerHTML = `<div class="flex min-h-[112px] items-center text-sm text-muted-foreground">Aún no hay calificaciones.</div>`;
                 } else {
                     recentEl.innerHTML = recents.slice(0, 5).map((g: any) => `
                         <div class="min-w-[220px] h-28 rounded-lg border border-border bg-muted/30 p-4 flex flex-col justify-between">
@@ -698,7 +698,7 @@ import Button from "@/components/starwind/button/Button.astro";
                                 <p class="text-xs text-muted-foreground truncate mt-1">${escHtml(g.subject)}</p>
                             </div>
                             <div class="flex items-end justify-between gap-3">
-                                <span class="text-xs text-muted-foreground">Calificar</span>
+                                <span class="text-xs text-muted-foreground">Calificación</span>
                                 <span class="text-2xl font-bold ${gradeColor(g.score)}">${formatGrade(g.score)}</span>
                             </div>
                         </div>
@@ -706,32 +706,32 @@ import Button from "@/components/starwind/button/Button.astro";
                 }
             }
 
-            // KPI: teachers
+            // KPI: profesores
             if (teachers) {
                 document.getElementById("stu-teachers-count")!.textContent = String(teachersList.length ?? 0);
             }
 
-            // Admissions summary
+            // Resumen de admisiones
             const admissionsEl = document.getElementById("stu-admissions-summary")!;
             if (admissions) {
                 const apps = listFromApi(admissions);
                 if (apps.length === 0) {
-                    admissionsEl.innerHTML = `<p class="text-sm text-muted-foreground">No applications yet.</p>`;
+                    admissionsEl.innerHTML = `<p class="text-sm text-muted-foreground">Aún no hay solicitudes.</p>`;
                 } else {
                     admissionsEl.innerHTML = apps.slice(0, 3).map((app: any) => `
                         <div class="flex items-center justify-between py-1">
-                            <span class="text-foreground truncate max-w-[160px]">${escHtml(app.career_name ?? app.career?.name ?? "Career")}</span>
+                            <span class="text-foreground truncate max-w-[160px]">${escHtml(app.career_name ?? app.career?.name ?? "Carrera")}</span>
                             <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGES[app.status] ?? "bg-gray-500/20 text-gray-300"}">${STATUS_LABELS[app.status] ?? app.status}</span>
                         </div>`).join("");
                 }
             } else {
-                admissionsEl.innerHTML = `<p class="text-muted-foreground text-xs">Unable to load.</p>`;
+                admissionsEl.innerHTML = `<p class="text-muted-foreground text-xs">No se pudo cargar.</p>`;
             }
 
             // Resumen de matrícula
             const enrollmentEl = document.getElementById("stu-enrollment-summary")!;
-            const career = activeEnroll.career_name ?? activeEnroll.career?.name ?? "Career";
-            const period = activeEnroll.period_name ?? activeEnroll.period?.name ?? activeEnroll.academic_period?.name ?? "Period";
+            const career = activeEnroll.career_name ?? activeEnroll.career?.name ?? "Carrera";
+            const period = activeEnroll.period_name ?? activeEnroll.period?.name ?? activeEnroll.academic_period?.name ?? "Período";
             const enrollStatus = (activeEnroll.status ?? "pending").charAt(0).toUpperCase() + (activeEnroll.status ?? "pending").slice(1);
             const statusClass = ["active", "completed"].includes(activeEnroll.status) ? "text-emerald-400" : "text-yellow-400";
             enrollmentEl.innerHTML = `
@@ -755,7 +755,7 @@ import Button from "@/components/starwind/button/Button.astro";
                 document.getElementById("tch-avg-score")!.textContent = avg !== '—' ? avg + '%' : '—';
                 const tbody = document.getElementById("tch-classes-table")!;
                 if (classes.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-sm text-muted-foreground">No classes assigned for current period</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-sm text-muted-foreground">No hay clases asignadas para el período actual</td></tr>`;
                 } else {
                     tbody.innerHTML = classes.slice(0, 5).map((c: any) => {
                         const avgStr = c.avg_score !== null ? `${c.avg_score}%` : '—';
@@ -796,7 +796,7 @@ import Button from "@/components/starwind/button/Button.astro";
                         </tr>
                     `).join('');
                 } else {
-                    tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-sm text-muted-foreground">No career data available</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-sm text-muted-foreground">No hay datos de carreras disponibles</td></tr>`;
                 }
             }
         })();

@@ -16,14 +16,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     <div class="flex items-center justify-between border-b border-border px-6 py-4">
       <div>
         <h1 class="text-xl font-semibold text-foreground">Mis materiales</h1>
-        <p class="text-sm text-muted-foreground">Resources uploaded by your teachers</p>
+        <p class="text-sm text-muted-foreground">Recursos subidos por tus docentes</p>
       </div>
     </div>
 
     <div class="p-6 space-y-4">
       <!-- Pestañas de filtro de clases -->
       <div id="class-tabs" class="flex gap-1 overflow-x-auto pb-1 border-b border-border">
-        <button class="class-tab active-class-tab px-4 py-2 text-sm font-medium text-foreground border-b-2 border-primary -mb-px whitespace-nowrap" data-class="">All Classes</button>
+        <button class="class-tab active-class-tab px-4 py-2 text-sm font-medium text-foreground border-b-2 border-primary -mb-px whitespace-nowrap" data-class="">Todas las clases</button>
       </div>
 
       <!-- Cuadrícula de materiales -->
@@ -32,8 +32,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <div class="flex size-16 items-center justify-center rounded-full bg-muted mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         </div>
-        <p class="text-lg font-medium text-foreground">No materials available</p>
-        <p class="text-sm text-muted-foreground mt-1">Your teachers haven't uploaded any materials yet</p>
+        <p class="text-lg font-medium text-foreground">No hay materiales disponibles</p>
+        <p class="text-sm text-muted-foreground mt-1">Tus docentes todavía no subieron materiales</p>
       </div>
     </div>
   </div>
@@ -117,7 +117,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       const uploader = m.uploader_name || m.uploaded_by || '';
       const isLink = type === 'link';
       const actionUrl = isLink ? (m.url || '') : (m.file_url || m.file || '');
-      const actionLabel = isLink ? 'Open Link' : 'Download';
+      const actionLabel = isLink ? 'Abrir enlace' : 'Descargar';
       const actionIcon = isLink
         ? `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`
         : `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
@@ -135,7 +135,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <span class="inline-flex items-center rounded-full ${bg} px-2 py-0.5 text-xs font-medium capitalize">${escHtml(m.type_display || type)}</span>
         </div>
         ${uploader ? `<div class="flex items-center gap-1.5"><div class="flex size-5 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">${escHtml(uploader.split(' ').map(p => p[0]).join('').toUpperCase().substring(0, 2))}</div><span class="text-xs text-muted-foreground">${escHtml(uploader)}</span></div>` : ''}
-        <p class="text-xs text-muted-foreground">Uploaded ${formatDate(m.created_at)}</p>
+        <p class="text-xs text-muted-foreground">Subido ${formatDate(m.created_at)}</p>
         ${actionUrl ? `<a href="${escHtml(actionUrl)}" target="_blank" rel="noopener" class="mt-auto inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
           ${actionIcon}
           ${actionLabel}
@@ -160,7 +160,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     tab.classList.remove('text-muted-foreground');
   }
 
-  // "All" tab click
+  // Clic en la pestaña "Todas"
   document.querySelector('.class-tab[data-class=""]')?.addEventListener('click', (e) => {
     setActiveTab(e.currentTarget);
     activeClassFilter = '';

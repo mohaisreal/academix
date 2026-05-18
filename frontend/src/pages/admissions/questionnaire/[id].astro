@@ -3,12 +3,12 @@ export const prerender = false;
 import DashboardLayout from "@/layouts/DashboardLayout.astro";
 ---
 
-<DashboardLayout title="Questionnaire — Academix" currentPath="/admissions">
+<DashboardLayout title="Cuestionario — Academix" currentPath="/admissions">
     <!-- Pantalla de carga -->
     <div id="loading-screen" class="flex items-center justify-center min-h-[60vh]">
         <div class="text-center space-y-3">
             <div class="inline-block size-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-            <p class="text-sm text-muted-foreground">Loading questionnaire...</p>
+            <p class="text-sm text-muted-foreground">Cargando cuestionario...</p>
         </div>
     </div>
 
@@ -18,27 +18,27 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             <div class="flex size-16 items-center justify-center rounded-full bg-destructive/10 mx-auto">
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-destructive"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             </div>
-            <h2 class="text-lg font-semibold text-foreground">Unable to load questionnaire</h2>
+            <h2 class="text-lg font-semibold text-foreground">No se pudo cargar el cuestionario</h2>
             <p id="error-message" class="text-sm text-muted-foreground"></p>
             <a href="/admissions/my-applications" class="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-                Back to Applications
+                Volver a solicitudes
             </a>
         </div>
     </div>
 
-    <!-- Correcto screen -->
+    <!-- Pantalla de éxito -->
     <div id="success-screen" class="hidden flex items-center justify-center min-h-[60vh] p-6">
         <div class="text-center space-y-6 max-w-md">
             <div id="confetti-container" class="relative flex size-20 items-center justify-center rounded-full bg-emerald-500/15 mx-auto">
                 <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-emerald-400"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             </div>
             <div class="space-y-2">
-                <h2 class="text-2xl font-bold text-foreground">Questionnaire Submitted!</h2>
-                <p class="text-sm text-muted-foreground">Your responses have been recorded exitosaly. Our team will review your application shortly.</p>
+                <h2 class="text-2xl font-bold text-foreground">¡Cuestionario enviado!</h2>
+                <p class="text-sm text-muted-foreground">Tus respuestas se registraron correctamente. Nuestro equipo revisará tu solicitud en breve.</p>
             </div>
             <a href="/admissions/my-applications" class="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-                View My Applications
+                Ver mis solicitudes
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </a>
         </div>
@@ -50,9 +50,9 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         <div class="flex items-center justify-between border-b border-border px-6 py-4">
             <div class="min-w-0">
                 <div class="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                    <a href="/admissions/my-applications" class="hover:text-foreground transition-colors">My Applications</a>
+                    <a href="/admissions/my-applications" class="hover:text-foreground transition-colors">Mis solicitudes</a>
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-                    <span>Questionnaire</span>
+                    <span>Cuestionario</span>
                 </div>
                 <h1 id="questionnaire-title" class="text-xl font-semibold text-foreground truncate"></h1>
                 <p id="questionnaire-description" class="text-sm text-muted-foreground mt-0.5"></p>
@@ -60,7 +60,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         </div>
 
         <div class="p-6 max-w-3xl mx-auto space-y-6">
-            <!-- Progress bar -->
+            <!-- Barra de progreso -->
             <div class="space-y-2">
                 <div class="flex items-center justify-between">
                     <span id="step-label" class="text-sm font-medium text-foreground"></span>
@@ -69,11 +69,11 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 <div class="h-2 w-full bg-muted rounded-full overflow-hidden">
                     <div id="progress-bar" class="h-full bg-primary rounded-full transition-all duration-300 ease-out" style="width: 0%"></div>
                 </div>
-                <!-- Step dots -->
+                <!-- Puntos de pasos -->
                 <div id="step-dots" class="flex items-center gap-1.5 mt-1"></div>
             </div>
 
-            <!-- Step card -->
+            <!-- Tarjeta de paso -->
             <div class="rounded-xl border border-border bg-card shadow-sm">
                 <div class="border-b border-border px-6 py-4">
                     <h2 id="step-title" class="text-base font-semibold text-foreground"></h2>
@@ -82,14 +82,14 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 <div id="questions-container" class="px-6 py-5 space-y-6"></div>
             </div>
 
-            <!-- Navigation -->
+            <!-- Navegación -->
             <div class="flex items-center justify-between pt-2">
                 <button id="btn-prev" type="button" class="inline-flex items-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-40 disabled:pointer-events-none">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-                    Previous
+                    Anterior
                 </button>
                 <button id="btn-next" type="button" class="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:pointer-events-none">
-                    <span id="btn-next-label">Save &amp; Continue</span>
+                    <span id="btn-next-label">Guardar y continuar</span>
                     <svg id="btn-next-icon-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                     <svg id="btn-next-icon-check" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="hidden"><polyline points="20 6 9 17 4 12"/></svg>
                     <div id="btn-next-spinner" class="hidden size-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
@@ -102,7 +102,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     <div id="stripe-backdrop" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
         <div class="w-full max-w-md rounded-xl border border-border bg-background shadow-2xl">
             <div class="flex items-center justify-between px-5 py-4 border-b border-border">
-                <h3 id="stripe-modal-title" class="text-base font-semibold text-foreground">Complete Payment</h3>
+                <h3 id="stripe-modal-title" class="text-base font-semibold text-foreground">Completar pago</h3>
                 <button id="stripe-modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
@@ -111,15 +111,15 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 <div id="stripe-payment-element"></div>
                 <div id="stripe-demo-content" class="hidden space-y-3">
                     <div class="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-xs text-yellow-400">
-                        Demo mode — no real payment will be processed.
+                        Modo demo — no se procesará ningún pago real.
                     </div>
                     <button id="stripe-demo-confirm" type="button" class="w-full inline-flex items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-                        Simulated Payment — Click to Confirm
+                        Pago simulado — Hacé clic para confirmar
                     </button>
                 </div>
                 <div id="stripe-real-actions" class="hidden space-y-3">
                     <button id="stripe-pay-btn" type="button" class="w-full inline-flex items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-                        Pay Now
+                        Pagar ahora
                     </button>
                 </div>
                 <p id="stripe-error" class="hidden text-xs text-destructive"></p>
@@ -279,7 +279,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 const data = await res.json();
                 state.careers = Array.isArray(data) ? data : (data.results ?? []);
             }
-        } catch { /* non-fatal */
+        } catch { /* no fatal */
  }
     }
 
@@ -291,18 +291,18 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 const data = await res.json();
                 state.subjectsByCareer[careerId] = Array.isArray(data) ? data : (data.results ?? []);
             }
-        } catch { /* non-fatal */
+        } catch { /* no fatal */
  }
     }
 
     async function init() {
         try {
-            // Get questionnaire config
+            // Obtiene la configuración del cuestionario
             const qRes = await fetch(`${API_URL}/questionnaire/questionnaires/${state.questionnaireId}/`, {
                 headers: authHeaders()
             });
             if (qRes.status === 401) { window.location.replace("/login"); return; }
-            if (!qRes.ok) { showError(`Questionnaire not found (${qRes.status}).`); return; }
+            if (!qRes.ok) { showError(`No se encontró el cuestionario (${qRes.status}).`); return; }
             state.questionnaire = await qRes.json();
 
             // Inicia o reanuda la respuesta
@@ -310,12 +310,12 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 method: "POST",
                 headers: authHeaders()
             });
-            if (!startRes.ok) { showError("Unable to start questionnaire. Please try again."); return; }
+            if (!startRes.ok) { showError("No se pudo iniciar el cuestionario. Intentá de nuevo."); return; }
             const responseData = await startRes.json();
             state.responseId = responseData.id;
             state.currentStepIndex = responseData.current_step ?? 0;
 
-            // If already submitted
+            // Si ya fue enviado
             if (responseData.status === "submitted") {
                 hide("loading-screen");
                 launchCorrecto();
@@ -347,11 +347,11 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             renderWizard();
 
         } catch (err) {
-            showError("A network error occurred. Please check your connection.");
+            showError("Ocurrió un error de red. Verificá tu conexión.");
         }
     }
 
-    // ── Conditional visibility ────────────────────────────────────────────────
+    // ── Visibilidad condicional ────────────────────────────────────────────────
     function isQuestionVisible(q: Question): boolean {
         if (!q.depends_on) return true;
         const depAnswer = state.answers[q.depends_on];
@@ -535,13 +535,13 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         el("questionnaire-title").textContent = q.title;
         el("questionnaire-description").textContent = q.description ?? "";
 
-        // Progress
+        // Progreso
         el("step-label").textContent = step.title;
-        el("step-counter").textContent = `Step ${current + 1} of ${total}`;
+        el("step-counter").textContent = `Paso ${current + 1} de ${total}`;
         const pct = total > 1 ? (current / (total - 1)) * 100 : 100;
         (el("progress-bar") as HTMLElement).style.width = `${pct}%`;
 
-        // Step dots
+        // Puntos de pasos
         const dotsContainer = el("step-dots");
         dotsContainer.innerHTML = steps.map((s, i) => {
             const isDone = i < current;
@@ -554,7 +554,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             return `<div class="${cls}" title="${s.title}"></div>`;
         }).join("");
 
-        // Step content
+        // Contenido del paso
         el("step-title").textContent = step.title;
         el("step-description").textContent = step.description ?? "";
         if (!step.description) el("step-description").classList.add("hidden");
@@ -562,7 +562,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
         renderQuestions(step);
 
-        // Nav buttons
+        // Botones de navegación
         const isFirst = current === 0;
         const isLast = current === total - 1;
 
@@ -574,11 +574,11 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         const iconCheck = el("btn-next-icon-check");
 
         if (isLast) {
-            btnNextLabel.textContent = "Submit";
+            btnNextLabel.textContent = "Enviar";
             iconArrow.classList.add("hidden");
             iconCheck.classList.remove("hidden");
         } else {
-            btnNextLabel.textContent = "Save & Continue";
+            btnNextLabel.textContent = "Guardar y continuar";
             iconArrow.classList.remove("hidden");
             iconCheck.classList.add("hidden");
         }
@@ -671,7 +671,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 const opts = q.options.slice().sort((a, b) => a.order - b.order);
                 return `${labelHtml}
                     <select id="q-${q.id}" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" data-qtype="select">
-                        <option value="">-- Select an option --</option>
+                        <option value="">-- Seleccioná una opción --</option>
                         ${opts.map(o => `<option value="${o.value}" ${currentVal === o.value ? "selected" : ""}>${o.label}</option>`).join("")}
                     </select>`;
             }
@@ -725,7 +725,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 if (!careerId) {
                     return `${labelHtml}
                         <div class="rounded-lg border border-border bg-muted/30 p-4 text-center text-sm text-muted-foreground">
-                            Please select a career first to view available subjects.
+                            Seleccioná primero una carrera para ver las asignaturas disponibles.
                         </div>`;
                 }
                 const subjects = state.subjectsByCareer[careerId] ?? [];
@@ -735,14 +735,14 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             case "stripe_payment": {
                 const amount = q.config?.amount ?? 0;
                 const currency = (q.config?.currency ?? "USD").toUpperCase();
-                const desc = q.config?.description ?? "Application fee";
+                const desc = q.config?.description ?? "Cuota de solicitud";
                 const isPaid = state.answers[q.id] === "paid";
                 return `${labelHtml}
                     <div class="rounded-xl border border-border bg-muted/20 p-5 space-y-4">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-foreground">${desc}</p>
-                                <p class="text-xs text-muted-foreground mt-0.5">One-time payment</p>
+                                <p class="text-xs text-muted-foreground mt-0.5">Pago único</p>
                             </div>
                             <div class="text-right">
                                 <p class="text-2xl font-bold text-foreground">${currency} ${Number(amount).toFixed(2)}</p>
@@ -751,11 +751,11 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                         ${isPaid
                             ? `<div class="flex items-center gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-emerald-400"><polyline points="20 6 9 17 4 12"/></svg>
-                                <span class="text-xs font-medium text-emerald-400">Payment completed</span>
+                                <span class="text-xs font-medium text-emerald-400">Pago completado</span>
                                </div>`
                             : `<button class="stripe-pay-btn w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors" data-qid="${q.id}" type="button">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                                Pay ${currency} ${Number(amount).toFixed(2)}
+                                Pagar ${currency} ${Number(amount).toFixed(2)}
                                </button>`
                         }
                     </div>`;
@@ -765,7 +765,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 return `<div class="prose prose-sm prose-invert max-w-none rounded-lg border border-border bg-muted/20 p-4 text-sm text-foreground [&_a]:text-primary [&_a]:underline [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm" data-info-content="${encodeURIComponent(q.config?.content ?? "")}"></div>`;
 
             default:
-                return `${labelHtml}<p class="text-xs text-muted-foreground">Unsupported question type: ${q.question_type}</p>`;
+                return `${labelHtml}<p class="text-xs text-muted-foreground">Tipo de pregunta no compatible: ${q.question_type}</p>`;
         }
     }
 
@@ -780,7 +780,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         if (subjects.length === 0) {
             return `${labelHtml}
                 <div class="rounded-lg border border-border bg-muted/30 p-4 text-center text-sm text-muted-foreground" data-subject-select-loading="true" data-qid="${q.id}" data-career-id="${careerId}">
-                    Loading subjects...
+                    Cargando asignaturas...
                 </div>`;
         }
 
@@ -806,10 +806,10 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
             return `
                 <div class="space-y-2">
-                    <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Year ${yr}</p>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Año ${yr}</p>
                     ${subs.map((s: any) => {
                         const isSelected = selectedIds.includes(s.id);
-                        const semLabel = s.semester ? `Semester ${s.semester}` : "";
+                        const semLabel = s.semester ? `Semestre ${s.semester}` : "";
                         return `<label class="subject-item cursor-pointer flex items-start gap-3 rounded-lg border border-border p-3 hover:bg-muted/50 transition-colors ${isSelected ? "selected" : ""}" data-subject-id="${s.id}">
                             <input type="checkbox" name="q-${q.id}-subjects" value="${s.id}" ${isSelected ? "checked" : ""} class="size-4 accent-primary rounded mt-0.5 shrink-0" data-qtype="subject_checkbox" data-qid="${q.id}" />
                             <div class="min-w-0 flex-1">
@@ -826,9 +826,9 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
         return `${labelHtml}
             <div class="space-y-4" data-subject-select="true" data-qid="${q.id}" data-max-selections="${maxSelections}">
-                ${grouped || `<p class="text-sm text-muted-foreground text-center py-4">No subjects available for the selected career.</p>`}
+                ${grouped || `<p class="text-sm text-muted-foreground text-center py-4">No hay asignaturas disponibles para la carrera seleccionada.</p>`}
             </div>
-            ${maxSelections > 0 ? `<p class="text-xs text-muted-foreground mt-1">Maximum ${maxSelections} subject${maxSelections !== 1 ? "s" : ""} allowed.</p>` : ""}`;
+            ${maxSelections > 0 ? `<p class="text-xs text-muted-foreground mt-1">Máximo ${maxSelections} asignatura${maxSelections !== 1 ? "s" : ""} permitidas.</p>` : ""}`;
     }
 
     function attachSubjectHandlers(container: HTMLElement, questions: Question[]) {
@@ -843,7 +843,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
                     if (maxSelections > 0 && checked.length > maxSelections) {
                         (cb as HTMLInputElement).checked = false;
-                        showToast("warning", "Selection limit reached", `You can select at most ${maxSelections} subject${maxSelections !== 1 ? "s" : ""}.`);
+                        showToast("warning", "Límite de selección alcanzado", `Podés seleccionar como máximo ${maxSelections} asignatura${maxSelections !== 1 ? "s" : ""}.`);
                         return;
                     }
 
@@ -859,7 +859,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             });
         });
 
-        // Info blocks: decode HTML
+        // Bloques informativos: decodificar HTML
         container.querySelectorAll("[data-info-content]").forEach(div => {
             div.innerHTML = decodeURIComponent((div as HTMLElement).dataset.infoContent ?? "");
         });
@@ -955,7 +955,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         return errors;
     }
 
-    // ── Save answers ──────────────────────────────────────────────────────────
+    // ── Guardar respuestas ─────────────────────────────────────────────────────
     async function saveAnswers(): Promise<boolean> {
         const q = state.questionnaire!;
         const steps = q.steps.slice().sort((a, b) => a.order - b.order);
@@ -990,7 +990,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             }
         }
 
-        // Bulk-save text answers
+        // Guardar en lote las respuestas de texto
         if (textPayload.length > 0) {
             const res = await fetch(`${API_URL}/questionnaire/responses/${state.responseId}/answers/`, {
                 method: "POST",
@@ -998,12 +998,12 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 body: JSON.stringify(textPayload),
             });
             if (!res.ok) {
-                showToast("error", "No se pudo guardar", "Could not save answers. Please try again.");
+                showToast("error", "No se pudo guardar", "No se pudieron guardar las respuestas. Intentá de nuevo.");
                 return false;
             }
         }
 
-        // Save file answers individually via FormData
+        // Guardar las respuestas de archivo individualmente con FormData
         for (const { question, file } of fileQuestions) {
             const fd = new FormData();
             fd.append("question", String(question.id));
@@ -1014,7 +1014,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 body: fd,
             });
             if (!res.ok) {
-                showToast("error", "File upload failed", `Could not upload file for "${question.label}".`);
+                showToast("error", "Falló la subida de archivo", `No se pudo subir el archivo para "${question.label}".`);
                 return false;
             }
         }
@@ -1022,13 +1022,13 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         return true;
     }
 
-    // ── Navigation ────────────────────────────────────────────────────────────
+    // ── Navegación ────────────────────────────────────────────────────────────
     async function goToNextStep() {
         captureAllAnswersOnCurrentStep();
 
         const errors = validateCurrentStep();
         if (errors.length > 0) {
-            showToast("error", "Campo obligatorios missing", `Please fill in: ${errors.slice(0, 3).join(", ")}${errors.length > 3 ? ` and ${errors.length - 3} more` : ""}.`);
+            showToast("error", "Faltan campos obligatorios", `Completá: ${errors.slice(0, 3).join(", ")}${errors.length > 3 ? ` y ${errors.length - 3} más` : ""}.`);
             return;
         }
 
@@ -1045,14 +1045,14 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         const isLast = state.currentStepIndex === steps.length - 1;
 
         if (isLast) {
-            // Submit
+            // Enviar
             const res = await fetch(`${API_URL}/questionnaire/responses/${state.responseId}/submit/`, {
                 method: "POST",
                 headers: authHeaders(),
             });
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
-                showToast("error", "Submission failed", data?.detail ?? "Could not submit questionnaire.");
+                showToast("error", "Falló el envío", data?.detail ?? "No se pudo enviar el cuestionario.");
                 setButtonLoading(false);
                 return;
             }
@@ -1114,7 +1114,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         state.stripePaymentAnswerId = state.stripePaymentAnswerIds[question.id] ?? null;
 
         btn.disabled = true;
-        btn.textContent = "Loading payment...";
+        btn.textContent = "Cargando pago...";
 
         try {
             // Obtiene el intento de pago
@@ -1125,9 +1125,9 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
-                showToast("error", "Payment unavailable", data?.detail ?? "Could not initialize payment.");
+                showToast("error", "Pago no disponible", data?.detail ?? "No se pudo inicializar el pago.");
                 btn.disabled = false;
-                btn.textContent = `Pay ${(question.config?.currency ?? "USD").toUpperCase()} ${Number(question.config?.amount ?? 0).toFixed(2)}`;
+                btn.textContent = `Pagar ${(question.config?.currency ?? "USD").toUpperCase()} ${Number(question.config?.amount ?? 0).toFixed(2)}`;
                 return;
             }
 
@@ -1138,11 +1138,11 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             }
             showStripeModal(question, data.client_secret ?? null);
         } catch (error) {
-            showToast("error", "Payment unavailable", "Could not connect to the payment service.");
+            showToast("error", "Pago no disponible", "No se pudo conectar con el servicio de pagos.");
         }
 
         btn.disabled = false;
-        btn.textContent = `Pay ${(question.config?.currency ?? "USD").toUpperCase()} ${Number(question.config?.amount ?? 0).toFixed(2)}`;
+        btn.textContent = `Pagar ${(question.config?.currency ?? "USD").toUpperCase()} ${Number(question.config?.amount ?? 0).toFixed(2)}`;
     }
 
     async function confirmStripePayment(answerId: number): Promise<boolean> {
@@ -1152,12 +1152,12 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         });
         if (!res.ok) {
             const data = await res.json().catch(() => ({}));
-            showToast("error", "Payment confirmation failed", data?.detail ?? "Could not confirm the payment.");
+            showToast("error", "Falló la confirmación del pago", data?.detail ?? "No se pudo confirmar el pago.");
             return false;
         }
         const data = await res.json();
         if (data.status !== "paid") {
-            showToast("warning", "Payment pending", "Stripe has not confirmed the payment yet. Please try again shortly.");
+            showToast("warning", "Pago pendiente", "Stripe todavía no confirmó el pago. Intentá nuevamente en breve.");
             return false;
         }
         return true;
@@ -1184,7 +1184,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         const amount = question.config?.amount ?? 0;
         const currency = (question.config?.currency ?? "USD").toUpperCase();
 
-        el("stripe-modal-title").textContent = question.config?.description ?? "Complete Payment";
+        el("stripe-modal-title").textContent = question.config?.description ?? "Completar pago";
         show("stripe-backdrop");
 
         if (isDemo) {
@@ -1199,7 +1199,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     state.answers[state.stripePaymentQuestionId] = "paid";
                 }
                 hide("stripe-backdrop");
-                showToast("success", "Payment confirmed", "Your simulated payment was processed.");
+                showToast("success", "Pago confirmado", "Tu pago simulado fue procesado.");
                 renderWizard();
             };
         } else {
@@ -1210,13 +1210,13 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             // Carga Stripe.js de forma diferida
             loadStripeJs().then(async stripeLoaded => {
                 if (!stripeLoaded || !(window as any).Stripe) {
-                    showToast("error", "Stripe unavailable", "Payment processor failed to load. Please refresh.");
+                    showToast("error", "Stripe no disponible", "No se pudo cargar el procesador de pagos. Actualizá la página.");
                     return;
                 }
 
                 const publishableKey = await getStripePublishableKey();
                 if (!publishableKey) {
-                    showToast("error", "Stripe not configured", "Production payments require STRIPE_PUBLIC_KEY on the backend.");
+                    showToast("error", "Stripe no configurado", "Los pagos en producción requieren STRIPE_PUBLIC_KEY en el backend.");
                     hide("stripe-backdrop");
                     return;
                 }
@@ -1227,7 +1227,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 const paymentEl = state.stripeElements.create("payment");
                 paymentEl.mount("#stripe-payment-element");
 
-                el("stripe-pay-btn").textContent = `Pay ${currency} ${Number(amount).toFixed(2)}`;
+                el("stripe-pay-btn").textContent = `Pagar ${currency} ${Number(amount).toFixed(2)}`;
                 el("stripe-pay-btn").onclick = async () => {
                     el<HTMLButtonElement>("stripe-pay-btn").disabled = true;
                     el("stripe-error").classList.add("hidden");
@@ -1252,7 +1252,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                             state.answers[state.stripePaymentQuestionId] = "paid";
                         }
                         hide("stripe-backdrop");
-                        showToast("success", "Payment completed", "Your payment was processed exitosaly.");
+                        showToast("success", "Pago completado", "Tu pago se procesó correctamente.");
                         renderWizard();
                     }
                 };
@@ -1271,12 +1271,12 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         });
     }
 
-    // ── Correcto screen ────────────────────────────────────────────────────────
+    // ── Pantalla de éxito ────────────────────────────────────────────────────────
     function launchCorrecto() {
         hide("wizard-screen");
         show("success-screen");
 
-        // Confetti animation
+        // Animación de confeti
         const container = el("confetti-container");
         const colors = ["#6366f1", "#22c55e", "#f59e0b", "#ec4899", "#3b82f6"];
         for (let i = 0; i < 18; i++) {

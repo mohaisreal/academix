@@ -1,7 +1,7 @@
 ---
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
-<DashboardLayout title="Classrooms — Academix" currentPath="/classrooms">
+<DashboardLayout title="Aulas — Academix" currentPath="/classrooms">
   <div id="page-loading" class="p-6 space-y-4">
     <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
     <div class="h-64 bg-card rounded-xl border border-border animate-pulse"></div>
@@ -10,19 +10,19 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   <div id="page-content" class="hidden">
     <div class="flex items-center justify-between border-b border-border px-6 py-4">
       <div>
-        <h1 class="text-xl font-semibold text-foreground">Classrooms</h1>
-        <p class="text-sm text-muted-foreground">Manage rooms and teaching spaces</p>
+        <h1 class="text-xl font-semibold text-foreground">Aulas</h1>
+        <p class="text-sm text-muted-foreground">Gestioná aulas y espacios de enseñanza</p>
       </div>
       <div class="flex items-center gap-3">
         <select id="type-filter" class="bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="">All Types</option>
-          <option value="lecture">Lecture</option>
-          <option value="lab">Lab</option>
-          <option value="seminar">Seminar</option>
+          <option value="">Todos los tipos</option>
+          <option value="lecture">Teórica</option>
+          <option value="lab">Laboratorio</option>
+          <option value="seminar">Seminario</option>
         </select>
         <button id="new-classroom-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          New Classroom
+          Nueva aula
         </button>
       </div>
     </div>
@@ -33,17 +33,17 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <table class="w-full">
             <thead>
               <tr class="border-b border-border">
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Name</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Building</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Capacity</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Type</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Actions</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Nombre</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Edificio</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Capacidad</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Tipo</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Acciones</th>
               </tr>
             </thead>
             <tbody id="classrooms-table-body"></tbody>
           </table>
         </div>
-        <div id="classrooms-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No classrooms found</div>
+        <div id="classrooms-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No se encontraron aulas</div>
       </div>
     </div>
   </div>
@@ -53,7 +53,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     <div class="w-full max-w-lg rounded-xl border border-border bg-background shadow-2xl max-h-[90vh] flex flex-col">
       <!-- Cabecera -->
       <div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-        <h2 id="modal-title" class="text-base font-semibold text-foreground">New Classroom</h2>
+        <h2 id="modal-title" class="text-base font-semibold text-foreground">Nueva aula</h2>
         <button id="modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -63,23 +63,23 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <form id="classroom-form" class="space-y-4">
           <input id="edit-id" type="hidden" value="" />
           <div>
-            <label class="text-xs font-medium text-muted-foreground">Name *</label>
-            <input id="classroom-name" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Room 101" />
+            <label class="text-xs font-medium text-muted-foreground">Nombre *</label>
+            <input id="classroom-name" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Aula 101" />
           </div>
           <div>
-            <label class="text-xs font-medium text-muted-foreground">Building *</label>
-            <input id="classroom-building" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Main Building" />
+            <label class="text-xs font-medium text-muted-foreground">Edificio *</label>
+            <input id="classroom-building" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Edificio principal" />
           </div>
           <div>
-            <label class="text-xs font-medium text-muted-foreground">Capacity *</label>
+            <label class="text-xs font-medium text-muted-foreground">Capacidad *</label>
             <input id="classroom-capacity" type="number" required min="1" value="30" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
           <div>
-            <label class="text-xs font-medium text-muted-foreground">Type *</label>
+            <label class="text-xs font-medium text-muted-foreground">Tipo *</label>
             <select id="classroom-type" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-              <option value="lecture">Lecture</option>
-              <option value="lab">Lab</option>
-              <option value="seminar">Seminar</option>
+              <option value="lecture">Teórica</option>
+              <option value="lab">Laboratorio</option>
+              <option value="seminar">Seminario</option>
             </select>
           </div>
           <div id="form-error" class="hidden text-xs text-red-400"></div>
@@ -182,7 +182,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         const id = (btn as HTMLElement).dataset.id;
         window.confirmAction({
           title: "Eliminar aula",
-          description: "This action cannot be undone.",
+          description: "Esta acción no se puede deshacer.",
           confirmLabel: "Eliminar",
           variant: "destructive",
           onConfirm: async () => {
@@ -216,14 +216,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const idEl = document.getElementById('edit-id') as HTMLInputElement;
 
     if (classroom) {
-      if (title) title.textContent = 'Edit Classroom';
+      if (title) title.textContent = 'Editar aula';
       if (idEl) idEl.value = classroom.id;
       (document.getElementById('classroom-name') as HTMLInputElement).value = classroom.name || '';
       (document.getElementById('classroom-building') as HTMLInputElement).value = classroom.building || '';
       (document.getElementById('classroom-capacity') as HTMLInputElement).value = classroom.capacity || 30;
       (document.getElementById('classroom-type') as HTMLSelectElement).value = classroom.room_type || classroom.type || 'lecture';
     } else {
-      if (title) title.textContent = 'New Classroom';
+      if (title) title.textContent = 'Nueva aula';
       if (idEl) idEl.value = '';
       (document.getElementById('classroom-form') as HTMLFormElement)?.reset();
     }

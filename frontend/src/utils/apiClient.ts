@@ -62,7 +62,7 @@ async function refreshAccessToken(): Promise<string | null> {
 
     return null;
   } catch (error) {
-    console.error('Token refresh failed:', error);
+    console.error('Falló la actualización del token:', error);
     clearTokens();
     return null;
   }
@@ -82,18 +82,18 @@ async function parseErrorResponse(response: Response): Promise<ApiError> {
       errorData = { message: await response.text() };
     }
   } catch (e) {
-    errorData = { message: 'An unknown error occurred' };
+    errorData = { message: 'Ocurrió un error desconocido' };
   }
 
   return {
-    message: errorData.message || errorData.detail || errorData.error || 'An error occurred',
+    message: errorData.message || errorData.detail || errorData.error || 'Ocurrió un error',
     errors: errorData.errors || errorData,
     status: response.status,
   };
 }
 
 /**
- * Make an authenticated API request
+ * Realiza una petición autenticada a la API
  */
 export async function apiRequest<T>(
   endpoint: string,
@@ -101,7 +101,7 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const { skipAuth, skipRefresh, ...fetchOptions } = options;
 
-  // Prepare headers
+  // Prepara las cabeceras
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(fetchOptions.headers as Record<string, string> | undefined),
@@ -109,11 +109,11 @@ export async function apiRequest<T>(
 
   // Añade la cabecera de autorización si no se omite
   if (!skipAuth) {
-    // Check if token needs refresh
+    // Comprueba si el token necesita actualización
     if (!skipRefresh && needsTokenRefresh()) {
       const newToken = await refreshAccessToken();
       if (!newToken) {
-        throw new ApiErrorClass('Session expired. Please log in again.', 401);
+        throw new ApiErrorClass('La sesión expiró. Inicia sesión de nuevo.', 401);
       }
     }
 
@@ -149,7 +149,7 @@ export async function apiRequest<T>(
 
         return await retryResponse.json();
       } else {
-        throw new ApiErrorClass('Session expired. Please log in again.', 401);
+        throw new ApiErrorClass('La sesión expiró. Inicia sesión de nuevo.', 401);
       }
     }
 
@@ -167,14 +167,14 @@ export async function apiRequest<T>(
     // Analiza y devuelve la respuesta JSON
     return await response.json();
   } catch (error) {
-    // Re-throw ApiErrorClass instances
+    // Relanza instancias de ApiErrorClass
     if (error instanceof ApiErrorClass) {
       throw error;
     }
 
     // Gestiona errores de red
     if (error instanceof TypeError) {
-      throw new ApiErrorClass('Network error. Please check your connection.');
+      throw new ApiErrorClass('Error de red. Revisa tu conexión.');
     }
 
     // Gestiona otros errores

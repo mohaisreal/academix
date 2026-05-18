@@ -16,7 +16,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     <div class="flex items-center justify-between border-b border-border px-6 py-4">
       <div>
         <h1 class="text-xl font-semibold text-foreground">Materiales didácticos</h1>
-        <p class="text-sm text-muted-foreground">Upload and manage class resources</p>
+        <p class="text-sm text-muted-foreground">Sube y gestiona recursos de clase</p>
       </div>
       <button id="upload-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -27,7 +27,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     <div class="p-6 space-y-4">
       <!-- Pestañas de filtro de clases -->
       <div id="class-tabs" class="flex gap-1 overflow-x-auto pb-1 border-b border-border">
-        <button class="class-tab active-class-tab px-4 py-2 text-sm font-medium text-foreground border-b-2 border-primary -mb-px whitespace-nowrap" data-class="">All Classes</button>
+        <button class="class-tab active-class-tab px-4 py-2 text-sm font-medium text-foreground border-b-2 border-primary -mb-px whitespace-nowrap" data-class="">Todas las clases</button>
       </div>
 
       <!-- Cuadrícula de materiales -->
@@ -36,13 +36,13 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <div class="flex size-16 items-center justify-center rounded-full bg-muted mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         </div>
-        <p class="text-lg font-medium text-foreground">No materials yet</p>
-        <p class="text-sm text-muted-foreground mt-1">Upload your first teaching material</p>
+        <p class="text-lg font-medium text-foreground">Aún no hay materiales</p>
+        <p class="text-sm text-muted-foreground mt-1">Sube tu primer material didáctico</p>
       </div>
     </div>
   </div>
 
-  <!-- Upload panel -->
+  <!-- Panel de subida -->
   <div id="upload-backdrop" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-start justify-end">
     <div class="w-96 h-full bg-card border-l border-border p-6 overflow-y-auto shadow-xl">
       <div class="flex items-center justify-between mb-6">
@@ -53,30 +53,30 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       </div>
       <form id="upload-form" class="space-y-4">
         <div>
-          <label class="text-xs font-medium text-muted-foreground">Title *</label>
+          <label class="text-xs font-medium text-muted-foreground">Título *</label>
           <input id="mat-title" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Título del material" />
         </div>
         <div>
-          <label class="text-xs font-medium text-muted-foreground">Description</label>
-          <textarea id="mat-desc" rows="3" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none" placeholder="Brief description..."></textarea>
+          <label class="text-xs font-medium text-muted-foreground">Descripción</label>
+          <textarea id="mat-desc" rows="3" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none" placeholder="Descripción breve..."></textarea>
         </div>
         <div>
-          <label class="text-xs font-medium text-muted-foreground">Class *</label>
+          <label class="text-xs font-medium text-muted-foreground">Clase *</label>
           <select id="mat-class" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-            <option value="">Select a class</option>
+            <option value="">Selecciona una clase</option>
           </select>
         </div>
         <div>
-          <label class="text-xs font-medium text-muted-foreground">Type *</label>
+          <label class="text-xs font-medium text-muted-foreground">Tipo *</label>
           <select id="mat-type" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-            <option value="document">Document</option>
+            <option value="document">Documento</option>
             <option value="video">Video</option>
-            <option value="link">Link</option>
-            <option value="other">Other</option>
+            <option value="link">Enlace</option>
+            <option value="other">Otro</option>
           </select>
         </div>
         <div id="file-input-section">
-          <label class="text-xs font-medium text-muted-foreground">File</label>
+          <label class="text-xs font-medium text-muted-foreground">Archivo</label>
           <input id="mat-file" type="file" class="mt-1 w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary hover:file:bg-primary/20 cursor-pointer" />
         </div>
         <div id="url-input-section" class="hidden">
@@ -87,7 +87,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <div id="upload-success" class="hidden text-xs text-green-400"></div>
         <div class="flex gap-3 pt-2">
           <button type="button" id="cancel-upload-btn" class="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancelar</button>
-          <button type="submit" id="submit-upload-btn" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Upload</button>
+          <button type="submit" id="submit-upload-btn" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Subir</button>
         </div>
       </form>
     </div>
@@ -195,14 +195,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           ${className ? `<span class="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">${escHtml(className)}</span>` : ''}
           <span class="inline-flex items-center rounded-full ${bg} px-2 py-0.5 text-xs font-medium capitalize">${type}</span>
         </div>
-        <p class="text-xs text-muted-foreground">Uploaded ${formatDate(m.uploaded_at || m.created_at)}</p>
+        <p class="text-xs text-muted-foreground">Subido ${formatDate(m.uploaded_at || m.created_at)}</p>
         <div class="flex items-center gap-2 mt-auto">
           ${url ? `<a href="${escHtml(url)}" target="_blank" rel="noopener" class="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Download
+            Descargar
           </a>` : ''}
           <button class="delete-mat-btn rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition-colors" data-id="${m.id}">
-            Delete
+            Eliminar
           </button>
         </div>
       </div>`;
@@ -213,7 +213,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         const id = (btn as HTMLElement).dataset.id;
         window.confirmAction({
           title: "Eliminar material",
-          description: "This action cannot be undone.",
+          description: "Esta acción no se puede deshacer.",
           confirmLabel: "Eliminar",
           variant: "destructive",
           onConfirm: async () => {
@@ -233,7 +233,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     renderMaterials(filtered);
   }
 
-  // Upload panel toggle
+  // Alterna panel de subida
   function openUpload() { document.getElementById('upload-backdrop')?.classList.remove('hidden'); }
   function closeUpload() {
     document.getElementById('upload-backdrop')?.classList.add('hidden');
@@ -266,7 +266,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const successEl = document.getElementById('upload-success');
     const btn = document.getElementById('submit-upload-btn') as HTMLButtonElement;
     btn.disabled = true;
-    btn.textContent = 'Uploading...';
+    btn.textContent = 'Subiendo...';
 
     const type = (document.getElementById('mat-type') as HTMLSelectElement).value;
     const title = (document.getElementById('mat-title') as HTMLInputElement).value;
@@ -295,7 +295,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       if (successEl) successEl.textContent = '¡Material subido correctamente!';
       errEl?.classList.add('hidden');
 
-      // Reload materials
+      // Recargar materiales
       const data = await apiFetch('/material/');
       allMaterials = Array.isArray(data) ? data : (data.results || []);
       filterAndRender();
@@ -306,7 +306,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       if (errEl) errEl.textContent = 'No se pudo subir el material';
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Upload';
+      btn.textContent = 'Subir';
     }
   });
 
@@ -325,9 +325,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const matClassSel = document.getElementById('mat-class') as HTMLSelectElement;
 
     classes.forEach(c => {
-      const subject = c.subject_name || c.subject?.name || `Class ${c.id}`;
+      const subject = c.subject_name || c.subject?.name || `Clase ${c.id}`;
 
-      // Tab
+      // Pestaña
       const tab = document.createElement('button');
       tab.className = 'class-tab px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground -mb-px whitespace-nowrap';
       tab.dataset.class = c.id;
@@ -344,14 +344,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       });
       tabsEl?.appendChild(tab);
 
-      // Dropdown option
+      // Opción del desplegable
       const opt = document.createElement('option');
       opt.value = c.id;
       opt.textContent = subject;
       matClassSel?.appendChild(opt);
     });
 
-    // "All" tab click
+    // Click en pestaña "Todas"
     document.querySelector('.class-tab[data-class=""]')?.addEventListener('click', () => {
       document.querySelectorAll('.class-tab').forEach(t => {
         t.classList.remove('active-class-tab', 'text-foreground', 'border-b-2', 'border-primary');

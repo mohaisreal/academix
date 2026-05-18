@@ -8,26 +8,26 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         <svg class="animate-spin text-primary" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
     </div>
 
-    <!-- Page content (hidden until loaded) -->
+    <!-- Contenido de la página (oculto hasta cargar) -->
     <div id="page-content" class="hidden">
         <!-- Cabecera -->
         <div class="flex items-center justify-between border-b border-border px-6 py-4">
             <div>
                 <div class="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                    <a href="/admissions" class="hover:text-foreground transition-colors">Admissions</a>
+                    <a href="/admissions" class="hover:text-foreground transition-colors">Admisiones</a>
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-                    <span id="career-name-breadcrumb" class="text-foreground">Career</span>
+                    <span id="career-name-breadcrumb" class="text-foreground">Carrera</span>
                 </div>
                 <h1 class="text-xl font-semibold text-foreground" id="page-title">Solicitud de admisión</h1>
                 <p class="text-sm text-muted-foreground" id="period-info"></p>
             </div>
-            <a href="/admissions/my-applications" class="text-sm text-primary hover:underline">My Applications →</a>
+            <a href="/admissions/my-applications" class="text-sm text-primary hover:underline">Mis solicitudes →</a>
         </div>
 
         <div class="p-6 space-y-6 max-w-3xl">
             <!-- Tarjeta de estado de solicitud -->
             <div id="application-card" class="bg-card border border-border rounded-xl p-6 shadow-sm">
-                <!-- No application yet -->
+                <!-- Aún no hay solicitud -->
                 <div id="no-application" class="hidden space-y-4">
                     <div class="flex items-center gap-3">
                         <div class="flex size-10 items-center justify-center rounded-lg bg-primary/10">
@@ -57,18 +57,18 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
                     <div class="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                            <p class="text-muted-foreground">Submitted</p>
+                            <p class="text-muted-foreground">Enviada</p>
                             <p id="app-submitted-date" class="text-foreground font-medium">—</p>
                         </div>
                         <div>
-                            <p class="text-muted-foreground">Period</p>
+                            <p class="text-muted-foreground">Período</p>
                             <p id="app-period" class="text-foreground font-medium">—</p>
                         </div>
                     </div>
 
-                    <!-- Notes if any -->
+                    <!-- Notas, si existen -->
                     <div id="app-notes-section" class="hidden rounded-md border border-border bg-muted/30 p-3">
-                        <p class="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Notes</p>
+                        <p class="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Notas</p>
                         <p id="app-notes" class="text-sm text-foreground"></p>
                     </div>
 
@@ -78,41 +78,41 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                             Enviar solicitud
                         </button>
-                        <p class="text-xs text-muted-foreground mt-2">Upload required documents before submitting.</p>
+                        <p class="text-xs text-muted-foreground mt-2">Subí los documentos obligatorios antes de enviar.</p>
                     </div>
 
-                    <!-- Submitted / Under Review info -->
+                    <!-- Información de enviada / en revisión -->
                     <div id="actions-submitted" class="hidden rounded-md border border-blue-500/30 bg-blue-500/10 p-3">
-                        <p class="text-sm text-blue-300">Your application is being processed. We'll notify you of any updates.</p>
+                        <p class="text-sm text-blue-300">Tu solicitud está siendo procesada. Te avisaremos ante cualquier novedad.</p>
                     </div>
 
-                    <!-- Admitted actions -->
+                    <!-- Acciones para admitida -->
                     <div id="actions-admitted" class="hidden space-y-3">
                         <div class="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3">
-                            <p class="text-sm font-medium text-emerald-400">🎉 Congratulations! You've been admitted.</p>
-                            <p class="text-xs text-emerald-400/80 mt-1">Confirm your place or withdraw your application.</p>
-                            <p class="text-xs text-muted-foreground mt-1">Deadline: <span id="admission-deadline" class="font-medium text-foreground">—</span></p>
+                            <p class="text-sm font-medium text-emerald-400">🎉 ¡Felicitaciones! Fuiste admitido/a.</p>
+                            <p class="text-xs text-emerald-400/80 mt-1">Confirmá tu plaza o retirate de la solicitud.</p>
+                            <p class="text-xs text-muted-foreground mt-1">Fecha límite: <span id="admission-deadline" class="font-medium text-foreground">—</span></p>
                         </div>
                         <div class="flex gap-3">
                             <button id="btn-confirm" class="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors">
-                                Confirm My Place
+                                Confirmar mi plaza
                             </button>
                             <button id="btn-withdraw" class="inline-flex items-center gap-2 rounded-md border border-destructive px-4 py-2 text-sm font-semibold text-destructive hover:bg-destructive/10 disabled:opacity-50 transition-colors">
-                                Withdraw
+                                Retirar solicitud
                             </button>
                         </div>
                     </div>
 
-                    <!-- Confirmed -->
+                    <!-- Confirmada -->
                     <div id="actions-confirmed" class="hidden rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3">
-                        <p class="text-sm font-medium text-emerald-400">✅ Place confirmed! Proceed to enrollment.</p>
+                        <p class="text-sm font-medium text-emerald-400">✅ ¡Plaza confirmada! Continuá con la matrícula.</p>
                         <a href="/enrollment" class="inline-flex items-center gap-1.5 mt-3 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors">
                             Ir a matrícula
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                         </a>
                     </div>
 
-                    <!-- Final states -->
+                    <!-- Estados finales -->
                     <div id="actions-final" class="hidden rounded-md border border-border bg-muted/30 p-3">
                         <p id="final-message" class="text-sm text-muted-foreground"></p>
                     </div>
@@ -125,7 +125,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             <div id="documents-section" class="hidden bg-card border border-border rounded-xl p-6 shadow-sm space-y-4">
                 <div class="flex items-center justify-between">
                     <h2 class="text-base font-semibold text-foreground">Documentos obligatorios</h2>
-                    <span class="text-xs text-muted-foreground">Upload all required documents</span>
+                    <span class="text-xs text-muted-foreground">Subí todos los documentos obligatorios</span>
                 </div>
 
                 <div id="documents-list" class="space-y-3"></div>
@@ -169,16 +169,16 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     };
 
     const STATUS_LABELS: Record<string, string> = {
-        draft: "Draft", submitted: "Submitted", under_review: "Under Review",
-        admitted: "Admitted", waitlisted: "Waitlisted", rejected: "Rejected",
-        confirmed: "Confirmed", withdrawn: "Withdrawn", expired: "Expired",
+        draft: "Borrador", submitted: "Enviada", under_review: "En revisión",
+        admitted: "Admitida", waitlisted: "En lista de espera", rejected: "Rechazada",
+        confirmed: "Confirmada", withdrawn: "Retirada", expired: "Vencida",
     };
 
     const DOC_TYPES = [
-        { value: "academic_record", label: "Academic Record" },
-        { value: "id_document", label: "ID Document" },
-        { value: "access_exam", label: "Access Exam" },
-        { value: "photo", label: "Passport Photo" },
+        { value: "academic_record", label: "Historial académico" },
+        { value: "id_document", label: "Documento de identidad" },
+        { value: "access_exam", label: "Examen de acceso" },
+        { value: "photo", label: "Foto carnet" },
     ];
 
     const DOC_STATUS_CLASSES: Record<string, string> = {
@@ -219,10 +219,10 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         else if (["rejected", "withdrawn", "expired", "waitlisted"].includes(status)) {
             const final = document.getElementById("actions-final")!;
             const messages: Record<string, string> = {
-                rejected: "Your application was not accepted for this period.",
-                withdrawn: "You have withdrawn from this application.",
-                expired: "This application has expired.",
-                waitlisted: "You are on the waiting list. We'll notify you if a spot opens.",
+                rejected: "Tu solicitud no fue aceptada para este período.",
+                withdrawn: "Te retiraste de esta solicitud.",
+                expired: "Esta solicitud venció.",
+                waitlisted: "Estás en lista de espera. Te avisaremos si se libera una vacante.",
             };
             document.getElementById("final-message")!.textContent = messages[status] ?? "Solicitud cerrada.";
             final.classList.remove("hidden");
@@ -275,24 +275,24 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             const existing = docs.find((d: any) => d.document_type === dt.value);
             const statusBadge = existing
                 ? `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${DOC_STATUS_CLASSES[existing.status] ?? "bg-gray-100 text-gray-700"}">${existing.status}</span>`
-                : `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-500">Missing</span>`;
+                : `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-500">Falta</span>`;
 
-            const fileInfo = existing ? `<span class="text-xs text-muted-foreground truncate max-w-xs">${existing.file_name ?? "Uploaded"}</span>` : "";
+            const fileInfo = existing ? `<span class="text-xs text-muted-foreground truncate max-w-xs">${existing.file_name ?? "Subido"}</span>` : "";
             const rejectReason = existing?.status === "rejected" && existing.rejection_reason
-                ? `<p class="text-xs text-red-400 mt-1">Reason: ${existing.rejection_reason}</p>`
+                ? `<p class="text-xs text-red-400 mt-1">Motivo: ${existing.rejection_reason}</p>`
                 : "";
 
             const uploadBtn = `
                 <label class="cursor-pointer inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    ${existing ? "Replace" : "Upload"}
+                    ${existing ? "Reemplazar" : "Subir"}
                     <input type="file" class="sr-only doc-upload" data-type="${dt.value}" data-app="${appId}" />
                 </label>`;
 
             const deleteBtn = existing && isDraft
                 ? `<button class="doc-delete inline-flex items-center gap-1.5 rounded-md border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors" data-doc-id="${existing.id}" data-app="${appId}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-                    Delete
+                    Eliminar
                    </button>`
                 : "";
 
@@ -413,9 +413,9 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             const careerRes = await apiFetch(`/academic/careers/${careerId}/`);
             if (careerRes.ok) {
                 const career = await careerRes.json();
-                const name = career.name ?? "Career";
+                const name = career.name ?? "Carrera";
                 document.getElementById("career-name-breadcrumb")!.textContent = name;
-                document.getElementById("page-title")!.textContent = `Apply — ${name}`;
+                    document.getElementById("page-title")!.textContent = `Solicitud — ${name}`;
             }
 
             // Carga el periodo activo
@@ -426,7 +426,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 const periods = Array.isArray(periodsData) ? periodsData : (periodsData.results ?? []);
                 activePeriod = periods.find((p: any) => p.is_active) ?? periods[0] ?? null;
                 if (activePeriod) {
-                    document.getElementById("period-info")!.textContent = `Period: ${activePeriod.name}`;
+                    document.getElementById("period-info")!.textContent = `Período: ${activePeriod.name}`;
                 }
             }
 
@@ -457,12 +457,12 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             document.getElementById("btn-create")?.addEventListener("click", async () => {
                 const btn = document.getElementById("btn-create") as HTMLButtonElement;
                 btn.disabled = true;
-                btn.textContent = "Creating...";
+                btn.textContent = "Creando...";
                 const createError = document.getElementById("create-error")!;
                 createError.classList.add("hidden");
 
                 if (!activePeriod) {
-                    createError.textContent = "No active academic period found.";
+                    createError.textContent = "No se encontró un período académico activo.";
                     createError.classList.remove("hidden");
                     btn.disabled = false;
                     btn.textContent = "Crear borrador de solicitud";
@@ -515,8 +515,8 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         } else if (target.id === "btn-withdraw" || target.closest("#btn-withdraw")) {
             window.confirmAction({
                 title: "Retirar solicitud",
-                description: "Are you sure you want to withdraw your application? This action cannot be undone.",
-                confirmLabel: "Withdraw",
+                description: "¿Seguro que querés retirar tu solicitud? Esta acción no se puede deshacer.",
+                confirmLabel: "Retirar",
                 variant: "destructive",
                 onConfirm: async () => {
                     await performAction(`/admissions/applications/${appId}/withdraw/`);

@@ -26,7 +26,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         </div>
     </div>
 
-    <!-- Submitted success banner -->
+    <!-- Banner de envío exitoso -->
     <div id="submitted-banner" class="hidden mx-6 mt-5 rounded-xl border-2 border-emerald-500/40 bg-emerald-500/10 px-5 py-4 flex items-start gap-3">
         <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 mt-0.5">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-emerald-500"><polyline points="20 6 9 17 4 12"/></svg>
@@ -44,7 +44,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             <div class="h-32 bg-muted animate-pulse rounded-xl"></div>
         </div>
 
-        <!-- Applications list -->
+        <!-- Lista de solicitudes -->
         <div id="apps-list" class="hidden space-y-4"></div>
 
         <!-- Estado vacío -->
@@ -231,7 +231,7 @@ const score = app.admission_score ? `${app.admission_score}` : null;
                     ${submitted ? `<span class="text-xs text-muted-foreground shrink-0 hidden sm:block">Enviada ${submitted}</span>` : ""}
                 </div>
 
-                <!-- Body -->
+                <!-- Cuerpo -->
                 <div class="px-5 py-4 space-y-3">
                     <p class="text-xs text-muted-foreground">${cfg.description}</p>
 
@@ -243,7 +243,7 @@ const score = app.admission_score ? `${app.admission_score}` : null;
                         ${prefOrder ? `<span class="ml-auto text-xs text-muted-foreground">Opción ${prefOrder}</span>` : ""}
                     </div>` : ""}
 
-                    <!-- Meta row -->
+                    <!-- Fila de metadatos -->
                     <div class="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
                         ${score ? `<span>Nota admisión: <span class="text-foreground font-semibold">${score}</span></span>` : ""}
                         <span>Titulaciones: <span class="text-foreground">${prefCount}</span></span>

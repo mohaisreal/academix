@@ -9,9 +9,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     <div class="h-64 bg-card rounded-xl border border-border animate-pulse"></div>
   </div>
 
-  <!-- Actual content -->
+  <!-- Contenido principal -->
   <div id="page-content" class="hidden">
-    <!-- Top bar -->
+  <!-- Barra superior -->
     <div class="border-b border-border px-6 py-4">
       <h1 class="text-xl font-semibold text-foreground">Configuración del sistema</h1>
       <p class="text-sm text-muted-foreground">Gestiona notificaciones por correo, marca y plantillas</p>
@@ -50,13 +50,13 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <div id="status-msg" class="hidden mt-4 text-sm rounded-lg px-3 py-2"></div>
       </div>
 
-      <!-- Access denied -->
+      <!-- Acceso denegado -->
       <div id="access-denied" class="hidden flex flex-col items-center justify-center py-16 text-center">
         <div class="flex size-16 items-center justify-center rounded-full bg-destructive/10 mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-destructive"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
         </div>
-        <p class="text-lg font-medium text-foreground">Access Denied</p>
-        <p class="text-sm text-muted-foreground mt-1">Only administrators and management can access system settings.</p>
+        <p class="text-lg font-medium text-foreground">Acceso denegado</p>
+        <p class="text-sm text-muted-foreground mt-1">Solo administradores y gestión pueden acceder a la configuración del sistema.</p>
       </div>
 
       <!-- Sección 2: plantillas de correo -->
@@ -68,7 +68,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           </div>
           <button id="new-template-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            New Template
+            Nueva plantilla
           </button>
         </div>
 
@@ -76,11 +76,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-border bg-muted/50">
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Name</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Description</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Nombre</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Descripción</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Estado</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Last Updated</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Actions</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Última actualización</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Acciones</th>
               </tr>
             </thead>
             <tbody id="templates-table"></tbody>
@@ -98,39 +98,39 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     <div class="w-full max-w-3xl rounded-xl border border-border bg-background shadow-2xl max-h-[90vh] flex flex-col">
       <!-- Cabecera -->
       <div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-        <h2 id="template-panel-title" class="text-base font-semibold text-foreground">New Template</h2>
+        <h2 id="template-panel-title" class="text-base font-semibold text-foreground">Nueva plantilla</h2>
         <button id="close-template-panel-btn" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
-      <!-- Scrollable body -->
+      <!-- Cuerpo desplazable -->
       <div class="overflow-y-auto flex-1 px-5 py-4">
         <form id="template-form" class="space-y-5">
           <input id="tpl-id" type="hidden" value="" />
 
           <div>
-            <label class="text-xs font-medium text-muted-foreground">Name *</label>
+            <label class="text-xs font-medium text-muted-foreground">Nombre *</label>
             <input id="tpl-name" type="text" required placeholder="p. ej. correo de bienvenida" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
 
           <div>
-            <label class="text-xs font-medium text-muted-foreground">Description</label>
-            <input id="tpl-description" type="text" placeholder="Short description of when this template is used" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+            <label class="text-xs font-medium text-muted-foreground">Descripción</label>
+            <input id="tpl-description" type="text" placeholder="Descripción breve de cuándo se usa esta plantilla" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
 
           <div>
-            <label class="text-xs font-medium text-muted-foreground">Subject Template *</label>
+            <label class="text-xs font-medium text-muted-foreground">Plantilla de asunto *</label>
             <input id="tpl-subject" type="text" required placeholder="p. ej. Bienvenido a {{app_name}}, {{user_name}}" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary font-mono" />
-            <p class="mt-1 text-xs text-muted-foreground">Use <code class="bg-muted px-1 rounded text-xs">&#123;&#123;placeholder&#125;&#125;</code> syntax for dynamic values</p>
+            <p class="mt-1 text-xs text-muted-foreground">Usá la sintaxis <code class="bg-muted px-1 rounded text-xs">&#123;&#123;placeholder&#125;&#125;</code> para valores dinámicos</p>
           </div>
 
           <!-- Plantilla de cuerpo con barra de herramientas -->
           <div>
-            <label class="text-xs font-medium text-muted-foreground mb-1 block">Body Template *</label>
+            <label class="text-xs font-medium text-muted-foreground mb-1 block">Plantilla de cuerpo *</label>
 
             <!-- Placeholder toolbar -->
             <div class="flex flex-wrap items-center gap-1.5 p-2 bg-muted/60 border border-border border-b-0 rounded-t-lg">
-              <span class="text-xs text-muted-foreground mr-1">Insert:</span>
+              <span class="text-xs text-muted-foreground mr-1">Insertar:</span>
               <button type="button" class="insert-placeholder-btn rounded px-2 py-0.5 text-xs font-mono bg-card border border-border text-foreground hover:bg-muted hover:border-primary/50 transition-colors" data-value="{{user_name}}">{"{{user_name}}"}</button>
               <button type="button" class="insert-placeholder-btn rounded px-2 py-0.5 text-xs font-mono bg-card border border-border text-foreground hover:bg-muted hover:border-primary/50 transition-colors" data-value="{{user_email}}">{"{{user_email}}"}</button>
               <button type="button" class="insert-placeholder-btn rounded px-2 py-0.5 text-xs font-mono bg-card border border-border text-foreground hover:bg-muted hover:border-primary/50 transition-colors" data-value="{{app_name}}">{"{{app_name}}"}</button>
@@ -142,7 +142,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                 img
               </button>
               <div class="ml-auto flex items-center gap-1.5">
-                <span class="text-xs text-muted-foreground/60">Supports full HTML</span>
+                <span class="text-xs text-muted-foreground/60">Soporta HTML completo</span>
               </div>
             </div>
 
@@ -154,10 +154,10 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
               class="w-full bg-input border border-border rounded-b-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary font-mono resize-y leading-relaxed"
               style="min-height: 300px;"
             ></textarea>
-            <p class="mt-1 text-xs text-muted-foreground">Write a complete HTML document or just the body content. Placeholders like <code class="bg-muted px-1 rounded text-xs">&#123;&#123;user_name&#125;&#125;</code> will be substituted at send time.</p>
+            <p class="mt-1 text-xs text-muted-foreground">Escribe un documento HTML completo o solo el contenido del cuerpo. Los marcadores como <code class="bg-muted px-1 rounded text-xs">&#123;&#123;user_name&#125;&#125;</code> se sustituirán al enviar.</p>
           </div>
 
-          <!-- Active toggle -->
+          <!-- Interruptor de activo -->
           <div class="flex items-center gap-3 py-1">
             <button
               type="button"
@@ -168,18 +168,18 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             >
               <span class="pointer-events-none inline-block h-5 w-5 translate-x-5 rounded-full bg-background shadow-lg ring-0 transition-transform"></span>
             </button>
-            <label class="text-sm text-foreground">Active</label>
+            <label class="text-sm text-foreground">Activa</label>
           </div>
 
           <!-- Acciones de previsualización / envío de prueba (dentro del cuerpo, encima del error) -->
           <div class="flex flex-wrap gap-2">
             <button type="button" id="tpl-preview-btn" class="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              Preview
+              Previsualizar
             </button>
             <button type="button" id="tpl-send-test-btn" class="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-              Send Test
+              Enviar prueba
             </button>
           </div>
 
@@ -333,7 +333,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           false
         );
       } catch {
-        showStatus("No se pudo actualizar system settings", true);
+        showStatus("No se pudo actualizar la configuración del sistema", true);
       } finally {
         toggle.disabled = false;
       }
@@ -366,7 +366,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <td class="px-5 py-3 text-sm text-muted-foreground max-w-xs truncate">${escHtml(t.description || "—")}</td>
           <td class="px-5 py-3">
             <span class="inline-flex items-center rounded-full ${active ? "bg-green-500/15 text-green-400" : "bg-muted text-muted-foreground"} px-2 py-0.5 text-xs font-medium">
-              ${active ? "Active" : "Inactive"}
+              ${active ? "Activa" : "Inactiva"}
             </span>
           </td>
           <td class="px-5 py-3 text-sm text-muted-foreground">${formatDate(t.updated_at)}</td>
@@ -407,8 +407,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       const tpl = allTemplates.find(x => String(x.id) === id);
       if (!tpl) return;
       window.confirmAction({
-        title: `Delete "${tpl.name}"`,
-        description: "This action cannot be undone.",
+        title: `Eliminar "${tpl.name}"`,
+        description: "Esta acción no se puede deshacer.",
         confirmLabel: "Eliminar",
         variant: "destructive",
         onConfirm: async () => {
@@ -449,7 +449,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         previewBtn.classList.remove("opacity-40", "pointer-events-none");
         sendTestBtn.classList.remove("opacity-40", "pointer-events-none");
       } else {
-        panelTitle.textContent = "New Template";
+        panelTitle.textContent = "Nueva plantilla";
         (document.getElementById("tpl-id") as HTMLInputElement).value = "";
         (document.getElementById("template-form") as HTMLFormElement).reset();
         tplActiveState = true;
@@ -470,7 +470,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     document.getElementById("cancel-template-btn")?.addEventListener("click", closeTemplatePanel);
     document.getElementById("modal-backdrop")?.addEventListener("click", e => { if (e.target === e.currentTarget) closeTemplatePanel(); });
 
-    // Placeholder insertion
+    // Inserción de marcadores
     document.querySelectorAll<HTMLElement>(".insert-placeholder-btn").forEach(btn => {
       btn.addEventListener("click", () => {
         const textarea = document.getElementById("tpl-body") as HTMLTextAreaElement;
@@ -516,7 +516,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       }
     });
 
-    // ─── Preview ──────────────────────────────────────────────────────────────────
+    // ─── Previsualización ─────────────────────────────────────────────────────────
 
     document.getElementById("tpl-preview-btn")?.addEventListener("click", async () => {
       const id = (document.getElementById("tpl-id") as HTMLInputElement).value;
@@ -536,12 +536,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         showTemplateError(`La vista previa falló: ${err.message}`);
       } finally {
         btn.disabled = false;
-        btn.textContent = "Preview";
+        btn.textContent = "Previsualizar";
       }
     });
 
     function openPreviewModal(subject: string, bodyHtml: string) {
-      (document.getElementById("preview-subject") as HTMLElement).textContent = `Subject: ${subject}`;
+      (document.getElementById("preview-subject") as HTMLElement).textContent = `Asunto: ${subject}`;
       const iframe = document.getElementById("preview-iframe") as HTMLIFrameElement;
       // Escribe HTML en el iframe para renderizado aislado seguro
       iframe.srcdoc = bodyHtml;
@@ -564,7 +564,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       }
     });
 
-    // ─── Send Test ────────────────────────────────────────────────────────────────
+    // ─── Enviar prueba ────────────────────────────────────────────────────────────
 
     document.getElementById("tpl-send-test-btn")?.addEventListener("click", async () => {
       const id = (document.getElementById("tpl-id") as HTMLInputElement).value;
@@ -572,7 +572,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
       const btn = document.getElementById("tpl-send-test-btn") as HTMLButtonElement;
       btn.disabled = true;
-      btn.textContent = "Sending...";
+      btn.textContent = "Enviando...";
 
       try {
         await apiFetch(`/notifications/email-templates/${id}/send-test/`, { method: "POST" });
@@ -581,7 +581,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         showTemplateError(`Falló el envío de prueba: ${err.message}`);
       } finally {
         btn.disabled = false;
-        btn.textContent = "Send Test";
+        btn.textContent = "Enviar prueba";
       }
     });
 

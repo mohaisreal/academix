@@ -1,7 +1,7 @@
 ---
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
-<DashboardLayout title="System — Academix" currentPath="/system">
+<DashboardLayout title="Sistema — Academix" currentPath="/system">
   <div id="page-loading" class="p-6 space-y-4">
     <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
     <div class="h-64 bg-card rounded-xl border border-border animate-pulse"></div>
@@ -9,8 +9,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   <div id="page-content" class="hidden">
     <div class="border-b border-border px-6 py-4">
-      <h1 class="text-xl font-semibold text-foreground">System Administration</h1>
-      <p class="text-sm text-muted-foreground">User accounts and platform configuration</p>
+      <h1 class="text-xl font-semibold text-foreground">Administración del sistema</h1>
+      <p class="text-sm text-muted-foreground">Cuentas de usuario y configuración de la plataforma</p>
     </div>
 
     <div class="p-6 space-y-6">
@@ -23,7 +23,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           </div>
           <button id="new-user-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            New User
+            Nuevo usuario
           </button>
         </div>
 
@@ -34,7 +34,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <input id="user-search" type="text" placeholder="Buscar por nombre o correo..." class="pl-9 pr-4 py-2 w-full bg-input border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
           <select id="role-filter" class="bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-            <option value="">All Roles</option>
+            <option value="">Todos los roles</option>
             <option value="s">Estudiante</option>
             <option value="t">Profesor</option>
             <option value="m">Gestión</option>
@@ -46,41 +46,41 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-border bg-muted/50">
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">User</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Usuario</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Correo electrónico</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Role</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Rol</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Estado</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Actions</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Acciones</th>
               </tr>
             </thead>
             <tbody id="users-table"></tbody>
           </table>
         </div>
-        <div id="users-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No users found</div>
+        <div id="users-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No se encontraron usuarios</div>
       </section>
 
       <!-- Formato de ID de estudiante -->
       <section class="bg-card text-card-foreground rounded-xl border border-border overflow-hidden">
         <div class="px-5 py-4 border-b border-border">
           <h2 class="text-sm font-semibold text-foreground">Formato de ID de estudiante</h2>
-          <p class="text-xs text-muted-foreground mt-0.5">Configure the auto-generated student ID pattern for new registrations</p>
+          <p class="text-xs text-muted-foreground mt-0.5">Configura el patrón de ID de estudiante autogenerado para nuevos registros</p>
         </div>
         <div class="px-5 py-4 space-y-4">
           <div class="space-y-1.5">
-            <label for="student-id-format" class="text-xs font-medium text-muted-foreground">Format Pattern</label>
+            <label for="student-id-format" class="text-xs font-medium text-muted-foreground">Patrón de formato</label>
             <input id="student-id-format" type="text" placeholder="\d{6}"
               class="w-full max-w-sm bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary font-mono" />
             <p class="text-xs text-muted-foreground">
-              Supported tokens: <code class="bg-muted rounded px-1">\d&#123;N&#125;</code> = N random digits,
-              <code class="bg-muted rounded px-1">[A-Z]&#123;N&#125;</code> = N uppercase letters.
-              Prefixes are literal. Example: <code class="bg-muted rounded px-1">STU-\d&#123;6&#125;</code>
+              Tokens compatibles: <code class="bg-muted rounded px-1">\d&#123;N&#125;</code> = N dígitos aleatorios,
+              <code class="bg-muted rounded px-1">[A-Z]&#123;N&#125;</code> = N letras mayúsculas.
+              Los prefijos son literales. Ejemplo: <code class="bg-muted rounded px-1">STU-\d&#123;6&#125;</code>
             </p>
           </div>
           <div class="flex items-center gap-3">
             <button id="save-student-id-format" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
               Guardar formato
             </button>
-            <span id="student-id-format-status" class="hidden text-xs text-emerald-400">Saved</span>
+            <span id="student-id-format-status" class="hidden text-xs text-emerald-400">Guardado</span>
           </div>
         </div>
       </section>
@@ -89,7 +89,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       <section class="bg-card text-card-foreground rounded-xl border border-border overflow-hidden">
         <div class="px-5 py-4 border-b border-border">
           <h2 class="text-sm font-semibold text-foreground">Cargos de pago de matrícula</h2>
-          <p class="text-xs text-muted-foreground mt-0.5">Configure administrative charges added after subject selection</p>
+          <p class="text-xs text-muted-foreground mt-0.5">Configura los cargos administrativos añadidos después de la selección de asignaturas</p>
         </div>
         <div class="px-5 py-4 space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -102,15 +102,15 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
               <label for="transcript-opening-fee" class="text-xs font-medium text-muted-foreground">Apertura de expediente (€)</label>
               <input id="transcript-opening-fee" type="number" min="0" step="0.01"
                 class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-              <p class="text-xs text-muted-foreground">Only applied when the student has no previous school period/enrollment.</p>
+              <p class="text-xs text-muted-foreground">Solo se aplica cuando el estudiante no tiene período escolar/matrícula previa.</p>
             </div>
           </div>
           <div class="space-y-1.5">
-            <label for="enrollment-extra-charges" class="text-xs font-medium text-muted-foreground">Extra charges JSON</label>
+            <label for="enrollment-extra-charges" class="text-xs font-medium text-muted-foreground">JSON de cargos extra</label>
             <textarea id="enrollment-extra-charges" rows="5"
               placeholder='[{"label":"Carné universitario","amount":"12.00","active":true}]'
               class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary font-mono"></textarea>
-            <p class="text-xs text-muted-foreground">Each item needs label, amount and optional active=true/false.</p>
+            <p class="text-xs text-muted-foreground">Cada elemento necesita label, amount y active=true/false opcional.</p>
           </div>
           <div class="flex items-center gap-3">
             <button id="save-enrollment-charges" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
@@ -128,7 +128,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     <div class="w-full max-w-lg rounded-xl border border-border bg-background shadow-2xl max-h-[90vh] flex flex-col">
       <!-- Cabecera -->
       <div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-        <h2 id="modal-title" class="text-base font-semibold text-foreground">New User</h2>
+        <h2 id="modal-title" class="text-base font-semibold text-foreground">Nuevo usuario</h2>
         <button id="modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -152,7 +152,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <input id="user-email" type="email" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
           <div>
-            <label class="text-xs font-medium text-muted-foreground">Username *</label>
+            <label class="text-xs font-medium text-muted-foreground">Nombre de usuario *</label>
             <input id="user-username" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
           <div id="password-field">
@@ -160,12 +160,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <input id="user-password" type="password" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
           <div>
-            <label class="text-xs font-medium text-muted-foreground">Role *</label>
+            <label class="text-xs font-medium text-muted-foreground">Rol *</label>
             <select id="user-role" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
               <option value="s">Estudiante</option>
               <option value="t">Profesor</option>
               <option value="m">Gestión</option>
-              <option value="a">Administration</option>
+              <option value="a">Administración</option>
             </select>
           </div>
           <div>
@@ -174,7 +174,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           </div>
           <div class="flex items-center gap-3">
             <input id="user-active" type="checkbox" checked class="size-4 rounded border-border" />
-            <label for="user-active" class="text-sm text-foreground">Active</label>
+            <label for="user-active" class="text-sm text-foreground">Activo</label>
           </div>
           <div id="form-error" class="hidden text-xs text-red-400 bg-red-500/10 rounded-lg p-3"></div>
         </form>
@@ -208,7 +208,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       ...options,
     });
-    if (res.status === 401) { window.location.replace('/login'); throw new Error('Unauthorized'); }
+    if (res.status === 401) { window.location.replace('/login'); throw new Error('No autorizado'); }
     if (res.status === 204) return {};
     if (!res.ok) throw new Error(`La solicitud falló (${res.status})`);
     return res.json();
@@ -220,7 +220,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     return d.innerHTML;
   }
 
-  const ROLE_LABELS: Record<string,string> = { s: 'Student', t: 'Teacher', m: 'Gestión', a: 'Admin' };
+  const ROLE_LABELS: Record<string,string> = { s: 'Estudiante', t: 'Profesor', m: 'Gestión', a: 'Administración' };
   const ROLE_COLORS: Record<string,string> = {
     s: 'bg-blue-500/15 text-blue-400',
     t: 'bg-purple-500/15 text-purple-400',
@@ -267,7 +267,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <div class="flex items-center gap-3">
             <div class="size-8 rounded-full bg-primary/15 flex items-center justify-center text-xs font-semibold text-primary flex-shrink-0">${escHtml(initials)}</div>
             <div>
-              <p class="text-sm font-medium text-foreground">${escHtml(u.first_name)} ${escHtml(u.last_name)} ${isSelf ? '<span class="text-xs text-muted-foreground">(you)</span>' : ''}</p>
+              <p class="text-sm font-medium text-foreground">${escHtml(u.first_name)} ${escHtml(u.last_name)} ${isSelf ? '<span class="text-xs text-muted-foreground">(tu cuenta)</span>' : ''}</p>
               <p class="text-xs text-muted-foreground">@${escHtml(u.username ?? '')}</p>
             </div>
           </div>
@@ -278,13 +278,13 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         </td>
         <td class="px-5 py-3">
           <span class="inline-flex items-center rounded-full ${active ? 'bg-green-500/15 text-green-400' : 'bg-muted text-muted-foreground'} px-2 py-0.5 text-xs font-medium">
-            ${active ? 'Active' : 'Inactive'}
+            ${active ? 'Activo' : 'Inactivo'}
           </span>
         </td>
         <td class="px-5 py-3">
           <div class="flex items-center gap-2">
             <button class="edit-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors" data-id="${u.id}">Editar</button>
-            ${!isSelf ? `<button class="toggle-btn rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${active ? 'border-border text-red-400 hover:bg-red-500/10 hover:border-red-500/30' : 'border-border text-green-400 hover:bg-green-500/10 hover:border-green-500/30'}" data-id="${u.id}" data-active="${active}">${active ? 'Deactivate' : 'Activate'}</button>` : ''}
+            ${!isSelf ? `<button class="toggle-btn rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${active ? 'border-border text-red-400 hover:bg-red-500/10 hover:border-red-500/30' : 'border-border text-green-400 hover:bg-green-500/10 hover:border-green-500/30'}" data-id="${u.id}" data-active="${active}">${active ? 'Desactivar' : 'Activar'}</button>` : ''}
           </div>
         </td>
       </tr>`;
@@ -300,7 +300,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       btn.addEventListener('click', async () => {
         const id = (btn as HTMLElement).dataset.id;
         const active = (btn as HTMLElement).dataset.active === 'true';
-        if (!confirm(`${active ? 'Deactivate' : 'Activate'} this user?`)) return;
+        if (!confirm(`¿${active ? 'Desactivar' : 'Activar'} este usuario?`)) return;
         await apiFetch(`/users/${id}/`, { method: 'PATCH', body: JSON.stringify({ is_active: !active }) });
         await loadUsers();
       });
@@ -329,7 +329,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const pwInput = document.getElementById('user-password') as HTMLInputElement;
     if (u) {
       if (title) title.textContent = 'Editar usuario';
-      if (pwHint) pwHint.textContent = '(leave blank to keep current)';
+      if (pwHint) pwHint.textContent = '(deja en blanco para mantener la actual)';
       pwInput.removeAttribute('required');
       (document.getElementById('edit-id') as HTMLInputElement).value = u.id;
       (document.getElementById('user-first') as HTMLInputElement).value = u.first_name ?? '';
@@ -341,7 +341,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       (document.getElementById('user-active') as HTMLInputElement).checked = u.is_active !== false;
       pwInput.value = '';
     } else {
-      if (title) title.textContent = 'New User';
+      if (title) title.textContent = 'Nuevo usuario';
       if (pwHint) pwHint.textContent = '(obligatoria para usuarios nuevos)';
       pwInput.setAttribute('required', '');
       (document.getElementById('edit-id') as HTMLInputElement).value = '';
@@ -394,7 +394,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       await loadUsers();
     } catch (err: any) {
       errEl?.classList.remove('hidden');
-      const msg = err?.message || 'No se ha podido guardar user';
+      const msg = err?.message || 'No se ha podido guardar el usuario';
       if (errEl) errEl.textContent = String(msg);
     }
   });
@@ -461,14 +461,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         }),
       });
       if (status) {
-        status.textContent = 'Saved';
+        status.textContent = 'Guardado';
         status.className = 'text-xs text-emerald-400';
         status.classList.remove('hidden');
         setTimeout(() => status.classList.add('hidden'), 2500);
       }
     } catch (err: any) {
       if (status) {
-        status.textContent = err?.message ?? 'Could not save enrollment charges.';
+        status.textContent = err?.message ?? 'No se pudieron guardar los cargos de matrícula.';
         status.className = 'text-xs text-red-400';
         status.classList.remove('hidden');
       }

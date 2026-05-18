@@ -73,7 +73,7 @@ export function ProtectedDashboard() {
     <div>
       <h1>¡Bienvenido, {user?.first_name}!</h1>
       <p>Correo electrónico: {user?.email}</p>
-      <p>Role: {user?.role}</p>
+      <p>Rol: {user?.role}</p>
       <button onClick={logout}>Cerrar sesión</button>
     </div>
   );
@@ -109,7 +109,7 @@ export function UserProfileExample() {
   };
 
   const handleUpdateTeléfono = async () => {
-    const newTeléfono = prompt('Enter new phone number:');
+    const newTeléfono = prompt('Ingresá el nuevo número de teléfono:');
     if (newTeléfono) {
       await updateProfile({ phone: newTeléfono });
     }
@@ -121,13 +121,13 @@ export function UserProfileExample() {
       {updateError && <div className="error">{updateError}</div>}
 
       <div>
-        <strong>Name:</strong> {user?.first_name} {user?.last_name}
+        <strong>Nombre:</strong> {user?.first_name} {user?.last_name}
       </div>
       <div>
         <strong>Correo electrónico:</strong> {user?.email}
       </div>
       <div>
-        <strong>Teléfono:</strong> {user?.phone || 'Not set'}
+        <strong>Teléfono:</strong> {user?.phone || 'No definido'}
       </div>
 
       <button onClick={handleUpdateTeléfono} disabled={isUpdating}>
@@ -319,7 +319,7 @@ export function ConditionalRenderingExample() {
         </div>
       ) : (
         <div>
-          <p>Please log in to continue</p>
+          <p>Iniciá sesión para continuar</p>
           <a href="/login">Iniciar sesión</a>
           <a href="/register">Registrarse</a>
         </div>
@@ -340,7 +340,7 @@ export function RoleBasedExample() {
   const isStudent = user?.role === 's';
 
   if (!isAuthenticated) {
-    return <div>Please log in</div>;
+    return <div>Iniciá sesión</div>;
   }
 
   return (
@@ -351,7 +351,7 @@ export function RoleBasedExample() {
 }
       <section>
         <h2>Mi perfil</h2>
-        <p>Name: {user?.first_name} {user?.last_name}</p>
+          <p>Nombre: {user?.first_name} {user?.last_name}</p>
       </section>
 
       {/* Sección solo para profesores */
@@ -359,7 +359,7 @@ export function RoleBasedExample() {
       {isTeacher && (
         <section>
           <h2>Panel de profesor</h2>
-          <p>Manage your classes and students</p>
+          <p>Gestioná tus clases y estudiantes</p>
         </section>
       )}
 
@@ -367,8 +367,8 @@ export function RoleBasedExample() {
 }
       {isAdmin && (
         <section>
-          <h2>Admin Panel</h2>
-          <p>System administration</p>
+          <h2>Panel de administración</h2>
+          <p>Administración del sistema</p>
         </section>
       )}
 
@@ -377,7 +377,7 @@ export function RoleBasedExample() {
       {isStudent && (
         <section>
           <h2>Mis cursos</h2>
-          <p>View your enrolled courses</p>
+          <p>Ver tus cursos matriculados</p>
         </section>
       )}
     </div>
@@ -407,10 +407,10 @@ export function ErrorHandlingExample() {
             alert('Credenciales inválidas. Inténtalo de nuevo.');
             break;
           case 429:
-            alert('Too many login attempts. Please try again later.');
+            alert('Demasiados intentos de inicio de sesión. Intentá nuevamente más tarde.');
             break;
           case 500:
-            alert('Server error. Please try again later.');
+            alert('Error del servidor. Intentá nuevamente más tarde.');
             break;
           default:
             alert(err.message);

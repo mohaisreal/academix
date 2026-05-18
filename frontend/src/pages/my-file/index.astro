@@ -1,7 +1,7 @@
 ---
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
-<DashboardLayout title="My Academic File — Academix" currentPath="/my-file">
+<DashboardLayout title="Mi expediente académico — Academix" currentPath="/my-file">
   <div id="page-loading" class="p-6 space-y-4">
     <div class="grid grid-cols-3 gap-4">
       <div class="h-64 bg-card rounded-xl border border-border animate-pulse col-span-1"></div>
@@ -13,12 +13,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   <div id="page-content" class="hidden">
     <div class="flex items-center justify-between border-b border-border px-6 py-4">
       <div>
-        <h1 class="text-xl font-semibold text-foreground">Academic File</h1>
-        <p class="text-sm text-muted-foreground">Your complete academic record</p>
+        <h1 class="text-xl font-semibold text-foreground">Expediente académico</h1>
+        <p class="text-sm text-muted-foreground">Tu historial académico completo</p>
       </div>
       <button onclick="window.print()" class="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors print:hidden">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-        Print File
+        Imprimir expediente
       </button>
     </div>
 
@@ -34,18 +34,18 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <div class="space-y-3" id="student-details"></div>
         </div>
 
-        <!-- Academic summary -->
+        <!-- Resumen académico -->
         <div class="bg-card text-card-foreground rounded-xl border border-border p-5 lg:col-span-2">
-          <h2 class="text-lg font-semibold text-foreground mb-4">Academic Summary</h2>
+          <h2 class="text-lg font-semibold text-foreground mb-4">Resumen académico</h2>
           <div class="grid grid-cols-2 gap-4" id="academic-summary"></div>
         </div>
       </div>
 
-      <!-- Period records -->
+      <!-- Registros por período -->
       <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
-        <h2 class="text-lg font-semibold text-foreground mb-4">Academic History</h2>
+        <h2 class="text-lg font-semibold text-foreground mb-4">Historial académico</h2>
         <div id="periods-accordion" class="space-y-3"></div>
-        <div id="file-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No academic records found</div>
+        <div id="file-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No se encontraron registros académicos</div>
       </div>
     </div>
   </div>
@@ -114,7 +114,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
       // Información del estudiante — data.student es el objeto anidado de la API
       const s = data.student || {};
-      const name = s.full_name || `${s.first_name || ''} ${s.last_name || ''}`.trim() || user?.username || 'Student';
+      const name = s.full_name || `${s.first_name || ''} ${s.last_name || ''}`.trim() || user?.username || 'Estudiante';
       const initials = name.split(' ').map(p => p[0]).join('').toUpperCase().substring(0, 2);
 
       const avatarEl = document.getElementById('student-avatar');
@@ -143,8 +143,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       const summaryEl = document.getElementById('academic-summary');
       if (summaryEl) {
         summaryEl.innerHTML = [
-          { label: 'Overall GPA', value: gpaBadge(data.overall_gpa || data.gpa, true) },
-          { label: 'Total Periods', value: `<span class="text-2xl font-bold text-foreground">${periods.length}</span>` },
+          { label: 'Promedio general', value: gpaBadge(data.overall_gpa || data.gpa, true) },
+          { label: 'Períodos totales', value: `<span class="text-2xl font-bold text-foreground">${periods.length}</span>` },
         ].map(s => `
           <div class="bg-muted/30 rounded-lg p-4">
             <p class="text-xs text-muted-foreground mb-2">${s.label}</p>
@@ -169,7 +169,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <div class="border border-border rounded-lg overflow-hidden">
               <button class="accordion-btn w-full flex items-center justify-between p-4 text-left hover:bg-muted/40 transition-colors" data-idx="${i}">
                 <div>
-                  <p class="font-medium text-foreground">${escHtml(p.period_name || p.period || 'Period')}</p>
+                  <p class="font-medium text-foreground">${escHtml(p.period_name || p.period || 'Período')}</p>
                   <p class="text-xs text-muted-foreground">${escHtml(p.career_name || p.career || '')}</p>
                 </div>
                 <div class="flex items-center gap-3">
@@ -182,11 +182,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                   <table class="w-full">
                     <thead>
                       <tr class="border-b border-border bg-muted/20">
-                        <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Subject</th>
-                        <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Code</th>
-                        <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Credits</th>
+                        <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Asignatura</th>
+                        <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Código</th>
+                        <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Créditos</th>
                         <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Calificación final</th>
-                        <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Result</th>
+                        <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide p-3">Resultado</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -197,10 +197,10 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                           <td class="p-3 text-sm text-muted-foreground">${escHtml(s.code || '-')}</td>
                           <td class="p-3 text-sm text-muted-foreground">${s.credits || '-'}</td>
                           <td class="p-3 text-sm font-medium text-foreground">${s.final_grade ?? s.grade ?? '-'}</td>
-                          <td class="p-3"><span class="inline-flex items-center rounded-full ${passed ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'} px-2 py-0.5 text-xs font-medium">${passed ? 'Pass' : 'Fail'}</span></td>
+                          <td class="p-3"><span class="inline-flex items-center rounded-full ${passed ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'} px-2 py-0.5 text-xs font-medium">${passed ? 'Aprobado' : 'Reprobado'}</span></td>
                         </tr>`;
                       }).join('')}
-                      ${subjects.length === 0 ? `<tr><td colspan="5" class="p-3 text-center text-sm text-muted-foreground">No subjects</td></tr>` : ''}
+                      ${subjects.length === 0 ? `<tr><td colspan="5" class="p-3 text-center text-sm text-muted-foreground">Sin asignaturas</td></tr>` : ''}
                     </tbody>
                   </table>
                 </div>

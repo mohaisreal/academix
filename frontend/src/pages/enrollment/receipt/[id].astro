@@ -7,15 +7,15 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     <div class="flex items-center justify-between border-b border-border px-6 py-4 print:hidden">
         <div>
             <div class="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                <a href="/enrollment" class="hover:text-foreground transition-colors">Enrollment</a>
+                <a href="/enrollment" class="hover:text-foreground transition-colors">Matrícula</a>
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-                <span class="text-foreground">Receipt</span>
+                <span class="text-foreground">Comprobante</span>
             </div>
             <h1 class="text-xl font-semibold text-foreground">Comprobante de matrícula</h1>
         </div>
         <button onclick="window.print()" class="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-            Print Receipt
+            Imprimir comprobante
         </button>
     </div>
 
@@ -40,7 +40,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                             <p class="text-sm text-muted-foreground">Comprobante de matrícula</p>
                         </div>
                         <div class="text-right">
-                            <p class="text-xs text-muted-foreground">Receipt #</p>
+                            <p class="text-xs text-muted-foreground">Comprobante #</p>
                             <p id="receipt-id" class="text-lg font-bold text-foreground font-mono">—</p>
                             <p id="receipt-date" class="text-xs text-muted-foreground mt-1">—</p>
                         </div>
@@ -62,11 +62,11 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     <!-- Detalles de matrícula -->
                     <div class="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                            <p class="text-xs text-muted-foreground">Career</p>
+                            <p class="text-xs text-muted-foreground">Carrera</p>
                             <p id="enrollment-career" class="font-medium text-foreground">—</p>
                         </div>
                         <div>
-                            <p class="text-xs text-muted-foreground">Period</p>
+                            <p class="text-xs text-muted-foreground">Período</p>
                             <p id="enrollment-period" class="font-medium text-foreground">—</p>
                         </div>
                         <div>
@@ -83,10 +83,10 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
                     <!-- Desglose de tasas -->
                     <div class="space-y-2">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Fee Details</p>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Detalle de aranceles</p>
                         <div id="fee-items" class="space-y-1.5"></div>
                         <div class="border-t border-border pt-2 mt-2 flex justify-between text-sm font-bold">
-                            <span class="text-foreground">Total Paid</span>
+                            <span class="text-foreground">Total pagado</span>
                             <span id="fee-total" class="text-foreground">—</span>
                         </div>
                     </div>
@@ -95,16 +95,16 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
                     <!-- Clases matriculadas -->
                     <div id="classes-section" class="hidden space-y-2">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Enrolled Classes</p>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Clases matriculadas</p>
                         <div id="classes-list" class="space-y-1.5"></div>
                     </div>
 
                     <!-- Pie -->
                     <div class="border-t border-dashed border-border pt-4">
                         <div class="flex items-center justify-between">
-                            <p class="text-xs text-muted-foreground">This document serves as official proof of enrollment.</p>
+                            <p class="text-xs text-muted-foreground">Este documento sirve como comprobante oficial de matrícula.</p>
                             <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-emerald-100 text-emerald-700">
-                                ✓ Valid
+                                ✓ Válido
                             </span>
                         </div>
                     </div>
@@ -212,8 +212,8 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 fee.line_items.forEach((item: any) => {
                     const amount = parseFloat(String(item.subtotal ?? item.amount ?? 0));
                     const label = item.type === "subject"
-                        ? `${item.subject_code ?? ""} ${item.subject_name ?? item.label ?? "Subject"}`
-                        : (item.label ?? "Administrative charge");
+                        ? `${item.subject_code ?? ""} ${item.subject_name ?? item.label ?? "Asignatura"}`
+                        : (item.label ?? "Cargo administrativo");
                     const calculation = item.type === "subject" && item.credits && item.price_per_credit
                         ? `${item.credits} ECTS × €${parseFloat(String(item.price_per_credit)).toFixed(2)}/crédito`
                         : "";
@@ -238,7 +238,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 const discAmt = parseFloat(fee.discount_amount);
                 feeRows.push(`
                     <div class="flex justify-between text-sm">
-                        <span class="text-muted-foreground">Discount${fee.discount_reason ? ` (${fee.discount_reason})` : ""}</span>
+                        <span class="text-muted-foreground">Descuento${fee.discount_reason ? ` (${fee.discount_reason})` : ""}</span>
                         <span class="text-foreground text-emerald-400">-€${isNaN(discAmt) ? fee.discount_amount : discAmt.toFixed(2)}</span>
                     </div>`);
             }
@@ -260,14 +260,14 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 const classListEl = document.getElementById("classes-list")!;
                 classListEl.innerHTML = classes.map((cls: any) => `
                     <div class="flex items-center justify-between text-sm py-1 border-b border-border/50 last:border-0">
-                        <span class="text-foreground">${cls.subject_name ?? cls.subject?.name ?? cls.name ?? "Class"}</span>
+                        <span class="text-foreground">${cls.subject_name ?? cls.subject?.name ?? cls.name ?? "Clase"}</span>
                         <span class="text-xs text-muted-foreground">${cls.teacher_name ?? cls.teacher?.full_name ?? ""}</span>
                     </div>`).join("");
             }
 
         } catch {
             document.getElementById("loading-state")?.classList.add("hidden");
-            document.getElementById("error-message")!.textContent = "Network error. Please check your connection.";
+            document.getElementById("error-message")!.textContent = "Error de red. Revisá tu conexión.";
             document.getElementById("error-state")?.classList.remove("hidden");
         }
     }

@@ -1,7 +1,7 @@
 ---
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
-<DashboardLayout title="My Classes — Academix" currentPath="/my-classes">
+<DashboardLayout title="Mis clases — Academix" currentPath="/my-classes">
   <div id="page-loading" class="p-6 space-y-4">
     <div class="grid grid-cols-4 gap-4">
       <div class="h-28 bg-card rounded-xl border border-border animate-pulse"></div>
@@ -15,36 +15,36 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   <div id="page-content" class="hidden">
     <div class="flex items-center justify-between border-b border-border px-6 py-4">
       <div>
-        <h1 class="text-xl font-semibold text-foreground">My Classes</h1>
-        <p class="text-sm text-muted-foreground">Classes assigned to you this period</p>
+        <h1 class="text-xl font-semibold text-foreground">Mis clases</h1>
+        <p class="text-sm text-muted-foreground">Clases asignadas para este período</p>
       </div>
     </div>
 
     <div class="p-6 space-y-6">
-      <!-- KPI row -->
+      <!-- Fila de KPI -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="kpi-row"></div>
 
       <!-- Tabla de clases -->
       <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
-        <h2 class="text-lg font-semibold text-foreground mb-4">Class List</h2>
+        <h2 class="text-lg font-semibold text-foreground mb-4">Lista de clases</h2>
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead>
               <tr class="border-b border-border">
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Subject</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Period</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Classroom</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Asignatura</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Período</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Aula</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Estudiantes</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Pending</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Avg Score</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Actions</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Pendientes</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Promedio</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Acciones</th>
               </tr>
             </thead>
             <tbody id="classes-table-body"></tbody>
           </table>
         </div>
         <div id="classes-empty" class="hidden py-10 text-center text-sm text-muted-foreground">
-          No classes assigned for current period
+          No hay clases asignadas para el período actual
         </div>
       </div>
     </div>
@@ -102,10 +102,10 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       const kpiRow = document.getElementById('kpi-row');
       if (kpiRow) {
         kpiRow.innerHTML = [
-          { label: 'Active Classes', value: classes.length, icon: '<path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 6 3 6 3s3 0 6-3v-5"/>', color: 'text-primary' },
+          { label: 'Clases activas', value: classes.length, icon: '<path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 6 3 6 3s3 0 6-3v-5"/>', color: 'text-primary' },
           { label: 'Total de estudiantes', value: totalStudents, icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>', color: 'text-blue-400' },
           { label: 'Calificaciones pendientes', value: pending, icon: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>', color: 'text-yellow-400' },
-          { label: 'Avg Score', value: avgScore === '-' ? '-' : avgScore + '%', icon: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>', color: 'text-green-400' },
+          { label: 'Promedio', value: avgScore === '-' ? '-' : avgScore + '%', icon: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>', color: 'text-green-400' },
         ].map(k => `
           <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
             <div class="flex items-center justify-between mb-3">
@@ -129,7 +129,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       }
 
       tbody.innerHTML = classes.map(c => {
-        const subject = c.subject_name || c.subject?.name || 'Subject';
+        const subject = c.subject_name || c.subject?.name || 'Asignatura';
         const period = c.period_name || c.period?.name || '-';
         const classroom = c.classroom_name || c.classroom?.name || '-';
         const students = c.student_count || c.students_count || 0;

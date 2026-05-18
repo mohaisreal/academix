@@ -1,7 +1,7 @@
 ---
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
-<DashboardLayout title="Marking — Academix" currentPath="/marking">
+<DashboardLayout title="Calificación — Academix" currentPath="/marking">
   <div id="page-loading" class="p-6 space-y-4">
     <div class="grid grid-cols-3 gap-4" style="height:calc(100vh - 80px)">
       <div class="h-full bg-card rounded-xl border border-border animate-pulse"></div>
@@ -12,35 +12,35 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   <div id="page-content" class="hidden">
     <div class="flex items-center justify-between border-b border-border px-6 py-4">
       <div>
-        <h1 class="text-xl font-semibold text-foreground">Marking</h1>
+        <h1 class="text-xl font-semibold text-foreground">Calificación</h1>
         <p class="text-sm text-muted-foreground">Califica evaluaciones de estudiantes</p>
       </div>
     </div>
 
     <div class="flex" style="height:calc(100vh - 130px)">
-      <!-- Left panel -->
+      <!-- Panel izquierdo -->
       <div class="w-80 shrink-0 border-r border-border overflow-y-auto p-4 space-y-4">
         <div>
-          <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Select Class</p>
+          <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Seleccionar clase</p>
           <div id="class-list" class="space-y-2"></div>
         </div>
         <div id="eval-section" class="hidden">
           <div class="flex items-center justify-between mb-3">
-            <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Evaluations</p>
-            <button id="new-eval-btn" class="text-xs text-primary hover:underline">+ New</button>
+            <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Evaluaciones</p>
+            <button id="new-eval-btn" class="text-xs text-primary hover:underline">+ Nueva</button>
           </div>
           <div id="eval-list" class="space-y-2"></div>
         </div>
       </div>
 
-      <!-- Right panel -->
+      <!-- Panel derecho -->
       <div class="flex-1 overflow-y-auto">
         <div id="empty-state" class="flex flex-col items-center justify-center h-full text-center">
           <div class="flex size-16 items-center justify-center rounded-full bg-muted mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </div>
-          <p class="text-lg font-medium text-foreground">Select a class and evaluation</p>
-          <p class="text-sm text-muted-foreground mt-1">Choose from the left panel to begin grading</p>
+          <p class="text-lg font-medium text-foreground">Selecciona una clase y una evaluación</p>
+          <p class="text-sm text-muted-foreground mt-1">Elige desde el panel izquierdo para comenzar a calificar</p>
         </div>
         <div id="grading-panel" class="hidden p-6 space-y-4"></div>
       </div>
@@ -51,32 +51,32 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   <div id="new-eval-backdrop" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
     <div class="bg-card border border-border rounded-xl p-6 w-96 shadow-xl">
       <div class="flex items-center justify-between mb-5">
-        <h3 class="text-lg font-semibold text-foreground">New Evaluation</h3>
+        <h3 class="text-lg font-semibold text-foreground">Nueva evaluación</h3>
         <button id="close-eval-modal" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       <form id="new-eval-form" class="space-y-4">
         <div>
-          <label class="text-xs font-medium text-muted-foreground">Name *</label>
-          <input id="eval-name" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Midterm Exam" />
+          <label class="text-xs font-medium text-muted-foreground">Nombre *</label>
+          <input id="eval-name" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Examen parcial" />
         </div>
         <div>
-          <label class="text-xs font-medium text-muted-foreground">Type *</label>
+          <label class="text-xs font-medium text-muted-foreground">Tipo *</label>
           <select id="eval-type" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-            <option value="exam">Exam</option>
-            <option value="quiz">Quiz</option>
-            <option value="assignment">Assignment</option>
-            <option value="project">Project</option>
-            <option value="participation">Participation</option>
+            <option value="exam">Examen</option>
+            <option value="quiz">Cuestionario</option>
+            <option value="assignment">Trabajo</option>
+            <option value="project">Proyecto</option>
+            <option value="participation">Participación</option>
           </select>
         </div>
         <div>
-          <label class="text-xs font-medium text-muted-foreground">Max Score *</label>
+          <label class="text-xs font-medium text-muted-foreground">Puntaje máximo *</label>
           <input id="eval-max-score" type="number" required min="1" value="100" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
         </div>
         <div>
-          <label class="text-xs font-medium text-muted-foreground">Due Date</label>
+          <label class="text-xs font-medium text-muted-foreground">Fecha de entrega</label>
           <input id="eval-due-date" type="date" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
         </div>
         <div id="eval-form-error" class="hidden text-xs text-red-400"></div>
@@ -141,11 +141,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const list = document.getElementById('class-list');
     if (!list) return;
     list.innerHTML = classes.map(c => {
-      const subject = c.subject_name || c.subject?.name || 'Class';
+      const subject = c.subject_name || c.subject?.name || 'Clase';
       const students = c.student_count || c.students_count || 0;
       return `<div class="class-item cursor-pointer rounded-lg border border-border p-3 hover:border-primary/50 hover:bg-muted/40 transition-colors" data-id="${c.id}">
         <p class="text-sm font-medium text-foreground">${escHtml(subject)}</p>
-        <p class="text-xs text-muted-foreground mt-0.5">${students} students</p>
+        <p class="text-xs text-muted-foreground mt-0.5">${students} estudiantes</p>
       </div>`;
     }).join('');
 
@@ -178,7 +178,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const list = document.getElementById('eval-list');
     if (!list) return;
     if (evals.length === 0) {
-      list.innerHTML = '<div class="text-xs text-muted-foreground py-2">No evaluations yet. Crear una cuenta.</div>';
+      list.innerHTML = '<div class="text-xs text-muted-foreground py-2">Aún no hay evaluaciones.</div>';
       return;
     }
     list.innerHTML = evals.map(e => {
@@ -190,7 +190,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <p class="text-sm font-medium text-foreground truncate">${escHtml(e.name)}</p>
           <span class="inline-flex items-center rounded-full ${bg} px-1.5 py-0.5 text-xs capitalize shrink-0">${type}</span>
         </div>
-        <p class="text-xs text-muted-foreground mt-0.5">Max: ${e.max_score} · Due: ${formatDate(e.due_date)}</p>
+        <p class="text-xs text-muted-foreground mt-0.5">Máx.: ${e.max_score} · Entrega: ${formatDate(e.due_date)}</p>
       </div>`;
     }).join('');
 
@@ -225,12 +225,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <h2 class="text-lg font-semibold text-foreground">${escHtml(evalData.name)}</h2>
             <div class="flex items-center gap-3 mt-1">
               <span class="inline-flex items-center rounded-full ${bg} px-2 py-0.5 text-xs capitalize">${type}</span>
-              <span class="text-xs text-muted-foreground">Due: ${formatDate(evalData.due)}</span>
-              <span class="text-xs text-muted-foreground">Max Score: ${evalData.max}</span>
+              <span class="text-xs text-muted-foreground">Entrega: ${formatDate(evalData.due)}</span>
+              <span class="text-xs text-muted-foreground">Puntaje máx.: ${evalData.max}</span>
             </div>
           </div>
           <button id="bulk-save-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-            Save All Calificaciones
+            Guardar todas las calificaciones
           </button>
         </div>
         <div class="overflow-x-auto">
@@ -238,15 +238,15 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <thead>
               <tr class="border-b border-border">
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Estudiante</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Current Score</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Score</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Feedback</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Puntaje actual</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Puntaje</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Comentarios</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Guardar</th>
               </tr>
             </thead>
             <tbody id="grading-table-body">
               ${students.map(s => {
-                const sName = s.student_name || `${s.first_name || ''} ${s.last_name || ''}`.trim() || 'Student';
+                const sName = s.student_name || `${s.first_name || ''} ${s.last_name || ''}`.trim() || 'Estudiante';
                 const sId = s.student_id || s.id;
                 const currentScore = s.score ?? s.grade_score ?? '';
                 const feedback = s.feedback || '';
@@ -262,14 +262,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                     <input type="number" min="0" max="${evalData.max}" class="score-input w-24 bg-input border border-border rounded-lg px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" data-student-id="${sId}" value="${currentScore}" placeholder="0–${evalData.max}" />
                   </td>
                   <td class="py-3 pr-4">
-                    <input type="text" class="feedback-input w-40 bg-input border border-border rounded-lg px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" data-student-id="${sId}" value="${escHtml(feedback)}" placeholder="Optional feedback" />
+                    <input type="text" class="feedback-input w-40 bg-input border border-border rounded-lg px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" data-student-id="${sId}" value="${escHtml(feedback)}" placeholder="Comentarios opcionales" />
                   </td>
                   <td class="py-3">
                     <button class="save-single-btn inline-flex items-center rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors" data-student-id="${sId}">Guardar</button>
                   </td>
                 </tr>`;
               }).join('')}
-              ${students.length === 0 ? '<tr><td colspan="5" class="py-6 text-center text-sm text-muted-foreground">No students found for this evaluation</td></tr>' : ''}
+              ${students.length === 0 ? '<tr><td colspan="5" class="py-6 text-center text-sm text-muted-foreground">No se encontraron estudiantes para esta evaluación</td></tr>' : ''}
             </tbody>
           </table>
         </div>
@@ -280,7 +280,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         const feedbackEl = document.querySelector(`.feedback-input[data-student-id="${studentId}"]`) as HTMLInputElement;
         const score = scoreEl?.value;
         const feedback = feedbackEl?.value || '';
-        if (score === '' || score == null) { toast.error('Please enter a score'); return; }
+        if (score === '' || score == null) { toast.error('Ingresa un puntaje'); return; }
         try {
           await apiFetch(`/grades/marking/${evalId}/`, {
             method: 'POST',
@@ -289,7 +289,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           if (scoreEl) scoreEl.style.borderColor = 'var(--color-green-500, #22c55e)';
           setTimeout(() => { if (scoreEl) scoreEl.style.borderColor = ''; }, 1500);
         } catch {
-          toast.error('No se ha podido guardar grade');
+          toast.error('No se pudo guardar la calificación');
         }
       }
 
@@ -333,7 +333,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const errEl = document.getElementById('eval-form-error');
     if (!selectedClassId) {
       errEl?.classList.remove('hidden');
-      if (errEl) errEl.textContent = 'Please select a class first';
+      if (errEl) errEl.textContent = 'Selecciona una clase primero';
       return;
     }
     const name = (document.getElementById('eval-name') as HTMLInputElement).value;
@@ -355,7 +355,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   });
 
   (async () => {
-    // Check URL param
+    // Verificar parámetro de URL
     const urlParams = new URLSearchParams(window.location.search);
     const preselectedClass = urlParams.get('class');
 

@@ -239,9 +239,9 @@ class Command(BaseCommand):
             .first()
         )
 
-        # The model fields are max_digits=4, decimal_places=3, so 10.000 would
-        # not fit even though the help_text says 0.000-10.000. Keep generated
-        # persisted grades below 10.000 to avoid seeding invalid rows.
+        # Los campos del modelo son max_digits=4, decimal_places=3, así que 10.000
+        # no entra aunque el help_text diga 0.000-10.000. Mantén las notas
+        # generadas por debajo de 10.000 para evitar sembrar filas inválidas.
         bachillerato_grade = self._grade(rng, Decimal("5.000"), Decimal("9.990"))
         evau_obligatory_grade = self._grade(rng, Decimal("5.000"), Decimal("9.990"))
         voluntary = self._voluntary_subjects(rng)
@@ -261,9 +261,9 @@ class Command(BaseCommand):
         app.notes = "Solicitud de prueba generada para validar admisiones automáticas."
         app.save()
 
-        # Idempotent reset for generated applications: the target career must be
-        # the first preference so each career receives exactly `per_career`
-        # candidates for ranking generation.
+        # Reinicio idempotente para solicitudes generadas: la carrera objetivo debe
+        # ser la primera preferencia para que cada carrera reciba exactamente
+        # `per_career` candidatos para generar ranking.
         app.preferences.all().delete()
         AdmissionPreference.objects.create(
             application=app,
@@ -293,7 +293,7 @@ class Command(BaseCommand):
 
     def _phone(self, fake, rng):
         if fake:
-            # Keep only digits because the model validator is strict.
+            # Mantén solo dígitos porque el validador del modelo es estricto.
             digits = "".join(ch for ch in fake.phone_number() if ch.isdigit())
             if 9 <= len(digits) <= 15:
                 return f"+{digits}"

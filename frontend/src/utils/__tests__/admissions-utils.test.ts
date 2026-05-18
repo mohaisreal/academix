@@ -10,19 +10,19 @@ import {
 // toDatetimeLocal
 // ---------------------------------------------------------------------------
 describe('toDatetimeLocal', () => {
-  it('slices ISO datetime to YYYY-MM-DDTHH:mm for datetime-local input', () => {
+  it('recorta datetime ISO a YYYY-MM-DDTHH:mm para input datetime-local', () => {
     expect(toDatetimeLocal('2026-01-15T09:00:00Z')).toBe('2026-01-15T09:00');
   });
 
-  it('returns empty string for null', () => {
+  it('devuelve cadena vacía para null', () => {
     expect(toDatetimeLocal(null)).toBe('');
   });
 
-  it('returns empty string for undefined', () => {
+  it('devuelve cadena vacía para undefined', () => {
     expect(toDatetimeLocal(undefined)).toBe('');
   });
 
-  it('handles datetime without timezone suffix', () => {
+  it('maneja datetime sin sufijo de zona horaria', () => {
     expect(toDatetimeLocal('2026-02-28T23:59:00')).toBe('2026-02-28T23:59');
   });
 });
@@ -31,15 +31,15 @@ describe('toDatetimeLocal', () => {
 // buildAdmissionDate
 // ---------------------------------------------------------------------------
 describe('buildAdmissionDate', () => {
-  it('returns the value as-is when non-empty', () => {
+  it('devuelve el valor tal cual cuando no está vacío', () => {
     expect(buildAdmissionDate('2026-01-15T09:00')).toBe('2026-01-15T09:00');
   });
 
-  it('returns null for empty string (field not set)', () => {
+  it('devuelve null para cadena vacía (campo sin completar)', () => {
     expect(buildAdmissionDate('')).toBeNull();
   });
 
-  it('returns null for whitespace-only string', () => {
+  it('devuelve null para cadena con solo espacios', () => {
     expect(buildAdmissionDate('   ')).toBeNull();
   });
 });
@@ -48,41 +48,41 @@ describe('buildAdmissionDate', () => {
 // shouldHideApplyLink
 // ---------------------------------------------------------------------------
 describe('shouldHideApplyLink', () => {
-  it('hides link when student has submitted application', () => {
+  it('oculta el enlace cuando el estudiante tiene una solicitud enviada', () => {
     const enrollments: any[] = [];
     const applications = [{ status: 'submitted' }];
     expect(shouldHideApplyLink(enrollments, applications)).toBe(true);
   });
 
-  it('hides link when student has admitted application', () => {
+  it('oculta el enlace cuando el estudiante tiene una solicitud admitida', () => {
     const enrollments: any[] = [];
     const applications = [{ status: 'admitted' }];
     expect(shouldHideApplyLink(enrollments, applications)).toBe(true);
   });
 
-  it('hides link when student has active career enrollment', () => {
+  it('oculta el enlace cuando el estudiante tiene matrícula activa en una carrera', () => {
     const enrollments = [{ status: 'active' }];
     const applications: any[] = [];
     expect(shouldHideApplyLink(enrollments, applications)).toBe(true);
   });
 
-  it('shows link when student has no application and no enrollment', () => {
+  it('muestra el enlace cuando el estudiante no tiene solicitud ni matrícula', () => {
     expect(shouldHideApplyLink([], [])).toBe(false);
   });
 
-  it('shows link when application is withdrawn (can re-apply)', () => {
+  it('muestra el enlace cuando la solicitud está retirada (puede volver a postularse)', () => {
     const enrollments: any[] = [];
     const applications = [{ status: 'withdrawn' }];
     expect(shouldHideApplyLink(enrollments, applications)).toBe(false);
   });
 
-  it('shows link when application is expired (can re-apply)', () => {
+  it('muestra el enlace cuando la solicitud está vencida (puede volver a postularse)', () => {
     const enrollments: any[] = [];
     const applications = [{ status: 'expired' }];
     expect(shouldHideApplyLink(enrollments, applications)).toBe(false);
   });
 
-  it('hides link for all active admission statuses', () => {
+  it('oculta el enlace para todos los estados activos de admisión', () => {
     const activeStatuses = [
       'submitted', 'under_review', 'provisional_admitted',
       'provisional_waitlisted', 'admitted', 'confirmed', 'completed',
@@ -97,7 +97,7 @@ describe('shouldHideApplyLink', () => {
 // parseStudentFields
 // ---------------------------------------------------------------------------
 describe('parseStudentFields', () => {
-  it('reads email, phone, date_of_birth from nested data.student', () => {
+  it('lee email, phone y date_of_birth desde data.student anidado', () => {
     const data = {
       student: {
         email: 'test@example.com',
@@ -117,7 +117,7 @@ describe('parseStudentFields', () => {
     expect(result.full_name).toBe('Test User');
   });
 
-  it('returns null values when student fields are missing', () => {
+  it('devuelve valores null cuando faltan campos de student', () => {
     const data = { student: {}, overall_gpa: null, periods: [] };
     const result = parseStudentFields(data);
     expect(result.email).toBeNull();
@@ -125,7 +125,7 @@ describe('parseStudentFields', () => {
     expect(result.date_of_birth).toBeNull();
   });
 
-  it('handles missing student object gracefully', () => {
+  it('maneja correctamente la ausencia del objeto student', () => {
     const result = parseStudentFields({});
     expect(result.email).toBeNull();
     expect(result.phone).toBeNull();

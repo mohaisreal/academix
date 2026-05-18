@@ -86,7 +86,7 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
       const selectField = document.createElement("select");
       selectField.tabIndex = -1;
       selectField.setAttribute("aria-hidden", "true");
-      selectField.setAttribute("placeholder", "select");
+      selectField.setAttribute("placeholder", "seleccionar");
       const selectName = this.select.getAttribute("data-name");
 
       if (this.required) {
@@ -103,7 +103,7 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
       // La primera opción es un placeholder
       const placeholderOption = document.createElement("option");
       placeholderOption.value = "";
-      placeholderOption.textContent = "Select";
+      placeholderOption.textContent = "Seleccionar";
       placeholderOption.disabled = true;
       placeholderOption.selected = true;
       selectField.appendChild(placeholderOption);
@@ -141,7 +141,7 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
       this.trigger.id = `starwind-select${selectIdx}-trigger`;
       this.content.id = `starwind-select${selectIdx}-content`;
 
-      // Set up additional ARIA attributes
+      // Configura atributos ARIA adicionales
       this.trigger.setAttribute("aria-controls", this.content.id);
       this.trigger.setAttribute("aria-required", this.required ? "true" : "false");
       this.content.setAttribute("aria-labelledby", this.trigger.id);
@@ -173,7 +173,7 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
 
       // Gestiona pointerdown
       this.trigger.addEventListener("pointerdown", (e) => {
-        // prevent implicit pointer capture
+        // evita la captura implícita del puntero
         // https://www.w3.org/TR/pointerevents3/#implicit-pointer-capture
         const target = e.target as HTMLElement;
         if (target.hasPointerCapture(e.pointerId)) {

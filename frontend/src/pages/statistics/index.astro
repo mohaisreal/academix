@@ -1,7 +1,7 @@
 ---
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
-<DashboardLayout title="Statistics — Academix" currentPath="/statistics">
+<DashboardLayout title="Estadísticas — Academix" currentPath="/statistics">
   <div id="page-loading" class="p-6 space-y-4">
     <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -14,12 +14,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   <div id="page-content" class="hidden">
     <div class="border-b border-border px-6 py-4">
-      <h1 class="text-xl font-semibold text-foreground">Platform Statistics</h1>
-      <p class="text-sm text-muted-foreground">Overall academic performance metrics</p>
+      <h1 class="text-xl font-semibold text-foreground">Estadísticas de la plataforma</h1>
+      <p class="text-sm text-muted-foreground">Métricas generales de rendimiento académico</p>
     </div>
 
     <div class="p-6 space-y-6">
-      <!-- KPI Row -->
+      <!-- Fila de KPI -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
           <p class="text-xs text-muted-foreground uppercase tracking-wide">Total de estudiantes</p>
@@ -30,11 +30,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <p id="kpi-teachers" class="mt-2 text-3xl font-bold text-foreground">—</p>
         </div>
         <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
-          <p class="text-xs text-muted-foreground uppercase tracking-wide">Active Enrolments</p>
+          <p class="text-xs text-muted-foreground uppercase tracking-wide">Matrículas activas</p>
           <p id="kpi-enrolments" class="mt-2 text-3xl font-bold text-foreground">—</p>
         </div>
         <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
-          <p class="text-xs text-muted-foreground uppercase tracking-wide">Platform GPA</p>
+          <p class="text-xs text-muted-foreground uppercase tracking-wide">Promedio general de la plataforma</p>
           <p id="kpi-gpa" class="mt-2 text-3xl font-bold text-primary">—</p>
         </div>
       </div>
@@ -42,23 +42,23 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       <!-- Tabla de rendimiento de titulaciones -->
       <div class="bg-card text-card-foreground rounded-xl border border-border overflow-hidden">
         <div class="px-5 py-4 border-b border-border">
-          <h2 class="text-sm font-semibold text-foreground">Performance by Career</h2>
+          <h2 class="text-sm font-semibold text-foreground">Rendimiento por carrera</h2>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-border bg-muted/50">
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Career</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Carrera</th>
                 <th class="text-right text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Estudiantes</th>
-                <th class="text-right text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Active Classes</th>
-                <th class="text-right text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Avg GPA</th>
-                <th class="text-right text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Pass Rate</th>
+                <th class="text-right text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Clases activas</th>
+                <th class="text-right text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Promedio</th>
+                <th class="text-right text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Tasa de aprobación</th>
               </tr>
             </thead>
             <tbody id="career-stats-table"></tbody>
           </table>
         </div>
-        <div id="stats-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No statistics available</div>
+        <div id="stats-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No hay estadísticas disponibles</div>
       </div>
 
       <!-- Distribución de estados de matrícula -->
@@ -137,7 +137,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
     // Distribución de estados de matrícula
     const statuses: any = data.enrolment_by_status ?? {};
-    const statusLabels: Record<string,string> = { pending: 'Pending', active: 'Active', completed: 'Completed', dropped: 'Dropped' };
+    const statusLabels: Record<string,string> = { pending: 'Pendiente', active: 'Activa', completed: 'Completada', dropped: 'Abandonada' };
     const statusColors: Record<string,string> = { pending: 'bg-yellow-400', active: 'bg-green-400', completed: 'bg-blue-400', dropped: 'bg-red-400' };
     const total = Object.values(statuses).reduce((a: number, b: any) => a + Number(b), 0) || 1;
     const barsEl = document.getElementById('status-bars');
@@ -155,7 +155,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <div class="h-full ${color} rounded-full transition-all" style="width:${pct}%"></div>
           </div>
         </div>`;
-      }).join('') || '<p class="text-sm text-muted-foreground">No enrolment data</p>';
+      }).join('') || '<p class="text-sm text-muted-foreground">No hay datos de matrículas</p>';
     }
   }
 

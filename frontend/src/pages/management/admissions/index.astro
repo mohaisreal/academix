@@ -7,7 +7,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     <div class="flex items-center justify-between border-b border-border px-6 py-4">
         <div>
             <h1 class="text-xl font-semibold text-foreground">Solicitudes de admisión</h1>
-            <p class="text-sm text-muted-foreground">Review and manage all student admission applications.</p>
+            <p class="text-sm text-muted-foreground">Revisa y gestiona todas las solicitudes de admisión de estudiantes.</p>
         </div>
         <div class="flex items-center gap-3">
             <!-- Insignia de atención: se muestra cuando hay elementos accionables -->
@@ -18,7 +18,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             <span id="total-count" class="text-sm text-muted-foreground bg-muted px-3 py-1.5 rounded-full"></span>
             <button id="btn-refresh" class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                Refresh
+                Actualizar
             </button>
         </div>
     </div>
@@ -26,33 +26,33 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     <div class="p-6 space-y-5">
         <!-- Píldoras de estado de filtro rápido -->
         <div class="flex flex-wrap items-center gap-2">
-            <span class="text-xs font-medium text-muted-foreground mr-1">Quick filter:</span>
+            <span class="text-xs font-medium text-muted-foreground mr-1">Filtro rápido:</span>
             <button class="status-pill active" data-status="">
-                All
+                Todas
             </button>
             <button class="status-pill" data-status="submitted">
                 <span class="size-1.5 rounded-full bg-blue-500 inline-block"></span>
-                Submitted
+                Enviadas
             </button>
             <button class="status-pill" data-status="under_review">
                 <span class="size-1.5 rounded-full bg-yellow-500 inline-block"></span>
-                Under Review
+                En revisión
             </button>
             <button class="status-pill" data-status="admitted">
                 <span class="size-1.5 rounded-full bg-green-500 inline-block"></span>
-                Admitted
+                Admitidas
             </button>
             <button class="status-pill" data-status="rejected">
                 <span class="size-1.5 rounded-full bg-red-500 inline-block"></span>
-                Rejected
+                Rechazadas
             </button>
             <button class="status-pill" data-status="confirmed">
                 <span class="size-1.5 rounded-full bg-emerald-500 inline-block"></span>
-                Confirmed
+                Confirmadas
             </button>
             <button class="status-pill" data-status="waitlisted">
                 <span class="size-1.5 rounded-full bg-orange-500 inline-block"></span>
-                Waitlisted
+                En lista de espera
             </button>
         </div>
 
@@ -63,62 +63,62 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 <input id="search-input" type="text" placeholder="Buscar estudiante o carrera..." class="pl-8 pr-3 py-2 rounded-md border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30 w-56" />
             </div>
             <select id="filter-career" class="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30">
-                <option value="">All Careers</option>
+                <option value="">Todas las carreras</option>
             </select>
         </div>
 
-        <!-- Ranking generation -->
+        <!-- Generación de ranking -->
         <section class="rounded-xl border border-border bg-card p-4 space-y-4 shadow-sm">
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h2 class="text-sm font-semibold text-foreground">Listas de admisión</h2>
                     <p class="text-xs text-muted-foreground mt-1">
-                        Generate admitted/waitlisted results by career capacity, then publish them to the public results page.
+                        Genera resultados de admitidos/lista de espera por capacidad de carrera y luego publícalos en la página pública de resultados.
                     </p>
                 </div>
                 <a href="/admissions/results" target="_blank" rel="noopener noreferrer" class="text-xs font-medium text-primary hover:underline">
-                    Open public results →
+                    Abrir resultados públicos →
                 </a>
             </div>
 
             <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <label class="space-y-1">
-                    <span class="text-xs font-medium text-muted-foreground">Academic period</span>
+                    <span class="text-xs font-medium text-muted-foreground">Período académico</span>
                     <select id="ranking-period" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30">
                         <option value="">Cargando periodos...</option>
                     </select>
                 </label>
                 <label class="space-y-1">
-                    <span class="text-xs font-medium text-muted-foreground">Career</span>
+                    <span class="text-xs font-medium text-muted-foreground">Carrera</span>
                     <select id="ranking-career" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30">
                         <option value="">Cargando carreras...</option>
                     </select>
                 </label>
                 <label class="space-y-1">
-                    <span class="text-xs font-medium text-muted-foreground">Score source</span>
+                    <span class="text-xs font-medium text-muted-foreground">Fuente de puntaje</span>
                     <select id="ranking-source" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30">
-                        <option value="admission_score">Calculated admission score</option>
-                        <option value="questionnaire_average">Questionnaire field average</option>
+                        <option value="admission_score">Puntaje de admisión calculado</option>
+                        <option value="questionnaire_average">Promedio de campos del cuestionario</option>
                     </select>
                 </label>
                 <label class="space-y-1">
-                    <span class="text-xs font-medium text-muted-foreground">Question IDs</span>
-                    <input id="ranking-question-ids" type="text" placeholder="e.g. 12,15,18" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30" />
+                    <span class="text-xs font-medium text-muted-foreground">IDs de preguntas</span>
+                    <input id="ranking-question-ids" type="text" placeholder="ej.: 12,15,18" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30" />
                 </label>
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
                 <button id="btn-generate-ranking" class="inline-flex items-center justify-center rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
-                    Generate draft
+                    Generar borrador
                 </button>
                 <button id="btn-generate-publish" class="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-                    Generate and publish
+                    Generar y publicar
                 </button>
                 <button id="btn-publish-ranking" class="inline-flex items-center justify-center rounded-md border border-primary/40 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10 transition-colors">
-                    Publish existing draft
+                    Publicar borrador existente
                 </button>
                 <p class="text-xs text-muted-foreground">
-                    “Questionnaire average” requires question IDs with numeric answers.
+                    “Promedio de cuestionario” requiere IDs de preguntas con respuestas numéricas.
                 </p>
             </div>
 
@@ -138,11 +138,11 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 <thead>
                     <tr class="border-b border-border bg-muted/30">
                         <th class="text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">Estudiante</th>
-                        <th class="text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">Career</th>
-                        <th class="text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">Period</th>
+                        <th class="text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">Carrera</th>
+                        <th class="text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">Período</th>
                         <th class="text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">Estado</th>
-                        <th class="text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">Submitted</th>
-                        <th class="text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">Action</th>
+                        <th class="text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">Enviada</th>
+                        <th class="text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">Acción</th>
                     </tr>
                 </thead>
                 <tbody id="applications-tbody"></tbody>
@@ -154,11 +154,11 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             <p id="pagination-summary" class="text-sm text-muted-foreground"></p>
             <div class="flex items-center gap-2">
                 <button id="btn-prev-page" class="inline-flex items-center rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent">
-                    Previous
+                    Anterior
                 </button>
                 <span id="pagination-page" class="min-w-20 text-center text-sm font-medium text-foreground"></span>
                 <button id="btn-next-page" class="inline-flex items-center rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent">
-                    Next
+                    Siguiente
                 </button>
             </div>
         </div>
@@ -169,9 +169,9 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 <div class="flex size-16 items-center justify-center rounded-full bg-muted mx-auto mb-4">
                     <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                 </div>
-                <h3 class="text-base font-medium text-foreground">No applications found</h3>
-                <p id="empty-message" class="text-sm text-muted-foreground mt-1">No applications match the selected filters.</p>
-                <button id="btn-clear-filters" class="mt-4 text-sm text-primary hover:underline">Clear all filters</button>
+                <h3 class="text-base font-medium text-foreground">No se encontraron solicitudes</h3>
+                <p id="empty-message" class="text-sm text-muted-foreground mt-1">Ninguna solicitud coincide con los filtros seleccionados.</p>
+                <button id="btn-clear-filters" class="mt-4 text-sm text-primary hover:underline">Limpiar todos los filtros</button>
             </div>
         </div>
 
@@ -181,7 +181,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             <div>
                 <p class="text-sm font-medium text-destructive">No se pudieron cargar las solicitudes</p>
                 <p id="error-message" class="text-sm text-destructive/80 mt-0.5"></p>
-                <button id="btn-retry" class="mt-2 text-sm text-destructive underline hover:no-underline">Try again</button>
+                <button id="btn-retry" class="mt-2 text-sm text-destructive underline hover:no-underline">Intentar de nuevo</button>
             </div>
         </div>
     </div>
@@ -228,9 +228,9 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     };
 
     const STATUS_LABELS: Record<string, string> = {
-        draft: "Draft", submitted: "Submitted", under_review: "Under Review",
-        admitted: "Admitted", waitlisted: "Waitlisted", rejected: "Rejected",
-        confirmed: "Confirmed", withdrawn: "Withdrawn", expired: "Expired",
+        draft: "Borrador", submitted: "Enviada", under_review: "En revisión",
+        admitted: "Admitida", waitlisted: "En lista de espera", rejected: "Rechazada",
+        confirmed: "Confirmada", withdrawn: "Retirada", expired: "Vencida",
     };
 
     // Estados que necesitan atención de administración
@@ -273,16 +273,16 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             careersList = Array.isArray(data) ? data : (data.results ?? []);
 
             const filterSelect = document.getElementById("filter-career") as HTMLSelectElement;
-            filterSelect.innerHTML = `<option value="">All Careers</option>`;
+            filterSelect.innerHTML = `<option value="">Todas las carreras</option>`;
             careersList.forEach((c: any) => {
                 filterSelect.appendChild(new Option(c.name, String(c.id)));
             });
 
             const rankingSelect = document.getElementById("ranking-career") as HTMLSelectElement;
-            rankingSelect.innerHTML = `<option value="">Select career</option>`;
+            rankingSelect.innerHTML = `<option value="">Seleccionar carrera</option>`;
             careersList.forEach((c: any) => {
                 const spots = Number(c.total_spots ?? 0);
-                rankingSelect.appendChild(new Option(`${c.name}${spots ? ` (${spots} spots)` : ""}`, String(c.id)));
+                rankingSelect.appendChild(new Option(`${c.name}${spots ? ` (${spots} cupos)` : ""}`, String(c.id)));
             });
         } catch {}
     }
@@ -292,20 +292,20 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         try {
             const res = await apiFetch("/academic/periods/");
             if (!res.ok) {
-                select.innerHTML = `<option value="">No se pudo cargar periods</option>`;
+                select.innerHTML = `<option value="">No se pudieron cargar los períodos</option>`;
                 return;
             }
             const data = await res.json();
             periodsList = Array.isArray(data) ? data : (data.results ?? []);
-            select.innerHTML = `<option value="">Select period</option>`;
+            select.innerHTML = `<option value="">Seleccionar período</option>`;
             periodsList.forEach((p: any) => {
-                const label = `${p.name}${p.is_active ? " · active" : ""}`;
+                const label = `${p.name}${p.is_active ? " · activo" : ""}`;
                 const opt = new Option(label, String(p.id));
                 if (p.is_active) opt.selected = true;
                 select.appendChild(opt);
             });
         } catch {
-            select.innerHTML = `<option value="">No se pudo cargar periods</option>`;
+            select.innerHTML = `<option value="">No se pudieron cargar los períodos</option>`;
         }
     }
 
@@ -327,7 +327,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             return preferences
                 .slice()
                 .sort((a: any, b: any) => (a.preference_order ?? 999) - (b.preference_order ?? 999))
-                .map((p: any) => `${p.preference_order ?? "?"}. ${p.career_name ?? p.career_code ?? "Career"}`)
+                .map((p: any) => `${p.preference_order ?? "?"}. ${p.career_name ?? p.career_code ?? "Carrera"}`)
                 .join("<br>");
         }
         return "—";
@@ -369,12 +369,12 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         const paginationWrapper = document.getElementById("pagination-wrapper")!;
 
         loading.classList.add("hidden");
-        totalCount.textContent = `${pagination.count} application${pagination.count !== 1 ? "s" : ""}`;
+        totalCount.textContent = `${pagination.count} solicitud${pagination.count !== 1 ? "es" : ""}`;
 
         // Cuenta elementos accionables de la página cargada.
         const actionNeededCount = allApplications.filter(a => ACTION_NEEDED.includes(a.status)).length;
         if (actionNeededCount > 0) {
-            attentionText.textContent = `${actionNeededCount} need${actionNeededCount === 1 ? "s" : ""} attention`;
+            attentionText.textContent = `${actionNeededCount} requiere${actionNeededCount === 1 ? "" : "n"} atención`;
             attentionBadge.classList.remove("hidden");
             attentionBadge.classList.add("inline-flex");
         } else {
@@ -430,10 +430,10 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 <td class="px-5 py-3.5 text-right">
                     ${isActionable
                         ? `<a href="/management/admissions/${app.id}" class="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors" onclick="event.stopPropagation()">
-                            Review
+                            Revisar
                             <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                            </a>`
-                        : `<a href="/management/admissions/${app.id}" class="text-xs text-primary hover:underline" onclick="event.stopPropagation()">View →</a>`
+                         : `<a href="/management/admissions/${app.id}" class="text-xs text-primary hover:underline" onclick="event.stopPropagation()">Ver →</a>`
                     }
                 </td>
             </tr>`;
@@ -459,8 +459,8 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         const start = pagination.count === 0 ? 0 : ((currentPage - 1) * PAGE_SIZE) + 1;
         const end = Math.min(currentPage * PAGE_SIZE, pagination.count);
 
-        summary.textContent = `Showing ${start}-${end} of ${pagination.count}`;
-        pageLabel.textContent = `Page ${currentPage} / ${totalPages}`;
+        summary.textContent = `Mostrando ${start}-${end} de ${pagination.count}`;
+        pageLabel.textContent = `Página ${currentPage} / ${totalPages}`;
         prevButton.disabled = !pagination.previous;
         nextButton.disabled = !pagination.next;
 
@@ -501,7 +501,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             renderApplications(allApplications);
         } catch {
             document.getElementById("loading-state")?.classList.add("hidden");
-            document.getElementById("error-message")!.textContent = "Network error. Please check your connection.";
+            document.getElementById("error-message")!.textContent = "Error de red. Revisá tu conexión.";
             document.getElementById("error-state")?.classList.remove("hidden");
         }
     }
@@ -545,7 +545,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
     async function runRanking(publish = false) {
         try {
-            setRankingFeedback(publish ? "Generating and publishing list..." : "Generating draft list...", "info");
+            setRankingFeedback(publish ? "Generando y publicando lista..." : "Generando lista en borrador...", "info");
             const payload = getRankingPayload(publish);
             const res = await apiFetch("/admissions/applications/generate-ranking/", {
                 method: "POST",
@@ -559,8 +559,8 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             const waitlisted = (data.results ?? []).filter((r: any) => r.status === "waitlisted").length;
             setRankingFeedback(
                 publish
-                    ? `Published for ${data.career_name}: ${admitted} admitted, ${waitlisted} waitlisted. Capacity: ${data.capacity}.`
-                    : `Draft generated for ${data.career_name}: ${admitted} would be admitted, ${waitlisted} would be waitlisted. Nothing has been published yet.`,
+                    ? `Publicado para ${data.career_name}: ${admitted} admitidos, ${waitlisted} en lista de espera. Cupo: ${data.capacity}.`
+                    : `Borrador generado para ${data.career_name}: ${admitted} quedarían admitidos, ${waitlisted} quedarían en lista de espera. Aún no se ha publicado nada.`,
                 "success",
             );
             if (publish) {
@@ -578,7 +578,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             if (!periodId || !careerId) {
                 throw new Error("Selecciona primero un periodo académico y una carrera.");
             }
-            setRankingFeedback("Publishing existing list...", "info");
+            setRankingFeedback("Publicando lista existente...", "info");
             const res = await apiFetch("/admissions/applications/publish-ranking/", {
                 method: "POST",
                 body: JSON.stringify({
@@ -590,7 +590,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             if (!res.ok) {
                 throw new Error(data.detail || data.error || `Falló la publicación (${res.status}).`);
             }
-            setRankingFeedback(`Published ${data.published ?? 0} result rows.`, "success");
+            setRankingFeedback(`Se publicaron ${data.published ?? 0} filas de resultados.`, "success");
             await loadApplications();
         } catch (err) {
             setRankingFeedback(err instanceof Error ? err.message : "No se pudo publicar el ranking.", "error");

@@ -2,14 +2,14 @@ from rest_framework.permissions import BasePermission
 
 
 class IsAdminOrManagement(BasePermission):
-    """Allow access only to users with role 'a' (admin) or 'm' (management)."""
+    """Permite acceso solo a usuarios con rol 'a' (admin) o 'm' (gestión)."""
 
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.role in ('a', 'm')
 
 
 class IsStudent(BasePermission):
-    """Allow access only to users with role 's' (student)."""
+    """Permite acceso solo a usuarios con rol 's' (estudiante)."""
 
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.role == 's'

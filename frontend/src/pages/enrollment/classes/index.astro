@@ -2,11 +2,11 @@
 import DashboardLayout from "@/layouts/DashboardLayout.astro";
 ---
 
-<DashboardLayout title="Subject Selection — Academix" currentPath="/enrollment/classes">
+<DashboardLayout title="Selección de asignaturas — Academix" currentPath="/enrollment/classes">
     <!-- Capa de finalización — se muestra tras terminar la matrícula -->
     <div id="completion-screen" class="hidden fixed inset-0 z-50 bg-background items-center justify-center p-6">
         <div class="max-w-lg w-full text-center space-y-6">
-            <!-- Animated checkmark -->
+            <!-- Check animado -->
             <div class="flex size-24 items-center justify-center rounded-full bg-emerald-500/15 mx-auto ring-4 ring-emerald-500/20">
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-emerald-400">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
@@ -15,8 +15,8 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             </div>
 
             <div class="space-y-2">
-                <h1 class="text-3xl font-bold text-foreground">You're all enrolled!</h1>
-                <p class="text-muted-foreground">Your admission process is complete. Here's a summary of your selected classes.</p>
+                <h1 class="text-3xl font-bold text-foreground">¡Ya estás matriculado!</h1>
+                <p class="text-muted-foreground">Tu proceso de admisión terminó. Acá tenés un resumen de tus clases seleccionadas.</p>
             </div>
 
             <!-- Resumen de clases seleccionadas -->
@@ -24,11 +24,11 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 <!-- populated by JS -->
             </div>
 
-            <!-- Completion meta info -->
+            <!-- Metadatos de finalización -->
             <div id="completion-meta" class="text-sm text-muted-foreground"></div>
 
             <a href="/" class="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-                Go to Panel
+                Ir al panel
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </a>
         </div>
@@ -36,11 +36,11 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
     <div class="flex items-center justify-between border-b border-border px-6 py-4">
         <div>
-            <h1 class="text-xl font-semibold text-foreground">Subject Selection</h1>
-            <p id="page-subtitle" class="text-sm text-muted-foreground">Select your classes for this period.</p>
+            <h1 class="text-xl font-semibold text-foreground">Selección de asignaturas</h1>
+            <p id="page-subtitle" class="text-sm text-muted-foreground">Seleccioná tus clases para este período.</p>
         </div>
         <a href="/enrollment" class="text-sm text-muted-foreground hover:text-foreground transition-colors">
-            ← Enrollment
+            ← Matrícula
         </a>
     </div>
 
@@ -54,46 +54,46 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
         <!-- Sin matrícula -->
         <div id="state-no-enrollment" class="hidden text-center py-16">
-            <p class="text-sm text-muted-foreground">You need to start an enrollment before selecting subjects.</p>
+            <p class="text-sm text-muted-foreground">Necesitás iniciar una matrícula antes de seleccionar asignaturas.</p>
             <a href="/enrollment" class="inline-flex items-center gap-2 mt-4 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
                 Ir a matrícula
             </a>
         </div>
 
-        <!-- Enrolled count summary + finish button -->
+        <!-- Resumen de clases matriculadas + botón de finalizar -->
         <div id="enrollment-summary" class="hidden flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-5 py-3">
             <div class="flex items-center gap-2 text-sm">
-                <span class="text-muted-foreground">Enrolled in</span>
+                <span class="text-muted-foreground">Matriculado en</span>
                 <span id="enrolled-count" class="font-semibold text-foreground">0</span>
-                <span class="text-muted-foreground">class(es)</span>
+                <span class="text-muted-foreground">clase(s)</span>
             </div>
             <div class="flex items-center gap-2">
                 <button id="btn-finish-enrollment" class="hidden inline-flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    Continue to Payment
+                    Continuar al pago
                 </button>
                 <a id="link-view-receipt" href="#" class="hidden inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                    View Receipt
+                    Ver comprobante
                 </a>
             </div>
         </div>
 
-        <!-- Weekly schedule view -->
+        <!-- Vista de horario semanal -->
         <div id="schedule-section" class="hidden">
             <div class="flex items-center justify-between mb-3">
-                <h2 class="text-base font-semibold text-foreground">Weekly Schedule</h2>
+                <h2 class="text-base font-semibold text-foreground">Horario semanal</h2>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full border border-border rounded-xl overflow-hidden text-xs">
                     <thead>
                         <tr class="bg-muted/50">
-                            <th class="border-r border-border px-3 py-2 text-left text-muted-foreground font-medium w-16">Time</th>
-                            <th class="border-r border-border px-3 py-2 text-center text-muted-foreground font-medium">Mon</th>
-                            <th class="border-r border-border px-3 py-2 text-center text-muted-foreground font-medium">Tue</th>
-                            <th class="border-r border-border px-3 py-2 text-center text-muted-foreground font-medium">Wed</th>
-                            <th class="border-r border-border px-3 py-2 text-center text-muted-foreground font-medium">Thu</th>
-                            <th class="px-3 py-2 text-center text-muted-foreground font-medium">Fri</th>
+                            <th class="border-r border-border px-3 py-2 text-left text-muted-foreground font-medium w-16">Hora</th>
+                            <th class="border-r border-border px-3 py-2 text-center text-muted-foreground font-medium">Lun</th>
+                            <th class="border-r border-border px-3 py-2 text-center text-muted-foreground font-medium">Mar</th>
+                            <th class="border-r border-border px-3 py-2 text-center text-muted-foreground font-medium">Mié</th>
+                            <th class="border-r border-border px-3 py-2 text-center text-muted-foreground font-medium">Jue</th>
+                            <th class="px-3 py-2 text-center text-muted-foreground font-medium">Vie</th>
                         </tr>
                     </thead>
                     <tbody id="schedule-tbody"></tbody>
@@ -111,8 +111,8 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             <div class="flex size-16 items-center justify-center rounded-full bg-muted mx-auto mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg>
             </div>
-            <h3 class="text-base font-medium text-foreground">No classes available</h3>
-            <p class="text-sm text-muted-foreground mt-1">No classes are offered for this career and period.</p>
+            <h3 class="text-base font-medium text-foreground">No hay clases disponibles</h3>
+            <p class="text-sm text-muted-foreground mt-1">No se ofrecen clases para esta carrera y período.</p>
         </div>
 
         <!-- Error -->
@@ -121,7 +121,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             <p id="error-message" class="text-sm text-destructive/80 mt-1"></p>
         </div>
 
-        <!-- Action feedback -->
+        <!-- Mensaje de acción -->
         <div id="action-feedback" class="hidden fixed bottom-6 right-6 rounded-lg border px-4 py-3 text-sm shadow-lg z-50"></div>
     </div>
 </DashboardLayout>
@@ -178,7 +178,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         "jueves": 3, "viernes": 4,
         "monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3, "friday": 4,
     };
-    const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+    const DAY_LABELS = ["Lun", "Mar", "Mié", "Jue", "Vie"];
     const HOURS = Array.from({ length: 13 }, (_, i) => i + 8); // 8-20
 
     function buildScheduleGrid(enrolledClasses: any[]) {
@@ -191,7 +191,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 const dayIndex = DAY_NAME_TO_INDEX[dayName] ?? -1;
                 const startHour = sched.start_time ? parseInt(sched.start_time.split(":")[0]) : null;
                 if (dayIndex >= 0 && startHour !== null && grid[dayIndex] && grid[dayIndex][startHour] !== undefined) {
-                    grid[dayIndex][startHour].push({ name: cls.subject?.name ?? cls.subject_name ?? "Class" });
+                    grid[dayIndex][startHour].push({ name: cls.subject?.name ?? cls.subject_name ?? "Clase" });
                 }
             });
         });
@@ -227,7 +227,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
         const bySubject = new Map<string, any[]>();
         classes.forEach(cls => {
-            const subjectKey = cls.subject?.name ?? cls.subject_name ?? "Desconocido Subject";
+            const subjectKey = cls.subject?.name ?? cls.subject_name ?? "Asignatura desconocida";
             if (!bySubject.has(subjectKey)) bySubject.set(subjectKey, []);
             bySubject.get(subjectKey)!.push(cls);
         });
@@ -236,7 +236,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             <div>
                 <h3 class="text-sm font-semibold text-foreground mb-3">
                     ${subjectName}
-                    <span class="text-xs font-normal text-muted-foreground ml-1">${subjectClasses[0]?.subject?.code ?? ""} · ${subjectClasses[0]?.subject?.credits ?? 0} credits</span>
+                    <span class="text-xs font-normal text-muted-foreground ml-1">${subjectClasses[0]?.subject?.code ?? ""} · ${subjectClasses[0]?.subject?.credits ?? 0} créditos</span>
                 </h3>
                 <div class="space-y-2">
                     ${subjectClasses.map(cls => {
@@ -261,22 +261,22 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                         if (isCompleted) {
                             actionBtn = "";
                         } else if (isEnrolled) {
-                            actionBtn = `<button class="btn-unenroll text-xs rounded-md border border-destructive/40 px-3 py-1.5 text-destructive hover:bg-destructive/10 transition-colors" data-class-id="${cls.id}">Remove</button>`;
+                            actionBtn = `<button class="btn-unenroll text-xs rounded-md border border-destructive/40 px-3 py-1.5 text-destructive hover:bg-destructive/10 transition-colors" data-class-id="${cls.id}">Quitar</button>`;
                         } else if (isFull) {
-                            actionBtn = `<button disabled class="text-xs rounded-md border border-border px-3 py-1.5 text-muted-foreground opacity-50 cursor-not-allowed">Class Full</button>`;
+                            actionBtn = `<button disabled class="text-xs rounded-md border border-border px-3 py-1.5 text-muted-foreground opacity-50 cursor-not-allowed">Clase completa</button>`;
                         } else {
-                            actionBtn = `<button class="btn-enroll text-xs rounded-md bg-primary px-3 py-1.5 text-primary-foreground hover:bg-primary/90 transition-colors" data-class-id="${cls.id}">Select</button>`;
+                            actionBtn = `<button class="btn-enroll text-xs rounded-md bg-primary px-3 py-1.5 text-primary-foreground hover:bg-primary/90 transition-colors" data-class-id="${cls.id}">Seleccionar</button>`;
                         }
 
                         const spotsLabel = isEnrolled ? ""
-                            : isFull ? `<span class="text-xs text-destructive/70">Full</span>`
-                            : `<span class="text-xs text-muted-foreground">${spotsAvailable} spot${spotsAvailable !== 1 ? "s" : ""} left</span>`;
+                            : isFull ? `<span class="text-xs text-destructive/70">Completo</span>`
+                            : `<span class="text-xs text-muted-foreground">${spotsAvailable} cupo${spotsAvailable !== 1 ? "s" : ""} disponible${spotsAvailable !== 1 ? "s" : ""}</span>`;
 
                         return `
                         <div class="bg-card border ${isEnrolled ? "border-primary/40" : "border-border"} rounded-lg p-4 flex items-center justify-between gap-4" data-class-card="${cls.id}">
                             <div class="flex-1 min-w-0 space-y-1.5">
                                 <div class="flex items-center gap-2 flex-wrap">
-                                    ${isEnrolled ? '<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-primary/15 text-primary">Enrolled</span>' : ""}
+                                    ${isEnrolled ? '<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-primary/15 text-primary">Matriculado</span>' : ""}
                                     ${spotsLabel}
                                 </div>
                                 <div class="flex flex-wrap gap-4 text-xs text-muted-foreground">
@@ -344,10 +344,10 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
         const completionClasses = document.getElementById("completion-classes")!;
         if (enrolledClasses.length === 0) {
-            completionClasses.innerHTML = `<p class="text-sm text-muted-foreground text-center py-4">No classes selected.</p>`;
+            completionClasses.innerHTML = `<p class="text-sm text-muted-foreground text-center py-4">No hay clases seleccionadas.</p>`;
         } else {
             completionClasses.innerHTML = enrolledClasses.map(cls => {
-                const subjectName = cls.subject?.name ?? cls.subject_name ?? "Class";
+                const subjectName = cls.subject?.name ?? cls.subject_name ?? "Clase";
                 const scheduleStr = (cls.schedules ?? []).map((s: any) => {
                     const day = s.day_name ?? s.day ?? "";
                     const start = s.start_time ?? "";
@@ -378,18 +378,18 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
     async function finishEnrollment(allClasses: any[]) {
         if (!careerEnrollmentId) {
-            showFeedback("Enrollment ID not found. Please refresh and try again.", true);
+            showFeedback("No se encontró el ID de matrícula. Actualizá la página e intentá de nuevo.", true);
             return;
         }
 
         const btn = document.getElementById("btn-finish-enrollment") as HTMLButtonElement;
         const resetBtn = () => {
             btn.disabled = false;
-            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Continue to Payment`;
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Continuar al pago`;
         };
 
         btn.disabled = true;
-        btn.textContent = "Saving selections...";
+        btn.textContent = "Guardando selecciones...";
 
         try {
             // Diff draft vs DB
@@ -424,7 +424,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 }
             }
 
-            btn.textContent = "Calculating payment...";
+            btn.textContent = "Calculando pago...";
             const res = await apiFetch(`/enrollment/career-enrollments/${careerEnrollmentId}/complete/`, {
                 method: "POST",
             });
@@ -445,7 +445,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
         } catch (err) {
             console.error("finishEnrollment error:", err);
-            showFeedback("No se pudo completar la matrícula. Please try again.", true);
+            showFeedback("No se pudo completar la matrícula. Intentá de nuevo.", true);
             resetBtn();
         }
     }
@@ -479,11 +479,11 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             const careerId = enrollment.career_id_ro ?? enrollment.career?.id ?? enrollment.career_id;
             const periodId = enrollment.period_id_ro ?? enrollment.period?.id ?? enrollment.academic_period?.id ?? enrollment.period_id;
 
-            enrollmentCareerName = enrollment.career_name ?? enrollment.career?.name ?? "Career";
+            enrollmentCareerName = enrollment.career_name ?? enrollment.career?.name ?? "Carrera";
             enrollmentPeriodName = enrollment.period_name ?? enrollment.period?.name ?? enrollment.academic_period?.name ?? "";
 
             document.getElementById("page-subtitle")!.textContent =
-                `${enrollmentCareerName} — ${enrollmentPeriodName || "Current Period"}`;
+                `${enrollmentCareerName} — ${enrollmentPeriodName || "Período actual"}`;
 
             // Carga matrículas de clase desde BD → inicializa originalEnrollIds y draftEnrollIds
             const classEnrollRes = await apiFetch("/enrollment/class-enrollments/");
@@ -528,7 +528,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
         } catch {
             document.getElementById("loading-state")?.classList.add("hidden");
-            document.getElementById("error-message")!.textContent = "Network error. Please check your connection.";
+            document.getElementById("error-message")!.textContent = "Error de red. Verificá tu conexión.";
             document.getElementById("error-state")?.classList.remove("hidden");
         }
     }

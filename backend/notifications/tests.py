@@ -10,7 +10,7 @@ from admissions.utils import notify_next_waitlisted
 
 
 class CreateNotificationEmailTests(TestCase):
-    """Tests for create_notification() email gating logic (REQ-NOTIF-01)."""
+    """Pruebas de la lógica de compuerta de correo en create_notification() (REQ-NOTIF-01)."""
 
     def setUp(self):
         self.user = User.objects.create_user(
@@ -28,7 +28,7 @@ class CreateNotificationEmailTests(TestCase):
 
     @patch('notifications.utils.send_mail')
     def test_happy_path_sends_email(self, mock_send):
-        """Both system and user enabled → email sent."""
+        """Sistema y usuario habilitados → correo enviado."""
         SystemSettings.objects.get_or_create(pk=1, defaults={'email_notifications_enabled': True})
         UserEmailPreference.objects.create(user=self.user, email_enabled=True)
 
@@ -41,7 +41,7 @@ class CreateNotificationEmailTests(TestCase):
 
     @patch('notifications.utils.send_mail')
     def test_user_disabled_no_email(self, mock_send):
-        """User opted out → no email."""
+        """Usuario desuscripto → sin correo."""
         SystemSettings.objects.get_or_create(pk=1, defaults={'email_notifications_enabled': True})
         UserEmailPreference.objects.create(user=self.user, email_enabled=False)
 
@@ -52,7 +52,7 @@ class CreateNotificationEmailTests(TestCase):
 
     @patch('notifications.utils.send_mail')
     def test_system_disabled_no_email(self, mock_send):
-        """System disabled → no email even if user enabled."""
+        """Sistema deshabilitado → sin correo aunque el usuario esté habilitado."""
         SystemSettings.objects.create(pk=1, email_notifications_enabled=False)
         UserEmailPreference.objects.create(user=self.user, email_enabled=True)
 
@@ -62,7 +62,7 @@ class CreateNotificationEmailTests(TestCase):
 
     @patch('notifications.utils.send_mail')
     def test_no_email_address_no_send(self, mock_send):
-        """User has no email → no email attempt."""
+        """El usuario no tiene correo → no se intenta enviar email."""
         self.user.email = ''
         self.user.save()
 
@@ -72,7 +72,7 @@ class CreateNotificationEmailTests(TestCase):
 
     @patch('notifications.utils.send_mail')
     def test_send_mail_called_with_fail_silently(self, mock_send):
-        """send_mail is called with fail_silently=True so SMTP errors don't crash."""
+        """send_mail se llama con fail_silently=True para que errores SMTP no rompan el flujo."""
         SystemSettings.objects.get_or_create(pk=1, defaults={'email_notifications_enabled': True})
         UserEmailPreference.objects.create(user=self.user, email_enabled=True)
 
@@ -84,13 +84,13 @@ class CreateNotificationEmailTests(TestCase):
         self.assertTrue(mock_send.call_args.kwargs['fail_silently'])
 
     def test_backward_compat_no_event_type(self):
-        """Calling without event_type still works (backward compat)."""
+        """Llamar sin event_type sigue funcionando (compatibilidad hacia atrás)."""
         notif = create_notification(self.user, 'Test', 'Hello', 'info')
         self.assertEqual(notif.event_type, '')
 
     @patch('notifications.utils.send_mail')
     def test_profile_only_creates_notification_without_email(self, mock_send):
-        """Profile-only channel → notification row, no email."""
+        """Canal solo perfil → fila de notificación, sin correo."""
         UserEmailPreference.objects.create(
             user=self.user,
             email_enabled=False,
@@ -105,7 +105,7 @@ class CreateNotificationEmailTests(TestCase):
 
     @patch('notifications.utils.send_mail')
     def test_email_only_sends_without_profile_notification(self, mock_send):
-        """Email-only channel → email sent, no profile notification row."""
+        """Canal solo correo → email enviado, sin fila de notificación en perfil."""
         SystemSettings.objects.get_or_create(pk=1, defaults={'email_notifications_enabled': True})
         UserEmailPreference.objects.create(
             user=self.user,
@@ -121,7 +121,7 @@ class CreateNotificationEmailTests(TestCase):
 
     @patch('notifications.utils.send_mail')
     def test_disabled_event_suppresses_all_delivery(self, mock_send):
-        """Disabled event key → no profile notification and no email."""
+        """Clave de evento deshabilitada → sin notificación de perfil y sin correo."""
         SystemSettings.objects.get_or_create(pk=1, defaults={'email_notifications_enabled': True})
         UserEmailPreference.objects.create(
             user=self.user,
@@ -143,7 +143,7 @@ class CreateNotificationEmailTests(TestCase):
 
 
 class EmailPreferenceAPITests(TestCase):
-    """Tests for GET/PATCH /api/notifications/email-preferences/ (REQ-NOTIF-02)."""
+    """Pruebas de GET/PATCH /api/notifications/email-preferences/ (REQ-NOTIF-02)."""
 
     def setUp(self):
         self.user = User.objects.create_user(
@@ -153,7 +153,7 @@ class EmailPreferenceAPITests(TestCase):
         self.client.force_authenticate(user=self.user)
 
     def test_get_auto_creates_preference(self):
-        """GET when no row exists → auto-creates with email_enabled=True."""
+        """GET cuando no existe fila → autogenera con email_enabled=True."""
         self.assertFalse(UserEmailPreference.objects.filter(user=self.user).exists())
         res = self.client.get('/api/notifications/email-preferences/')
         self.assertEqual(res.status_code, 200)
@@ -161,14 +161,14 @@ class EmailPreferenceAPITests(TestCase):
         self.assertTrue(UserEmailPreference.objects.filter(user=self.user).exists())
 
     def test_get_returns_existing(self):
-        """GET when row exists → returns current value."""
+        """GET cuando existe fila → devuelve el valor actual."""
         UserEmailPreference.objects.create(user=self.user, email_enabled=False)
         res = self.client.get('/api/notifications/email-preferences/')
         self.assertEqual(res.status_code, 200)
         self.assertFalse(res.data['email_enabled'])
 
     def test_patch_updates_preference(self):
-        """PATCH updates email_enabled field."""
+        """PATCH actualiza el campo email_enabled."""
         UserEmailPreference.objects.create(user=self.user, email_enabled=True)
         res = self.client.patch(
             '/api/notifications/email-preferences/',
@@ -179,14 +179,14 @@ class EmailPreferenceAPITests(TestCase):
         self.assertFalse(res.data['email_enabled'])
 
     def test_anonymous_gets_401(self):
-        """Unauthenticated request → 401."""
+        """Solicitud no autenticada → 401."""
         anon = APIClient()
         res = anon.get('/api/notifications/email-preferences/')
         self.assertEqual(res.status_code, 401)
 
 
 class SystemSettingsAPITests(TestCase):
-    """Tests for GET/PATCH /api/notifications/system-settings/ (REQ-NOTIF-03)."""
+    """Pruebas de GET/PATCH /api/notifications/system-settings/ (REQ-NOTIF-03)."""
 
     def setUp(self):
         self.admin = User.objects.create_user(
@@ -201,13 +201,13 @@ class SystemSettingsAPITests(TestCase):
         self.student_client.force_authenticate(user=self.student)
 
     def test_admin_get_auto_creates(self):
-        """Admin GET when no row → auto-creates singleton with default True."""
+        """GET de admin cuando no hay fila → autocrea singleton con valor por defecto True."""
         res = self.admin_client.get('/api/notifications/system-settings/')
         self.assertEqual(res.status_code, 200)
         self.assertTrue(res.data['email_notifications_enabled'])
 
     def test_admin_toggle_off(self):
-        """Admin PATCH to disable."""
+        """PATCH de admin para deshabilitar."""
         res = self.admin_client.patch(
             '/api/notifications/system-settings/',
             {'email_notifications_enabled': False},
@@ -217,7 +217,7 @@ class SystemSettingsAPITests(TestCase):
         self.assertFalse(res.data['email_notifications_enabled'])
 
     def test_admin_toggle_on(self):
-        """Admin PATCH to enable."""
+        """PATCH de admin para habilitar."""
         SystemSettings.objects.create(pk=1, email_notifications_enabled=False)
         res = self.admin_client.patch(
             '/api/notifications/system-settings/',
@@ -228,12 +228,12 @@ class SystemSettingsAPITests(TestCase):
         self.assertTrue(res.data['email_notifications_enabled'])
 
     def test_student_gets_403(self):
-        """Non-admin user → 403 Forbidden."""
+        """Usuario no admin → 403 Forbidden."""
         res = self.student_client.get('/api/notifications/system-settings/')
         self.assertEqual(res.status_code, 403)
 
     def test_student_patch_gets_403(self):
-        """Non-admin PATCH → 403 Forbidden."""
+        """PATCH de no admin → 403 Forbidden."""
         res = self.student_client.patch(
             '/api/notifications/system-settings/',
             {'email_notifications_enabled': False},
@@ -243,7 +243,7 @@ class SystemSettingsAPITests(TestCase):
 
 
 class WithdrawNotifyWaitlistIntegrationTest(TestCase):
-    """Integration test: withdraw → notify_next_waitlisted → create_notification (S-02)."""
+    """Prueba de integración: withdraw → notify_next_waitlisted → create_notification (S-02)."""
 
     def setUp(self):
         from academic.models import Career, AcademicPeriod
@@ -268,7 +268,7 @@ class WithdrawNotifyWaitlistIntegrationTest(TestCase):
 
     @patch('notifications.utils.send_mail')
     def test_notify_next_waitlisted_sends_email(self, mock_send):
-        """notify_next_waitlisted() creates notification AND sends email to waitlisted student."""
+        """notify_next_waitlisted() crea notificación Y envía correo al estudiante en lista de espera."""
         notify_next_waitlisted(self.career, self.period)
 
         # Notificación creada

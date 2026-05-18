@@ -40,11 +40,11 @@ from .serializers import (
 
 
 # ---------------------------------------------------------------------------
-# Helper
+# Función auxiliar
 # ---------------------------------------------------------------------------
 
 def _get_response_for_student(pk, user):
-    """Return a QuestionnaireResponse owned by the given student or raise 404."""
+    """Devuelve una QuestionnaireResponse del estudiante indicado o lanza 404."""
     try:
         return QuestionnaireResponse.objects.select_related(
             'questionnaire', 'student'

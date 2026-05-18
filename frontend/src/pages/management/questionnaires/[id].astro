@@ -5,7 +5,7 @@ export const prerender = false;
 import DashboardLayout from "@/layouts/DashboardLayout.astro";
 ---
 
-<DashboardLayout title="Questionnaire Builder — Academix" currentPath="/management/questionnaires">
+<DashboardLayout title="Constructor de cuestionarios — Academix" currentPath="/management/questionnaires">
     <!-- Pantalla de carga -->
     <div id="loading-screen" class="flex items-center justify-center min-h-[60vh]">
         <div class="text-center space-y-3">
@@ -17,7 +17,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     <!-- Pantalla de error -->
     <div id="error-screen" class="hidden flex items-center justify-center min-h-[60vh] p-6">
         <div class="text-center space-y-4 max-w-md">
-            <h2 class="text-lg font-semibold text-foreground">Unable to load questionnaire</h2>
+            <h2 class="text-lg font-semibold text-foreground">No se pudo cargar el cuestionario</h2>
             <p id="error-message" class="text-sm text-muted-foreground"></p>
             <a href="/management/questionnaires" class="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
@@ -39,7 +39,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     <div class="flex items-center gap-2 mt-0.5">
                         <span id="builder-flow-type" class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium"></span>
                         <span id="builder-active-badge" class="hidden inline-flex items-center gap-1 text-xs text-emerald-400">
-                            <span class="size-1.5 rounded-full bg-emerald-400"></span>Active
+                            <span class="size-1.5 rounded-full bg-emerald-400"></span>Activo
                         </span>
                     </div>
                 </div>
@@ -49,18 +49,18 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         <!-- Diseño de dos columnas -->
         <div class="flex flex-1 overflow-hidden" style="height: calc(100vh - 3.5rem - 4.5rem);">
 
-            <!-- LEFT: Step list -->
+            <!-- IZQUIERDA: lista de pasos -->
             <div class="w-64 shrink-0 border-r border-border flex flex-col bg-background overflow-hidden">
                 <div class="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-                    <span class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Steps</span>
-                    <button id="btn-add-step" type="button" title="Add Step" class="rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pasos</span>
+                    <button id="btn-add-step" type="button" title="Agregar paso" class="rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     </button>
                 </div>
                 <div id="step-list" class="flex-1 overflow-y-auto py-2 space-y-0.5 px-2"></div>
             </div>
 
-            <!-- RIGHT: Step editor -->
+            <!-- DERECHA: editor de pasos -->
             <div class="flex-1 overflow-y-auto">
                 <!-- Ningún paso seleccionado -->
                 <div id="no-step-selected" class="flex items-center justify-center h-full text-center p-8">
@@ -68,16 +68,16 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                         <div class="flex size-14 items-center justify-center rounded-full bg-muted mx-auto">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/></svg>
                         </div>
-                        <p class="text-sm text-muted-foreground">Select a step to edit, or create one to get started.</p>
+                        <p class="text-sm text-muted-foreground">Selecciona un paso para editar o crea uno para comenzar.</p>
                     </div>
                 </div>
 
-                <!-- Step editor panel -->
+                <!-- Panel del editor de pasos -->
                 <div id="step-editor" class="hidden p-6 space-y-6 max-w-3xl mx-auto">
-                    <!-- Step meta form -->
+                    <!-- Formulario de metadatos del paso -->
                     <div class="rounded-xl border border-border bg-card p-5 space-y-4">
                         <div class="flex items-center justify-between">
-                            <h2 class="text-sm font-semibold text-foreground uppercase tracking-wider">Step Details</h2>
+                            <h2 class="text-sm font-semibold text-foreground uppercase tracking-wider">Detalles del paso</h2>
                             <button id="btn-delete-step" type="button" class="inline-flex items-center gap-1.5 rounded-md border border-destructive/30 px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                                 Eliminar paso
@@ -85,12 +85,12 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                         </div>
                         <div class="grid grid-cols-1 gap-4">
                             <div class="space-y-1.5">
-                                <label class="text-sm font-medium text-foreground" for="step-title-input">Step Title <span class="text-destructive">*</span></label>
-                                <input id="step-title-input" type="text" placeholder="e.g., Personal Information" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
+                                <label class="text-sm font-medium text-foreground" for="step-title-input">Título del paso <span class="text-destructive">*</span></label>
+                                <input id="step-title-input" type="text" placeholder="ej.: Información personal" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
                             </div>
                             <div class="space-y-1.5">
-                                <label class="text-sm font-medium text-foreground" for="step-desc-input">Step Description</label>
-                                <textarea id="step-desc-input" placeholder="Optional guidance for students..." rows="2" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring resize-y"></textarea>
+                                <label class="text-sm font-medium text-foreground" for="step-desc-input">Descripción del paso</label>
+                                <textarea id="step-desc-input" placeholder="Orientación opcional para estudiantes..." rows="2" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring resize-y"></textarea>
                             </div>
                         </div>
                         <div class="flex justify-end">
@@ -104,7 +104,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     <!-- Lista de preguntas -->
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-sm font-semibold text-foreground">Questions</h3>
+                            <h3 class="text-sm font-semibold text-foreground">Preguntas</h3>
                             <button id="btn-add-question" type="button" class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                 Agregar pregunta
@@ -114,7 +114,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                         <div id="questions-list" class="space-y-2"></div>
 
                         <div id="no-questions" class="hidden rounded-xl border border-dashed border-border p-8 text-center">
-                            <p class="text-sm text-muted-foreground">No questions yet. Click "Agregar pregunta" to create one.</p>
+                            <p class="text-sm text-muted-foreground">Todavía no hay preguntas. Haz clic en "Agregar pregunta" para crear una.</p>
                         </div>
                     </div>
                 </div>
@@ -126,19 +126,19 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     <div id="step-modal-backdrop" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
         <div class="w-full max-w-md rounded-xl border border-border bg-background shadow-2xl">
             <div class="flex items-center justify-between px-5 py-4 border-b border-border">
-                <h2 class="text-base font-semibold text-foreground">New Step</h2>
+                <h2 class="text-base font-semibold text-foreground">Nuevo paso</h2>
                 <button id="step-modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
             <div class="px-5 py-4 space-y-4">
                 <div class="space-y-1.5">
-                    <label class="text-sm font-medium text-foreground" for="new-step-title">Step Title <span class="text-destructive">*</span></label>
-                    <input id="new-step-title" type="text" placeholder="e.g., Personal Information" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
+                    <label class="text-sm font-medium text-foreground" for="new-step-title">Título del paso <span class="text-destructive">*</span></label>
+                    <input id="new-step-title" type="text" placeholder="p. ej., Información personal" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
                 </div>
                 <div class="space-y-1.5">
-                    <label class="text-sm font-medium text-foreground" for="new-step-desc">Description</label>
-                    <textarea id="new-step-desc" placeholder="Optional..." rows="2" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring resize-y"></textarea>
+                    <label class="text-sm font-medium text-foreground" for="new-step-desc">Descripción</label>
+                    <textarea id="new-step-desc" placeholder="Opcional..." rows="2" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring resize-y"></textarea>
                 </div>
             </div>
             <div class="flex items-center justify-end gap-3 px-5 py-4 border-t border-border">
@@ -166,34 +166,34 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 <!-- Campos principales -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="space-y-1.5 sm:col-span-2">
-                        <label class="text-sm font-medium text-foreground" for="qm-label">Label <span class="text-destructive">*</span></label>
-                        <input id="qm-label" type="text" placeholder="e.g., Full Name" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
+                        <label class="text-sm font-medium text-foreground" for="qm-label">Etiqueta <span class="text-destructive">*</span></label>
+                        <input id="qm-label" type="text" placeholder="p. ej., Nombre completo" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
                     </div>
                     <div class="space-y-1.5 sm:col-span-2">
-                        <label class="text-sm font-medium text-foreground" for="qm-help-text">Help Text</label>
-                        <input id="qm-help-text" type="text" placeholder="Optional hint shown below the label" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
+                        <label class="text-sm font-medium text-foreground" for="qm-help-text">Texto de ayuda</label>
+                        <input id="qm-help-text" type="text" placeholder="Pista opcional mostrada debajo de la etiqueta" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
                     </div>
                     <div class="space-y-1.5">
-                        <label class="text-sm font-medium text-foreground" for="qm-type">Question Type <span class="text-destructive">*</span></label>
+                        <label class="text-sm font-medium text-foreground" for="qm-type">Tipo de pregunta <span class="text-destructive">*</span></label>
                         <select id="qm-type" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring">
-                            <option value="text">Text (single line)</option>
-                            <option value="textarea">Text (multi-line)</option>
+                            <option value="text">Texto (una línea)</option>
+                            <option value="textarea">Texto (varias líneas)</option>
                             <option value="email">Email</option>
                             <option value="tel">Teléfono</option>
-                            <option value="number">Number</option>
-                            <option value="date">Date</option>
-                            <option value="select">Dropdown (select)</option>
-                            <option value="radio">Radio buttons</option>
-                            <option value="checkbox">Checkboxes</option>
-                            <option value="file_upload">File upload</option>
-                            <option value="career_select">Career selector</option>
-                            <option value="subject_select">Subject selector</option>
+                            <option value="number">Número</option>
+                            <option value="date">Fecha</option>
+                            <option value="select">Desplegable (selección)</option>
+                            <option value="radio">Botones de opción</option>
+                            <option value="checkbox">Casillas de verificación</option>
+                            <option value="file_upload">Carga de archivo</option>
+                            <option value="career_select">Selector de carrera</option>
+                            <option value="subject_select">Selector de asignatura</option>
                             <option value="stripe_payment">Pago de Stripe</option>
-                            <option value="info">Info block (HTML)</option>
+                            <option value="info">Bloque informativo (HTML)</option>
                         </select>
                     </div>
                     <div class="space-y-1.5">
-                        <label class="text-sm font-medium text-foreground" for="qm-order">Order</label>
+                        <label class="text-sm font-medium text-foreground" for="qm-order">Orden</label>
                         <input id="qm-order" type="number" min="1" value="1" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
                     </div>
                 </div>
@@ -209,33 +209,33 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
                 <!-- Visualización condicional -->
                 <div class="rounded-lg border border-border p-4 space-y-3">
-                    <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Conditional Display</p>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Visualización condicional</p>
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1.5">
-                            <label class="text-xs text-muted-foreground" for="qm-depends-on">Show only if question</label>
+                            <label class="text-xs text-muted-foreground" for="qm-depends-on">Mostrar solo si la pregunta</label>
                             <select id="qm-depends-on" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring">
-                                <option value="">Always show</option>
+                                <option value="">Mostrar siempre</option>
                             </select>
                         </div>
                         <div class="space-y-1.5">
-                            <label class="text-xs text-muted-foreground" for="qm-depends-value">Has value equal to</label>
-                            <input id="qm-depends-value" type="text" placeholder="Expected value..." class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
+                            <label class="text-xs text-muted-foreground" for="qm-depends-value">Tiene un valor igual a</label>
+                            <input id="qm-depends-value" type="text" placeholder="Valor esperado..." class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
                         </div>
                     </div>
                 </div>
 
-                <!-- Type-specific config panels -->
-                <!-- Options editor (select / radio / checkbox) -->
+                <!-- Paneles de configuración por tipo -->
+                <!-- Editor de opciones (select / radio / checkbox) -->
                 <div id="cfg-options" class="hidden space-y-3">
                     <div class="flex items-center justify-between">
-                        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Options</p>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Opciones</p>
                         <button id="btn-add-option" type="button" class="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                            Add Option
+                            Agregar opción
                         </button>
                     </div>
                     <div id="options-list" class="space-y-2"></div>
-                    <p class="text-xs text-muted-foreground">Both label (displayed) and value (stored) are required.</p>
+                    <p class="text-xs text-muted-foreground">Tanto la etiqueta (visible) como el valor (almacenado) son obligatorios.</p>
                 </div>
 
                 <!-- Configuración de Stripe -->
@@ -243,11 +243,11 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Configuración de pago</p>
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1.5">
-                            <label class="text-xs text-muted-foreground" for="cfg-stripe-amount">Amount</label>
-                            <input id="cfg-stripe-amount" type="number" min="0" step="0.01" placeholder="e.g. 50.00" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
+                            <label class="text-xs text-muted-foreground" for="cfg-stripe-amount">Monto</label>
+                            <input id="cfg-stripe-amount" type="number" min="0" step="0.01" placeholder="p. ej. 50.00" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
                         </div>
                         <div class="space-y-1.5">
-                            <label class="text-xs text-muted-foreground" for="cfg-stripe-currency">Currency</label>
+                            <label class="text-xs text-muted-foreground" for="cfg-stripe-currency">Moneda</label>
                             <input id="cfg-stripe-currency" type="text" placeholder="USD" maxlength="3" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
                         </div>
                     </div>
@@ -259,14 +259,14 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
                 <!-- Configuración de subida de ficheros -->
                 <div id="cfg-file" class="hidden rounded-lg border border-border p-4 space-y-3">
-                    <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">File Upload Configuration</p>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Configuración de carga de archivos</p>
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1.5">
-                            <label class="text-xs text-muted-foreground" for="cfg-file-types">Accepted types (comma-separated)</label>
+                            <label class="text-xs text-muted-foreground" for="cfg-file-types">Tipos aceptados (separados por comas)</label>
                             <input id="cfg-file-types" type="text" placeholder=".pdf,.jpg,.png" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
                         </div>
                         <div class="space-y-1.5">
-                            <label class="text-xs text-muted-foreground" for="cfg-file-max">Max size (MB)</label>
+                            <label class="text-xs text-muted-foreground" for="cfg-file-max">Tamaño máximo (MB)</label>
                             <input id="cfg-file-max" type="number" min="1" max="100" placeholder="10" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
                         </div>
                     </div>
@@ -274,14 +274,14 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
                 <!-- Configuración del selector de asignaturas -->
                 <div id="cfg-subject" class="hidden rounded-lg border border-border p-4 space-y-3">
-                    <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Subject Selector Configuration</p>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Configuración del selector de asignaturas</p>
                     <div class="grid grid-cols-2 gap-3">
                         <div class="flex items-center gap-2">
                             <input id="cfg-subject-past-years" type="checkbox" class="size-4 accent-primary rounded" />
-                            <label class="text-xs text-muted-foreground" for="cfg-subject-past-years">Allow past year subjects</label>
+                            <label class="text-xs text-muted-foreground" for="cfg-subject-past-years">Permitir asignaturas de años anteriores</label>
                         </div>
                         <div class="space-y-1.5">
-                            <label class="text-xs text-muted-foreground" for="cfg-subject-max">Max selections (0 = unlimited)</label>
+                            <label class="text-xs text-muted-foreground" for="cfg-subject-max">Máximo de selecciones (0 = sin límite)</label>
                             <input id="cfg-subject-max" type="number" min="0" placeholder="0" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
                         </div>
                     </div>
@@ -289,18 +289,18 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
                 <!-- Configuración del selector de titulaciones -->
                 <div id="cfg-career" class="hidden rounded-lg border border-border p-4 space-y-3">
-                    <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Career Selector Configuration</p>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Configuración del selector de carreras</p>
                     <div class="space-y-1.5">
-                        <label class="text-xs text-muted-foreground" for="cfg-career-max">Max selections (0 = unlimited)</label>
+                        <label class="text-xs text-muted-foreground" for="cfg-career-max">Máximo de selecciones (0 = sin límite)</label>
                         <input id="cfg-career-max" type="number" min="0" placeholder="0" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" />
                     </div>
                 </div>
 
                 <!-- Configuración de bloque informativo -->
                 <div id="cfg-info" class="hidden space-y-1.5">
-                    <label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground" for="cfg-info-content">HTML Content</label>
-                    <textarea id="cfg-info-content" rows="6" placeholder="<p>This questionnaire collects...</p>" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring resize-y"></textarea>
-                    <p class="text-xs text-muted-foreground">Basic HTML is supported. This block is read-only for students.</p>
+                    <label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground" for="cfg-info-content">Contenido HTML</label>
+                    <textarea id="cfg-info-content" rows="6" placeholder="<p>Este cuestionario recopila...</p>" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring resize-y"></textarea>
+                    <p class="text-xs text-muted-foreground">Se admite HTML básico. Este bloque es de solo lectura para estudiantes.</p>
                 </div>
             </div>
 
@@ -398,7 +398,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             });
             if (res.status === 401) { window.location.replace("/login"); return; }
             if (!res.ok) {
-                el("error-message").textContent = `Questionnaire not found (${res.status}).`;
+                el("error-message").textContent = `No se encontró el cuestionario (${res.status}).`;
                 hide("loading-screen");
                 show("error-screen");
                 return;
@@ -416,7 +416,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             renderStepList();
 
         } catch {
-            el("error-message").textContent = "Network error. Please check your connection.";
+            el("error-message").textContent = "Error de red. Revisa tu conexión.";
             hide("loading-screen");
             show("error-screen");
         }
@@ -445,7 +445,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         const steps = state.questionnaire?.steps ?? [];
 
         if (steps.length === 0) {
-            container.innerHTML = `<p class="px-3 py-2 text-xs text-muted-foreground text-center">No steps yet.</p>`;
+            container.innerHTML = `<p class="px-3 py-2 text-xs text-muted-foreground text-center">Todavía no hay pasos.</p>`;
             return;
         }
 
@@ -457,7 +457,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     <span class="flex size-5 items-center justify-center rounded-full text-[10px] font-bold shrink-0 ${isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}">${i + 1}</span>
                     <span class="truncate font-medium">${s.title}</span>
                 </div>
-                <p class="text-xs text-muted-foreground mt-0.5 ml-7 truncate">${s.questions.length} question${s.questions.length !== 1 ? "s" : ""}</p>
+                <p class="text-xs text-muted-foreground mt-0.5 ml-7 truncate">${s.questions.length} pregunta${s.questions.length !== 1 ? "s" : ""}</p>
             </button>`;
         }).join("");
 
@@ -513,18 +513,18 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                         <span class="text-sm font-medium text-foreground">${q.label}</span>
                         ${q.is_required ? `<span class="text-destructive text-xs">*</span>` : ""}
                         <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${typeColor}">${typeLabel}</span>
-                        ${q.depends_on ? `<span class="text-xs text-muted-foreground">conditional</span>` : ""}
+                        ${q.depends_on ? `<span class="text-xs text-muted-foreground">condicional</span>` : ""}
                     </div>
                     ${q.help_text ? `<p class="text-xs text-muted-foreground mt-0.5">${q.help_text}</p>` : ""}
                     ${q.question_type === "select" || q.question_type === "radio" || q.question_type === "checkbox"
-                        ? `<p class="text-xs text-muted-foreground mt-0.5">${q.options.length} option${q.options.length !== 1 ? "s" : ""}</p>`
+                        ? `<p class="text-xs text-muted-foreground mt-0.5">${q.options.length} opción${q.options.length !== 1 ? "es" : ""}</p>`
                         : ""}
                 </div>
                 <div class="flex items-center gap-1 shrink-0">
-                    <button type="button" class="btn-move-up rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors ${qi === 0 ? "opacity-30 pointer-events-none" : ""}" data-qi="${qi}" title="Move up">
+                    <button type="button" class="btn-move-up rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors ${qi === 0 ? "opacity-30 pointer-events-none" : ""}" data-qi="${qi}" title="Mover arriba">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
                     </button>
-                    <button type="button" class="btn-move-down rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors ${qi === questions.length - 1 ? "opacity-30 pointer-events-none" : ""}" data-qi="${qi}" title="Move down">
+                    <button type="button" class="btn-move-down rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors ${qi === questions.length - 1 ? "opacity-30 pointer-events-none" : ""}" data-qi="${qi}" title="Mover abajo">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                     </button>
                     <button type="button" class="btn-edit-question rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" data-qi="${qi}" title="Editar pregunta">
@@ -576,9 +576,9 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
     function getTypeLabel(type: string): string {
         const map: Record<string, string> = {
-            text: "Text", textarea: "Textarea", email: "Email", tel: "Teléfono",
-            number: "Number", date: "Date", select: "Select", radio: "Radio",
-            checkbox: "Checkbox", file_upload: "File", career_select: "Career",
+            text: "Texto", textarea: "Área de texto", email: "Correo electrónico", tel: "Teléfono",
+            number: "Número", date: "Fecha", select: "Desplegable", radio: "Opción",
+            checkbox: "Casilla", file_upload: "Archivo", career_select: "Carrera",
             subject_select: "Asignaturas", stripe_payment: "Pago", info: "Información",
         };
         return map[type] ?? type;
@@ -615,7 +615,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             state.questionnaire!.steps.sort((a, b) => a.order - b.order);
             return true;
         } catch {
-            showToast("error", "Network error", "Could not create step.");
+            showToast("error", "Error de red", "No se pudo crear el paso.");
             return false;
         }
     }
@@ -627,7 +627,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         const title = (el<HTMLInputElement>("step-title-input")).value.trim();
         const description = (el<HTMLTextAreaElement>("step-desc-input")).value.trim();
 
-        if (!title) { showToast("warning", "Título obligatorio", "Please enter a step title."); return; }
+        if (!title) { showToast("warning", "Título obligatorio", "Ingresa un título para el paso."); return; }
 
         el("btn-save-step-meta-label").textContent = "Guardando...";
         el("btn-save-step-meta-spinner").classList.remove("hidden");
@@ -646,9 +646,9 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             step.title = title;
             step.description = description;
             renderStepList();
-            showToast("success", "Step saved", "Step details updated.");
+            showToast("success", "Paso guardado", "Se actualizaron los detalles del paso.");
         } catch {
-            showToast("error", "Network error", "Could not save step.");
+            showToast("error", "Error de red", "No se pudo guardar el paso.");
         } finally {
             el("btn-save-step-meta-label").textContent = "Guardar paso";
             el("btn-save-step-meta-spinner").classList.add("hidden");
@@ -686,12 +686,12 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                         renderStepList();
                         hide("step-editor");
                         show("no-step-selected");
-                        showToast("success", "Deleted", "Step removed.");
+                        showToast("success", "Eliminado", "Paso eliminado.");
                     } else {
                         showToast("error", "No se pudo eliminar", `Error ${res.status}`);
                     }
                 } catch {
-                    showToast("error", "Network error", "Could not delete step.");
+                    showToast("error", "Error de red", "No se pudo eliminar el paso.");
                 }
             },
         });
@@ -701,7 +701,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     function populateDependsOnDropdown(excludeQIndex: number) {
         const step = state.questionnaire?.steps[state.selectedStepIndex];
         const sel = el<HTMLSelectElement>("qm-depends-on");
-        sel.innerHTML = `<option value="">Always show</option>`;
+        sel.innerHTML = `<option value="">Mostrar siempre</option>`;
         if (!step) return;
         step.questions.forEach((q, qi) => {
             if (qi === excludeQIndex) return;
@@ -802,13 +802,13 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     function renderOptionsList() {
         const container = el("options-list");
         if (state.qmOptions.length === 0) {
-            container.innerHTML = `<p class="text-xs text-muted-foreground text-center py-2">No options yet.</p>`;
+            container.innerHTML = `<p class="text-xs text-muted-foreground text-center py-2">Todavía no hay opciones.</p>`;
             return;
         }
         container.innerHTML = state.qmOptions.map((opt, i) => `
             <div class="flex items-center gap-2" data-opt-index="${i}">
-                <input type="text" class="opt-label flex h-8 flex-1 rounded-md border border-input bg-background px-2.5 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring" value="${opt.label}" placeholder="Label (shown to user)" data-idx="${i}" />
-                <input type="text" class="opt-value flex h-8 flex-1 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring" value="${opt.value}" placeholder="Value (stored)" data-idx="${i}" />
+                <input type="text" class="opt-label flex h-8 flex-1 rounded-md border border-input bg-background px-2.5 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring" value="${opt.label}" placeholder="Etiqueta (visible para el usuario)" data-idx="${i}" />
+                <input type="text" class="opt-value flex h-8 flex-1 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring" value="${opt.value}" placeholder="Valor (almacenado)" data-idx="${i}" />
                 <button type="button" class="btn-remove-opt rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" data-idx="${i}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
@@ -849,7 +849,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         const dependsOnValue = (el<HTMLInputElement>("qm-depends-value")).value.trim();
         const questionIdRaw = (el<HTMLInputElement>("qm-question-id")).value.trim();
 
-        if (!label) { showToast("warning", "Label required", "Please enter a question label."); return; }
+        if (!label) { showToast("warning", "Etiqueta obligatoria", "Ingresa una etiqueta para la pregunta."); return; }
 
         // Construye configuración
         const config: Record<string, any> = {};
@@ -891,7 +891,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             : `${API_URL}/questionnaire/steps/${step.id}/questions/`;
         const method = isEdit ? "PATCH" : "POST";
 
-        el("question-modal-save-label").textContent = isEdit ? "Guardando..." : "Creating...";
+        el("question-modal-save-label").textContent = isEdit ? "Guardando..." : "Creando...";
         el("question-modal-save-spinner").classList.remove("hidden");
         el<HTMLButtonElement>("question-modal-save").disabled = true;
 
@@ -928,10 +928,10 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             hide("question-modal-backdrop");
             renderQuestionsList(step);
             renderStepList();
-            showToast("success", isEdit ? "Question updated" : "Question added", label);
+            showToast("success", isEdit ? "Pregunta actualizada" : "Pregunta agregada", label);
 
         } catch {
-            showToast("error", "Network error", "Could not save question.");
+            showToast("error", "Error de red", "No se pudo guardar la pregunta.");
         } finally {
             el("question-modal-save-label").textContent = "Guardar pregunta";
             el("question-modal-save-spinner").classList.add("hidden");
@@ -996,7 +996,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     return;
                 }
             } catch {
-                showToast("error", "Network error", "Could not delete question.");
+                showToast("error", "Error de red", "No se pudo eliminar la pregunta.");
                 return;
             }
         }
@@ -1004,7 +1004,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         step.questions.splice(qi, 1);
         renderQuestionsList(step);
         renderStepList();
-        showToast("success", "Deleted", `Question "${q.label}" removed.`);
+        showToast("success", "Eliminado", `Se eliminó la pregunta "${q.label}".`);
     }
 
     async function moveQuestion(qi: number, dir: "up" | "down") {
@@ -1058,7 +1058,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     el("step-modal-save").addEventListener("click", async () => {
         const title = (el<HTMLInputElement>("new-step-title")).value.trim();
         const desc = (el<HTMLTextAreaElement>("new-step-desc")).value.trim();
-        if (!title) { showToast("warning", "Título obligatorio", "Enter a step title."); return; }
+        if (!title) { showToast("warning", "Título obligatorio", "Ingresa un título para el paso."); return; }
 
         const spinner = el("step-modal-spinner");
         const btn = el<HTMLButtonElement>("step-modal-save");
@@ -1074,7 +1074,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             const newIdx = (state.questionnaire?.steps.length ?? 1) - 1;
             selectStep(newIdx);
             renderStepList();
-            showToast("success", "Step created", title);
+            showToast("success", "Paso creado", title);
         }
     });
 

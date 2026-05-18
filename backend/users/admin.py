@@ -5,14 +5,14 @@ from .models import User
 
 
 class CustomUserCreationForm(UserCreationForm):
-    """Form for creating new users with password handling"""
+    """Formulario para crear usuarios nuevos con manejo de contraseña."""
     class Meta(UserCreationForm.Meta):
         model = User
         fields = ('username', 'email', 'first_name', 'last_name', 'role')
 
 
 class CustomUserChangeForm(UserChangeForm):
-    """Form for updating users with password handling"""
+    """Formulario para actualizar usuarios con manejo de contraseña."""
     class Meta(UserChangeForm.Meta):
         model = User
         fields = '__all__'
@@ -22,7 +22,7 @@ class CustomUserChangeForm(UserChangeForm):
 class UserAdmin(BaseUserAdmin):
     """
     Interfaz administrativa personalizada para el modelo Usuario que extiende UserAdmin
-    with proper password handling and custom fields
+    con manejo correcto de contraseña y campos personalizados
     """
     form = CustomUserChangeForm
     add_form = CustomUserCreationForm
@@ -58,7 +58,7 @@ class UserAdmin(BaseUserAdmin):
         'dni'
     ]
 
-    # Ordering
+    # Orden
     ordering = ['-created_at']
 
     # Grupos de campos para editar usuarios existentes
@@ -66,7 +66,7 @@ class UserAdmin(BaseUserAdmin):
         (None, {
             'fields': ('username', 'password')
         }),
-        ('Personal Info', {
+        ('Información personal', {
             'fields': (
                 'first_name',
                 'last_name',
@@ -78,7 +78,7 @@ class UserAdmin(BaseUserAdmin):
                 'profile_image'
             )
         }),
-        ('Role & Permissions', {
+        ('Rol y permisos', {
             'fields': (
                 'role',
                 'is_active',
@@ -88,7 +88,7 @@ class UserAdmin(BaseUserAdmin):
                 'user_permissions'
             )
         }),
-        ('Important Dates', {
+        ('Fechas importantes', {
             'fields': ('last_login', 'date_joined', 'created_at', 'updated_at')
         }),
     )
@@ -114,7 +114,7 @@ class UserAdmin(BaseUserAdmin):
 
     # Campos que se muestran al ver detalles de usuario
     def get_readonly_fields(self, request, obj=None):
-        """Make created_at and updated_at readonly"""
-        if obj:  # Editing an existing object
+        """Hace que created_at y updated_at sean de solo lectura."""
+        if obj:  # Editando un objeto existente
             return self.readonly_fields
         return []

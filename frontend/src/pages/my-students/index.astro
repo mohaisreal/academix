@@ -15,7 +15,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       </div>
       <div class="flex items-center gap-3">
         <select id="class-filter" class="bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="">All Classes</option>
+          <option value="">Todas las clases</option>
         </select>
         <input id="search-input" type="text" placeholder="Buscar estudiantes..." class="w-52 bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
       </div>
@@ -28,15 +28,15 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <thead>
               <tr class="border-b border-border">
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Estudiante</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Career</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Avg Grade</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Actions</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Carrera</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Promedio</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Acciones</th>
               </tr>
             </thead>
             <tbody id="students-table-body"></tbody>
           </table>
         </div>
-        <div id="students-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No students found</div>
+        <div id="students-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No se encontraron estudiantes</div>
       </div>
     </div>
   </div>
@@ -123,7 +123,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <td class="py-3 pr-4 text-sm text-muted-foreground">${escHtml(career)}</td>
         <td class="py-3 pr-4">${gradeBadge(avg)}</td>
         <td class="py-3">
-          <a href="/files?student=${studentId}" class="inline-flex items-center rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors">View File</a>
+          <a href="/files?student=${studentId}" class="inline-flex items-center rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors">Ver expediente</a>
         </td>
       </tr>`;
     }).join('');
@@ -163,7 +163,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       classes.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c.id;
-        opt.textContent = c.subject_name || c.subject?.name || `Class ${c.id}`;
+          opt.textContent = c.subject_name || c.subject?.name || `Clase ${c.id}`;
         sel?.appendChild(opt);
       });
     } catch {}

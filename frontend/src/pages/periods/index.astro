@@ -1,7 +1,7 @@
 ---
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
-<DashboardLayout title="Academic Periods — Academix" currentPath="/periods">
+<DashboardLayout title="Períodos académicos — Academix" currentPath="/periods">
   <div id="page-loading" class="p-6 space-y-4">
     <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
     <div class="h-64 bg-card rounded-xl border border-border animate-pulse"></div>
@@ -10,12 +10,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   <div id="page-content" class="hidden">
     <div class="flex items-center justify-between border-b border-border px-6 py-4">
       <div>
-        <h1 class="text-xl font-semibold text-foreground">Academic Periods</h1>
-        <p class="text-sm text-muted-foreground">Manage academic semesters and periods</p>
+        <h1 class="text-xl font-semibold text-foreground">Períodos académicos</h1>
+        <p class="text-sm text-muted-foreground">Gestiona semestres y períodos académicos</p>
       </div>
       <button id="new-period-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        New Period
+        Nuevo período
       </button>
     </div>
 
@@ -23,7 +23,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       <!-- Aviso de advertencia -->
       <div class="flex items-start gap-3 rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-4">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 mt-0.5 shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        <p class="text-sm text-yellow-400">Activating a period will deactivate all other periods. Only one period can be active at a time.</p>
+        <p class="text-sm text-yellow-400">Activar un período desactivará todos los demás. Solo un período puede estar activo a la vez.</p>
       </div>
 
       <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
@@ -31,19 +31,19 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <table class="w-full">
             <thead>
               <tr class="border-b border-border">
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Name</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Code</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Start Date</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">End Date</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Nombre</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Código</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Fecha de inicio</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Fecha de fin</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Ventana de admisión</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Estado</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Actions</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Acciones</th>
               </tr>
             </thead>
             <tbody id="periods-table-body"></tbody>
           </table>
         </div>
-        <div id="periods-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No periods found</div>
+        <div id="periods-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No se encontraron períodos</div>
       </div>
     </div>
   </div>
@@ -53,7 +53,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     <div class="w-full max-w-lg rounded-xl border border-border bg-background shadow-2xl max-h-[90vh] flex flex-col">
       <!-- Cabecera -->
       <div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-        <h2 id="modal-title" class="text-base font-semibold text-foreground">New Period</h2>
+        <h2 id="modal-title" class="text-base font-semibold text-foreground">Nuevo período</h2>
         <button id="modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -63,19 +63,19 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <form id="period-form" class="space-y-4">
           <input id="edit-id" type="hidden" value="" />
           <div>
-            <label class="text-xs font-medium text-muted-foreground">Name *</label>
-            <input id="period-name" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Spring 2026" />
+            <label class="text-xs font-medium text-muted-foreground">Nombre *</label>
+            <input id="period-name" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Primavera 2026" />
           </div>
           <div>
-            <label class="text-xs font-medium text-muted-foreground">Code *</label>
+            <label class="text-xs font-medium text-muted-foreground">Código *</label>
             <input id="period-code" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="SP2026" />
           </div>
           <div>
-            <label class="text-xs font-medium text-muted-foreground">Start Date *</label>
+            <label class="text-xs font-medium text-muted-foreground">Fecha de inicio *</label>
             <input id="period-start" type="date" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
           <div>
-            <label class="text-xs font-medium text-muted-foreground">End Date *</label>
+            <label class="text-xs font-medium text-muted-foreground">Fecha de fin *</label>
             <input id="period-end" type="date" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
           <div>
@@ -88,7 +88,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           </div>
           <div class="flex items-center gap-3">
             <input id="period-active" type="checkbox" class="size-4 rounded border-border" />
-            <label for="period-active" class="text-sm text-foreground">Active (will deactivate others)</label>
+            <label for="period-active" class="text-sm text-foreground">Activo (desactivará los demás)</label>
           </div>
           <div id="form-error" class="hidden text-xs text-red-400"></div>
         </form>
@@ -176,12 +176,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             : '—'
         }</td>
         <td class="py-3 pr-4">
-          ${active ? '<span class="inline-flex items-center rounded-full bg-green-500/15 text-green-400 px-2 py-0.5 text-xs font-medium">Active</span>' : '<span class="inline-flex items-center rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-xs font-medium">Inactive</span>'}
+          ${active ? '<span class="inline-flex items-center rounded-full bg-green-500/15 text-green-400 px-2 py-0.5 text-xs font-medium">Activo</span>' : '<span class="inline-flex items-center rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-xs font-medium">Inactivo</span>'}
         </td>
         <td class="py-3">
           <div class="flex items-center gap-2">
             <button class="edit-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors" data-id="${p.id}">Editar</button>
-            ${!active ? `<button class="activate-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-green-400 hover:bg-green-500/10 hover:border-green-500/30 transition-colors" data-id="${p.id}">Activate</button>` : ''}
+            ${!active ? `<button class="activate-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-green-400 hover:bg-green-500/10 hover:border-green-500/30 transition-colors" data-id="${p.id}">Activar</button>` : ''}
             <button class="delete-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-colors" data-id="${p.id}">Eliminar</button>
           </div>
         </td>
@@ -199,9 +199,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       btn.addEventListener('click', () => {
         const id = (btn as HTMLElement).dataset.id;
         window.confirmAction({
-          title: "Activate Period",
-          description: "All other periods will be deactivated. Continue?",
-          confirmLabel: "Activate",
+          title: "Activar período",
+          description: "Todos los demás períodos se desactivarán. ¿Continuar?",
+          confirmLabel: "Activar",
           onConfirm: async () => {
             try {
               await apiFetch(`/academic/periods/${id}/`, { method: 'PATCH', body: JSON.stringify({ is_active: true }) });
@@ -217,7 +217,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         const id = (btn as HTMLElement).dataset.id;
         window.confirmAction({
           title: "Eliminar periodo",
-          description: "This action cannot be undone.",
+          description: "Esta acción no se puede deshacer.",
           confirmLabel: "Eliminar",
           variant: "destructive",
           onConfirm: async () => {
@@ -255,7 +255,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       (document.getElementById('period-admission-close') as HTMLInputElement).value = period.admission_close_date?.slice(0, 16) ?? '';
       (document.getElementById('period-active') as HTMLInputElement).checked = period.is_active === true;
     } else {
-      if (title) title.textContent = 'New Period';
+      if (title) title.textContent = 'Nuevo período';
       if (idEl) idEl.value = '';
       (document.getElementById('period-form') as HTMLFormElement)?.reset();
     }
@@ -297,15 +297,15 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         await loadPeriods();
       } catch {
         errEl?.classList.remove('hidden');
-        if (errEl) errEl.textContent = 'No se ha podido guardar period';
+        if (errEl) errEl.textContent = 'No se pudo guardar el período';
       }
     };
 
     if (is_active && !id) {
       window.confirmAction({
-        title: "Activate Period",
-        description: "Activating this period will deactivate all other periods. Continue?",
-        confirmLabel: "Activate",
+        title: "Activar período",
+        description: "Activar este período desactivará todos los demás. ¿Continuar?",
+        confirmLabel: "Activar",
         onConfirm: doSave,
       });
       return;
