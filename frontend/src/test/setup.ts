@@ -16,7 +16,7 @@ const localStorageMock = {
 
 // Configura los mocks globales
 beforeAll(() => {
-  Object.defineProperty(global, 'localStorage', {
+  Object.defineProperty(globalThis, 'localStorage', {
     value: localStorageMock,
     writable: true,
   });
@@ -25,7 +25,7 @@ beforeAll(() => {
 // Limpia después de cada prueba
 afterEach(() => {
   // Reinicia localStorage
-  if (global.localStorage) {
-    (global.localStorage as any).clear();
+  if (globalThis.localStorage) {
+    globalThis.localStorage.clear();
   }
 });

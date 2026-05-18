@@ -85,7 +85,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   function formatTimeAgo(dateStr) {
     const date = new Date(dateStr);
     const now = new Date();
-    const diff = Math.floor((now - date) / 1000);
+    const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
     if (diff < 60) return 'justo ahora';
     if (diff < 3600) return `hace ${Math.floor(diff / 60)} min`;
     if (diff < 86400) return `hace ${Math.floor(diff / 3600)} h`;
@@ -155,8 +155,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   // Clic para marcar como leída
     list.querySelectorAll('.notif-item').forEach(el => {
       el.addEventListener('click', async () => {
-        const id = el.dataset.id;
-        const isRead = el.dataset.read === 'true';
+        const id = (el as HTMLElement).dataset.id;
+        const isRead = (el as HTMLElement).dataset.read === 'true';
         if (!isRead) {
           try {
             await apiFetch(`/notifications/${id}/mark-read/`, { method: 'PATCH' });
@@ -191,7 +191,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       });
       btn.classList.add('active-tab', 'text-foreground', 'border-b-2', 'border-primary');
       btn.classList.remove('text-muted-foreground');
-      currentFilter = btn.dataset.filter;
+      currentFilter = (btn as HTMLElement).dataset.filter || 'all';
       renderNotifications();
     });
   });

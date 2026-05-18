@@ -158,7 +158,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     }).join('');
 
     tbody.querySelectorAll('.view-file-btn').forEach(btn => {
-      btn.addEventListener('click', () => openPanel(btn.dataset.id));
+      btn.addEventListener('click', () => openPanel((btn as HTMLElement).dataset.id));
     });
   }
 

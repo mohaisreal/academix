@@ -272,7 +272,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         modalAction = action;
         document.getElementById("modal-title")!.textContent = action === "validated" ? "Validar documento" : "Rechazar documento";
         document.getElementById("modal-reason-wrapper")?.classList.toggle("hidden", action === "validated");
-        document.getElementById("modal-reason")!.value = "";
+        (document.getElementById("modal-reason") as HTMLTextAreaElement).value = "";
         const backdrop = document.getElementById("modal-backdrop")!;
         backdrop.classList.remove("hidden");
         backdrop.classList.add("flex");
