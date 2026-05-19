@@ -28,6 +28,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Nombre</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Código</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Duración</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Cupos totales</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Asignaturas</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Estado</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Acciones</th>
@@ -71,6 +72,10 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <label class="text-xs font-medium text-muted-foreground">Duración (años)</label>
             <input id="career-duration" type="number" min="1" max="6" value="4" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Cupos totales *</label>
+            <input id="career-total-spots" type="number" min="0" step="1" required value="100" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
           <div class="flex items-center gap-3">
             <input id="career-active" type="checkbox" checked class="size-4 rounded border-border text-primary focus:ring-primary" />
             <label for="career-active" class="text-sm text-foreground">Activa</label>
@@ -89,6 +94,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
 <script>
   import { toast } from "@/components/starwind/toast";
+  import {
+    DEFAULT_TOTAL_SPOTS,
+    parseValidTotalSpots,
+    resolveCareerTotalSpots,
+  } from '@/utils/careers-form-utils';
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
   const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
@@ -141,10 +151,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     tbody.innerHTML = careers.map(c => {
       const active = c.is_active !== false;
       const subjects = c.subjects_count ?? c.subjects?.length ?? '-';
+      const totalSpots = resolveCareerTotalSpots(c.total_spots);
       return `<tr class="border-b border-border hover:bg-muted/40 transition-colors">
         <td class="py-3 pr-4 text-sm font-medium text-foreground">${escHtml(c.name)}</td>
         <td class="py-3 pr-4 text-sm text-muted-foreground font-mono">${escHtml(c.code)}</td>
         <td class="py-3 pr-4 text-sm text-muted-foreground">${c.duration_years || c.duration || '-'} años</td>
+        <td class="py-3 pr-4 text-sm text-muted-foreground">${totalSpots}</td>
         <td class="py-3 pr-4 text-sm text-muted-foreground">${subjects}</td>
         <td class="py-3 pr-4">
           <span class="inline-flex items-center rounded-full ${active ? 'bg-green-500/15 text-green-400' : 'bg-muted text-muted-foreground'} px-2 py-0.5 text-xs font-medium">${active ? 'Activa' : 'Inactiva'}</span>
@@ -211,6 +223,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const codeEl = document.getElementById('career-code') as HTMLInputElement;
     const descEl = document.getElementById('career-desc') as HTMLTextAreaElement;
     const durEl = document.getElementById('career-duration') as HTMLInputElement;
+    const totalSpotsEl = document.getElementById('career-total-spots') as HTMLInputElement;
     const activeEl = document.getElementById('career-active') as HTMLInputElement;
     document.getElementById('form-error')?.classList.add('hidden');
 
@@ -221,11 +234,13 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       if (codeEl) codeEl.value = career.code || '';
       if (descEl) descEl.value = career.description || '';
       if (durEl) durEl.value = career.duration_years || career.duration || 4;
+      if (totalSpotsEl) totalSpotsEl.value = String(resolveCareerTotalSpots(career.total_spots));
       if (activeEl) activeEl.checked = career.is_active !== false;
     } else {
       if (title) title.textContent = 'Nueva carrera';
       if (idEl) idEl.value = '';
       (document.getElementById('career-form') as HTMLFormElement)?.reset();
+      if (totalSpotsEl) totalSpotsEl.value = String(DEFAULT_TOTAL_SPOTS);
       if (activeEl) activeEl.checked = true;
     }
     document.getElementById('modal-backdrop')?.classList.remove('hidden');
@@ -249,12 +264,22 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const code = (document.getElementById('career-code') as HTMLInputElement).value;
     const description = (document.getElementById('career-desc') as HTMLTextAreaElement).value;
     const duration_years = parseInt((document.getElementById('career-duration') as HTMLInputElement).value);
+    const totalSpotsRaw = (document.getElementById('career-total-spots') as HTMLInputElement).value;
+    const total_spots = parseValidTotalSpots(totalSpotsRaw);
     const is_active = (document.getElementById('career-active') as HTMLInputElement).checked;
+
+    if (total_spots === null) {
+      errEl?.classList.remove('hidden');
+      if (errEl) errEl.textContent = 'Ingresá cupos totales válidos (entero mayor o igual a 0).';
+      return;
+    }
+
+    errEl?.classList.add('hidden');
     try {
       if (id) {
-        await apiFetch(`/academic/careers/${id}/`, { method: 'PATCH', body: JSON.stringify({ name, code, description, duration_years, is_active }) });
+        await apiFetch(`/academic/careers/${id}/`, { method: 'PATCH', body: JSON.stringify({ name, code, description, duration_years, total_spots, is_active }) });
       } else {
-        await apiFetch('/academic/careers/', { method: 'POST', body: JSON.stringify({ name, code, description, duration_years, is_active }) });
+        await apiFetch('/academic/careers/', { method: 'POST', body: JSON.stringify({ name, code, description, duration_years, total_spots, is_active }) });
       }
       closePanel();
       await loadCareers();

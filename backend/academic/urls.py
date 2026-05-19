@@ -9,5 +9,9 @@ router.register('periods', views.AcademicPeriodViewSet, basename='period')
 router.register('classrooms', views.ClassroomViewSet, basename='classroom')
 router.register('classes', views.ClassViewSet, basename='class')
 router.register('schedules', views.ClassScheduleViewSet, basename='schedule')
+router.register('time-slots', views.TimeSlotViewSet, basename='time-slot')
+router.register('timetable-runs', views.TimetableRunViewSet, basename='timetable-run')
+router.register('schedule-assignments', views.ScheduleAssignmentViewSet, basename='schedule-assignment')
+router.register('constraint-violations', views.ConstraintViolationViewSet, basename='constraint-violation')
 
 urlpatterns = router.urls

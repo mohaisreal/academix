@@ -140,6 +140,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 </style>
 
 <script>
+  import { normalizeMyScheduleRows } from '@/utils/timetable-management-utils';
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
   const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
@@ -157,16 +158,23 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   if (role !== 's' && role !== 't') window.location.replace('/');
 
-  // Mapea datos de matrícula de asignaturas del estudiante a la misma forma que los datos de clase
-  function normalizeStudentSubjects(subjects) {
-    return subjects.map(s => ({
-      id: s.class_id || s.id,
-      subject_name: s.subject_name || s.name,
-      classroom_name: s.classroom_name || s.classroom,
-      period_name: s.period_name,
-      schedules: s.schedules || s.schedule || [],
-      color: null,
-    }));
+  function groupRowsAsClasses(rows) {
+    const grouped = new Map();
+    rows.forEach((row) => {
+      const clsId = row.class_id;
+      if (!grouped.has(clsId)) {
+        grouped.set(clsId, {
+          id: clsId,
+          subject_name: row.subject_name,
+          classroom_name: row.classroom,
+          period_name: row.period_name,
+          color: row.color,
+          schedules: [],
+        });
+      }
+      grouped.get(clsId).schedules.push(row.schedule[0]);
+    });
+    return Array.from(grouped.values());
   }
 
   async function apiFetch(path, options = {}) {
@@ -294,13 +302,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   (async () => {
     try {
       let classes = [];
-      if (role === 's') {
-        const data = await apiFetch('/enrollment/my-subjects/');
+      if (role === 's' || role === 't') {
+        const data = await apiFetch('/academic/classes/my-schedule/');
         const raw = Array.isArray(data) ? data : (data.results || []);
-        classes = normalizeStudentSubjects(raw);
-      } else if (role === 't') {
-        const data = await apiFetch('/academic/classes/my-classes/');
-        classes = Array.isArray(data) ? data : (data.results || []);
+        const normalized = normalizeMyScheduleRows(raw);
+        classes = groupRowsAsClasses(normalized);
       }
 
     // Determina la etiqueta del período actual

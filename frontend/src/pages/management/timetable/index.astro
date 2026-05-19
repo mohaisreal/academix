@@ -1,0 +1,317 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+---
+
+<DashboardLayout title="Gestión de horarios — Academix" currentPath="/management/timetable">
+  <div id="page-loading" class="p-6 space-y-4">
+    <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
+    <div class="h-56 bg-card rounded-xl border border-border animate-pulse"></div>
+    <div class="h-80 bg-card rounded-xl border border-border animate-pulse"></div>
+  </div>
+
+  <div id="page-content" class="hidden p-6 space-y-6">
+    <div class="flex flex-col gap-3 border-b border-border pb-4 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <h1 class="text-xl font-semibold text-foreground">Gestión de horarios</h1>
+        <p class="text-sm text-muted-foreground">Generá borradores, publicá ejecuciones y revisá asignaciones/conflictos.</p>
+      </div>
+      <span id="selected-run-badge" class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">Ninguna ejecución seleccionada</span>
+    </div>
+
+    <section class="bg-card border border-border rounded-xl p-5 space-y-4">
+      <div class="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+        <div>
+          <h2 class="text-lg font-semibold">Ejecuciones</h2>
+          <p class="text-sm text-muted-foreground">Crear, filtrar, generar, publicar o eliminar borradores.</p>
+        </div>
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <select id="run-period-filter" class="bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="">Todos los períodos</option></select>
+          <select id="run-status-filter" class="bg-input border border-border rounded-lg px-3 py-2 text-sm">
+            <option value="">Todos los estados</option><option value="draft">Borrador</option><option value="running">En ejecución</option><option value="completed">Completada</option><option value="partial">Parcial</option><option value="failed">Fallida</option><option value="published">Publicada</option>
+          </select>
+          <button id="reload-runs-btn" class="rounded-lg border border-border px-4 py-2 text-sm">Recargar</button>
+        </div>
+      </div>
+
+      <div class="grid gap-6 xl:grid-cols-[1.8fr,1fr]">
+        <div>
+          <div class="overflow-x-auto"><table class="w-full"><thead><tr class="border-b border-border"><th class="text-left text-xs uppercase pb-3">Ejecución</th><th class="text-left text-xs uppercase pb-3">Estado</th><th class="text-left text-xs uppercase pb-3">Asignaciones</th><th class="text-left text-xs uppercase pb-3">Infracciones</th><th class="text-left text-xs uppercase pb-3">Acciones</th></tr></thead><tbody id="runs-table-body"></tbody></table></div>
+          <div id="runs-empty" class="hidden rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">No se encontraron ejecuciones.</div>
+        </div>
+        <form id="run-form" class="rounded-xl border border-border bg-background p-4 space-y-3">
+          <h3 class="text-sm font-semibold">Crear ejecución borrador</h3>
+          <div><label class="text-xs text-muted-foreground">Período *</label><select id="run-period-create" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="">Seleccioná un período</option></select></div>
+          <div id="run-form-error" class="hidden rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300"></div>
+          <button class="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Crear ejecución</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="bg-card border border-border rounded-xl p-5 space-y-4">
+      <h2 class="text-lg font-semibold">Franjas horarias</h2>
+      <div class="grid gap-6 xl:grid-cols-[1.5fr,1fr]">
+        <div>
+          <div class="overflow-x-auto"><table class="w-full"><thead><tr class="border-b border-border"><th class="text-left text-xs uppercase pb-3">Día</th><th class="text-left text-xs uppercase pb-3">Inicio</th><th class="text-left text-xs uppercase pb-3">Fin</th></tr></thead><tbody id="timeslots-table-body"></tbody></table></div>
+          <div id="timeslots-empty" class="hidden rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">No hay franjas horarias aún.</div>
+        </div>
+        <div class="space-y-4">
+          <form id="timeslot-form" class="rounded-xl border border-border bg-background p-4 space-y-3">
+            <h3 class="text-sm font-semibold">Crear franja</h3>
+            <select id="timeslot-day-of-week" required class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="">Día</option><option value="0">Lunes</option><option value="1">Martes</option><option value="2">Miércoles</option><option value="3">Jueves</option><option value="4">Viernes</option><option value="5">Sábado</option><option value="6">Domingo</option></select>
+            <div class="grid gap-2 sm:grid-cols-2"><input id="timeslot-start-time" type="time" required class="bg-input border border-border rounded-lg px-3 py-2 text-sm" /><input id="timeslot-end-time" type="time" required class="bg-input border border-border rounded-lg px-3 py-2 text-sm" /></div>
+            <div id="timeslot-form-error" class="hidden rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300"></div>
+            <button class="w-full rounded-lg border border-border px-4 py-2 text-sm">Crear franja</button>
+          </form>
+
+          <form id="timeslot-batch-form" class="rounded-xl border border-border bg-background p-4 space-y-3">
+            <h3 class="text-sm font-semibold">Crear lote por intervalos</h3>
+            <select id="timeslot-batch-day-of-week" required class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="">Día</option><option value="0">Lunes</option><option value="1">Martes</option><option value="2">Miércoles</option><option value="3">Jueves</option><option value="4">Viernes</option><option value="5">Sábado</option><option value="6">Domingo</option></select>
+            <div class="grid gap-2 sm:grid-cols-2"><input id="timeslot-batch-start-time" type="time" required class="bg-input border border-border rounded-lg px-3 py-2 text-sm" /><input id="timeslot-batch-end-time" type="time" required class="bg-input border border-border rounded-lg px-3 py-2 text-sm" /></div>
+            <input id="timeslot-batch-interval-minutes" type="number" min="1" required placeholder="Intervalo (min)" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm" />
+            <textarea id="timeslot-batch-breaks" rows="2" placeholder="11:00-11:30, 13:00-14:00" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"></textarea>
+            <div id="timeslot-batch-form-error" class="hidden rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300"></div>
+            <button class="w-full rounded-lg border border-border px-4 py-2 text-sm">Crear franjas por intervalo</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid gap-6 xl:grid-cols-[1.6fr,1fr]">
+      <div class="xl:col-span-2 bg-card border border-border rounded-xl p-5 space-y-4">
+        <h2 class="text-lg font-semibold">Preview de ejecución generada</h2>
+        <p id="preview-helper" class="text-sm text-muted-foreground">Seleccioná una ejecución y usá “Preview” para revisar cómo quedó generada antes de publicar.</p>
+        <div class="grid gap-3 sm:grid-cols-4">
+          <div class="rounded-lg border border-border p-3"><p class="text-xs text-muted-foreground">Período</p><p id="preview-period" class="text-sm font-medium">—</p></div>
+          <div class="rounded-lg border border-border p-3"><p class="text-xs text-muted-foreground">Estado</p><p id="preview-status" class="text-sm font-medium">—</p></div>
+          <div class="rounded-lg border border-border p-3"><p class="text-xs text-muted-foreground">Asignaciones</p><p id="preview-assignments" class="text-sm font-medium">0</p></div>
+          <div class="rounded-lg border border-border p-3"><p class="text-xs text-muted-foreground">Score</p><p id="preview-score" class="text-sm font-medium">—</p></div>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold mb-2">Metadata de generación</h3>
+          <ul id="preview-metadata" class="space-y-1 text-sm"></ul>
+          <p id="preview-metadata-empty" class="text-sm text-muted-foreground">Sin metadata disponible para esta ejecución.</p>
+        </div>
+        <div id="preview-empty" class="hidden rounded-lg border border-dashed border-border px-4 py-6 text-sm text-muted-foreground">Esta ejecución no tiene asignaciones generadas todavía.</div>
+      </div>
+      <div class="bg-card border border-border rounded-xl p-5 space-y-3">
+        <h2 class="text-lg font-semibold">Asignaciones</h2>
+        <p id="asignaciones-helper" class="text-sm text-muted-foreground">Seleccioná una ejecución para ver sus asignaciones.</p>
+        <div class="overflow-x-auto"><table class="w-full"><thead><tr class="border-b border-border"><th class="text-left text-xs uppercase pb-3">Asignatura</th><th class="text-left text-xs uppercase pb-3">Actividad</th><th class="text-left text-xs uppercase pb-3">Docente</th><th class="text-left text-xs uppercase pb-3">Franja</th><th class="text-left text-xs uppercase pb-3">Aula</th><th class="text-left text-xs uppercase pb-3">Estado</th></tr></thead><tbody id="asignaciones-table-body"></tbody></table></div>
+        <div id="asignaciones-empty" class="hidden rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">No hay asignaciones para esta ejecución.</div>
+      </div>
+      <div class="bg-card border border-border rounded-xl p-5 space-y-3">
+        <h2 class="text-lg font-semibold">Infracciones</h2>
+        <select id="violations-severity-filter" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="">Todas</option><option value="hard">Dura</option><option value="soft">Blanda</option></select>
+        <div class="flex flex-wrap gap-2 text-xs"><span id="violations-total" class="rounded-full bg-muted px-3 py-1">0 total</span><span id="violations-hard" class="rounded-full bg-red-500/10 text-red-300 px-3 py-1">0 duras</span><span id="violations-soft" class="rounded-full bg-amber-500/10 text-amber-300 px-3 py-1">0 blandas</span></div>
+        <ul id="violations-table-body" class="space-y-2 text-sm"></ul>
+      </div>
+    </section>
+  </div>
+</DashboardLayout>
+
+<script>
+  import { toast } from '@/components/starwind/toast';
+  import { buildTimeslotBatch, parseTimeslotBreakRanges, summarizeViolations, getRunDisplayName, formatActivityType, buildRunPreviewInfo, classifyTimetableActionError, buildDraftRunPayload, buildManualTimeslotPayload } from '@/utils/timetable-management-utils';
+
+  const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000/api';
+  const token = localStorage.getItem('access_token');
+  const user = JSON.parse(localStorage.getItem('user-storage') || '{}')?.state?.user;
+  if (!token) window.location.replace('/login');
+  if (!user || !['a', 'm'].includes(user.role)) window.location.replace('/');
+
+  const DAY_NAMES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+  const RUN_STATUS_LABELS = { draft: 'Borrador', running: 'En ejecución', completed: 'Completada', partial: 'Parcial', failed: 'Fallida', published: 'Publicada' };
+  const RUN_BADGES = { published: 'bg-green-500/10 text-green-300', completed: 'bg-blue-500/10 text-blue-300', running: 'bg-cyan-500/10 text-cyan-300', partial: 'bg-amber-500/10 text-amber-300', failed: 'bg-red-500/10 text-red-300', draft: 'bg-muted text-foreground' };
+
+  const q = (id) => document.getElementById(id);
+  const unwrap = (x) => (Array.isArray(x) ? x : (x?.results || []));
+  const esc = (v) => { const e = document.createElement('div'); e.textContent = String(v ?? ''); return e.innerHTML; };
+  const err = (e, fb) => (e instanceof Error && e.message ? e.message : fb);
+
+  let periods = []; let runs = []; let timeslots = []; let assignments = []; let violations = []; let selectedRunId = null;
+
+  async function apiFetch(path, options: RequestInit = {}) {
+    const res = await fetch(`${API_URL}${path}`, { ...options, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...(options.headers || {}) } });
+    if (res.status === 401) window.location.replace('/login');
+    const ct = res.headers.get('content-type') || '';
+    const payload = ct.includes('application/json') ? await res.json() : null;
+    if (!res.ok) {
+      const apiError = new Error(payload?.detail || payload?.mensaje || `HTTP ${res.status}`) as Error & { status?: number; payload?: any };
+      apiError.status = res.status;
+      apiError.payload = payload;
+      throw apiError;
+    }
+    return payload;
+  }
+
+  function showContent() { q('page-loading')?.classList.add('hidden'); q('page-content')?.classList.remove('hidden'); }
+  function selectedRun() { return runs.find((r) => Number(r.id) === Number(selectedRunId)) || null; }
+
+  function renderPeriodSelects() {
+    const a = q('run-period-filter'); const b = q('run-period-create');
+    if (!(a instanceof HTMLSelectElement) || !(b instanceof HTMLSelectElement)) return;
+    const av = a.value; const bv = b.value;
+    const opts = periods.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
+    a.innerHTML = `<option value="">Todos los períodos</option>${opts}`;
+    b.innerHTML = `<option value="">Seleccioná un período</option>${opts}`;
+    a.value = av; b.value = bv;
+  }
+
+  function renderRunBadge() { const b = q('selected-run-badge'); if (b) b.textContent = selectedRun() ? getRunDisplayName(selectedRun()) : 'Ninguna ejecución seleccionada'; }
+  function syncSelectedRun() { if (!selectedRunId || !runs.some((r) => Number(r.id) === Number(selectedRunId))) selectedRunId = runs[0]?.id ?? null; }
+
+  function renderRuns() {
+    const tbody = q('runs-table-body'); const empty = q('runs-empty'); if (!tbody) return;
+    if (runs.length === 0) { tbody.innerHTML = ''; empty?.classList.remove('hidden'); renderRunBadge(); return; }
+    empty?.classList.add('hidden');
+    tbody.innerHTML = runs.map((run) => {
+      const isSel = Number(run.id) === Number(selectedRunId); const canDelete = run.status === 'draft'; const canGenerate = run.status !== 'published';
+      return `<tr class="border-b border-border ${isSel ? 'bg-primary/5' : ''}"><td class="py-3 pr-2"><div class="font-medium">${esc(run.period_name || run.period?.name || `Ejecución #${run.id}`)}</div><div class="text-xs text-muted-foreground">#${run.id}</div></td><td class="py-3 pr-2"><span class="inline-flex rounded-full ${RUN_BADGES[run.status] || 'bg-muted'} px-2.5 py-0.5 text-xs">${esc(RUN_STATUS_LABELS[run.status] || run.status)}</span></td><td class="py-3 pr-2 text-sm">${run.assignments_count ?? run.asignaciones_count ?? 0}</td><td class="py-3 pr-2 text-sm">${run.violations_count ?? 0}</td><td class="py-3"><div class="flex flex-wrap gap-2"><button class="select-run-btn rounded border border-border px-2 py-1 text-xs" data-id="${run.id}">${isSel ? 'Seleccionada' : 'Seleccionar'}</button><button class="preview-run-btn rounded border border-indigo-500/30 text-indigo-300 px-2 py-1 text-xs" data-id="${run.id}">Preview</button><button class="generate-run-btn rounded border border-primary/40 text-primary px-2 py-1 text-xs ${canGenerate ? '' : 'opacity-60'}" data-id="${run.id}" ${canGenerate ? '' : 'disabled'}>Generar</button><button class="publish-run-btn rounded border border-green-500/30 text-green-300 px-2 py-1 text-xs ${run.status === 'published' ? 'opacity-60' : ''}" data-id="${run.id}" ${run.status === 'published' ? 'disabled' : ''}>Publicar</button><button class="delete-run-btn rounded border border-red-500/30 text-red-300 px-2 py-1 text-xs ${canDelete ? '' : 'opacity-60'}" data-id="${run.id}" ${canDelete ? '' : 'disabled'}>Eliminar</button></div></td></tr>`;
+    }).join('');
+
+    tbody.querySelectorAll('.select-run-btn').forEach((b) => b.addEventListener('click', async () => { selectedRunId = Number(b.getAttribute('data-id')); renderRuns(); renderRunBadge(); await Promise.all([loadAssignments(), loadViolations()]); }));
+    tbody.querySelectorAll('.preview-run-btn').forEach((b) => b.addEventListener('click', async () => { selectedRunId = Number(b.getAttribute('data-id')); await Promise.all([loadAssignments(), loadViolations()]); renderPreview(); renderRuns(); renderRunBadge(); }));
+    tbody.querySelectorAll('.publish-run-btn').forEach((b) => b.addEventListener('click', async () => publishRun(Number(b.getAttribute('data-id')))));
+    tbody.querySelectorAll('.generate-run-btn').forEach((b) => b.addEventListener('click', async () => generateRun(Number(b.getAttribute('data-id')))));
+    tbody.querySelectorAll('.delete-run-btn').forEach((b) => b.addEventListener('click', async () => deleteRun(Number(b.getAttribute('data-id')))));
+    renderRunBadge();
+  }
+
+  function renderTimeslots() {
+    const tbody = q('timeslots-table-body'); const empty = q('timeslots-empty'); if (!tbody) return;
+    if (timeslots.length === 0) { tbody.innerHTML = ''; empty?.classList.remove('hidden'); return; }
+    empty?.classList.add('hidden');
+    tbody.innerHTML = timeslots.map((s) => `<tr class="border-b border-border"><td class="py-3">${esc(s.day_name || DAY_NAMES[Number(s.day_of_week)] || '—')}</td><td class="py-3">${esc(s.start_time || '—')}</td><td class="py-3">${esc(s.end_time || '—')}</td></tr>`).join('');
+  }
+
+  function renderAssignments() {
+    const helper = q('asignaciones-helper'); const tbody = q('asignaciones-table-body'); const empty = q('asignaciones-empty');
+    if (helper) helper.textContent = selectedRunId ? `Ejecución #${selectedRunId} · asignaciones` : 'Seleccioná una ejecución para ver sus asignaciones.';
+    if (!tbody) return;
+    if (!selectedRunId || assignments.length === 0) { tbody.innerHTML = ''; empty?.classList.remove('hidden'); return; }
+    empty?.classList.add('hidden');
+    tbody.innerHTML = assignments.map((a) => `<tr class="border-b border-border"><td class="py-3"><div class="font-medium">${esc(a.asignatura_name || a.subject_name || 'Clase')}</div><div class="text-xs text-muted-foreground">${esc(a.asignatura_code || a.subject_code || '')}</div></td><td class="py-3">${esc(formatActivityType(a.activity_type || 'theory'))}</td><td class="py-3">${esc(a.teacher_name || '—')}</td><td class="py-3">${esc(a.timeslot_day_name ? `${a.timeslot_day_name} · ${a.timeslot_start_time}-${a.timeslot_end_time}` : '—')}</td><td class="py-3">${esc(a.classroom_name || '—')}</td><td class="py-3">${esc(a.status || 'assigned')}</td></tr>`).join('');
+  }
+
+  function renderViolations() {
+    const list = q('violations-table-body'); if (!list) return;
+    const sum = summarizeViolations(violations);
+    const total = q('violations-total'); const hard = q('violations-hard'); const soft = q('violations-soft');
+    if (total) total.textContent = `${sum.total} total`; if (hard) hard.textContent = `${sum.hard} duras`; if (soft) soft.textContent = `${sum.soft} blandas`;
+    if (!selectedRunId || violations.length === 0) { list.innerHTML = '<li class="text-sm text-muted-foreground">No hay infracciones para esta ejecución.</li>'; return; }
+    list.innerHTML = violations.map((v) => `<li class="rounded-lg border border-border p-2"><strong>${esc(v.severity === 'hard' ? 'Dura' : 'Blanda')}</strong> · ${esc(v.rule_kind || 'regla')} · ${esc(v.assignment_asignatura_code || '—')} · penalización ${Number(v.penalty ?? 0)}<div class="text-muted-foreground">${esc(v.mensaje || v.message || '')}</div></li>`).join('');
+  }
+
+  function renderPreview() {
+    const helper = q('preview-helper'); const metadataList = q('preview-metadata'); const metadataEmpty = q('preview-metadata-empty'); const assignmentsEmpty = q('preview-empty');
+    const run = selectedRun();
+    if (!run) {
+      if (helper) helper.textContent = 'Seleccioná una ejecución y usá “Preview” para revisar cómo quedó generada antes de publicar.';
+      if (q('preview-period')) q('preview-period').textContent = '—';
+      if (q('preview-status')) q('preview-status').textContent = '—';
+      if (q('preview-assignments')) q('preview-assignments').textContent = '0';
+      if (q('preview-score')) q('preview-score').textContent = '—';
+      if (metadataList) metadataList.innerHTML = '';
+      metadataEmpty?.classList.remove('hidden'); assignmentsEmpty?.classList.add('hidden');
+      return;
+    }
+    const preview = buildRunPreviewInfo(run, assignments);
+    if (helper) helper.textContent = `Preview de ejecución #${run.id} · ${preview.statusLabel}.`;
+    if (q('preview-period')) q('preview-period').textContent = String(preview.periodLabel || '—');
+    if (q('preview-status')) q('preview-status').textContent = preview.statusLabel;
+    if (q('preview-assignments')) q('preview-assignments').textContent = String(preview.assignmentsCount);
+    if (q('preview-score')) q('preview-score').textContent = preview.scoreLabel;
+    if (metadataList) metadataList.innerHTML = preview.metadataRows.map((row) => `<li><span class="text-muted-foreground">${esc(row.key)}:</span> ${esc(row.value)}</li>`).join('');
+    metadataEmpty?.classList.toggle('hidden', preview.metadataRows.length > 0);
+    assignmentsEmpty?.classList.toggle('hidden', preview.hasAssignments);
+  }
+
+  async function loadCatalogs() {
+    const [periodData, timeslotData] = await Promise.all([apiFetch('/academic/periods/'), apiFetch('/academic/time-slots/')]);
+    periods = unwrap(periodData); timeslots = unwrap(timeslotData);
+    renderPeriodSelects(); renderTimeslots();
+  }
+  async function loadRuns() {
+    const params = new URLSearchParams(); const p = q('run-period-filter'); const s = q('run-status-filter');
+    if (p instanceof HTMLSelectElement && p.value) params.set('period', p.value);
+    if (s instanceof HTMLSelectElement && s.value) params.set('status', s.value);
+    runs = unwrap(await apiFetch(`/academic/timetable-runs/${params.toString() ? `?${params.toString()}` : ''}`));
+    syncSelectedRun(); renderRuns();
+  }
+  async function loadTimeslots() { timeslots = unwrap(await apiFetch('/academic/time-slots/')); renderTimeslots(); }
+  async function loadAssignments() { if (!selectedRunId) { assignments = []; renderAssignments(); renderPreview(); return; } assignments = unwrap(await apiFetch(`/academic/schedule-assignments/?run=${selectedRunId}`)); renderAssignments(); renderPreview(); }
+  async function loadViolations() {
+    if (!selectedRunId) { violations = []; renderViolations(); renderPreview(); return; }
+    const params = new URLSearchParams({ run: String(selectedRunId) }); const sf = q('violations-severity-filter');
+    if (sf instanceof HTMLSelectElement && sf.value) params.set('severity', sf.value);
+    violations = unwrap(await apiFetch(`/academic/constraint-violations/?${params.toString()}`)); renderViolations(); renderPreview();
+  }
+
+  async function publishRun(id) { try { await apiFetch(`/academic/timetable-runs/${id}/publish/`, { method: 'POST' }); toast.success('Ejecución publicada'); await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(classifyTimetableActionError(e, 'publish')); } }
+  async function generateRun(id) { try { selectedRunId = id; await apiFetch(`/academic/timetable-runs/${id}/generate/`, { method: 'POST' }); toast.success('Horario generado'); await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(classifyTimetableActionError(e, 'generate')); } }
+  async function deleteRun(id) { try { await apiFetch(`/academic/timetable-runs/${id}/`, { method: 'DELETE' }); if (Number(selectedRunId) === Number(id)) selectedRunId = null; toast.success('Ejecución borrador eliminada'); await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(err(e, 'No se pudo eliminar')); } }
+
+  q('reload-runs-btn')?.addEventListener('click', async () => { try { await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(err(e, 'No se pudieron recargar ejecuciones')); } });
+  q('run-period-filter')?.addEventListener('change', async () => { try { await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(err(e, 'No se pudo aplicar filtro')); } });
+  q('run-status-filter')?.addEventListener('change', async () => { try { await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(err(e, 'No se pudo aplicar filtro')); } });
+  q('violations-severity-filter')?.addEventListener('change', async () => { try { await loadViolations(); } catch (e) { toast.error(err(e, 'No se pudo aplicar filtro de gravedad')); } });
+
+  q('run-form')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const period = q('run-period-create'); const error = q('run-form-error'); error?.classList.add('hidden');
+    if (!(period instanceof HTMLSelectElement)) return;
+    try {
+      const created = await apiFetch('/academic/timetable-runs/', { method: 'POST', body: JSON.stringify(buildDraftRunPayload(period.value)) });
+      selectedRunId = created?.id ?? selectedRunId;
+      if (event.currentTarget instanceof HTMLFormElement) event.currentTarget.reset();
+      toast.success('Ejecución borrador creada');
+      await Promise.all([loadRuns(), loadAssignments(), loadViolations()]);
+    } catch (e) {
+      if (error) error.textContent = classifyTimetableActionError(e, 'draft'); error?.classList.remove('hidden');
+    }
+  });
+
+  q('timeslot-form')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const day = q('timeslot-day-of-week'); const start = q('timeslot-start-time'); const end = q('timeslot-end-time'); const error = q('timeslot-form-error'); error?.classList.add('hidden');
+    if (!(day instanceof HTMLSelectElement) || !(start instanceof HTMLInputElement) || !(end instanceof HTMLInputElement)) return;
+    if (start.value >= end.value) { if (error) error.textContent = 'La hora de fin debe ser posterior a la hora de inicio.'; error?.classList.remove('hidden'); return; }
+    try {
+      const period = q('run-period-create');
+      if (!(period instanceof HTMLSelectElement)) throw new Error('No se encontró el selector de período.');
+      const payload = buildManualTimeslotPayload({ period: period.value, dayOfWeek: day.value, startTime: start.value, endTime: end.value });
+      await apiFetch('/academic/time-slots/', { method: 'POST', body: JSON.stringify(payload) });
+      toast.success('Franja creada');
+      if (event.currentTarget instanceof HTMLFormElement) event.currentTarget.reset();
+      await loadTimeslots();
+    }
+    catch (e) { if (error) error.textContent = classifyTimetableActionError(e, 'timeslot'); error?.classList.remove('hidden'); }
+  });
+
+  q('timeslot-batch-form')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const day = q('timeslot-batch-day-of-week'); const start = q('timeslot-batch-start-time'); const end = q('timeslot-batch-end-time'); const interval = q('timeslot-batch-interval-minutes'); const breaks = q('timeslot-batch-breaks'); const error = q('timeslot-batch-form-error');
+    error?.classList.add('hidden');
+    if (!(day instanceof HTMLSelectElement) || !(start instanceof HTMLInputElement) || !(end instanceof HTMLInputElement) || !(interval instanceof HTMLInputElement) || !(breaks instanceof HTMLTextAreaElement)) return;
+    try {
+      const period = q('run-period-create');
+      if (!(period instanceof HTMLSelectElement)) throw new Error('No se encontró el selector de período.');
+      const batch = buildTimeslotBatch({ period: period.value, dayOfWeek: day.value, startTime: start.value, endTime: end.value, intervalMinutes: interval.value, breakRanges: parseTimeslotBreakRanges(breaks.value) });
+      if (batch.length === 0) throw new Error('No se crearían franjas con el rango indicado.');
+      const key = (x) => `${x.day_of_week}|${String(x.start_time).slice(0, 5)}|${String(x.end_time).slice(0, 5)}`;
+      const existing = new Set(timeslots.map(key));
+      const unique = batch.filter((s) => !existing.has(key(s)));
+      let created = 0;
+      for (const payload of unique) { await apiFetch('/academic/time-slots/', { method: 'POST', body: JSON.stringify(payload) }); created += 1; }
+      toast.success(created ? `Creadas ${created} franjas${batch.length - created ? ` · omitidas ${batch.length - created} duplicadas` : ''}` : `No se crearon nuevas · ${batch.length} duplicadas`);
+      if (event.currentTarget instanceof HTMLFormElement) event.currentTarget.reset();
+      await loadTimeslots();
+    } catch (e) { if (error) error.textContent = classifyTimetableActionError(e, 'timeslot'); error?.classList.remove('hidden'); }
+  });
+
+  (async () => {
+    try { await loadCatalogs(); await loadRuns(); await Promise.all([loadAssignments(), loadViolations()]); }
+    catch (e) { toast.error(err(e, 'No se pudo cargar la gestión de horarios')); }
+    showContent();
+  })();
+</script>

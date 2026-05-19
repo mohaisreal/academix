@@ -170,3 +170,100 @@ class MatriculaConfig(models.Model):
 
     def __str__(self):
         return f"{self.label} — {self.price_per_credit} €/crédito"
+
+
+class TimeSlot(models.Model):
+    DAY_CHOICES = ClassSchedule.DAY_CHOICES
+
+    period = models.ForeignKey(AcademicPeriod, on_delete=models.CASCADE, related_name='time_slots')
+    day_of_week = models.PositiveSmallIntegerField(choices=DAY_CHOICES)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+
+    class Meta:
+        ordering = ['day_of_week', 'start_time']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['period', 'day_of_week', 'start_time', 'end_time'],
+                name='unique_period_timeslot',
+            ),
+        ]
+
+    def clean(self):
+        if self.start_time and self.end_time and self.start_time >= self.end_time:
+            from django.core.exceptions import ValidationError
+            raise ValidationError({'end_time': 'End time must be after start time.'})
+
+    def __str__(self):
+        return f"{self.period.code} {self.get_day_of_week_display()} {self.start_time}-{self.end_time}"
+
+
+class TimetableRun(models.Model):
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('completed', 'Completed'),
+        ('partial', 'Partial'),
+        ('failed', 'Failed'),
+        ('published', 'Published'),
+    ]
+
+    period = models.ForeignKey(AcademicPeriod, on_delete=models.CASCADE, related_name='timetable_runs')
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default='draft')
+    metadata = models.JSONField(default=dict, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class ScheduleAssignment(models.Model):
+    SOURCE_CHOICES = [
+        ('generated', 'Generated'),
+        ('manual', 'Manual'),
+    ]
+
+    run = models.ForeignKey(TimetableRun, on_delete=models.CASCADE, related_name='assignments')
+    cls = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='schedule_assignments')
+    slot = models.ForeignKey(TimeSlot, on_delete=models.CASCADE, related_name='assignments')
+    classroom = models.ForeignKey(Classroom, null=True, blank=True, on_delete=models.SET_NULL)
+    teacher = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='generated_schedule_assignments',
+    )
+    source = models.CharField(max_length=10, choices=SOURCE_CHOICES, default='generated')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['run', 'cls'], name='unique_run_class_assignment'),
+            models.UniqueConstraint(fields=['run', 'slot', 'classroom'], name='unique_run_slot_classroom'),
+            models.UniqueConstraint(fields=['run', 'slot', 'teacher'], name='unique_run_slot_teacher'),
+        ]
+
+
+class ConstraintViolation(models.Model):
+    SEVERITY_CHOICES = [
+        ('hard', 'Hard'),
+        ('soft', 'Soft'),
+    ]
+
+    run = models.ForeignKey(TimetableRun, on_delete=models.CASCADE, related_name='violations')
+    assignment = models.ForeignKey(
+        ScheduleAssignment,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='violations',
+    )
+    severity = models.CharField(max_length=10, choices=SEVERITY_CHOICES)
+    reason = models.CharField(max_length=255)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']

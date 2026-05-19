@@ -10,56 +10,10 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   <div id="page-content" class="hidden">
     <div class="border-b border-border px-6 py-4">
       <h1 class="text-xl font-semibold text-foreground">Administración del sistema</h1>
-      <p class="text-sm text-muted-foreground">Cuentas de usuario y configuración de la plataforma</p>
+      <p class="text-sm text-muted-foreground">Configuración general de la plataforma</p>
     </div>
 
     <div class="p-6 space-y-6">
-      <!-- Gestión de usuarios -->
-      <section class="bg-card text-card-foreground rounded-xl border border-border overflow-hidden">
-        <div class="flex items-center justify-between px-5 py-4 border-b border-border">
-          <div>
-            <h2 class="text-sm font-semibold text-foreground">Gestión de usuarios</h2>
-            <p class="text-xs text-muted-foreground mt-0.5">Crea y gestiona todos los usuarios del sistema</p>
-          </div>
-          <button id="new-user-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nuevo usuario
-          </button>
-        </div>
-
-        <!-- Filtros -->
-        <div class="px-5 py-3 border-b border-border flex flex-wrap gap-3">
-          <div class="relative flex-1 min-w-48">
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
-            <input id="user-search" type="text" placeholder="Buscar por nombre o correo..." class="pl-9 pr-4 py-2 w-full bg-input border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-          </div>
-          <select id="role-filter" class="bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-            <option value="">Todos los roles</option>
-            <option value="s">Estudiante</option>
-            <option value="t">Profesor</option>
-            <option value="m">Gestión</option>
-            <option value="a">Admin</option>
-          </select>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="border-b border-border bg-muted/50">
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Usuario</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Correo electrónico</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Rol</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Estado</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-5 py-3">Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="users-table"></tbody>
-          </table>
-        </div>
-        <div id="users-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No se encontraron usuarios</div>
-      </section>
-
-      <!-- Formato de ID de estudiante -->
       <section class="bg-card text-card-foreground rounded-xl border border-border overflow-hidden">
         <div class="px-5 py-4 border-b border-border">
           <h2 class="text-sm font-semibold text-foreground">Formato de ID de estudiante</h2>
@@ -85,7 +39,6 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         </div>
       </section>
 
-      <!-- Cobros de matrícula -->
       <section class="bg-card text-card-foreground rounded-xl border border-border overflow-hidden">
         <div class="px-5 py-4 border-b border-border">
           <h2 class="text-sm font-semibold text-foreground">Cargos de pago de matrícula</h2>
@@ -122,70 +75,6 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       </section>
     </div>
   </div>
-
-  <!-- Modal centrado -->
-  <div id="modal-backdrop" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="w-full max-w-lg rounded-xl border border-border bg-background shadow-2xl max-h-[90vh] flex flex-col">
-      <!-- Cabecera -->
-      <div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-        <h2 id="modal-title" class="text-base font-semibold text-foreground">Nuevo usuario</h2>
-        <button id="modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <!-- Scrollable body -->
-      <div class="overflow-y-auto flex-1 px-5 py-4">
-        <form id="user-form" class="space-y-4">
-          <input id="edit-id" type="hidden" value="" />
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="text-xs font-medium text-muted-foreground">Nombre *</label>
-              <input id="user-first" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-            </div>
-            <div>
-              <label class="text-xs font-medium text-muted-foreground">Apellido *</label>
-              <input id="user-last" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-            </div>
-          </div>
-          <div>
-            <label class="text-xs font-medium text-muted-foreground">Correo electrónico *</label>
-            <input id="user-email" type="email" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-          </div>
-          <div>
-            <label class="text-xs font-medium text-muted-foreground">Nombre de usuario *</label>
-            <input id="user-username" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-          </div>
-          <div id="password-field">
-            <label class="text-xs font-medium text-muted-foreground">Contraseña <span id="pw-hint" class="text-muted-foreground/60">(obligatoria para usuarios nuevos)</span></label>
-            <input id="user-password" type="password" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-          </div>
-          <div>
-            <label class="text-xs font-medium text-muted-foreground">Rol *</label>
-            <select id="user-role" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-              <option value="s">Estudiante</option>
-              <option value="t">Profesor</option>
-              <option value="m">Gestión</option>
-              <option value="a">Administración</option>
-            </select>
-          </div>
-          <div>
-            <label class="text-xs font-medium text-muted-foreground">Teléfono</label>
-            <input id="user-phone" type="tel" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-          </div>
-          <div class="flex items-center gap-3">
-            <input id="user-active" type="checkbox" checked class="size-4 rounded border-border" />
-            <label for="user-active" class="text-sm text-foreground">Activo</label>
-          </div>
-          <div id="form-error" class="hidden text-xs text-red-400 bg-red-500/10 rounded-lg p-3"></div>
-        </form>
-      </div>
-      <!-- Pie fijo -->
-      <div class="flex items-center justify-end gap-3 px-5 py-4 border-t border-border shrink-0">
-        <button id="modal-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancelar</button>
-        <button id="modal-save" type="submit" form="user-form" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">Guardar</button>
-      </div>
-    </div>
-  </div>
 </DashboardLayout>
 
 <script>
@@ -197,6 +86,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; }
     catch { return null; }
   }
+
   const token = localStorage.getItem(TOKEN_KEY);
   if (!token) window.location.replace('/login');
   const user = getUser();
@@ -214,194 +104,6 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     return res.json();
   }
 
-  function escHtml(str) {
-    const d = document.createElement('div');
-    d.textContent = String(str ?? '');
-    return d.innerHTML;
-  }
-
-  const ROLE_LABELS: Record<string,string> = { s: 'Estudiante', t: 'Profesor', m: 'Gestión', a: 'Administración' };
-  const ROLE_COLORS: Record<string,string> = {
-    s: 'bg-blue-500/15 text-blue-400',
-    t: 'bg-purple-500/15 text-purple-400',
-    m: 'bg-yellow-500/15 text-yellow-400',
-    a: 'bg-red-500/15 text-red-400',
-  };
-
-  let allUsers: any[] = [];
-  let searchQuery = '';
-  let roleFilter = '';
-
-  function renderTable() {
-    let filtered = allUsers;
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      filtered = filtered.filter(u =>
-        (u.first_name + ' ' + u.last_name).toLowerCase().includes(q) ||
-        u.email?.toLowerCase().includes(q) ||
-        u.username?.toLowerCase().includes(q)
-      );
-    }
-    if (roleFilter) {
-      filtered = filtered.filter(u => u.role === roleFilter);
-    }
-
-    const tbody = document.getElementById('users-table');
-    const empty = document.getElementById('users-empty');
-    if (!tbody) return;
-
-    if (filtered.length === 0) {
-      tbody.innerHTML = '';
-      empty?.classList.remove('hidden');
-      return;
-    }
-    empty?.classList.add('hidden');
-    tbody.innerHTML = filtered.map(u => {
-      const active = u.is_active !== false;
-      const initials = ((u.first_name?.[0] ?? '') + (u.last_name?.[0] ?? '')).toUpperCase() || '?';
-      const roleLabel = ROLE_LABELS[u.role] ?? u.role ?? '—';
-      const roleColor = ROLE_COLORS[u.role] ?? 'bg-muted text-muted-foreground';
-      const isSelf = u.id === user.id;
-      return `<tr class="border-b border-border hover:bg-muted/40 transition-colors">
-        <td class="px-5 py-3">
-          <div class="flex items-center gap-3">
-            <div class="size-8 rounded-full bg-primary/15 flex items-center justify-center text-xs font-semibold text-primary flex-shrink-0">${escHtml(initials)}</div>
-            <div>
-              <p class="text-sm font-medium text-foreground">${escHtml(u.first_name)} ${escHtml(u.last_name)} ${isSelf ? '<span class="text-xs text-muted-foreground">(tu cuenta)</span>' : ''}</p>
-              <p class="text-xs text-muted-foreground">@${escHtml(u.username ?? '')}</p>
-            </div>
-          </div>
-        </td>
-        <td class="px-5 py-3 text-sm text-muted-foreground">${escHtml(u.email ?? '—')}</td>
-        <td class="px-5 py-3">
-          <span class="inline-flex items-center rounded-full ${roleColor} px-2 py-0.5 text-xs font-medium">${roleLabel}</span>
-        </td>
-        <td class="px-5 py-3">
-          <span class="inline-flex items-center rounded-full ${active ? 'bg-green-500/15 text-green-400' : 'bg-muted text-muted-foreground'} px-2 py-0.5 text-xs font-medium">
-            ${active ? 'Activo' : 'Inactivo'}
-          </span>
-        </td>
-        <td class="px-5 py-3">
-          <div class="flex items-center gap-2">
-            <button class="edit-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors" data-id="${u.id}">Editar</button>
-            ${!isSelf ? `<button class="toggle-btn rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${active ? 'border-border text-red-400 hover:bg-red-500/10 hover:border-red-500/30' : 'border-border text-green-400 hover:bg-green-500/10 hover:border-green-500/30'}" data-id="${u.id}" data-active="${active}">${active ? 'Desactivar' : 'Activar'}</button>` : ''}
-          </div>
-        </td>
-      </tr>`;
-    }).join('');
-
-    tbody.querySelectorAll('.edit-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const u = allUsers.find(x => x.id == (btn as HTMLElement).dataset.id);
-        if (u) openPanel(u);
-      });
-    });
-    tbody.querySelectorAll('.toggle-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const id = (btn as HTMLElement).dataset.id;
-        const active = (btn as HTMLElement).dataset.active === 'true';
-        if (!confirm(`¿${active ? 'Desactivar' : 'Activar'} este usuario?`)) return;
-        await apiFetch(`/users/${id}/`, { method: 'PATCH', body: JSON.stringify({ is_active: !active }) });
-        await loadUsers();
-      });
-    });
-  }
-
-  async function loadUsers() {
-    try {
-      const data = await apiFetch('/users/');
-      allUsers = Array.isArray(data) ? data : (data?.results ?? []);
-      renderTable();
-    } catch (err) {
-      console.error('No se pudieron cargar los usuarios:', err);
-      const empty = document.getElementById('users-empty');
-      if (empty) { empty.textContent = 'No se pudieron cargar los usuarios.'; empty.classList.remove('hidden'); }
-    } finally {
-      document.getElementById('page-loading')?.classList.add('hidden');
-      document.getElementById('page-content')?.classList.remove('hidden');
-    }
-  }
-
-  function openPanel(u: any = null) {
-    document.getElementById('form-error')?.classList.add('hidden');
-    const title = document.getElementById('modal-title');
-    const pwHint = document.getElementById('pw-hint');
-    const pwInput = document.getElementById('user-password') as HTMLInputElement;
-    if (u) {
-      if (title) title.textContent = 'Editar usuario';
-      if (pwHint) pwHint.textContent = '(deja en blanco para mantener la actual)';
-      pwInput.removeAttribute('required');
-      (document.getElementById('edit-id') as HTMLInputElement).value = u.id;
-      (document.getElementById('user-first') as HTMLInputElement).value = u.first_name ?? '';
-      (document.getElementById('user-last') as HTMLInputElement).value = u.last_name ?? '';
-      (document.getElementById('user-email') as HTMLInputElement).value = u.email ?? '';
-      (document.getElementById('user-username') as HTMLInputElement).value = u.username ?? '';
-      (document.getElementById('user-role') as HTMLSelectElement).value = u.role ?? 's';
-      (document.getElementById('user-phone') as HTMLInputElement).value = u.phone ?? '';
-      (document.getElementById('user-active') as HTMLInputElement).checked = u.is_active !== false;
-      pwInput.value = '';
-    } else {
-      if (title) title.textContent = 'Nuevo usuario';
-      if (pwHint) pwHint.textContent = '(obligatoria para usuarios nuevos)';
-      pwInput.setAttribute('required', '');
-      (document.getElementById('edit-id') as HTMLInputElement).value = '';
-      (document.getElementById('user-form') as HTMLFormElement)?.reset();
-      (document.getElementById('user-active') as HTMLInputElement).checked = true;
-    }
-    document.getElementById('modal-backdrop')?.classList.remove('hidden');
-  }
-
-  function closePanel() {
-    document.getElementById('modal-backdrop')?.classList.add('hidden');
-  }
-
-  document.getElementById('new-user-btn')?.addEventListener('click', () => openPanel());
-  document.getElementById('modal-close')?.addEventListener('click', closePanel);
-  document.getElementById('modal-cancel')?.addEventListener('click', closePanel);
-  document.getElementById('modal-backdrop')?.addEventListener('click', e => { if (e.target === e.currentTarget) closePanel(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
-
-  document.getElementById('user-search')?.addEventListener('input', e => {
-    searchQuery = (e.target as HTMLInputElement).value;
-    renderTable();
-  });
-  document.getElementById('role-filter')?.addEventListener('change', e => {
-    roleFilter = (e.target as HTMLSelectElement).value;
-    renderTable();
-  });
-
-  document.getElementById('user-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const errEl = document.getElementById('form-error');
-    const id = (document.getElementById('edit-id') as HTMLInputElement).value;
-    const body: any = {
-      first_name: (document.getElementById('user-first') as HTMLInputElement).value.trim(),
-      last_name: (document.getElementById('user-last') as HTMLInputElement).value.trim(),
-      email: (document.getElementById('user-email') as HTMLInputElement).value.trim(),
-      username: (document.getElementById('user-username') as HTMLInputElement).value.trim(),
-      role: (document.getElementById('user-role') as HTMLSelectElement).value,
-      phone: (document.getElementById('user-phone') as HTMLInputElement).value.trim(),
-      is_active: (document.getElementById('user-active') as HTMLInputElement).checked,
-    };
-    const pw = (document.getElementById('user-password') as HTMLInputElement).value;
-    if (pw) body.password = pw;
-
-    try {
-      const url = id ? `/users/${id}/` : '/users/';
-      const method = id ? 'PATCH' : 'POST';
-      await apiFetch(url, { method, body: JSON.stringify(body) });
-      closePanel();
-      await loadUsers();
-    } catch (err: any) {
-      errEl?.classList.remove('hidden');
-      const msg = err?.message || 'No se ha podido guardar el usuario';
-      if (errEl) errEl.textContent = String(msg);
-    }
-  });
-
-  loadUsers();
-
-  // --- Configuración del sistema ---
   async function loadSystemSettings() {
     try {
       const data = await apiFetch('/notifications/system-settings/');
@@ -413,8 +115,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       if (schoolInsurance) schoolInsurance.value = String(data.school_insurance_fee ?? '0.00');
       if (transcriptOpening) transcriptOpening.value = String(data.transcript_opening_fee ?? '0.00');
       if (extraCharges) extraCharges.value = JSON.stringify(data.enrollment_extra_charges ?? [], null, 2);
-    } catch { /* ignore */
- }
+    } catch { /* ignore */ }
+    finally {
+      document.getElementById('page-loading')?.classList.add('hidden');
+      document.getElementById('page-content')?.classList.remove('hidden');
+    }
   }
 
   document.getElementById('save-student-id-format')?.addEventListener('click', async () => {
@@ -428,8 +133,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         body: JSON.stringify({ student_id_format: fmt }),
       });
       if (status) { status.classList.remove('hidden'); setTimeout(() => status.classList.add('hidden'), 2500); }
-    } catch { /* ignore */
- }
+    } catch { /* ignore */ }
   });
 
   document.getElementById('save-enrollment-charges')?.addEventListener('click', async () => {

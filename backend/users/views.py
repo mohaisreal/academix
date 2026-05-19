@@ -302,6 +302,24 @@ class UserListView(generics.ListCreateAPIView):
             return AdminUserWriteSerializer
         return UserSerializer
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        role = self.request.query_params.get('role')
+        if role:
+            queryset = queryset.filter(role=role)
+
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(first_name__icontains=search)
+                | Q(last_name__icontains=search)
+                | Q(username__icontains=search)
+                | Q(email__icontains=search)
+            )
+
+        return queryset
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

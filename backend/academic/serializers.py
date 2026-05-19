@@ -1,6 +1,17 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Career, Subject, AcademicPeriod, Classroom, Class, ClassSchedule
+from .models import (
+    Career,
+    Subject,
+    AcademicPeriod,
+    Classroom,
+    Class,
+    ClassSchedule,
+    TimeSlot,
+    TimetableRun,
+    ScheduleAssignment,
+    ConstraintViolation,
+)
 
 User = get_user_model()
 
@@ -151,3 +162,69 @@ class ClassSerializer(serializers.ModelSerializer):
             'period', 'period_id', 'classroom', 'classroom_id',
             'max_students', 'passing_grade', 'schedules', 'enrolled_count', 'available_spots', 'created_at',
         ]
+
+
+class TimeSlotSerializer(serializers.ModelSerializer):
+    day_name = serializers.CharField(source='get_day_of_week_display', read_only=True)
+
+    class Meta:
+        model = TimeSlot
+        fields = ['id', 'period', 'day_of_week', 'day_name', 'start_time', 'end_time']
+
+    def validate(self, attrs):
+        start = attrs.get('start_time', getattr(self.instance, 'start_time', None))
+        end = attrs.get('end_time', getattr(self.instance, 'end_time', None))
+        if start and end and start >= end:
+            raise serializers.ValidationError({'end_time': 'End time must be after start time.'})
+        return attrs
+
+
+class TimetableRunSerializer(serializers.ModelSerializer):
+    period_name = serializers.CharField(source='period.name', read_only=True)
+    assignments_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TimetableRun
+        fields = ['id', 'period', 'period_name', 'status', 'metadata', 'assignments_count', 'created_at', 'updated_at']
+        read_only_fields = ['status', 'metadata', 'created_at', 'updated_at']
+
+    def get_assignments_count(self, obj):
+        return obj.assignments.count()
+
+
+class ScheduleAssignmentSerializer(serializers.ModelSerializer):
+    period = serializers.IntegerField(source='run.period_id', read_only=True)
+    teacher_name = serializers.SerializerMethodField()
+    classroom_name = serializers.SerializerMethodField()
+    timeslot_day_name = serializers.CharField(source='slot.get_day_of_week_display', read_only=True)
+    timeslot_start_time = serializers.TimeField(source='slot.start_time', read_only=True)
+    timeslot_end_time = serializers.TimeField(source='slot.end_time', read_only=True)
+    subject_name = serializers.CharField(source='cls.subject.name', read_only=True)
+    subject_code = serializers.CharField(source='cls.subject.code', read_only=True)
+
+    def get_teacher_name(self, obj):
+        if not obj.teacher:
+            return None
+        full_name = f"{obj.teacher.first_name} {obj.teacher.last_name}".strip()
+        return full_name or obj.teacher.username
+
+    def get_classroom_name(self, obj):
+        if not obj.classroom:
+            return None
+        return obj.classroom.name
+
+    class Meta:
+        model = ScheduleAssignment
+        fields = [
+            'id', 'run', 'period', 'cls', 'slot', 'classroom', 'teacher',
+            'teacher_name', 'classroom_name',
+            'timeslot_day_name', 'timeslot_start_time', 'timeslot_end_time',
+            'subject_name', 'subject_code',
+            'source', 'created_at',
+        ]
+
+
+class ConstraintViolationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConstraintViolation
+        fields = ['id', 'run', 'assignment', 'severity', 'reason', 'metadata', 'created_at']
