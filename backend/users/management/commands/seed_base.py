@@ -10,7 +10,7 @@ What it creates:
 Academic structure:
   - 3 careers (CS, BA, ENG)
   - 5 subjects per career (15 total)
-  - 1 active academic period (Spring 2026)
+  - 1 active academic period (Periodo Primavera 2026)
   - 8 classrooms (4 lecture + 4 lab, capacity 30)
   - 15 classes (one per subject for the active period)
   - 2 schedules per class (non-overlapping)
@@ -39,36 +39,36 @@ from django.db import transaction
 # Data definitions
 # ---------------------------------------------------------------------------
 CAREERS_DATA = [
-    ("Computer Science",       "CS",  4, 50, "Bachelor's degree in Computer Science and Software Engineering."),
-    ("Business Administration", "BA",  3, 40, "Bachelor's degree in Business Administration and Gestión."),
-    ("Engineering",             "ENG", 5, 45, "Bachelor's degree in Mechanical and Civil Engineering."),
+    ("Ciencias de la Computación", "CS", 4, 50, "Grado en Ciencias de la Computación e Ingeniería de Software."),
+    ("Administración de Empresas", "BA", 3, 40, "Grado en Administración y Dirección de Empresas."),
+    ("Ingeniería", "ENG", 5, 45, "Grado en Ingeniería Mecánica y Civil."),
 ]
 
 SUBJECTS_DATA = {
     "CS": [
-        ("Calculus I",        "CS101", 4, 6),
-        ("Programming I",     "CS102", 4, 6),
-        ("Data Structures",   "CS103", 3, 4),
-        ("Databases",         "CS104", 3, 4),
-        ("Computer Networks", "CS105", 3, 5),
+        ("Cálculo I", "CS101", 4, 6),
+        ("Programación I", "CS102", 4, 6),
+        ("Estructuras de Datos", "CS103", 3, 4),
+        ("Bases de Datos", "CS104", 3, 4),
+        ("Redes de Computadoras", "CS105", 3, 5),
     ],
     "BA": [
-        ("Business Economics",   "BA101", 3, 4),
-        ("Marketing Principles", "BA102", 3, 4),
-        ("Accounting I",         "BA103", 4, 5),
-        ("Business Law",         "BA104", 3, 4),
-        ("Strategic Gestión", "BA105", 3, 4),
+        ("Economía Empresarial", "BA101", 3, 4),
+        ("Fundamentos de Marketing", "BA102", 3, 4),
+        ("Contabilidad I", "BA103", 4, 5),
+        ("Derecho Empresarial", "BA104", 3, 4),
+        ("Gestión Estratégica", "BA105", 3, 4),
     ],
     "ENG": [
-        ("Engineering Maths", "ENG101", 4, 6),
-        ("Statics",           "ENG102", 3, 4),
-        ("Thermodynamics",    "ENG103", 3, 4),
-        ("Ciencia de materiales", "ENG104", 3, 5),
-        ("Fluid Mechanics",   "ENG105", 3, 4),
+        ("Matemática para Ingeniería", "ENG101", 4, 6),
+        ("Estática", "ENG102", 3, 4),
+        ("Termodinámica", "ENG103", 3, 4),
+        ("Ciencia de Materiales", "ENG104", 3, 5),
+        ("Mecánica de Fluidos", "ENG105", 3, 4),
     ],
 }
 
-PERIOD = ("Spring 2026", "SP2026", datetime.date(2026, 2, 1), datetime.date(2026, 6, 30), True)
+PERIOD = ("Periodo Primavera 2026", "SP2026", datetime.date(2026, 2, 1), datetime.date(2026, 6, 30), True)
 
 # (start, end) pairs — non-overlapping so students won't collide
 TIME_SLOTS = [

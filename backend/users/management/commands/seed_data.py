@@ -63,54 +63,54 @@ def _name_for_index(index):
 # Academic data definitions
 # ---------------------------------------------------------------------------
 CAREERS_DATA = [
-    ("Computer Science",        "CS",  4, "Bachelor's degree in Computer Science and Software Engineering."),
-    ("Business Administration",  "BA",  3, "Bachelor's degree in Business Administration and Gestión."),
-    ("Engineering",              "ENG", 5, "Bachelor's degree in Mechanical and Civil Engineering."),
-    ("Medicine",                 "MED", 6, "Doctor of Medicine degree program."),
-    ("Law",                      "LAW", 5, "Bachelor's degree in Law and Legal Studies."),
+    ("Ciencias de la Computación", "CS", 4, "Grado en Ciencias de la Computación e Ingeniería de Software."),
+    ("Administración de Empresas", "BA", 3, "Grado en Administración y Dirección de Empresas."),
+    ("Ingeniería", "ENG", 5, "Grado en Ingeniería Mecánica y Civil."),
+    ("Medicina", "MED", 6, "Grado en Medicina."),
+    ("Derecho", "LAW", 5, "Grado en Derecho y Estudios Jurídicos."),
 ]
 
 SUBJECTS_DATA = {
     "CS": [
-        ("Calculus I",           "CS101", 4, 6),
-        ("Programming I",        "CS102", 4, 6),
-        ("Data Structures",      "CS103", 3, 4),
-        ("Databases",            "CS104", 3, 4),
-        ("Computer Networks",    "CS105", 3, 5),
+        ("Cálculo I", "CS101", 4, 6),
+        ("Programación I", "CS102", 4, 6),
+        ("Estructuras de Datos", "CS103", 3, 4),
+        ("Bases de Datos", "CS104", 3, 4),
+        ("Redes de Computadoras", "CS105", 3, 5),
     ],
     "BA": [
-        ("Business Economics",   "BA101", 3, 4),
-        ("Marketing Principles", "BA102", 3, 4),
-        ("Accounting I",         "BA103", 4, 5),
-        ("Business Law",         "BA104", 3, 4),
-        ("Strategic Gestión", "BA105", 3, 4),
+        ("Economía Empresarial", "BA101", 3, 4),
+        ("Fundamentos de Marketing", "BA102", 3, 4),
+        ("Contabilidad I", "BA103", 4, 5),
+        ("Derecho Empresarial", "BA104", 3, 4),
+        ("Gestión Estratégica", "BA105", 3, 4),
     ],
     "ENG": [
-        ("Engineering Maths",    "ENG101", 4, 6),
-        ("Statics",              "ENG102", 3, 4),
-        ("Thermodynamics",       "ENG103", 3, 4),
-        ("Ciencia de materiales",    "ENG104", 3, 5),
-        ("Fluid Mechanics",      "ENG105", 3, 4),
+        ("Matemática para Ingeniería", "ENG101", 4, 6),
+        ("Estática", "ENG102", 3, 4),
+        ("Termodinámica", "ENG103", 3, 4),
+        ("Ciencia de Materiales", "ENG104", 3, 5),
+        ("Mecánica de Fluidos", "ENG105", 3, 4),
     ],
     "MED": [
-        ("Human Anatomy",        "MED101", 5, 8),
-        ("Biochemistry",         "MED102", 4, 6),
-        ("Physiology",           "MED103", 4, 6),
-        ("Microbiology",         "MED104", 3, 5),
-        ("Pharmacology I",       "MED105", 3, 5),
+        ("Anatomía Humana", "MED101", 5, 8),
+        ("Bioquímica", "MED102", 4, 6),
+        ("Fisiología", "MED103", 4, 6),
+        ("Microbiología", "MED104", 3, 5),
+        ("Farmacología I", "MED105", 3, 5),
     ],
     "LAW": [
-        ("Civil Law",            "LAW101", 4, 5),
-        ("Constitutional Law",   "LAW102", 4, 5),
-        ("Criminal Law",         "LAW103", 4, 5),
-        ("Commercial Law",       "LAW104", 3, 4),
-        ("Administrative Law",   "LAW105", 3, 4),
+        ("Derecho Civil", "LAW101", 4, 5),
+        ("Derecho Constitucional", "LAW102", 4, 5),
+        ("Derecho Penal", "LAW103", 4, 5),
+        ("Derecho Mercantil", "LAW104", 3, 4),
+        ("Derecho Administrativo", "LAW105", 3, 4),
     ],
 }
 
 PERIOD_DEFS = [
-    ("Spring 2026", "SP2026", datetime.date(2026, 2, 1),  datetime.date(2026, 6, 30),  True),
-    ("Fall 2025",   "FA2025", datetime.date(2025, 9, 1),  datetime.date(2026, 1, 31),  False),
+    ("Periodo Primavera 2026", "SP2026", datetime.date(2026, 2, 1), datetime.date(2026, 6, 30), True),
+    ("Periodo Otoño 2025", "FA2025", datetime.date(2025, 9, 1), datetime.date(2026, 1, 31), False),
 ]
 
 # Fixed time slots: (start_time, end_time)
