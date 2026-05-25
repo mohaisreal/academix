@@ -316,6 +316,8 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 </DashboardLayout>
 
 <script>
+    import { formatQuestionIdBadge, QUESTION_ID_BADGE_CLASS } from "@/utils/questionnaire-editor-utils";
+
     const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
 
     function getToken(): string | null { return localStorage.getItem("access_token"); }
@@ -513,6 +515,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                         <span class="text-sm font-medium text-foreground">${q.label}</span>
                         ${q.is_required ? `<span class="text-destructive text-xs">*</span>` : ""}
                         <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${typeColor}">${typeLabel}</span>
+                        <span class="${QUESTION_ID_BADGE_CLASS}">${formatQuestionIdBadge(q.id)}</span>
                         ${q.depends_on ? `<span class="text-xs text-muted-foreground">condicional</span>` : ""}
                     </div>
                     ${q.help_text ? `<p class="text-xs text-muted-foreground mt-0.5">${q.help_text}</p>` : ""}
