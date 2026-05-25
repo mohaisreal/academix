@@ -3,6 +3,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
 from django.http import HttpResponse
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import generics, status
 
@@ -87,6 +88,13 @@ class QuestionnaireViewSet(ModelViewSet):
         flow_type = self.request.query_params.get('flow_type')
         if flow_type:
             qs = qs.filter(flow_type=flow_type)
+
+        search = self.request.query_params.get('search')
+        if search:
+            qs = qs.filter(
+                Q(title__icontains=search) |
+                Q(description__icontains=search)
+            )
 
         return qs
 
