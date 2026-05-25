@@ -5,6 +5,7 @@ from . import views
 router = DefaultRouter()
 router.register('careers', views.CareerViewSet, basename='career')
 router.register('subjects', views.SubjectViewSet, basename='subject')
+router.register('departments', views.DepartmentViewSet, basename='department')
 router.register('periods', views.AcademicPeriodViewSet, basename='period')
 router.register('classrooms', views.ClassroomViewSet, basename='classroom')
 router.register('classes', views.ClassViewSet, basename='class')
@@ -13,5 +14,6 @@ router.register('time-slots', views.TimeSlotViewSet, basename='time-slot')
 router.register('timetable-runs', views.TimetableRunViewSet, basename='timetable-run')
 router.register('schedule-assignments', views.ScheduleAssignmentViewSet, basename='schedule-assignment')
 router.register('constraint-violations', views.ConstraintViolationViewSet, basename='constraint-violation')
+router.register('scheduling-constraints', views.SchedulingConstraintViewSet, basename='scheduling-constraint')
 
 urlpatterns = router.urls

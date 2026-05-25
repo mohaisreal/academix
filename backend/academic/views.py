@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.db.models import Prefetch
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -7,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from .models import (
     Career,
     Subject,
+    Department,
     AcademicPeriod,
     Classroom,
     Class,
@@ -15,14 +17,18 @@ from .models import (
     TimetableRun,
     ScheduleAssignment,
     ConstraintViolation,
+    SchedulingConstraint,
 )
 from .serializers import (
     CareerSerializer, SubjectSerializer, AcademicPeriodSerializer,
+    DepartmentSerializer,
     ClassroomSerializer, ClassSerializer, ClassScheduleSerializer,
     TimeSlotSerializer, TimetableRunSerializer, ScheduleAssignmentSerializer,
     ConstraintViolationSerializer,
+    SchedulingConstraintSerializer,
 )
 from .timetabling import generate_for_run
+from .schedule_source import serialize_assignment_schedule
 from shared.permissions import IsAdminOrManagement
 
 SAFE_METHODS = ('GET', 'HEAD', 'OPTIONS')
@@ -49,7 +55,13 @@ class CareerViewSet(viewsets.ModelViewSet):
             subject__career=career
         ).select_related(
             'subject', 'teacher', 'period', 'classroom'
-        ).prefetch_related('schedules')
+        ).prefetch_related(
+            Prefetch(
+                'schedule_assignments',
+                queryset=ScheduleAssignment.objects.filter(run__status='published').select_related('slot', 'run'),
+                to_attr='published_schedule_assignments',
+            )
+        )
 
         if period_id:
             qs = qs.filter(period_id=period_id)
@@ -67,11 +79,21 @@ class SubjectViewSet(viewsets.ModelViewSet):
         return [IsAdminOrManagement()]
 
     def get_queryset(self):
-        qs = Subject.objects.select_related('career').all()
+        qs = Subject.objects.select_related('career', 'department', 'department__teacher').all()
         career_id = self.request.query_params.get('career')
         if career_id:
             qs = qs.filter(career_id=career_id)
         return qs
+
+
+class DepartmentViewSet(viewsets.ModelViewSet):
+    queryset = Department.objects.select_related('teacher').all()
+    serializer_class = DepartmentSerializer
+
+    def get_permissions(self):
+        if self.request.method in SAFE_METHODS:
+            return [IsAuthenticated()]
+        return [IsAdminOrManagement()]
 
 
 class AcademicPeriodViewSet(viewsets.ModelViewSet):
@@ -98,13 +120,19 @@ class AcademicPeriodViewSet(viewsets.ModelViewSet):
 
 
 class ClassroomViewSet(viewsets.ModelViewSet):
-    queryset = Classroom.objects.all()
     serializer_class = ClassroomSerializer
 
     def get_permissions(self):
         if self.request.method in SAFE_METHODS:
             return [IsAuthenticated()]
         return [IsAdminOrManagement()]
+
+    def get_queryset(self):
+        qs = Classroom.objects.all().order_by('id')
+        room_type = self.request.query_params.get('type') or self.request.query_params.get('room_type')
+        if room_type:
+            qs = qs.filter(type=room_type)
+        return qs
 
 
 class ClassViewSet(viewsets.ModelViewSet):
@@ -286,14 +314,18 @@ class TimetableRunViewSet(viewsets.ModelViewSet):
         payload = TimetableRunSerializer(run).data
         if run.status == 'failed':
             preconditions = (run.metadata or {}).get('generator', {}).get('precondition_errors', [])
+            preparation_errors = (run.metadata or {}).get('generator', {}).get('class_preparation_errors', [])
             reason_map = {
                 'missing_classes': 'faltan clases para el período',
                 'missing_teachers': 'faltan docentes asignados en una o más clases',
                 'missing_classrooms': 'faltan aulas asignadas en una o más clases',
                 'missing_time_slots': 'faltan franjas horarias del período',
+                'class_preparation_insufficient_subjects': 'faltan materias activas para preparar clases del período',
+                'class_preparation_insufficient_classrooms': 'faltan aulas disponibles para preparar clases del período',
             }
-            if preconditions:
-                reasons = [reason_map[key] for key in preconditions if key in reason_map]
+            reasons_source = [*preconditions, *preparation_errors]
+            if reasons_source:
+                reasons = [reason_map[key] for key in reasons_source if key in reason_map]
                 if reasons:
                     payload['detail'] = f"No se pudo generar: {', '.join(reasons)}."
             return Response(payload, status=status.HTTP_400_BAD_REQUEST)
@@ -317,16 +349,19 @@ class ScheduleAssignmentViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ScheduleAssignmentSerializer
 
     def get_queryset(self):
-        qs = ScheduleAssignment.objects.select_related('run', 'cls__subject', 'slot', 'classroom', 'teacher').all()
+        qs = ScheduleAssignment.objects.select_related('run', 'cls__subject__career', 'slot', 'classroom', 'teacher').all()
         run = self.request.query_params.get('run')
         period = self.request.query_params.get('period')
         cls = self.request.query_params.get('cls')
+        career = self.request.query_params.get('career')
         if run:
             qs = qs.filter(run_id=run)
         if period:
             qs = qs.filter(run__period_id=period)
         if cls:
             qs = qs.filter(cls_id=cls)
+        if career:
+            qs = qs.filter(cls__subject__career_id=career)
         return qs
 
     def get_permissions(self):
@@ -351,3 +386,22 @@ class ConstraintViolationViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_permissions(self):
         return [IsAuthenticated()]
+
+
+class SchedulingConstraintViewSet(viewsets.ModelViewSet):
+    serializer_class = SchedulingConstraintSerializer
+
+    def get_queryset(self):
+        qs = SchedulingConstraint.objects.select_related('period', 'teacher', 'classroom', 'career').all()
+        period = self.request.query_params.get('period')
+        is_active = self.request.query_params.get('is_active')
+        if period:
+            qs = qs.filter(period_id=period)
+        if is_active in {'true', 'false'}:
+            qs = qs.filter(is_active=(is_active == 'true'))
+        return qs
+
+    def get_permissions(self):
+        if self.request.method in SAFE_METHODS:
+            return [IsAuthenticated()]
+        return [IsAdminOrManagement()]

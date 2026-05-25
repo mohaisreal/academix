@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from .models import (
     Career,
     Subject,
+    Department,
     AcademicPeriod,
     Classroom,
     Class,
@@ -11,7 +12,9 @@ from .models import (
     TimetableRun,
     ScheduleAssignment,
     ConstraintViolation,
+    SchedulingConstraint,
 )
+from .schedule_source import serialize_assignment_schedule
 
 User = get_user_model()
 
@@ -57,15 +60,42 @@ class CareerSerializer(serializers.ModelSerializer):
 
 class SubjectSerializer(serializers.ModelSerializer):
     career_name = serializers.CharField(source='career.name', read_only=True)
+    department_name = serializers.CharField(source='department.name', read_only=True)
+    department_teacher_name = serializers.SerializerMethodField()
+
+    def get_department_teacher_name(self, obj):
+        department = getattr(obj, 'department', None)
+        teacher = getattr(department, 'teacher', None) if department else None
+        if not teacher:
+            return None
+        return f"{teacher.first_name} {teacher.last_name}".strip() or teacher.username
 
     class Meta:
         model = Subject
         fields = ['id', 'name', 'code', 'career', 'career_name', 'credits',
+                  'department', 'department_name', 'department_teacher_name',
                   'credit_price_first_enrollment',
                   'credit_price_second_enrollment',
                   'credit_price_third_enrollment',
                   'credit_price_fourth_or_more_enrollment',
                   'subject_type', 'description', 'hours_per_week', 'is_active']
+
+
+class DepartmentSerializer(serializers.ModelSerializer):
+    teacher_name = serializers.SerializerMethodField()
+    subjects_count = serializers.SerializerMethodField()
+
+    def get_teacher_name(self, obj):
+        if not obj.teacher:
+            return None
+        return f"{obj.teacher.first_name} {obj.teacher.last_name}".strip() or obj.teacher.username
+
+    def get_subjects_count(self, obj):
+        return obj.subjects.filter(is_active=True).count()
+
+    class Meta:
+        model = Department
+        fields = ['id', 'name', 'code', 'description', 'teacher', 'teacher_name', 'subjects_count', 'is_active', 'created_at', 'updated_at']
 
 
 class AcademicPeriodSerializer(serializers.ModelSerializer):
@@ -137,7 +167,10 @@ class ClassSerializer(serializers.ModelSerializer):
         queryset=Classroom.objects.all(), source='classroom',
         write_only=True, required=False, allow_null=True
     )
-    schedules = ClassScheduleSerializer(many=True, read_only=True)
+    schedules = serializers.SerializerMethodField()
+    schedule_source = serializers.SerializerMethodField()
+    schedule_available = serializers.SerializerMethodField()
+    schedule_unavailable_reason = serializers.SerializerMethodField()
     enrolled_count = serializers.SerializerMethodField()
     available_spots = serializers.SerializerMethodField()
 
@@ -155,12 +188,37 @@ class ClassSerializer(serializers.ModelSerializer):
             capacity = obj.max_students or 30
         return max(0, capacity - enrolled)
 
+    def _canonical_assignment(self, obj):
+        assignments = getattr(obj, 'published_schedule_assignments', None)
+        if assignments is None:
+            assignments = list(
+                obj.schedule_assignments.filter(run__status='published').select_related('slot', 'run').order_by('-run__created_at', '-id')
+            )
+        period_match = [a for a in assignments if a.run.period_id == obj.period_id]
+        return period_match[0] if period_match else None
+
+    def get_schedules(self, obj):
+        assignment = self._canonical_assignment(obj)
+        if not assignment:
+            return []
+        return [serialize_assignment_schedule(assignment)]
+
+    def get_schedule_source(self, obj):
+        return 'generated'
+
+    def get_schedule_available(self, obj):
+        return self._canonical_assignment(obj) is not None
+
+    def get_schedule_unavailable_reason(self, obj):
+        return None if self.get_schedule_available(obj) else 'schedule_unavailable'
+
     class Meta:
         model = Class
         fields = [
             'id', 'subject', 'subject_id', 'teacher', 'teacher_id',
             'period', 'period_id', 'classroom', 'classroom_id',
-            'max_students', 'passing_grade', 'schedules', 'enrolled_count', 'available_spots', 'created_at',
+            'max_students', 'passing_grade', 'schedules', 'schedule_source', 'schedule_available',
+            'schedule_unavailable_reason', 'enrolled_count', 'available_spots', 'created_at',
         ]
 
 
@@ -201,6 +259,9 @@ class ScheduleAssignmentSerializer(serializers.ModelSerializer):
     timeslot_end_time = serializers.TimeField(source='slot.end_time', read_only=True)
     subject_name = serializers.CharField(source='cls.subject.name', read_only=True)
     subject_code = serializers.CharField(source='cls.subject.code', read_only=True)
+    career_id = serializers.IntegerField(source='cls.subject.career_id', read_only=True)
+    career_code = serializers.CharField(source='cls.subject.career.code', read_only=True)
+    career_name = serializers.CharField(source='cls.subject.career.name', read_only=True)
 
     def get_teacher_name(self, obj):
         if not obj.teacher:
@@ -219,7 +280,7 @@ class ScheduleAssignmentSerializer(serializers.ModelSerializer):
             'id', 'run', 'period', 'cls', 'slot', 'classroom', 'teacher',
             'teacher_name', 'classroom_name',
             'timeslot_day_name', 'timeslot_start_time', 'timeslot_end_time',
-            'subject_name', 'subject_code',
+            'subject_name', 'subject_code', 'career_id', 'career_code', 'career_name',
             'source', 'created_at',
         ]
 
@@ -228,3 +289,27 @@ class ConstraintViolationSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConstraintViolation
         fields = ['id', 'run', 'assignment', 'severity', 'reason', 'metadata', 'created_at']
+
+
+class SchedulingConstraintSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SchedulingConstraint
+        fields = ['id', 'kind', 'scope', 'period', 'teacher', 'classroom', 'career', 'day_of_week', 'start_time', 'end_time', 'is_active', 'metadata', 'created_at', 'updated_at']
+
+    def validate(self, attrs):
+        base = {
+            'kind': getattr(self.instance, 'kind', None),
+            'scope': getattr(self.instance, 'scope', 'period'),
+            'period': getattr(self.instance, 'period', None),
+            'teacher': getattr(self.instance, 'teacher', None),
+            'classroom': getattr(self.instance, 'classroom', None),
+            'career': getattr(self.instance, 'career', None),
+            'day_of_week': getattr(self.instance, 'day_of_week', None),
+            'start_time': getattr(self.instance, 'start_time', None),
+            'end_time': getattr(self.instance, 'end_time', None),
+            'is_active': getattr(self.instance, 'is_active', True),
+            'metadata': getattr(self.instance, 'metadata', {}),
+        }
+        instance = SchedulingConstraint(**{**base, **attrs})
+        instance.clean()
+        return attrs

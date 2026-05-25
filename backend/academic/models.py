@@ -31,6 +31,13 @@ class Subject(models.Model):
     name = models.CharField(max_length=200)
     code = models.CharField(max_length=20, unique=True)
     career = models.ForeignKey(Career, on_delete=models.CASCADE, related_name='subjects')
+    department = models.ForeignKey(
+        'Department',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='subjects',
+    )
     credits = models.PositiveSmallIntegerField(default=3)
     credit_price_first_enrollment = models.DecimalField(
         max_digits=8,
@@ -96,6 +103,29 @@ class AcademicPeriod(models.Model):
         ordering = ['-start_date']
 
 
+class Department(models.Model):
+    name = models.CharField(max_length=200)
+    code = models.CharField(max_length=20, unique=True)
+    description = models.TextField(blank=True)
+    teacher = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        limit_choices_to={'role': 't'},
+        related_name='department',
+    )
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['code', 'name']
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+
+
 class Classroom(models.Model):
     TYPE_CHOICES = [
         ('lecture', 'Lecture Hall'),
@@ -133,6 +163,14 @@ class Class(models.Model):
 
     def __str__(self):
         return f"{self.subject.name} - {self.period.name}"
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['period', 'subject'],
+                name='unique_period_subject_class',
+            ),
+        ]
 
 
 class ClassSchedule(models.Model):
@@ -267,3 +305,48 @@ class ConstraintViolation(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+
+class SchedulingConstraint(models.Model):
+    KIND_CHOICES = [
+        ('teacher_unavailable', 'Teacher unavailable'),
+        ('classroom_unavailable', 'Classroom unavailable'),
+        ('career_unavailable', 'Career unavailable'),
+    ]
+    SCOPE_CHOICES = [
+        ('global', 'Global'),
+        ('period', 'Period'),
+    ]
+
+    kind = models.CharField(max_length=24, choices=KIND_CHOICES)
+    scope = models.CharField(max_length=10, choices=SCOPE_CHOICES, default='period')
+    period = models.ForeignKey(AcademicPeriod, null=True, blank=True, on_delete=models.CASCADE, related_name='constraints')
+    teacher = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE, related_name='scheduling_constraints')
+    classroom = models.ForeignKey(Classroom, null=True, blank=True, on_delete=models.CASCADE, related_name='scheduling_constraints')
+    career = models.ForeignKey(Career, null=True, blank=True, on_delete=models.CASCADE, related_name='scheduling_constraints')
+    day_of_week = models.PositiveSmallIntegerField(choices=ClassSchedule.DAY_CHOICES)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    is_active = models.BooleanField(default=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['kind', 'day_of_week', 'start_time']
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.start_time and self.end_time and self.start_time >= self.end_time:
+            raise ValidationError({'end_time': 'End time must be after start time.'})
+        if self.scope == 'period' and not self.period_id:
+            raise ValidationError({'period': 'Period is required when scope is period.'})
+        if self.scope == 'global' and self.period_id:
+            raise ValidationError({'period': 'Global constraints cannot be bound to a period.'})
+
+        if self.kind == 'teacher_unavailable' and not self.teacher_id:
+            raise ValidationError({'teacher': 'Teacher is required for teacher_unavailable.'})
+        if self.kind == 'classroom_unavailable' and not self.classroom_id:
+            raise ValidationError({'classroom': 'Classroom is required for classroom_unavailable.'})
+        if self.kind == 'career_unavailable' and not self.career_id:
+            raise ValidationError({'career': 'Career is required for career_unavailable.'})
