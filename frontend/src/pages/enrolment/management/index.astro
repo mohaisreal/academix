@@ -50,6 +50,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           </table>
         </div>
         <div id="enrolments-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No se encontraron matrículas</div>
+        <div id="enrolments-pagination" class="hidden px-4 py-3 border-t border-border items-center justify-between">
+          <p id="enrolments-pagination-summary" class="text-sm text-muted-foreground"></p>
+          <div class="flex gap-2 items-center">
+            <button id="enrolments-prev" class="rounded-md border border-border px-3 py-1 text-sm disabled:opacity-50">Anterior</button>
+            <span id="enrolments-page" class="text-sm"></span>
+            <button id="enrolments-next" class="rounded-md border border-border px-3 py-1 text-sm disabled:opacity-50">Siguiente</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -156,14 +164,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   let enrolments: any[] = [], careers: any[] = [], periods: any[] = [], students: any[] = [];
   let studentOptionsLoaded = false;
   let filterStatus = '', filterCareer = '';
+  let currentPage = 1;
+  let pagination = { count: 0, next: null as string | null, previous: null as string | null };
 
   function renderTable() {
     let filtered = enrolments;
-    if (filterStatus) filtered = filtered.filter(e => e.status === filterStatus);
-    if (filterCareer) filtered = filtered.filter(e => {
-      const career = careers.find(c => String(c.id) === filterCareer);
-      return career ? e.career_name === career.name : false;
-    });
 
     const tbody = document.getElementById('enrolments-table');
     const empty = document.getElementById('enrolments-empty');
@@ -198,6 +203,23 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         </td>
       </tr>`;
     }).join('');
+
+    const wrapper = document.getElementById('enrolments-pagination');
+    const summary = document.getElementById('enrolments-pagination-summary');
+    const pageLabel = document.getElementById('enrolments-page');
+    const prev = document.getElementById('enrolments-prev') as HTMLButtonElement;
+    const next = document.getElementById('enrolments-next') as HTMLButtonElement;
+    if (wrapper && summary && pageLabel && prev && next) {
+      const totalPages = Math.max(1, Math.ceil(pagination.count / 20));
+      const start = pagination.count === 0 ? 0 : ((currentPage - 1) * 20) + 1;
+      const end = Math.min(currentPage * 20, pagination.count);
+      summary.textContent = `Mostrando ${start}-${end} de ${pagination.count}`;
+      pageLabel.textContent = `Página ${currentPage} / ${totalPages}`;
+      prev.disabled = !pagination.previous;
+      next.disabled = !pagination.next;
+      wrapper.classList.toggle('hidden', pagination.count <= 20);
+      wrapper.classList.toggle('flex', pagination.count > 20);
+    }
 
     tbody.querySelectorAll<HTMLButtonElement>('.edit-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -246,13 +268,24 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     });
   }
 
+  function buildEnrollmentPath() {
+    const params = new URLSearchParams();
+    params.set('page', String(currentPage));
+    if (filterStatus) params.set('status', filterStatus);
+    if (filterCareer) params.set('career', filterCareer);
+    return `/enrollment/management/?${params.toString()}`;
+  }
+
   async function loadData() {
     const [eData, cData, pData] = await Promise.all([
-      apiFetch('/enrollment/management/'),
+      apiFetch(buildEnrollmentPath()),
       apiFetch('/academic/careers/'),
       apiFetch('/academic/periods/'),
     ]);
     enrolments = Array.isArray(eData) ? eData : (eData?.results ?? []);
+    pagination = Array.isArray(eData)
+      ? { count: enrolments.length, next: null, previous: null }
+      : { count: Number(eData?.count ?? enrolments.length), next: eData?.next ?? null, previous: eData?.previous ?? null };
     careers = Array.isArray(cData) ? cData : (cData?.results ?? []);
     periods = Array.isArray(pData) ? pData : (pData?.results ?? []);
 
@@ -340,8 +373,10 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   document.getElementById('modal-cancel')?.addEventListener('click', closePanel);
   document.getElementById('modal-backdrop')?.addEventListener('click', e => { if (e.target === e.currentTarget) closePanel(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
-  document.getElementById('filter-status')?.addEventListener('change', e => { filterStatus = (e.target as HTMLSelectElement).value; renderTable(); });
-  document.getElementById('filter-career')?.addEventListener('change', e => { filterCareer = (e.target as HTMLSelectElement).value; renderTable(); });
+  document.getElementById('filter-status')?.addEventListener('change', e => { filterStatus = (e.target as HTMLSelectElement).value; currentPage = 1; loadData(); });
+  document.getElementById('filter-career')?.addEventListener('change', e => { filterCareer = (e.target as HTMLSelectElement).value; currentPage = 1; loadData(); });
+  document.getElementById('enrolments-prev')?.addEventListener('click', () => { if (pagination.previous) { currentPage -= 1; loadData(); } });
+  document.getElementById('enrolments-next')?.addEventListener('click', () => { if (pagination.next) { currentPage += 1; loadData(); } });
 
   document.getElementById('enrolment-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();

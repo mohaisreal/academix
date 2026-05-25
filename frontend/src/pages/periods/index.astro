@@ -44,6 +44,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           </table>
         </div>
         <div id="periods-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No se encontraron períodos</div>
+        <div id="periods-pagination" class="hidden mt-4 items-center justify-between">
+          <p id="periods-pagination-summary" class="text-sm text-muted-foreground"></p>
+          <div class="flex gap-2 items-center">
+            <button id="periods-prev" class="rounded-md border border-border px-3 py-1 text-sm disabled:opacity-50">Anterior</button>
+            <span id="periods-page" class="text-sm"></span>
+            <button id="periods-next" class="rounded-md border border-border px-3 py-1 text-sm disabled:opacity-50">Siguiente</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -104,6 +112,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
 <script>
   import { toast } from "@/components/starwind/toast";
+  import { buildPaginatedEndpoint, getTotalPages, normalizePaginatedResponse, paginationSummary } from '@/utils/pagination-utils';
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
   const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
@@ -152,6 +161,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   }
 
   let periods = [];
+  let currentPage = 1;
+  let pagination = { count: 0, next: null, previous: null };
 
   function renderTable() {
     const tbody = document.getElementById('periods-table-body');
@@ -229,12 +240,28 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         });
       });
     });
+    const wrapper = document.getElementById('periods-pagination');
+    const summary = document.getElementById('periods-pagination-summary');
+    const page = document.getElementById('periods-page');
+    const prev = document.getElementById('periods-prev') as HTMLButtonElement;
+    const next = document.getElementById('periods-next') as HTMLButtonElement;
+    if (wrapper && summary && page && prev && next) {
+      summary.textContent = paginationSummary({ count: pagination.count, currentPage, pageSize: 20 });
+      page.textContent = `Página ${currentPage} de ${getTotalPages(pagination.count, 20)}`;
+      prev.disabled = !pagination.previous;
+      next.disabled = !pagination.next;
+      wrapper.classList.toggle('hidden', pagination.count <= 20);
+      wrapper.classList.toggle('flex', pagination.count > 20);
+    }
   }
 
-  async function loadPeriods() {
+  async function loadPeriods(page = currentPage) {
     try {
-      const data = await apiFetch('/academic/periods/');
-      periods = Array.isArray(data) ? data : (data.results || []);
+      currentPage = page;
+      const data = await apiFetch(buildPaginatedEndpoint('/academic/periods/', currentPage));
+      const normalized = normalizePaginatedResponse(data);
+      periods = normalized.results;
+      pagination = { count: normalized.count, next: normalized.next, previous: normalized.previous };
       renderTable();
     } catch { periods = []; }
   }
@@ -271,6 +298,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   document.getElementById('modal-cancel')?.addEventListener('click', closePanel);
   document.getElementById('modal-backdrop')?.addEventListener('click', e => { if (e.target === e.currentTarget) closePanel(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+  document.getElementById('periods-prev')?.addEventListener('click', () => { if (pagination.previous) loadPeriods(currentPage - 1); });
+  document.getElementById('periods-next')?.addEventListener('click', () => { if (pagination.next) loadPeriods(currentPage + 1); });
 
   document.getElementById('period-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();

@@ -44,6 +44,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           </table>
         </div>
         <div id="classrooms-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No se encontraron aulas</div>
+        <div id="classrooms-pagination" class="hidden mt-4 items-center justify-between">
+          <p id="classrooms-pagination-summary" class="text-sm text-muted-foreground"></p>
+          <div class="flex items-center gap-2">
+            <button id="classrooms-prev" class="rounded-md border border-border px-3 py-1 text-sm disabled:opacity-50">Anterior</button>
+            <span id="classrooms-page" class="text-sm"></span>
+            <button id="classrooms-next" class="rounded-md border border-border px-3 py-1 text-sm disabled:opacity-50">Siguiente</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -96,6 +104,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
 <script>
   import { toast } from "@/components/starwind/toast";
+  import { buildPaginatedEndpoint, getTotalPages, normalizePaginatedResponse, paginationSummary } from '@/utils/pagination-utils';
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
   const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
@@ -140,6 +149,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   };
 
   let allClassrooms = [];
+  let currentPage = 1;
+  let pagination = { count: 0, next: null, previous: null };
+  let filterType = '';
 
   function renderTable(classrooms) {
     const tbody = document.getElementById('classrooms-table-body');
@@ -172,7 +184,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
     tbody.querySelectorAll('.edit-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const classroom = allClassrooms.find(c => c.id == (btn as HTMLElement).dataset.id);
+            const classroom = allClassrooms.find(c => c.id == (btn as HTMLElement).dataset.id);
         if (classroom) openPanel(classroom);
       });
     });
@@ -196,19 +208,37 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     });
   }
 
-  async function loadClassrooms() {
+  async function loadClassrooms(page = currentPage) {
     try {
-      const data = await apiFetch('/academic/classrooms/');
-      allClassrooms = Array.isArray(data) ? data : (data.results || []);
-      const filter = (document.getElementById('type-filter') as HTMLSelectElement)?.value;
-      renderTable(filter ? allClassrooms.filter(c => (c.room_type || c.type) === filter) : allClassrooms);
+      currentPage = page;
+      const data = await apiFetch(buildPaginatedEndpoint('/academic/classrooms/', currentPage, { type: filterType }));
+      const normalized = normalizePaginatedResponse(data);
+      allClassrooms = normalized.results;
+      pagination = { count: normalized.count, next: normalized.next, previous: normalized.previous };
+      renderTable(allClassrooms);
+      const wrapper = document.getElementById('classrooms-pagination');
+      const summary = document.getElementById('classrooms-pagination-summary');
+      const pageLabel = document.getElementById('classrooms-page');
+      const prev = document.getElementById('classrooms-prev') as HTMLButtonElement;
+      const next = document.getElementById('classrooms-next') as HTMLButtonElement;
+      if (wrapper && summary && pageLabel && prev && next) {
+        summary.textContent = paginationSummary({ count: pagination.count, currentPage, pageSize: 20 });
+        pageLabel.textContent = `Página ${currentPage} de ${getTotalPages(pagination.count, 20)}`;
+        prev.disabled = !pagination.previous;
+        next.disabled = !pagination.next;
+        wrapper.classList.toggle('hidden', pagination.count <= 20);
+        wrapper.classList.toggle('flex', pagination.count > 20);
+      }
     } catch { allClassrooms = []; }
   }
 
   document.getElementById('type-filter')?.addEventListener('change', (e) => {
-    const type = (e.target as HTMLSelectElement).value;
-    renderTable(type ? allClassrooms.filter(c => (c.room_type || c.type) === type) : allClassrooms);
+    filterType = (e.target as HTMLSelectElement).value;
+    currentPage = 1;
+    loadClassrooms(1);
   });
+  document.getElementById('classrooms-prev')?.addEventListener('click', () => { if (pagination.previous) loadClassrooms(currentPage - 1); });
+  document.getElementById('classrooms-next')?.addEventListener('click', () => { if (pagination.next) loadClassrooms(currentPage + 1); });
 
   function openPanel(classroom = null) {
     document.getElementById('form-error')?.classList.add('hidden');

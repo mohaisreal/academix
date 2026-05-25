@@ -33,6 +33,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Nombre</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Código</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Carrera</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Departamento</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Docente dpto.</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Créditos</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">€/ECTS</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Hs/semana</th>
@@ -44,6 +46,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           </table>
         </div>
         <div id="subjects-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No se encontraron asignaturas</div>
+        <div id="subjects-pagination" class="hidden mt-4 items-center justify-between">
+          <p id="subjects-pagination-summary" class="text-sm text-muted-foreground"></p>
+          <div class="flex items-center gap-2">
+            <button id="subjects-prev" class="rounded-md border border-border px-3 py-1 text-sm disabled:opacity-50">Anterior</button>
+            <span id="subjects-page" class="text-sm"></span>
+            <button id="subjects-next" class="rounded-md border border-border px-3 py-1 text-sm disabled:opacity-50">Siguiente</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -74,6 +84,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <label class="text-xs font-medium text-muted-foreground">Carrera *</label>
             <select id="subject-career" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
               <option value="">Selecciona una carrera</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Departamento</label>
+            <select id="subject-department" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+              <option value="">Sin departamento</option>
             </select>
           </div>
           <div>
@@ -130,6 +146,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
 <script>
   import { toast } from "@/components/starwind/toast";
+  import { buildPaginatedEndpoint, getTotalPages, normalizePaginatedResponse, paginationSummary } from '@/utils/pagination-utils';
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
   const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
@@ -183,6 +200,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   let subjects = [];
   let careersList = [];
+  let departmentsList = [];
+  let currentPage = 1;
+  let pagination = { count: 0, next: null, previous: null };
 
   function renderTable() {
     const tbody = document.getElementById('subjects-table-body');
@@ -197,10 +217,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     tbody.innerHTML = subjects.map(s => {
       const active = s.is_active !== false;
       const careerName = s.career_name || careersList.find(c => c.id === s.career)?.name || '-';
+      const departmentName = s.department_name || '-';
+      const departmentTeacher = s.department_teacher_name || 'No asignado';
       return `<tr class="border-b border-border hover:bg-muted/40 transition-colors">
         <td class="py-3 pr-4 text-sm font-medium text-foreground">${escHtml(s.name)}</td>
         <td class="py-3 pr-4 text-sm text-muted-foreground font-mono">${escHtml(s.code)}</td>
         <td class="py-3 pr-4 text-sm text-muted-foreground">${escHtml(careerName)}</td>
+        <td class="py-3 pr-4 text-sm text-muted-foreground">${escHtml(departmentName)}</td>
+        <td class="py-3 pr-4 text-sm text-muted-foreground">${escHtml(departmentTeacher)}</td>
         <td class="py-3 pr-4 text-sm text-muted-foreground">${s.credits || '-'}</td>
         <td class="py-3 pr-4 text-xs text-muted-foreground">${escHtml(formatCreditPrices(s))}</td>
         <td class="py-3 pr-4 text-sm text-muted-foreground">${s.hours_per_week || s.hours_week || '-'}</td>
@@ -240,13 +264,31 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         });
       });
     });
+    renderPagination();
   }
 
-  async function loadSubjects(careerId = '') {
+  function renderPagination() {
+    const wrapper = document.getElementById('subjects-pagination');
+    const summary = document.getElementById('subjects-pagination-summary');
+    const page = document.getElementById('subjects-page');
+    const prev = document.getElementById('subjects-prev') as HTMLButtonElement;
+    const next = document.getElementById('subjects-next') as HTMLButtonElement;
+    if (!wrapper || !summary || !page || !prev || !next) return;
+    summary.textContent = paginationSummary({ count: pagination.count, currentPage, pageSize: 20 });
+    page.textContent = `Página ${currentPage} de ${getTotalPages(pagination.count, 20)}`;
+    prev.disabled = !pagination.previous;
+    next.disabled = !pagination.next;
+    wrapper.classList.toggle('hidden', pagination.count <= 20);
+    wrapper.classList.toggle('flex', pagination.count > 20);
+  }
+
+  async function loadSubjects(careerId = '', page = currentPage) {
     try {
-      const path = careerId ? `/academic/subjects/?career=${careerId}` : '/academic/subjects/';
-      const data = await apiFetch(path);
-      subjects = Array.isArray(data) ? data : (data.results || []);
+      currentPage = page;
+      const data = await apiFetch(buildPaginatedEndpoint('/academic/subjects/', currentPage, { career: careerId }));
+      const normalized = normalizePaginatedResponse(data);
+      subjects = normalized.results;
+      pagination = { count: normalized.count, next: normalized.next, previous: normalized.previous };
       renderTable();
     } catch { subjects = []; }
   }
@@ -257,12 +299,20 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const idEl = document.getElementById('edit-id') as HTMLInputElement;
 
     const careerSel = document.getElementById('subject-career') as HTMLSelectElement;
+    const departmentSel = document.getElementById('subject-department') as HTMLSelectElement;
     careerSel.innerHTML = '<option value="">Selecciona una carrera</option>';
+    departmentSel.innerHTML = '<option value="">Sin departamento</option>';
     careersList.forEach(c => {
       const opt = document.createElement('option');
       opt.value = c.id;
       opt.textContent = c.name;
       careerSel.appendChild(opt);
+    });
+    departmentsList.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d.id;
+      opt.textContent = d.name;
+      departmentSel.appendChild(opt);
     });
 
     if (subject) {
@@ -271,6 +321,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       (document.getElementById('subject-name') as HTMLInputElement).value = subject.name || '';
       (document.getElementById('subject-code') as HTMLInputElement).value = subject.code || '';
       careerSel.value = subject.career || '';
+      departmentSel.value = subject.department ? String(subject.department) : '';
       (document.getElementById('subject-credits') as HTMLInputElement).value = subject.credits || 3;
       (document.getElementById('price-first') as HTMLInputElement).value = formatMoney(subject.credit_price_first_enrollment ?? 16);
       (document.getElementById('price-second') as HTMLInputElement).value = formatMoney(subject.credit_price_second_enrollment ?? 28);
@@ -283,6 +334,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       if (title) title.textContent = 'Nueva asignatura';
       if (idEl) idEl.value = '';
       (document.getElementById('subject-form') as HTMLFormElement)?.reset();
+      departmentSel.value = '';
       (document.getElementById('subject-active') as HTMLInputElement).checked = true;
     }
     document.getElementById('modal-backdrop')?.classList.remove('hidden');
@@ -299,7 +351,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
 
   document.getElementById('career-filter')?.addEventListener('change', (e) => {
-    loadSubjects((e.target as HTMLSelectElement).value);
+    currentPage = 1;
+    loadSubjects((e.target as HTMLSelectElement).value, 1);
+  });
+  document.getElementById('subjects-prev')?.addEventListener('click', () => {
+    if (pagination.previous) loadSubjects((document.getElementById('career-filter') as HTMLSelectElement).value, currentPage - 1);
+  });
+  document.getElementById('subjects-next')?.addEventListener('click', () => {
+    if (pagination.next) loadSubjects((document.getElementById('career-filter') as HTMLSelectElement).value, currentPage + 1);
   });
 
   document.getElementById('subject-form')?.addEventListener('submit', async (e) => {
@@ -309,6 +368,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const name = (document.getElementById('subject-name') as HTMLInputElement).value;
     const code = (document.getElementById('subject-code') as HTMLInputElement).value;
     const career = (document.getElementById('subject-career') as HTMLSelectElement).value;
+    const departmentRaw = (document.getElementById('subject-department') as HTMLSelectElement).value;
     const credits = parseInt((document.getElementById('subject-credits') as HTMLInputElement).value);
     const credit_price_first_enrollment = (document.getElementById('price-first') as HTMLInputElement).value;
     const credit_price_second_enrollment = (document.getElementById('price-second') as HTMLInputElement).value;
@@ -321,6 +381,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       name,
       code,
       career,
+      department: departmentRaw ? Number(departmentRaw) : null,
       credits,
       credit_price_first_enrollment,
       credit_price_second_enrollment,
@@ -346,8 +407,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   (async () => {
     try {
-      const data = await apiFetch('/academic/careers/');
-      careersList = Array.isArray(data) ? data : (data.results || []);
+      const [careersData, departmentsData] = await Promise.all([
+        apiFetch('/academic/careers/'),
+        apiFetch('/academic/departments/'),
+      ]);
+      careersList = Array.isArray(careersData) ? careersData : (careersData.results || []);
+      departmentsList = Array.isArray(departmentsData) ? departmentsData : (departmentsData.results || []);
       const sel = document.getElementById('career-filter') as HTMLSelectElement;
       careersList.forEach(c => {
         const opt = document.createElement('option');

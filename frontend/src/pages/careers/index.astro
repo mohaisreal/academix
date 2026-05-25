@@ -38,6 +38,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           </table>
         </div>
         <div id="careers-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No se encontraron carreras</div>
+        <div id="careers-pagination" class="hidden mt-4 items-center justify-between">
+          <p id="careers-pagination-summary" class="text-sm text-muted-foreground"></p>
+          <div class="flex items-center gap-2">
+            <button id="careers-prev" class="rounded-md border border-border px-3 py-1 text-sm disabled:opacity-50">Anterior</button>
+            <span id="careers-page" class="text-sm text-foreground"></span>
+            <button id="careers-next" class="rounded-md border border-border px-3 py-1 text-sm disabled:opacity-50">Siguiente</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -99,6 +107,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     parseValidTotalSpots,
     resolveCareerTotalSpots,
   } from '@/utils/careers-form-utils';
+  import {
+    buildPaginatedEndpoint,
+    getTotalPages,
+    normalizePaginatedResponse,
+    paginationSummary,
+  } from '@/utils/pagination-utils';
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
   const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
@@ -137,6 +151,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   }
 
   let careers = [];
+  let currentPage = 1;
+  let pagination = { count: 0, next: null, previous: null };
 
   function renderTable() {
     const tbody = document.getElementById('careers-table-body');
@@ -206,12 +222,33 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         });
       });
     });
+
+    renderPagination();
   }
 
-  async function loadCareers() {
+  function renderPagination() {
+    const wrapper = document.getElementById('careers-pagination');
+    const summary = document.getElementById('careers-pagination-summary');
+    const pageLabel = document.getElementById('careers-page');
+    const prev = document.getElementById('careers-prev') as HTMLButtonElement;
+    const next = document.getElementById('careers-next') as HTMLButtonElement;
+    if (!wrapper || !summary || !pageLabel || !prev || !next) return;
+    const totalPages = getTotalPages(pagination.count, 20);
+    summary.textContent = paginationSummary({ count: pagination.count, currentPage, pageSize: 20 });
+    pageLabel.textContent = `Página ${currentPage} de ${totalPages}`;
+    prev.disabled = !pagination.previous;
+    next.disabled = !pagination.next;
+    wrapper.classList.toggle('hidden', pagination.count <= 20);
+    wrapper.classList.toggle('flex', pagination.count > 20);
+  }
+
+  async function loadCareers(page = currentPage) {
     try {
-      const data = await apiFetch('/academic/careers/');
-      careers = Array.isArray(data) ? data : (data.results || []);
+      currentPage = page;
+      const data = await apiFetch(buildPaginatedEndpoint('/academic/careers/', currentPage));
+      const normalized = normalizePaginatedResponse(data);
+      careers = normalized.results;
+      pagination = { count: normalized.count, next: normalized.next, previous: normalized.previous };
       renderTable();
     } catch { careers = []; }
   }
@@ -254,6 +291,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   document.getElementById('modal-close')?.addEventListener('click', closePanel);
   document.getElementById('modal-cancel')?.addEventListener('click', closePanel);
   document.getElementById('modal-backdrop')?.addEventListener('click', e => { if (e.target === e.currentTarget) closePanel(); });
+  document.getElementById('careers-prev')?.addEventListener('click', () => { if (pagination.previous) loadCareers(currentPage - 1); });
+  document.getElementById('careers-next')?.addEventListener('click', () => { if (pagination.next) loadCareers(currentPage + 1); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
 
   document.getElementById('career-form')?.addEventListener('submit', async (e) => {

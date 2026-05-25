@@ -66,6 +66,14 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 <tbody id="table-body"></tbody>
             </table>
         </div>
+        <div id="pagination-wrapper" class="hidden items-center justify-between rounded-xl border border-border bg-card px-4 py-3 shadow-sm">
+            <p id="pagination-summary" class="text-sm text-muted-foreground"></p>
+            <div class="flex items-center gap-2">
+                <button id="btn-prev-page" class="rounded-md border border-border px-3 py-1.5 text-sm disabled:opacity-50">Anterior</button>
+                <span id="pagination-page" class="text-sm font-medium text-foreground"></span>
+                <button id="btn-next-page" class="rounded-md border border-border px-3 py-1.5 text-sm disabled:opacity-50">Siguiente</button>
+            </div>
+        </div>
 
         <!-- Estado vacío -->
         <div id="empty-state" class="hidden text-center py-16">
@@ -360,26 +368,21 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         });
     }
 
-    function filterAndRender() {
-        const query = (el<HTMLInputElement>("search-input")).value.toLowerCase().trim();
-        const type = (el<HTMLSelectElement>("filter-type")).value;
-
-        const filtered = allQuestionnaires.filter(q => {
-            const matchesQuery = !query ||
-                (q.title ?? "").toLowerCase().includes(query) ||
-                (q.description ?? "").toLowerCase().includes(query);
-            const matchesType = !type || q.flow_type === type;
-            return matchesQuery && matchesType;
-        });
-
-        renderTable(filtered);
+    function buildListPath() {
+        const params = new URLSearchParams();
+        params.set('page', String(currentPage));
+        const query = el<HTMLInputElement>('search-input').value.trim();
+        const type = el<HTMLSelectElement>('filter-type').value;
+        if (query) params.set('search', query);
+        if (type) params.set('flow_type', type);
+        return `${API_URL}/questionnaire/questionnaires/?${params.toString()}`;
     }
 
     // ── API calls ─────────────────────────────────────────────────────────────
     async function loadData() {
         try {
             const [qRes, cRes] = await Promise.all([
-                fetch(`${API_URL}/questionnaire/questionnaires/`, { headers: authHeaders() }),
+                fetch(buildListPath(), { headers: authHeaders() }),
                 fetch(`${API_URL}/academic/careers/`, { headers: authHeaders() }),
             ]);
 
@@ -394,6 +397,9 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
             const qData = await qRes.json();
             allQuestionnaires = Array.isArray(qData) ? qData : (qData.results ?? []);
+            pagination = Array.isArray(qData)
+                ? { count: allQuestionnaires.length, next: null, previous: null }
+                : { count: Number(qData.count ?? allQuestionnaires.length), next: qData.next ?? null, previous: qData.previous ?? null };
 
             if (cRes.ok) {
                 const cData = await cRes.json();
@@ -402,6 +408,14 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             }
 
             renderTable(allQuestionnaires);
+            const totalPages = Math.max(1, Math.ceil(pagination.count / 20));
+            el('pagination-summary').textContent = `Mostrando ${pagination.count === 0 ? 0 : ((currentPage - 1) * 20) + 1}-${Math.min(currentPage * 20, pagination.count)} de ${pagination.count}`;
+            el('pagination-page').textContent = `Página ${currentPage} / ${totalPages}`;
+            const wrapper = el('pagination-wrapper');
+            wrapper.classList.toggle('hidden', pagination.count <= 20);
+            wrapper.classList.toggle('flex', pagination.count > 20);
+            (el('btn-prev-page') as HTMLButtonElement).disabled = !pagination.previous;
+            (el('btn-next-page') as HTMLButtonElement).disabled = !pagination.next;
 
         } catch {
             hide("loading-state");
@@ -429,7 +443,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     ...q,
                     is_preinscripcion_wizard: enable ? q.id === id : false,
                 }));
-                filterAndRender();
+                loadData();
                 showToast("success", enable ? "Asistente configurado" : "Asistente quitado",
                     enable ? "Este cuestionario ahora es el asistente de preinscripción." : "Se restauró el asistente estático por defecto.");
             } else {
@@ -454,7 +468,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 allQuestionnaires = allQuestionnaires.map(q =>
                     q.id === id ? { ...q, ...updated } : q
                 );
-                filterAndRender();
+                loadData();
                 showToast("success", newActive ? "Activado" : "Desactivado",
                     newActive ? "El cuestionario ahora está activo." : "El cuestionario ahora está inactivo.");
             } else {
@@ -473,7 +487,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             });
             if (res.ok || res.status === 204) {
                 allQuestionnaires = allQuestionnaires.filter(q => q.id !== id);
-                filterAndRender();
+                loadData();
                 showToast("success", "Eliminado", "Cuestionario eliminado correctamente.");
             } else {
                 showToast("error", "No se pudo eliminar", `El servidor respondió con ${res.status}.`);
@@ -575,7 +589,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 showToast("success", "Creado", "Cuestionario creado correctamente.");
             }
 
-            filterAndRender();
+            loadData();
             closeModal();
 
         } catch {
@@ -657,7 +671,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
             const created = await res.json();
             allQuestionnaires.unshift(created);
-            filterAndRender();
+            loadData();
             closeImportModal();
             showToast("success", "Importado", `"${created.title}" se creó correctamente.`);
         } catch {
@@ -764,9 +778,13 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
     el("toggle-active").addEventListener("click", () => setActiveToggle(!isActiveToggle));
 
-    el("search-input").addEventListener("input", filterAndRender);
-    el("filter-type").addEventListener("change", filterAndRender);
+    el("search-input").addEventListener("input", () => { currentPage = 1; loadData(); });
+    el("filter-type").addEventListener("change", () => { currentPage = 1; loadData(); });
+    el("btn-prev-page").addEventListener("click", () => { if (pagination.previous) { currentPage -= 1; loadData(); } });
+    el("btn-next-page").addEventListener("click", () => { if (pagination.next) { currentPage += 1; loadData(); } });
 
     // ── Inicialización ──────────────────────────────────────────────────────────────────
     loadData();
 </script>
+    let currentPage = 1;
+    let pagination = { count: 0, next: null as string | null, previous: null as string | null };
