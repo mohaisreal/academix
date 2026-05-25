@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import CareerEnrollment, ClassEnrollment, EnrollmentFee
 from academic.models import Career, AcademicPeriod, Class
+from academic.schedule_source import canonical_assignment_map_for_period, serialize_assignment_schedule
 
 User = get_user_model()
 
@@ -79,14 +80,13 @@ class ClassEnrollmentSerializer(serializers.ModelSerializer):
         return str(obj.cls.classroom) if obj.cls.classroom else ''
 
     def get_schedules(self, obj):
-        return [
-            {
-                'day_name': s.get_day_of_week_display(),
-                'start_time': s.start_time.strftime('%H:%M'),
-                'end_time': s.end_time.strftime('%H:%M'),
-            }
-            for s in obj.cls.schedules.all()
-        ]
+        assignment_map = self.context.get('canonical_assignment_map')
+        if assignment_map is None:
+            assignment_map = canonical_assignment_map_for_period(obj.cls.period_id, [obj.cls_id])
+        assignment = assignment_map.get(obj.cls_id)
+        if not assignment:
+            return []
+        return [serialize_assignment_schedule(assignment)]
 
     class Meta:
         model = ClassEnrollment

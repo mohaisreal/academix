@@ -3,7 +3,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from users.models import User
-from academic.models import Career, AcademicPeriod, Subject, Class, ClassSchedule, Classroom
+from academic.models import Career, AcademicPeriod, Subject, Class, ClassSchedule, Classroom, TimeSlot, TimetableRun, ScheduleAssignment
 from enrollment.models import CareerEnrollment, ClassEnrollment, EnrollmentFee
 from admissions.models import AdmissionApplication
 
@@ -150,6 +150,8 @@ class CareerEnrollmentTests(TestCase):
         results = response.data if isinstance(response.data, list) else response.data.get('results', response.data)
         self.assertGreaterEqual(len(results), 2)
 
+    
+
     # --- Prueba 6: pagar arancel -----------------------------------------------
 
     def test_student_can_pay_enrollment_fee(self):
@@ -233,6 +235,11 @@ class ClassEnrollmentTests(TestCase):
             start_time='08:00',
             end_time='10:00',
         )
+        self.slot_a = TimeSlot.objects.create(period=self.period, day_of_week=0, start_time='08:00', end_time='10:00')
+        self.slot_b_overlap = TimeSlot.objects.create(period=self.period, day_of_week=0, start_time='09:00', end_time='11:00')
+        self.slot_c_no_overlap = TimeSlot.objects.create(period=self.period, day_of_week=0, start_time='10:00', end_time='12:00')
+        self.run = TimetableRun.objects.create(period=self.period, status='published')
+        ScheduleAssignment.objects.create(run=self.run, cls=self.cls, slot=self.slot_a, classroom=self.classroom, teacher=None)
 
         # CareerEnrollment activo para el estudiante
         self.career_enrollment = CareerEnrollment.objects.create(
@@ -319,6 +326,7 @@ class ClassEnrollmentTests(TestCase):
             subject=subject_b, period=self.period, classroom=self.classroom, max_students=30,
         )
         ClassSchedule.objects.create(cls=cls_b, day_of_week=0, start_time='09:00', end_time='11:00')
+        ScheduleAssignment.objects.create(run=self.run, cls=cls_b, slot=self.slot_b_overlap, classroom=self.classroom, teacher=None)
 
         # Clase C: Lunes 10:00-12:00 (NO solapa — empieza justo cuando termina la A)
         subject_c = Subject.objects.create(
@@ -328,6 +336,7 @@ class ClassEnrollmentTests(TestCase):
             subject=subject_c, period=self.period, classroom=self.classroom, max_students=30,
         )
         ClassSchedule.objects.create(cls=cls_c, day_of_week=0, start_time='10:00', end_time='12:00')
+        ScheduleAssignment.objects.create(run=self.run, cls=cls_c, slot=self.slot_c_no_overlap, classroom=self.classroom, teacher=None)
 
         self.client.force_authenticate(user=self.student)
 

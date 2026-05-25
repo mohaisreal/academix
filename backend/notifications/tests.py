@@ -241,6 +241,29 @@ class SystemSettingsAPITests(TestCase):
         )
         self.assertEqual(res.status_code, 403)
 
+    def test_admin_patch_accepts_ui_extra_charges_without_client_metadata(self):
+        """PATCH acepta payload UI y normaliza excluyendo metadatos de cliente."""
+        res = self.admin_client.patch(
+            '/api/notifications/system-settings/',
+            {
+                'enrollment_extra_charges': [
+                    {
+                        'label': 'Carné universitario',
+                        'amount': '12.00',
+                        'active': True,
+                        'clientId': 'tmp-1',
+                        'errors': {'amount': 'legacy'},
+                    }
+                ]
+            },
+            format='json',
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(
+            res.data['enrollment_extra_charges'],
+            [{'label': 'Carné universitario', 'amount': '12.00', 'active': True}],
+        )
+
 
 class WithdrawNotifyWaitlistIntegrationTest(TestCase):
     """Prueba de integración: withdraw → notify_next_waitlisted → create_notification (S-02)."""

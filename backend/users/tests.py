@@ -1,175 +1,202 @@
+import re
 from io import StringIO
+from unittest.mock import patch
 
 from django.core.management import call_command
+from django.core.management import get_commands
 from django.core.management.base import CommandError
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from academic.models import AcademicPeriod, Career, TimeSlot
+from academic.models import AcademicPeriod, Career, Classroom, Department, Subject
 from admissions.models import AdmissionApplication, AdmissionPreference
 from users.models import User
 
 
-class SeedTestDataCommandTests(TestCase):
-    def setUp(self):
-        self.period = AcademicPeriod.objects.create(
-            name="Periodo Primavera 2026",
-            code="SP2026",
-            start_date="2026-02-01",
-            end_date="2026-06-30",
-            is_active=True,
-        )
-        self.career_cs = Career.objects.create(name="Ciencias de la Computación", code="CS", is_active=True)
-        self.career_eng = Career.objects.create(name="Ingeniería", code="ENG", is_active=True)
+class SeedAcademicBaseCommandTests(TestCase):
+    REALISTIC_CAREER_NAMES = {
+        "Ingeniería en Sistemas",
+        "Medicina",
+        "Administración y Dirección de Empresas",
+        "Arquitectura",
+        "Psicología",
+    }
 
-    def _run_command(self, **kwargs):
+    def _run_command(self):
         stdout = StringIO()
-        call_command("seed_test_data", stdout=stdout, **kwargs)
+        call_command("seed_academic_base", stdout=stdout)
         return stdout.getvalue()
 
-    def test_rejects_invalid_profile(self):
-        with self.assertRaises(CommandError):
-            self._run_command(profile="bad")
+    def test_only_new_seed_command_exists_for_scope(self):
+        commands = get_commands()
+        self.assertIn("seed_academic_base", commands)
+        self.assertNotIn("seed_base", commands)
+        self.assertNotIn("seed_data", commands)
+        self.assertNotIn("seed_test_data", commands)
+        self.assertNotIn("seed_admission_applications", commands)
 
-    def test_rejects_non_positive_per_career(self):
-        with self.assertRaises(CommandError):
-            self._run_command(profile="admissions", per_career=0)
-
-    def test_rejects_non_positive_slots_per_day(self):
-        with self.assertRaises(CommandError):
-            self._run_command(profile="timetable", slots_per_day=0)
-
-    def test_rejects_unknown_period_code(self):
-        with self.assertRaises(CommandError):
-            self._run_command(profile="admissions", period_code="UNKNOWN")
-
-    def test_rejects_when_no_careers_exist(self):
-        Career.objects.all().delete()
-        with self.assertRaises(CommandError):
-            self._run_command(profile="admissions")
-
-    def test_admissions_seed_is_idempotent_and_creates_preferences(self):
-        self._run_command(profile="admissions", per_career=2, seed=20260519)
-
-        first_usernames = list(
-            User.objects.filter(username__startswith="seedtest_adm_")
-            .order_by("username")
-            .values_list("username", flat=True)
+    def test_seed_cleans_only_target_entities(self):
+        untouched_user = User.objects.create_user(username="gestion1", password="pass", role="m")
+        untouched_period = AcademicPeriod.objects.create(
+            name="Periodo Activo",
+            code="PA2026",
+            start_date="2026-01-10",
+            end_date="2026-06-20",
+            is_active=True,
         )
-        self.assertEqual(len(first_usernames), 4)
-        self.assertEqual(AdmissionApplication.objects.count(), 4)
-        self.assertEqual(AdmissionPreference.objects.count(), 4)
+        old_career = Career.objects.create(name="Carrera Vieja", code="CV")
+        Subject.objects.create(name="Asignatura Vieja", code="ASG000", career=old_career)
+        Classroom.objects.create(name="Aula Vieja", building="Edificio Viejo", capacity=20, type="lecture")
+        User.objects.create_user(username="estudiante99", password="pass", role="s")
+        User.objects.create_user(username="profesor99", password="pass", role="t")
+
+        self._run_command()
+
+        self.assertTrue(User.objects.filter(id=untouched_user.id).exists())
+        self.assertTrue(AcademicPeriod.objects.filter(id=untouched_period.id).exists())
+        self.assertFalse(User.objects.filter(username="estudiante99").exists())
+        self.assertFalse(User.objects.filter(username="profesor99").exists())
+        self.assertGreater(User.objects.filter(role="s").count(), 0)
+        self.assertGreater(User.objects.filter(role="t").count(), 0)
+        self.assertGreater(Career.objects.count(), 0)
+        self.assertGreater(Subject.objects.count(), 0)
+        self.assertGreater(Classroom.objects.count(), 0)
+
+    def test_seed_generates_realistic_catalog_without_generic_names(self):
+        self._run_command()
+
+        student_usernames = list(User.objects.filter(role="s").values_list("username", flat=True))
+        self.assertTrue(all(re.match(r"^estudiante\d+$", username) for username in student_usernames))
+        teacher_names = list(User.objects.filter(role="t").values_list("first_name", "last_name"))
+        self.assertTrue(all(first and last for first, last in teacher_names))
+
         self.assertEqual(
-            AdmissionApplication.objects.filter(status="submitted", academic_period=self.period).count(),
-            4,
+            set(Career.objects.values_list("name", flat=True)),
+            self.REALISTIC_CAREER_NAMES,
+        )
+        self.assertTrue(all(not re.match(r"^Asignatura\s+\d+$", s.name) for s in Subject.objects.all()))
+        self.assertTrue(all(not re.match(r"^Carrera\s+\d+$", c.name) for c in Career.objects.all()))
+        self.assertTrue(all(a.name.startswith("Aula ") for a in Classroom.objects.all()))
+
+        self.assertEqual(Subject.objects.filter(career__isnull=True).count(), 0)
+        self.assertEqual(Career.objects.filter(subjects__isnull=True).count(), 0)
+
+    def test_seed_creates_submitted_pending_admission_applications(self):
+        active_period = AcademicPeriod.objects.create(
+            name="Periodo de Admisión Vigente",
+            code="PA-VIGENTE",
+            start_date="2026-01-10",
+            end_date="2026-06-20",
+            is_active=True,
         )
 
-        self._run_command(profile="admissions", per_career=2, seed=20260519)
+        self._run_command()
 
-        second_usernames = list(
-            User.objects.filter(username__startswith="seedtest_adm_")
-            .order_by("username")
-            .values_list("username", flat=True)
+        seeded_students = User.objects.filter(role="s")
+        applications = AdmissionApplication.objects.all()
+
+        self.assertGreater(applications.count(), 0)
+        self.assertLess(applications.count(), seeded_students.count())
+        self.assertEqual(applications.filter(status="submitted").count(), applications.count())
+        self.assertEqual(applications.exclude(submission_date__isnull=False).count(), 0)
+        self.assertEqual(applications.exclude(student__role="s").count(), 0)
+        self.assertEqual(applications.filter(academic_period__isnull=True).count(), 0)
+        self.assertEqual(applications.exclude(academic_period=active_period).count(), 0)
+        self.assertEqual(applications.exclude(status="submitted").count(), 0)
+
+    def test_seed_submitted_applications_include_target_career_and_payload(self):
+        self._run_command()
+
+        applications = AdmissionApplication.objects.select_related("student").all()
+
+        self.assertGreater(applications.count(), 0)
+        self.assertEqual(applications.exclude(status="submitted").count(), 0)
+        self.assertEqual(applications.exclude(access_route="evau").count(), 0)
+        self.assertEqual(applications.filter(bachillerato_grade__isnull=True).count(), 0)
+        self.assertEqual(applications.filter(evau_obligatory_grade__isnull=True).count(), 0)
+        self.assertEqual(applications.filter(admission_score__isnull=True).count(), 0)
+        self.assertEqual(applications.exclude(admission_score=10.100).count(), 0)
+        self.assertEqual(applications.filter(evau_voluntary_subjects=[]).count(), 0)
+        self.assertEqual(applications.exclude(assigned_career__isnull=True).count(), applications.count())
+
+        self.assertEqual(
+            AdmissionPreference.objects.filter(application__in=applications).count(),
+            applications.count(),
         )
-        self.assertEqual(first_usernames, second_usernames)
-        self.assertEqual(AdmissionApplication.objects.count(), 4)
-        self.assertEqual(AdmissionPreference.objects.count(), 4)
-
-    def test_seed_is_reproducible_with_same_seed(self):
-        self._run_command(profile="admissions", per_career=1, seed=111)
-        first_snapshot = list(
-            User.objects.filter(username__startswith="seedtest_adm_")
-            .order_by("username")
-            .values_list("username", "first_name", "last_name", "dni")
+        self.assertEqual(
+            AdmissionPreference.objects.filter(application__in=applications, preference_order=1).count(),
+            applications.count(),
+        )
+        self.assertEqual(
+            AdmissionPreference.objects.filter(application__in=applications, status="pending").count(),
+            applications.count(),
         )
 
-        AdmissionPreference.objects.all().delete()
-        AdmissionApplication.objects.all().delete()
-        User.objects.filter(username__startswith="seedtest_adm_").delete()
+    def test_seed_creates_departments_and_links_subjects_and_teachers(self):
+        self._run_command()
 
-        self._run_command(profile="admissions", per_career=1, seed=111)
-        second_snapshot = list(
-            User.objects.filter(username__startswith="seedtest_adm_")
-            .order_by("username")
-            .values_list("username", "first_name", "last_name", "dni")
-        )
+        departments = Department.objects.all()
+        teachers = User.objects.filter(role="t")
+        subjects = Subject.objects.all()
+
+        self.assertGreater(departments.count(), 0)
+        self.assertTrue(all(department.teacher_id is not None for department in departments))
+        self.assertEqual(departments.values_list("teacher_id", flat=True).distinct().count(), departments.count())
+        self.assertEqual(departments.exclude(teacher__role="t").count(), 0)
+        self.assertEqual(subjects.filter(department__isnull=True).count(), 0)
+        self.assertEqual(subjects.exclude(department__in=departments).count(), 0)
+        self.assertGreater(teachers.count(), departments.count())
+
+    def test_seed_is_deterministic_for_catalog_names(self):
+        self._run_command()
+        first_snapshot = {
+            "careers": tuple(Career.objects.order_by("code").values_list("code", "name")),
+            "departments": tuple(Department.objects.order_by("code").values_list("code", "name")),
+            "subjects": tuple(Subject.objects.order_by("code").values_list("code", "name", "career__code", "department__code")),
+        }
+
+        self._run_command()
+        second_snapshot = {
+            "careers": tuple(Career.objects.order_by("code").values_list("code", "name")),
+            "departments": tuple(Department.objects.order_by("code").values_list("code", "name")),
+            "subjects": tuple(Subject.objects.order_by("code").values_list("code", "name", "career__code", "department__code")),
+        }
+
         self.assertEqual(first_snapshot, second_snapshot)
 
-    def test_timetable_profile_creates_time_slots(self):
-        self._run_command(profile="timetable", slots_per_day=2, seed=20260519)
-        self.assertEqual(TimeSlot.objects.filter(period=self.period).count(), 10)
+    def test_seed_fails_fast_when_timetable_readiness_is_insufficient(self):
+        with patch(
+            "users.management.commands.seed_academic_base.SEED_TIME_SLOTS",
+            [(0, "08:00", "09:00")],
+        ):
+            with self.assertRaisesMessage(CommandError, "slots insuficientes"):
+                self._run_command()
 
-    def test_wipe_seed_data_restarts_seed_records(self):
-        self._run_command(profile="full", per_career=1, slots_per_day=2, seed=20260519)
+    def test_reexecution_replaces_departments_and_keeps_subject_department_links(self):
+        self._run_command()
+        first_department_ids = set(Department.objects.values_list("id", flat=True))
 
-        seeded_user = User.objects.filter(username__startswith="seedtest_adm_").order_by("id").first()
-        original_seeded_user_id = seeded_user.id
-        app = AdmissionApplication.objects.get(student=seeded_user, academic_period=self.period)
-        app.notes = "mutado-manual"
-        app.save(update_fields=["notes"])
+        self._run_command()
 
-        self._run_command(
-            profile="full",
-            per_career=1,
-            slots_per_day=2,
-            seed=20260519,
-            wipe_seed_data=True,
-        )
+        second_department_ids = set(Department.objects.values_list("id", flat=True))
+        self.assertEqual(Department.objects.count(), len(second_department_ids))
+        self.assertTrue(first_department_ids.isdisjoint(second_department_ids))
+        self.assertEqual(Subject.objects.filter(department__isnull=True).count(), 0)
 
-        self.assertEqual(User.objects.filter(username__startswith="seedtest_adm_").count(), 2)
-        self.assertEqual(User.objects.filter(username__startswith="seedtest_teacher_").count(), 2)
-        self.assertEqual(AdmissionApplication.objects.count(), 2)
-        self.assertEqual(AdmissionPreference.objects.count(), 2)
+    def test_reexecution_replaces_target_dataset(self):
+        self._run_command()
+        first_career_ids = set(Career.objects.values_list("id", flat=True))
+        first_subject_ids = set(Subject.objects.values_list("id", flat=True))
 
-        reseeded_user = User.objects.filter(username=seeded_user.username).first()
-        self.assertIsNotNone(reseeded_user)
-        self.assertNotEqual(reseeded_user.id, original_seeded_user_id)
-        reseeded_app = AdmissionApplication.objects.get(student=reseeded_user, academic_period=self.period)
-        self.assertNotEqual(reseeded_app.notes, "mutado-manual")
+        self._run_command()
 
-    def test_wipe_seed_data_does_not_delete_non_seed_records(self):
-        non_seed_student = User.objects.create_user(
-            username="normal_student",
-            email="normal_student@test.com",
-            password="testpass123",
-            role="s",
-        )
-        non_seed_teacher = User.objects.create_user(
-            username="normal_teacher",
-            email="normal_teacher@test.com",
-            password="testpass123",
-            role="t",
-        )
-        external_app = AdmissionApplication.objects.create(
-            student=non_seed_student,
-            academic_period=self.period,
-            status="submitted",
-            notes="externa",
-        )
-        AdmissionPreference.objects.create(
-            application=external_app,
-            career=self.career_cs,
-            preference_order=1,
-            status="pending",
-        )
-
-        self._run_command(profile="full", per_career=1, slots_per_day=2, seed=20260519)
-        self._run_command(
-            profile="full",
-            per_career=1,
-            slots_per_day=2,
-            seed=20260519,
-            wipe_seed_data=True,
-        )
-
-        self.assertTrue(User.objects.filter(username="normal_student").exists())
-        self.assertTrue(User.objects.filter(username="normal_teacher").exists())
-        self.assertTrue(AdmissionApplication.objects.filter(id=external_app.id).exists())
-        self.assertEqual(
-            AdmissionPreference.objects.filter(application=external_app).count(),
-            1,
-        )
+        second_career_ids = set(Career.objects.values_list("id", flat=True))
+        second_subject_ids = set(Subject.objects.values_list("id", flat=True))
+        self.assertEqual(Career.objects.count(), len(second_career_ids))
+        self.assertEqual(Subject.objects.count(), len(second_subject_ids))
+        self.assertTrue(first_career_ids.isdisjoint(second_career_ids))
+        self.assertTrue(first_subject_ids.isdisjoint(second_subject_ids))
 
 
 class UserListViewFilteringTests(APITestCase):

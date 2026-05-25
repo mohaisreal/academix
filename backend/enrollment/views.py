@@ -15,6 +15,7 @@ from .models import CareerEnrollment, ClassEnrollment, EnrollmentFee
 from .serializers import CareerEnrollmentSerializer, ClassEnrollmentSerializer, EnrollmentFeeSerializer
 from .services import refresh_enrollment_fee
 from academic.models import AcademicPeriod
+from academic.schedule_source import canonical_assignment_map_for_period, schedules_overlap
 from notifications.utils import create_notification
 from shared.permissions import IsAdminOrManagement, IsStudent
 
@@ -953,11 +954,16 @@ class ClassEnrollmentCreateDeleteView(generics.GenericAPIView):
         ).prefetch_related('cls__schedules')
         if user.role not in ('m', 'a'):
             qs = qs.filter(student=user, status__in=['enrolled', 'waitlisted'])
-        serializer = ClassEnrollmentSerializer(qs, many=True)
+        class_ids = [row.cls_id for row in qs]
+        assignment_map = {}
+        if class_ids:
+            period_id = qs.first().cls.period_id
+            assignment_map = canonical_assignment_map_for_period(period_id, class_ids)
+        serializer = ClassEnrollmentSerializer(qs, many=True, context={'canonical_assignment_map': assignment_map})
         return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
-        from academic.models import Class, ClassSchedule
+        from academic.models import Class
 
         if request.user.role != 's':
             return Response({"detail": "Solo estudiantes pueden inscribirse en clases."}, status=status.HTTP_403_FORBIDDEN)
@@ -991,35 +997,45 @@ class ClassEnrollmentCreateDeleteView(generics.GenericAPIView):
         if ClassEnrollment.objects.filter(student=request.user, cls=cls).exists():
             return Response({"detail": "Ya estás inscripto en esta clase."}, status=status.HTTP_400_BAD_REQUEST)
 
+        assignment_map = canonical_assignment_map_for_period(cls.period_id, [cls.id])
+        target_assignment = assignment_map.get(cls.id)
+        if not target_assignment:
+            return Response(
+                {
+                    "code": "schedule_unavailable",
+                    "detail": "La clase no tiene horario publicado disponible.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         # Verificar solapamiento de horarios
         enrolled_classes = ClassEnrollment.objects.filter(
             student=request.user,
             cls__period=cls.period,
             status='enrolled',
-        ).select_related('cls').prefetch_related('cls__schedules')
+        ).select_related('cls')
 
-        new_schedules = cls.schedules.all()
+        enrolled_class_ids = [ce.cls_id for ce in enrolled_classes]
+        enrolled_assignment_map = canonical_assignment_map_for_period(cls.period_id, enrolled_class_ids)
         DAY_NAMES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
         for enrolled_ce in enrolled_classes:
-            for existing_schedule in enrolled_ce.cls.schedules.all():
-                for new_schedule in new_schedules:
-                    if existing_schedule.day_of_week == new_schedule.day_of_week:
-                        # Verificar solapamiento de horas
-                        if not (new_schedule.end_time <= existing_schedule.start_time or
-                                new_schedule.start_time >= existing_schedule.end_time):
-                            day_name = DAY_NAMES[existing_schedule.day_of_week] if existing_schedule.day_of_week < 7 else str(existing_schedule.day_of_week)
-                            return Response(
-                                {
-                                    "detail": (
-                                        f"Solapamiento de horarios: la clase {cls.subject.name} "
-                                        f"({day_name} {new_schedule.start_time}-{new_schedule.end_time}) "
-                                        f"solapa con {enrolled_ce.cls.subject.name} "
-                                        f"({day_name} {existing_schedule.start_time}-{existing_schedule.end_time})."
-                                    )
-                                },
-                                status=status.HTTP_400_BAD_REQUEST
-                            )
+            existing_assignment = enrolled_assignment_map.get(enrolled_ce.cls_id)
+            if not existing_assignment:
+                continue
+            if schedules_overlap(existing_assignment, target_assignment):
+                day_name = DAY_NAMES[existing_assignment.slot.day_of_week] if existing_assignment.slot.day_of_week < 7 else str(existing_assignment.slot.day_of_week)
+                return Response(
+                    {
+                        "detail": (
+                            f"Solapamiento de horarios: la clase {cls.subject.name} "
+                            f"({day_name} {target_assignment.slot.start_time}-{target_assignment.slot.end_time}) "
+                            f"solapa con {enrolled_ce.cls.subject.name} "
+                            f"({day_name} {existing_assignment.slot.start_time}-{existing_assignment.slot.end_time})."
+                        )
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
         # Verificar disponibilidad
         enrolled_count = ClassEnrollment.objects.filter(cls=cls, status='enrolled').count()

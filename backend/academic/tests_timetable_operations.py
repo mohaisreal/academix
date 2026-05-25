@@ -18,6 +18,8 @@ from academic.models import (
     ScheduleAssignment,
     ConstraintViolation,
     ClassSchedule,
+    SchedulingConstraint,
+    Department,
 )
 from enrollment.models import ClassEnrollment
 from users.models import User
@@ -164,6 +166,16 @@ class TimetableGenerateAndPublishTests(TestCase):
 
     def test_generate_fails_with_missing_classes_category(self):
         period = make_period('P2026GEN4')
+        dep_teacher = User.objects.create_user(
+            username='teacher_dep_g4',
+            email='teacher_dep_g4@test.com',
+            password='testpass123',
+            role='t',
+        )
+        department = Department.objects.create(name='Departamento G4', code='DEP-G4', teacher=dep_teacher)
+        career = Career.objects.create(name='Career G4', code='CAR-G4')
+        Subject.objects.create(name='Subject G4', code='SUB-G4', career=career, department=department, is_active=True)
+        Classroom.objects.create(name='Room G4', building='Main', capacity=35, type='lecture')
         TimeSlot.objects.create(
             period=period,
             day_of_week=0,
@@ -174,11 +186,68 @@ class TimetableGenerateAndPublishTests(TestCase):
 
         response = self.client.post(f'/api/academic/timetable-runs/{run.id}/generate/')
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('detail', response.data)
-        self.assertIn('clases', str(response.data['detail']).lower())
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         run.refresh_from_db()
-        self.assertIn('missing_classes', run.metadata['generator'].get('precondition_errors', []))
+        self.assertIn(run.status, {'completed', 'partial'})
+        self.assertEqual(Class.objects.filter(period=period).count(), 1)
+        self.assertNotIn('missing_classes', run.metadata['generator'].get('precondition_errors', []))
+        self.assertEqual(run.metadata['generator'].get('classes_created'), 1)
+        for field in ['classes_created', 'classes_considered', 'generated_assignments', 'precondition_errors', 'class_preparation_errors']:
+            self.assertIn(field, run.metadata['generator'])
+
+    def test_generate_is_idempotent_for_prepared_classes(self):
+        period = make_period('P2026GEN4B')
+        dep_teacher = User.objects.create_user(
+            username='teacher_dep_g4b',
+            email='teacher_dep_g4b@test.com',
+            password='testpass123',
+            role='t',
+        )
+        department = Department.objects.create(name='Departamento G4B', code='DEP-G4B', teacher=dep_teacher)
+        career = Career.objects.create(name='Career G4B', code='CAR-G4B')
+        Subject.objects.create(name='Subject G4B', code='SUB-G4B', career=career, department=department, is_active=True)
+        Classroom.objects.create(name='Room G4B', building='Main', capacity=35, type='lecture')
+        TimeSlot.objects.create(period=period, day_of_week=0, start_time=time(8, 0), end_time=time(9, 0))
+        run = TimetableRun.objects.create(period=period)
+
+        first = self.client.post(f'/api/academic/timetable-runs/{run.id}/generate/')
+        second = self.client.post(f'/api/academic/timetable-runs/{run.id}/generate/')
+
+        self.assertEqual(first.status_code, status.HTTP_200_OK)
+        self.assertEqual(second.status_code, status.HTTP_200_OK)
+        run.refresh_from_db()
+        self.assertEqual(Class.objects.filter(period=period).count(), 1)
+        self.assertEqual(run.metadata['generator'].get('classes_created'), 0)
+
+    def test_generate_fails_when_no_active_subjects_for_preparation(self):
+        period = make_period('P2026GEN4C')
+        Career.objects.create(name='Career G4C', code='CAR-G4C')
+        Classroom.objects.create(name='Room G4C', building='Main', capacity=35, type='lecture')
+        TimeSlot.objects.create(period=period, day_of_week=0, start_time=time(8, 0), end_time=time(9, 0))
+        run = TimetableRun.objects.create(period=period)
+
+        response = self.client.post(f'/api/academic/timetable-runs/{run.id}/generate/')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        run.refresh_from_db()
+        self.assertIn('class_preparation_insufficient_subjects', run.metadata['generator'].get('class_preparation_errors', []))
+        self.assertEqual(run.metadata['generator'].get('generated_assignments'), 0)
+        for field in ['classes_created', 'classes_considered', 'generated_assignments', 'precondition_errors', 'class_preparation_errors']:
+            self.assertIn(field, run.metadata['generator'])
+
+    def test_generate_fails_when_no_classrooms_for_preparation(self):
+        period = make_period('P2026GEN4D')
+        career = Career.objects.create(name='Career G4D', code='CAR-G4D')
+        Subject.objects.create(name='Subject G4D', code='SUB-G4D', career=career, is_active=True)
+        TimeSlot.objects.create(period=period, day_of_week=0, start_time=time(8, 0), end_time=time(9, 0))
+        run = TimetableRun.objects.create(period=period)
+
+        response = self.client.post(f'/api/academic/timetable-runs/{run.id}/generate/')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        run.refresh_from_db()
+        self.assertIn('class_preparation_insufficient_classrooms', run.metadata['generator'].get('class_preparation_errors', []))
+        self.assertEqual(run.metadata['generator'].get('generated_assignments'), 0)
 
     def test_generate_fails_with_missing_time_slots_category(self):
         period = make_period('P2026GEN5')
@@ -193,7 +262,7 @@ class TimetableGenerateAndPublishTests(TestCase):
         run.refresh_from_db()
         self.assertIn('missing_time_slots', run.metadata['generator'].get('precondition_errors', []))
 
-    def test_generate_fails_with_missing_teacher_and_classroom_categories(self):
+    def test_generate_fails_with_missing_classroom_category(self):
         period = make_period('P2026GEN6')
         cls = make_class(period, 'G6')
         cls.teacher = None
@@ -212,8 +281,91 @@ class TimetableGenerateAndPublishTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         run.refresh_from_db()
         categories = run.metadata['generator'].get('precondition_errors', [])
-        self.assertIn('missing_teachers', categories)
         self.assertIn('missing_classrooms', categories)
+
+    def test_generate_uses_department_teacher_when_class_teacher_missing(self):
+        period = make_period('P2026GEN7')
+        fallback_teacher = User.objects.create_user(
+            username='teacher_dep_g7',
+            email='teacher_dep_g7@test.com',
+            password='testpass123',
+            role='t',
+        )
+        department = Department.objects.create(name='Departamento G7', code='DEP-G7', teacher=fallback_teacher)
+        career = Career.objects.create(name='Career G7', code='CAR-G7')
+        subject = Subject.objects.create(name='Subject G7', code='SUB-G7', career=career, department=department)
+        classroom = Classroom.objects.create(name='Room G7', building='Main', capacity=30, type='lecture')
+        cls = Class.objects.create(subject=subject, teacher=None, period=period, classroom=classroom, max_students=30)
+        TimeSlot.objects.create(period=period, day_of_week=1, start_time=time(9, 0), end_time=time(10, 0))
+        run = TimetableRun.objects.create(period=period)
+
+        response = self.client.post(f'/api/academic/timetable-runs/{run.id}/generate/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        run.refresh_from_db()
+        self.assertEqual(run.status, 'completed')
+        assignment = ScheduleAssignment.objects.get(run=run, cls=cls)
+        self.assertEqual(assignment.teacher_id, fallback_teacher.id)
+        unresolved = run.metadata['generator'].get('unresolved_teachers', [])
+        self.assertEqual(unresolved, [])
+
+    def test_class_teacher_precedence_blocks_even_if_department_teacher_available(self):
+        period = make_period('P2026GEN8')
+        class_teacher = User.objects.create_user(
+            username='teacher_cls_g8',
+            email='teacher_cls_g8@test.com',
+            password='testpass123',
+            role='t',
+        )
+        department_teacher = User.objects.create_user(
+            username='teacher_dep_g8',
+            email='teacher_dep_g8@test.com',
+            password='testpass123',
+            role='t',
+        )
+        department = Department.objects.create(name='Departamento G8', code='DEP-G8', teacher=department_teacher)
+        career = Career.objects.create(name='Career G8', code='CAR-G8')
+        subject = Subject.objects.create(name='Subject G8', code='SUB-G8', career=career, department=department)
+        classroom = Classroom.objects.create(name='Room G8', building='Main', capacity=30, type='lecture')
+        Class.objects.create(subject=subject, teacher=class_teacher, period=period, classroom=classroom, max_students=30)
+        TimeSlot.objects.create(period=period, day_of_week=1, start_time=time(11, 0), end_time=time(12, 0))
+        SchedulingConstraint.objects.create(
+            kind='teacher_unavailable',
+            scope='period',
+            period=period,
+            teacher=class_teacher,
+            day_of_week=1,
+            start_time=time(11, 0),
+            end_time=time(12, 0),
+            is_active=True,
+        )
+        run = TimetableRun.objects.create(period=period)
+
+        response = self.client.post(f'/api/academic/timetable-runs/{run.id}/generate/')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        run.refresh_from_db()
+        self.assertEqual(run.status, 'failed')
+        self.assertEqual(run.assignments.count(), 0)
+
+    def test_generate_reports_unresolved_teachers_when_no_resolution_possible(self):
+        period = make_period('P2026GEN9')
+        career = Career.objects.create(name='Career G9', code='CAR-G9')
+        subject = Subject.objects.create(name='Subject G9', code='SUB-G9', career=career)
+        classroom = Classroom.objects.create(name='Room G9', building='Main', capacity=25, type='lecture')
+        cls = Class.objects.create(subject=subject, teacher=None, period=period, classroom=classroom, max_students=20)
+        TimeSlot.objects.create(period=period, day_of_week=2, start_time=time(10, 0), end_time=time(11, 0))
+        run = TimetableRun.objects.create(period=period)
+
+        response = self.client.post(f'/api/academic/timetable-runs/{run.id}/generate/')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        run.refresh_from_db()
+        self.assertEqual(run.status, 'failed')
+        unresolved = run.metadata['generator'].get('unresolved_teachers', [])
+        self.assertEqual(unresolved, [cls.id])
+        violation = ConstraintViolation.objects.get(run=run)
+        self.assertTrue(violation.metadata.get('unresolved_teacher'))
 
     def test_publish_rejects_failed_run(self):
         period = make_period('P2026PUB1')
@@ -411,6 +563,129 @@ class MyScheduleCompatibilityTests(TestCase):
         self.assertIsNone(row['assignment_id'])
 
 
+class CareerClassesCanonicalScheduleTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.student = make_student('student_ccs')
+        self.client.force_authenticate(user=self.student)
+        self.period = make_period('P2026CCS1')
+        self.career = Career.objects.create(name='Career Canon', code='CCAN')
+        self.subject = Subject.objects.create(name='Subject Canon', code='SCAN', career=self.career)
+        self.teacher = User.objects.create_user(
+            username='teacher_ccs',
+            email='teacher_ccs@test.com',
+            password='testpass123',
+            role='t',
+        )
+        self.classroom = Classroom.objects.create(name='Room Canon', building='Main', capacity=40, type='lecture')
+        self.cls = Class.objects.create(
+            subject=self.subject,
+            teacher=self.teacher,
+            period=self.period,
+            classroom=self.classroom,
+            max_students=30,
+        )
+
+    def test_classes_endpoint_uses_published_assignment_and_contract_fields(self):
+        ClassSchedule.objects.create(cls=self.cls, day_of_week=0, start_time=time(8, 0), end_time=time(9, 0))
+        slot = TimeSlot.objects.create(period=self.period, day_of_week=2, start_time=time(13, 0), end_time=time(14, 0))
+        run = TimetableRun.objects.create(period=self.period, status='published')
+        assignment = ScheduleAssignment.objects.create(
+            run=run,
+            cls=self.cls,
+            slot=slot,
+            classroom=self.classroom,
+            teacher=self.teacher,
+        )
+
+        response = self.client.get(f'/api/academic/careers/{self.career.id}/classes/', {'period': self.period.id})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        row = response.data[0]
+        self.assertEqual(row['schedule_source'], 'generated')
+        self.assertTrue(row['schedule_available'])
+        self.assertIsNone(row['schedule_unavailable_reason'])
+        self.assertEqual(len(row['schedules']), 1)
+        self.assertEqual(row['schedules'][0]['assignment_id'], assignment.id)
+        self.assertEqual(row['schedules'][0]['source'], 'generated')
+        self.assertEqual(row['schedules'][0]['day_name'], slot.get_day_of_week_display())
+
+    def test_classes_endpoint_marks_unavailable_when_no_published_assignment(self):
+        ClassSchedule.objects.create(cls=self.cls, day_of_week=0, start_time=time(8, 0), end_time=time(9, 0))
+
+        response = self.client.get(f'/api/academic/careers/{self.career.id}/classes/', {'period': self.period.id})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        row = response.data[0]
+        self.assertEqual(row['schedule_source'], 'generated')
+        self.assertFalse(row['schedule_available'])
+        self.assertEqual(row['schedule_unavailable_reason'], 'schedule_unavailable')
+        self.assertEqual(row['schedules'], [])
+
+
+class SchedulingConstraintsTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.manager = make_manager('mgr_constraints')
+        self.client.force_authenticate(user=self.manager)
+        self.period = make_period('P2026SC1')
+        self.cls = make_class(self.period, 'SC1')
+        self.slot = TimeSlot.objects.create(period=self.period, day_of_week=0, start_time=time(8, 0), end_time=time(9, 0))
+
+    def test_constraints_crud_validation_and_list(self):
+        invalid = self.client.post('/api/academic/scheduling-constraints/', {
+            'kind': 'teacher_unavailable', 'scope': 'period', 'period': self.period.id, 'day_of_week': 0, 'start_time': '10:00:00', 'end_time': '09:00:00', 'is_active': True,
+        }, format='json')
+        self.assertEqual(invalid.status_code, 400)
+        self.assertIn('end_time', invalid.data)
+
+        valid = self.client.post('/api/academic/scheduling-constraints/', {
+            'kind': 'teacher_unavailable', 'scope': 'period', 'period': self.period.id, 'teacher': self.cls.teacher_id, 'day_of_week': 0, 'start_time': '08:00:00', 'end_time': '10:00:00', 'is_active': True,
+        }, format='json')
+        self.assertEqual(valid.status_code, 201)
+        self.assertEqual(SchedulingConstraint.objects.count(), 1)
+
+    def test_assignments_include_career_fields_and_filter(self):
+        run = TimetableRun.objects.create(period=self.period, status='completed')
+        ScheduleAssignment.objects.create(run=run, cls=self.cls, slot=self.slot, classroom=self.cls.classroom, teacher=self.cls.teacher)
+
+        response = self.client.get('/api/academic/schedule-assignments/', {'run': run.id, 'career': self.cls.subject.career_id})
+        self.assertEqual(response.status_code, 200)
+        row = response.data.get('results', response.data)[0]
+        self.assertEqual(row['career_id'], self.cls.subject.career_id)
+        self.assertEqual(row['career_code'], self.cls.subject.career.code)
+        self.assertEqual(row['career_name'], self.cls.subject.career.name)
+
+    def test_generate_applies_active_constraints_and_registers_violation(self):
+        run = TimetableRun.objects.create(period=self.period, status='draft')
+        SchedulingConstraint.objects.create(
+            kind='teacher_unavailable', scope='period', period=self.period,
+            teacher=self.cls.teacher, day_of_week=0, start_time=time(7, 0), end_time=time(11, 0), is_active=True,
+        )
+
+        response = self.client.post(f'/api/academic/timetable-runs/{run.id}/generate/')
+        self.assertEqual(response.status_code, 400)
+        run.refresh_from_db()
+        self.assertIn(run.status, {'partial', 'failed'})
+        self.assertEqual(run.assignments.count(), 0)
+        self.assertGreaterEqual(run.violations.count(), 1)
+
+    def test_seeded_dataset_generates_without_unresolved_teachers(self):
+        call_command('seed_academic_base')
+        period = AcademicPeriod.objects.filter(is_active=True).order_by('-start_date').first()
+        self.assertIsNotNone(period)
+        run = TimetableRun.objects.create(period=period)
+
+        response = self.client.post(f'/api/academic/timetable-runs/{run.id}/generate/')
+
+        self.assertEqual(response.status_code, 200)
+        run.refresh_from_db()
+        self.assertIn(run.status, {'completed', 'partial'})
+        unresolved = run.metadata.get('generator', {}).get('unresolved_teachers', [])
+        self.assertEqual(unresolved, [])
+        self.assertNotIn('class_preparation_insufficient_teachers', run.metadata.get('generator', {}).get('class_preparation_errors', []))
+
+
 class SeedTestDataTimetableCommandTests(TestCase):
     def setUp(self):
         self.period = AcademicPeriod.objects.create(
@@ -421,6 +696,12 @@ class SeedTestDataTimetableCommandTests(TestCase):
             is_active=True,
         )
         Career.objects.create(name='Ciencias de la Computación', code='CS', is_active=True)
+        User.objects.create_user(
+            username='teacher01',
+            email='teacher01@academix.edu',
+            password='testpass123',
+            role='t',
+        )
 
     def test_seed_timetable_generate_run_creates_completed_or_partial_run(self):
         stdout = StringIO()
