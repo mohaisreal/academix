@@ -9,6 +9,11 @@ import {
   buildManualTimeslotPayload,
   normalizeMyScheduleRows,
   groupAssignmentsByClass,
+  extractCareerOptions,
+  normalizeAssignmentsToWeekGrid,
+  buildConstraintPayload,
+  mapConstraintFieldErrors,
+  resolveAssignmentTeacherDisplay,
 } from '../timetable-management-utils';
 
 describe('buildBulkTimeSlots', () => {
@@ -133,6 +138,42 @@ describe('classifyTimetableActionError', () => {
     });
 
     expect(classifyTimetableActionError(e, 'generate')).toContain('franjas horarias');
+  });
+
+  it('mapea error de preparación por falta de materias activas', () => {
+    const e = Object.assign(new Error('Bad request'), {
+      status: 400,
+      payload: {
+        status: 'failed',
+        metadata: { generator: { class_preparation_errors: ['class_preparation_insufficient_subjects'] } },
+      },
+    });
+
+    expect(classifyTimetableActionError(e, 'generate')).toContain('materias activas');
+  });
+
+  it('mapea error de preparación por falta de aulas', () => {
+    const e = Object.assign(new Error('Bad request'), {
+      status: 400,
+      payload: {
+        status: 'failed',
+        metadata: { generator: { class_preparation_errors: ['class_preparation_insufficient_classrooms'] } },
+      },
+    });
+
+    expect(classifyTimetableActionError(e, 'generate')).toContain('aulas disponibles');
+  });
+
+  it('muestra mensaje específico cuando hay docentes sin resolver', () => {
+    const e = Object.assign(new Error('Bad request'), {
+      status: 400,
+      payload: {
+        status: 'failed',
+        metadata: { generator: { unresolved_teachers: [44, 45] } },
+      },
+    });
+
+    expect(classifyTimetableActionError(e, 'generate')).toContain('docentes sin resolver');
   });
 
   it('mapea 400 de validación/precondición por campos', () => {
@@ -275,5 +316,45 @@ describe('buildRunPreviewInfo', () => {
     expect(preview.violationsCount).toBe(0);
     expect(preview.hasAssignments).toBe(false);
     expect(preview.metadataRows).toEqual([]);
+  });
+});
+
+describe('preview grid + constraints helpers', () => {
+  it('extrae carreras únicas desde asignaciones', () => {
+    const careers = extractCareerOptions([
+      { id: 1, career_id: 2, career_name: 'Ingeniería' },
+      { id: 2, career_id: 2, career_name: 'Ingeniería' },
+      { id: 3, career_id: 3, career_name: 'Derecho' },
+    ]);
+    expect(careers).toEqual([{ id: 2, name: 'Ingeniería' }, { id: 3, name: 'Derecho' }]);
+  });
+
+  it('normaliza asignaciones a grilla L-V y filtra por carrera', () => {
+    const grid = normalizeAssignmentsToWeekGrid([
+      { id: 10, career_id: 2, career_name: 'Ingeniería', subject_code: 'ALG', classroom_name: 'A1', timeslot_day_name: 'Monday', timeslot_start_time: '08:00:00' },
+      { id: 11, career_id: 3, career_name: 'Derecho', subject_code: 'DER', classroom_name: 'B1', timeslot_day_name: 'Tuesday', timeslot_start_time: '09:00:00' },
+    ], 2);
+    expect(grid).toHaveLength(1);
+    expect(grid[0].day).toBe(0);
+    expect(grid[0].hour).toBe('08:00');
+  });
+
+  it('arma payload de restricción por tipo/scope', () => {
+    const payload = buildConstraintPayload({
+      kind: 'teacher_unavailable', scope: 'period', period: '5', teacher: '8', classroom: '', career: '', dayOfWeek: '2', startTime: '10:00:00', endTime: '11:00:00', isActive: true,
+    });
+    expect(payload.period).toBe(5);
+    expect(payload.teacher).toBe(8);
+    expect(payload.classroom).toBeNull();
+  });
+
+  it('mapea errores por campo desde payload DRF', () => {
+    expect(mapConstraintFieldErrors({ period: ['Requerido'], teacher: ['Inválido'] })).toEqual({ period: 'Requerido', teacher: 'Inválido' });
+  });
+
+  it('resuelve docente visible con precedencia teacher > department > pendiente', () => {
+    expect(resolveAssignmentTeacherDisplay({ teacher_name: 'Ada Lovelace', department_teacher_name: 'Grace Hopper' })).toBe('Ada Lovelace');
+    expect(resolveAssignmentTeacherDisplay({ teacher_name: '', department_teacher_name: 'Grace Hopper' })).toContain('Grace Hopper');
+    expect(resolveAssignmentTeacherDisplay({ teacher_name: '', department_teacher_name: '' })).toBe('No resuelto');
   });
 });
