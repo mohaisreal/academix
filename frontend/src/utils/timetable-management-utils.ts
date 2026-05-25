@@ -8,6 +8,9 @@ export type TimeslotBatchFormValues = { period: string; dayOfWeek: string; start
 export type TimeslotPayload = { period: number; day_of_week: number; start_time: string; end_time: string };
 export type TimetableApiError = Error & { status?: number; payload?: any };
 export type TimetableViolationSummary = { total: number; hard: number; soft: number; penalty: number };
+export type AssignmentGridRow = { id: number; cls?: number; subject_name?: string; subject_code?: string; classroom_name?: string; teacher_name?: string; career_id?: number; career_name?: string; timeslot_day_name?: string; timeslot_start_time?: string; timeslot_end_time?: string };
+export type TimetableGridBlock = { id: number; day: number; hour: string; label: string; careerId: number | null; careerName: string | null };
+export type ConstraintFormValues = { kind: string; scope: string; period: string; teacher: string; classroom: string; career: string; dayOfWeek: string; startTime: string; endTime: string; isActive: boolean };
 
 export type BulkBreakRange = { start: string; end: string };
 export type SlotPayload = { period: number; day_of_week: number; start_time: string; end_time: string };
@@ -71,7 +74,10 @@ export function classifyTimetableActionError(error: unknown, action: 'generate' 
   const payload = typedError?.payload;
   const detail = String(payload?.detail || typedError?.message || '').toLowerCase();
   const preconditionErrors = payload?.metadata?.generator?.precondition_errors;
+  const classPreparationErrors = payload?.metadata?.generator?.class_preparation_errors;
+  const unresolvedTeachers = payload?.metadata?.generator?.unresolved_teachers;
   const categories = Array.isArray(preconditionErrors) ? preconditionErrors : [];
+  const preparationCategories = Array.isArray(classPreparationErrors) ? classPreparationErrors : [];
   const fieldError = payload && typeof payload === 'object' && Object.keys(payload).some((key) => ['period', 'day_of_week', 'start_time', 'end_time', 'non_field_errors'].includes(key));
 
   if (status === 400 && action === 'generate' && (detail.includes('failed') || payload?.status === 'failed')) {
@@ -87,6 +93,15 @@ export function classifyTimetableActionError(error: unknown, action: 'generate' 
     if (categories.includes('missing_time_slots')) {
       return 'No se pudo generar: faltan franjas horarias para el período seleccionado.';
     }
+    if (preparationCategories.includes('class_preparation_insufficient_subjects')) {
+      return 'No se pudo generar: faltan materias activas para preparar clases del período.';
+    }
+    if (preparationCategories.includes('class_preparation_insufficient_classrooms')) {
+      return 'No se pudo generar: faltan aulas disponibles para preparar clases del período.';
+    }
+    if (Array.isArray(unresolvedTeachers) && unresolvedTeachers.length > 0) {
+      return `No se pudo generar: hay docentes sin resolver en ${unresolvedTeachers.length} clase(s).`;
+    }
     if (detail.includes('faltan')) {
       return String(payload?.detail || typedError?.message || 'No se pudo generar.');
     }
@@ -99,6 +114,16 @@ export function classifyTimetableActionError(error: unknown, action: 'generate' 
     return 'Validación incompleta: revisá período, día y rango horario antes de enviar.';
   }
   return typedError?.message || 'Error técnico inesperado.';
+}
+
+export function resolveAssignmentTeacherDisplay(assignment: Record<string, any>) {
+  const directTeacher = String(assignment?.teacher_name || assignment?.teacher?.full_name || assignment?.teacher?.username || '').trim();
+  if (directTeacher) return directTeacher;
+
+  const departmentTeacher = String(assignment?.department_teacher_name || assignment?.subject?.department_teacher_name || '').trim();
+  if (departmentTeacher) return `${departmentTeacher} (depto)`;
+
+  return 'No resuelto';
 }
 
 export function buildBulkTimeSlots(input: { periodId: number; daysOfWeek: number[]; startTime: string; endTime: string; intervalMinutes: number; breakRanges: BulkBreakRange[]; existingKeys: Set<string> }): BulkSlotResult {
@@ -193,4 +218,55 @@ export function buildRunPreviewInfo(run: Record<string, any> | null, assignments
     metadataRows,
     hasAssignments: assignmentsCount > 0,
   };
+}
+
+export function extractCareerOptions(assignments: AssignmentGridRow[]) {
+  const map = new Map<number, string>();
+  assignments.forEach((a) => {
+    const id = Number(a.career_id);
+    if (Number.isInteger(id) && id > 0 && !map.has(id)) map.set(id, a.career_name || `Carrera #${id}`);
+  });
+  return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+}
+
+const DAY_TO_INDEX: Record<string, number> = {
+  monday: 0, tuesday: 1, wednesday: 2, thursday: 3, friday: 4,
+};
+
+export function normalizeAssignmentsToWeekGrid(assignments: AssignmentGridRow[], selectedCareerId: number | null = null) {
+  return assignments
+    .filter((a) => (selectedCareerId ? Number(a.career_id) === Number(selectedCareerId) : true))
+    .map<TimetableGridBlock>((a) => {
+      const dayName = String(a.timeslot_day_name || '').toLowerCase();
+      const day = DAY_TO_INDEX[dayName] ?? -1;
+      const hour = String(a.timeslot_start_time || '00:00:00').slice(0, 5);
+      const label = `${a.subject_code || a.subject_name || 'Clase'} · ${a.classroom_name || 'Sin aula'}`;
+      return { id: Number(a.id), day, hour, label, careerId: a.career_id ? Number(a.career_id) : null, careerName: a.career_name || null };
+    })
+    .filter((b) => b.day >= 0 && b.day <= 4);
+}
+
+export function buildConstraintPayload(values: ConstraintFormValues) {
+  return {
+    kind: values.kind,
+    scope: values.scope,
+    period: values.scope === 'period' ? toOptionalNumber(values.period) : null,
+    teacher: values.kind === 'teacher_unavailable' ? toOptionalNumber(values.teacher) : null,
+    classroom: values.kind === 'classroom_unavailable' ? toOptionalNumber(values.classroom) : null,
+    career: values.kind === 'career_unavailable' ? toOptionalNumber(values.career) : null,
+    day_of_week: Number(values.dayOfWeek),
+    start_time: values.startTime,
+    end_time: values.endTime,
+    is_active: values.isActive,
+    metadata: {},
+  };
+}
+
+export function mapConstraintFieldErrors(payload: any): Record<string, string> {
+  if (!payload || typeof payload !== 'object') return {};
+  const result: Record<string, string> = {};
+  Object.entries(payload).forEach(([key, value]) => {
+    if (Array.isArray(value) && value[0]) result[key] = String(value[0]);
+  });
+  return result;
 }
