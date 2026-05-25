@@ -1,5 +1,12 @@
 ---
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
+import {
+  createEmptyChargeRow,
+  normalizeExtraChargeRows,
+  serializeExtraChargeRows,
+  validateExtraChargeRows,
+  type EditableChargeRow,
+} from '@/utils/system-enrollment-charges-utils';
 ---
 <DashboardLayout title="Sistema — Academix" currentPath="/system">
   <div id="page-loading" class="p-6 space-y-4">
@@ -58,12 +65,15 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
               <p class="text-xs text-muted-foreground">Solo se aplica cuando el estudiante no tiene período escolar/matrícula previa.</p>
             </div>
           </div>
-          <div class="space-y-1.5">
-            <label for="enrollment-extra-charges" class="text-xs font-medium text-muted-foreground">JSON de cargos extra</label>
-            <textarea id="enrollment-extra-charges" rows="5"
-              placeholder='[{"label":"Carné universitario","amount":"12.00","active":true}]'
-              class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary font-mono"></textarea>
-            <p class="text-xs text-muted-foreground">Cada elemento necesita label, amount y active=true/false opcional.</p>
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-medium text-muted-foreground">Cargos extra</label>
+              <button id="add-extra-charge" class="inline-flex items-center rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors">
+                Añadir cargo
+              </button>
+            </div>
+            <div id="extra-charges-list" class="space-y-2"></div>
+            <p id="extra-charges-empty" class="text-xs text-muted-foreground">No hay cargos extra configurados.</p>
           </div>
           <div class="flex items-center gap-3">
             <button id="save-enrollment-charges" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
@@ -78,6 +88,13 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 </DashboardLayout>
 
 <script>
+  import {
+    createEmptyChargeRow,
+    normalizeExtraChargeRows,
+    serializeExtraChargeRows,
+    validateExtraChargeRows,
+  } from '@/utils/system-enrollment-charges-utils';
+
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
   const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
@@ -104,6 +121,65 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     return res.json();
   }
 
+  let extraChargeRows = [];
+
+  function renderExtraChargeRows() {
+    const list = document.getElementById('extra-charges-list');
+    const empty = document.getElementById('extra-charges-empty');
+    if (!list || !empty) return;
+
+    list.innerHTML = '';
+    if (extraChargeRows.length === 0) {
+      empty.classList.remove('hidden');
+      return;
+    }
+
+    empty.classList.add('hidden');
+
+    extraChargeRows.forEach((row) => {
+      const wrapper = document.createElement('div');
+      wrapper.dataset.extraChargeRow = row.clientId;
+      wrapper.setAttribute('data-extra-charge-row', row.clientId);
+      wrapper.className = 'grid grid-cols-1 md:grid-cols-[1fr_140px_110px_auto] gap-2 rounded-lg border border-border p-3';
+      wrapper.innerHTML = `
+        <div>
+          <label class="text-xs text-muted-foreground">Concepto</label>
+          <input data-extra-charge-field="label" value="${row.label}" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground" />
+          <p class="text-xs text-red-400 ${row.errors?.label ? '' : 'hidden'}" data-extra-charge-error="label">${row.errors?.label ?? ''}</p>
+        </div>
+        <div>
+          <label class="text-xs text-muted-foreground">Monto (€)</label>
+          <input data-extra-charge-field="amount" type="text" value="${row.amount}" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground" />
+          <p class="text-xs text-red-400 ${row.errors?.amount ? '' : 'hidden'}" data-extra-charge-error="amount">${row.errors?.amount ?? ''}</p>
+        </div>
+        <label class="mt-6 inline-flex items-center gap-2 text-xs text-muted-foreground"><input data-extra-charge-field="active" type="checkbox" ${row.active ? 'checked' : ''} /> Activo</label>
+        <button data-extra-charge-action="remove" class="mt-6 inline-flex items-center rounded-lg border border-border px-3 py-2 text-xs hover:bg-muted">Eliminar</button>
+      `;
+
+      wrapper.querySelector('[data-extra-charge-field="label"]')?.addEventListener('input', (event) => {
+        const target = event.target;
+        extraChargeRows = extraChargeRows.map((item) => item.clientId === row.clientId ? { ...item, label: target.value } : item);
+      });
+
+      wrapper.querySelector('[data-extra-charge-field="amount"]')?.addEventListener('input', (event) => {
+        const target = event.target;
+        extraChargeRows = extraChargeRows.map((item) => item.clientId === row.clientId ? { ...item, amount: target.value } : item);
+      });
+
+      wrapper.querySelector('[data-extra-charge-field="active"]')?.addEventListener('change', (event) => {
+        const target = event.target;
+        extraChargeRows = extraChargeRows.map((item) => item.clientId === row.clientId ? { ...item, active: target.checked } : item);
+      });
+
+      wrapper.querySelector('[data-extra-charge-action="remove"]')?.addEventListener('click', () => {
+        extraChargeRows = extraChargeRows.filter((item) => item.clientId !== row.clientId);
+        renderExtraChargeRows();
+      });
+
+      list.appendChild(wrapper);
+    });
+  }
+
   async function loadSystemSettings() {
     try {
       const data = await apiFetch('/notifications/system-settings/');
@@ -111,10 +187,10 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       if (input && data.student_id_format) input.value = data.student_id_format;
       const schoolInsurance = document.getElementById('school-insurance-fee') as HTMLInputElement;
       const transcriptOpening = document.getElementById('transcript-opening-fee') as HTMLInputElement;
-      const extraCharges = document.getElementById('enrollment-extra-charges') as HTMLTextAreaElement;
       if (schoolInsurance) schoolInsurance.value = String(data.school_insurance_fee ?? '0.00');
       if (transcriptOpening) transcriptOpening.value = String(data.transcript_opening_fee ?? '0.00');
-      if (extraCharges) extraCharges.value = JSON.stringify(data.enrollment_extra_charges ?? [], null, 2);
+      extraChargeRows = normalizeExtraChargeRows(data.enrollment_extra_charges ?? []);
+      renderExtraChargeRows();
     } catch { /* ignore */ }
     finally {
       document.getElementById('page-loading')?.classList.add('hidden');
@@ -136,19 +212,21 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     } catch { /* ignore */ }
   });
 
+  document.getElementById('add-extra-charge')?.addEventListener('click', () => {
+    extraChargeRows = [...extraChargeRows, createEmptyChargeRow()];
+    renderExtraChargeRows();
+  });
+
   document.getElementById('save-enrollment-charges')?.addEventListener('click', async () => {
     const schoolInsurance = document.getElementById('school-insurance-fee') as HTMLInputElement;
     const transcriptOpening = document.getElementById('transcript-opening-fee') as HTMLInputElement;
-    const extraCharges = document.getElementById('enrollment-extra-charges') as HTMLTextAreaElement;
     const status = document.getElementById('enrollment-charges-status');
-    let parsedExtras: any[] = [];
 
-    try {
-      parsedExtras = extraCharges?.value?.trim() ? JSON.parse(extraCharges.value) : [];
-      if (!Array.isArray(parsedExtras)) throw new Error('Los cargos extra deben ser un arreglo JSON.');
-    } catch (err: any) {
+    extraChargeRows = validateExtraChargeRows(extraChargeRows);
+    renderExtraChargeRows();
+    if (extraChargeRows.some((row) => row.errors?.label || row.errors?.amount)) {
       if (status) {
-        status.textContent = err?.message ?? 'JSON inválido.';
+        status.textContent = 'Corregí los errores de los cargos extra antes de guardar.';
         status.className = 'text-xs text-red-400';
         status.classList.remove('hidden');
       }
@@ -161,7 +239,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         body: JSON.stringify({
           school_insurance_fee: schoolInsurance?.value || '0.00',
           transcript_opening_fee: transcriptOpening?.value || '0.00',
-          enrollment_extra_charges: parsedExtras,
+          enrollment_extra_charges: serializeExtraChargeRows(extraChargeRows),
         }),
       });
       if (status) {
