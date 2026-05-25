@@ -127,6 +127,8 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 </DashboardLayout>
 
 <script>
+    import { getEnrollmentClassAction, getEnrollmentClassAvailability, getScheduleSummaryLabel } from "@/utils/enrollment-class-selection-utils";
+
     const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
     const token = localStorage.getItem("access_token");
 
@@ -250,25 +252,25 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                         const classroomStr = cls.classroom
                             ? `${cls.classroom.name} (${cls.classroom.building})`
                             : "—";
-                        const scheduleStr = (cls.schedules ?? []).map((s: any) => {
-                            const day = s.day_name ?? s.day ?? "";
-                            const start = s.start_time ?? "";
-                            const end = s.end_time ?? "";
-                            return `${day} ${start}–${end}`;
-                        }).join(" · ");
+                        const scheduleStr = getScheduleSummaryLabel(cls.schedules ?? []);
+                        const availability = getEnrollmentClassAvailability(cls);
 
                         let actionBtn = "";
-                        if (isCompleted) {
+                        const action = getEnrollmentClassAction({ cls, isEnrolled, isFull, isCompleted });
+                        if (action.key === "none") {
                             actionBtn = "";
-                        } else if (isEnrolled) {
+                        } else if (action.key === "unenroll") {
                             actionBtn = `<button class="btn-unenroll text-xs rounded-md border border-destructive/40 px-3 py-1.5 text-destructive hover:bg-destructive/10 transition-colors" data-class-id="${cls.id}">Quitar</button>`;
-                        } else if (isFull) {
+                        } else if (action.key === "full") {
                             actionBtn = `<button disabled class="text-xs rounded-md border border-border px-3 py-1.5 text-muted-foreground opacity-50 cursor-not-allowed">Clase completa</button>`;
+                        } else if (action.key === "unavailable") {
+                            actionBtn = `<button disabled class="text-xs rounded-md border border-border px-3 py-1.5 text-muted-foreground opacity-50 cursor-not-allowed">Sin horario disponible</button>`;
                         } else {
                             actionBtn = `<button class="btn-enroll text-xs rounded-md bg-primary px-3 py-1.5 text-primary-foreground hover:bg-primary/90 transition-colors" data-class-id="${cls.id}">Seleccionar</button>`;
                         }
 
                         const spotsLabel = isEnrolled ? ""
+                            : !availability.available ? `<span class="text-xs text-muted-foreground">Sin horario disponible</span>`
                             : isFull ? `<span class="text-xs text-destructive/70">Completo</span>`
                             : `<span class="text-xs text-muted-foreground">${spotsAvailable} cupo${spotsAvailable !== 1 ? "s" : ""} disponible${spotsAvailable !== 1 ? "s" : ""}</span>`;
 
@@ -320,8 +322,12 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     }
 
     function enrollInClass(classId: number, allClasses: any[]) {
-        draftEnrollIds.add(classId);
         const clsObj = allClasses.find(c => c.id === classId);
+        if (!clsObj || !getEnrollmentClassAvailability(clsObj).available) {
+            showFeedback("Esta clase no tiene horario publicado disponible.", true);
+            return;
+        }
+        draftEnrollIds.add(classId);
         if (clsObj && clsObj.available_spots != null) {
             clsObj.available_spots = Math.max(0, clsObj.available_spots - 1);
             clsObj.enrolled_count = (clsObj.enrolled_count ?? 0) + 1;
