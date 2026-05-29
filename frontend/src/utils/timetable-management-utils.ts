@@ -10,6 +10,7 @@ export type TimetableApiError = Error & { status?: number; payload?: any };
 export type TimetableViolationSummary = { total: number; hard: number; soft: number; penalty: number };
 export type AssignmentGridRow = { id: number; cls?: number; subject_name?: string; subject_code?: string; classroom_name?: string; teacher_name?: string; career_id?: number; career_name?: string; timeslot_day_name?: string; timeslot_start_time?: string; timeslot_end_time?: string };
 export type TimetableGridBlock = { id: number; day: number; hour: string; label: string; careerId: number | null; careerName: string | null };
+export type TimetableGridRow = { hour: string; cells: Array<{ day: number; blocks: TimetableGridBlock[] }> };
 export type ConstraintFormValues = { kind: string; scope: string; period: string; teacher: string; classroom: string; career: string; dayOfWeek: string; startTime: string; endTime: string; isActive: boolean };
 
 export type BulkBreakRange = { start: string; end: string };
@@ -186,13 +187,44 @@ export function formatActivityType(activityType: string) {
 }
 
 export type MyScheduleRow = { class_id: number; subject_name: string; day_of_week: number; start_time: string; end_time: string; source?: string | null; [key: string]: any };
+
+function normalizeScheduleEntries(row: MyScheduleRow) {
+  const provided = Array.isArray((row as any).schedule)
+    ? (row as any).schedule
+    : Array.isArray((row as any).schedules)
+      ? (row as any).schedules
+      : null;
+
+  if (provided && provided.length > 0) {
+    return provided.map((entry: any) => ({
+      day_of_week: Number(entry.day_of_week),
+      start_time: String(entry.start_time),
+      end_time: String(entry.end_time),
+    }));
+  }
+
+  return [{ day_of_week: row.day_of_week, start_time: row.start_time, end_time: row.end_time }];
+}
+
 export function normalizeMyScheduleRows(rows: MyScheduleRow[]) {
-  return rows.map((row) => ({ ...row, source: row.source || 'legacy', schedule: [{ day_of_week: row.day_of_week, start_time: row.start_time, end_time: row.end_time }] }));
+  return rows.map((row) => ({ ...row, source: row.source || 'legacy', schedule: normalizeScheduleEntries(row) }));
 }
 
 export function groupAssignmentsByClass(assignments: Array<Record<string, any>>) {
   const bucket = new Map<number, { cls: number; items: Array<Record<string, any>> }>();
   for (const assignment of assignments) { const cls = Number(assignment.cls ?? assignment.cls_id); if (!bucket.has(cls)) bucket.set(cls, { cls, items: [] }); bucket.get(cls)!.items.push(assignment); }
+  const dayOrder: Record<string, number> = { monday: 0, tuesday: 1, wednesday: 2, thursday: 3, friday: 4, saturday: 5, sunday: 6 };
+  for (const entry of bucket.values()) {
+    entry.items.sort((a, b) => {
+      const dayA = dayOrder[String(a.timeslot_day_name || '').toLowerCase()] ?? 99;
+      const dayB = dayOrder[String(b.timeslot_day_name || '').toLowerCase()] ?? 99;
+      if (dayA !== dayB) return dayA - dayB;
+      const timeA = String(a.timeslot_start_time || '99:99:99');
+      const timeB = String(b.timeslot_start_time || '99:99:99');
+      if (timeA !== timeB) return timeA.localeCompare(timeB);
+      return Number(a.id || 0) - Number(b.id || 0);
+    });
+  }
   return Array.from(bucket.values());
 }
 
@@ -244,6 +276,19 @@ export function normalizeAssignmentsToWeekGrid(assignments: AssignmentGridRow[],
       return { id: Number(a.id), day, hour, label, careerId: a.career_id ? Number(a.career_id) : null, careerName: a.career_name || null };
     })
     .filter((b) => b.day >= 0 && b.day <= 4);
+}
+
+export function buildWeekGridRows(blocks: TimetableGridBlock[]): TimetableGridRow[] {
+  const hours = Array.from(new Set(blocks.map((b) => b.hour))).sort();
+  return hours.map((hour) => ({
+    hour,
+    cells: [0, 1, 2, 3, 4].map((day) => ({
+      day,
+      blocks: blocks
+        .filter((b) => b.day === day && b.hour === hour)
+        .sort((a, b) => Number(a.id) - Number(b.id)),
+    })),
+  }));
 }
 
 export function buildConstraintPayload(values: ConstraintFormValues) {

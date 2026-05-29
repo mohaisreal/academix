@@ -11,6 +11,7 @@ import {
   groupAssignmentsByClass,
   extractCareerOptions,
   normalizeAssignmentsToWeekGrid,
+  buildWeekGridRows,
   buildConstraintPayload,
   mapConstraintFieldErrors,
   resolveAssignmentTeacherDisplay,
@@ -235,6 +236,26 @@ describe('normalizeMyScheduleRows', () => {
     expect(rows[1].source).toBe('legacy');
     expect(rows[1].schedule).toHaveLength(1);
   });
+
+  it('preserva múltiples bloques cuando la fila ya trae schedule/schedules', () => {
+    const rows = normalizeMyScheduleRows([
+      {
+        class_id: 22,
+        subject_name: 'Física',
+        source: 'generated',
+        schedules: [
+          { day_of_week: 1, start_time: '08:00', end_time: '09:00' },
+          { day_of_week: 3, start_time: '10:00', end_time: '11:00' },
+        ],
+      },
+    ] as any);
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].schedule).toEqual([
+      { day_of_week: 1, start_time: '08:00', end_time: '09:00' },
+      { day_of_week: 3, start_time: '10:00', end_time: '11:00' },
+    ]);
+  });
 });
 
 describe('groupAssignmentsByClass', () => {
@@ -249,6 +270,17 @@ describe('groupAssignmentsByClass', () => {
     expect(grouped[0].cls).toBe(20);
     expect(grouped[0].items).toHaveLength(2);
     expect(grouped[1].cls).toBe(21);
+  });
+
+  it('soporta cls_id alternativo y ordena ítems por slot', () => {
+    const grouped = groupAssignmentsByClass([
+      { id: 11, cls_id: 40, timeslot_day_name: 'Wednesday', timeslot_start_time: '10:00:00' },
+      { id: 10, cls_id: 40, timeslot_day_name: 'Monday', timeslot_start_time: '08:00:00' },
+    ]);
+
+    expect(grouped).toHaveLength(1);
+    expect(grouped[0].cls).toBe(40);
+    expect(grouped[0].items.map((i) => i.id)).toEqual([10, 11]);
   });
 });
 
@@ -337,6 +369,19 @@ describe('preview grid + constraints helpers', () => {
     expect(grid).toHaveLength(1);
     expect(grid[0].day).toBe(0);
     expect(grid[0].hour).toBe('08:00');
+  });
+
+  it('mantiene colisiones en misma celda día/hora para render múltiple', () => {
+    const rows = buildWeekGridRows([
+      { id: 10, day: 0, hour: '08:00', label: 'ALG · A1', careerId: 2, careerName: 'Ingeniería' },
+      { id: 11, day: 0, hour: '08:00', label: 'FIS · A2', careerId: 2, careerName: 'Ingeniería' },
+      { id: 12, day: 1, hour: '08:00', label: 'DER · B1', careerId: 3, careerName: 'Derecho' },
+    ]);
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].hour).toBe('08:00');
+    expect(rows[0].cells[0].blocks.map((b) => b.id)).toEqual([10, 11]);
+    expect(rows[0].cells[1].blocks.map((b) => b.id)).toEqual([12]);
   });
 
   it('arma payload de restricción por tipo/scope', () => {

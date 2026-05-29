@@ -153,7 +153,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
 <script>
   import { toast } from '@/components/starwind/toast';
-  import { buildTimeslotBatch, parseTimeslotBreakRanges, summarizeViolations, getRunDisplayName, formatActivityType, buildRunPreviewInfo, classifyTimetableActionError, buildDraftRunPayload, buildManualTimeslotPayload, extractCareerOptions, normalizeAssignmentsToWeekGrid, buildConstraintPayload, mapConstraintFieldErrors, resolveAssignmentTeacherDisplay } from '@/utils/timetable-management-utils';
+  import { buildTimeslotBatch, parseTimeslotBreakRanges, summarizeViolations, getRunDisplayName, formatActivityType, buildRunPreviewInfo, classifyTimetableActionError, buildDraftRunPayload, buildManualTimeslotPayload, extractCareerOptions, normalizeAssignmentsToWeekGrid, buildWeekGridRows, buildConstraintPayload, mapConstraintFieldErrors, resolveAssignmentTeacherDisplay } from '@/utils/timetable-management-utils';
 
   const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000/api';
   const token = localStorage.getItem('access_token');
@@ -187,6 +187,23 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       throw apiError;
     }
     return payload;
+  }
+
+  async function loadScheduleAssignmentsByRun(runId) {
+    const firstPage = await apiFetch(`/academic/schedule-assignments/?run=${runId}`);
+    if (!firstPage || Array.isArray(firstPage) || !Array.isArray(firstPage.results)) return unwrap(firstPage);
+
+    const merged = [...firstPage.results];
+    let nextUrl = firstPage.next;
+    while (nextUrl) {
+      const normalizedNext = String(nextUrl);
+      const relativeNext = normalizedNext.startsWith(API_URL) ? normalizedNext.slice(API_URL.length) : normalizedNext;
+      const page = await apiFetch(relativeNext);
+      const rows = Array.isArray(page?.results) ? page.results : unwrap(page);
+      merged.push(...rows);
+      nextUrl = page?.next;
+    }
+    return merged;
   }
 
   function showContent() { q('page-loading')?.classList.add('hidden'); q('page-content')?.classList.remove('hidden'); }
@@ -303,20 +320,20 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const body = q('preview-grid-body');
     if (!body) return;
     const blocks = normalizeAssignmentsToWeekGrid(assignments, selectedCareerId);
+    const rows = buildWeekGridRows(blocks);
     const empty = q('preview-modal-empty');
-    const hours = Array.from(new Set(blocks.map((b) => b.hour))).sort();
-    if (hours.length === 0) {
+    if (rows.length === 0) {
       body.innerHTML = '';
       empty?.classList.remove('hidden');
       return;
     }
     empty?.classList.add('hidden');
-    body.innerHTML = hours.map((hour) => {
-      const cells = [0, 1, 2, 3, 4].map((day) => {
-        const block = blocks.find((b) => b.day === day && b.hour === hour);
-        return `<td class="border border-border p-2 align-top">${block ? esc(block.label) : ''}</td>`;
+    body.innerHTML = rows.map((row) => {
+      const cells = row.cells.map((cell) => {
+        const labels = cell.blocks.map((block) => `<div class="rounded border border-border/60 bg-muted/40 px-1 py-0.5 mb-1 last:mb-0">${esc(block.label)}</div>`).join('');
+        return `<td class="border border-border p-2 align-top">${labels}</td>`;
       }).join('');
-      return `<tr><td class="border border-border p-2 font-medium">${hour}</td>${cells}</tr>`;
+      return `<tr><td class="border border-border p-2 font-medium">${row.hour}</td>${cells}</tr>`;
     }).join('');
   }
 
@@ -361,7 +378,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       : 1;
     renderTimeslots();
   }
-  async function loadAssignments() { if (!selectedRunId) { assignments = []; renderAssignments(); renderPreview(); return; } assignments = unwrap(await apiFetch(`/academic/schedule-assignments/?run=${selectedRunId}`)); renderAssignments(); renderPreview(); }
+  async function loadAssignments() { if (!selectedRunId) { assignments = []; renderAssignments(); renderPreview(); return; } assignments = await loadScheduleAssignmentsByRun(selectedRunId); renderAssignments(); renderPreview(); }
   async function loadViolations() {
     if (!selectedRunId) { violations = []; renderViolations(); renderPreview(); return; }
     const params = new URLSearchParams({ run: String(selectedRunId) }); const sf = q('violations-severity-filter');
