@@ -3,12 +3,12 @@ from django.db.models import Q
 from academic.models import Class, Subject, Classroom, ScheduleAssignment, SchedulingConstraint, ConstraintViolation
 
 
-def _build_generator_metadata(classes_considered, precondition_errors, class_preparation_errors):
+def _build_generator_metadata(classes_considered, sessions_requested, precondition_errors, class_preparation_errors):
     return {
         'strategy': 'greedy-v1',
         'classes_created': 0,
         'classes_considered': classes_considered,
-        'sessions_requested': classes_considered,
+        'sessions_requested': sessions_requested,
         'generated_assignments': 0,
         'unscheduled_sessions': 0,
         'hard_violations': 0,
@@ -94,8 +94,10 @@ def generate_for_run(run):
         precondition_errors.append('missing_classrooms')
 
     if precondition_errors or preparation['errors']:
+        sessions_requested = sum(max(0, cls.subject.hours_per_week) for cls in classes)
         metadata = _build_generator_metadata(
             classes_considered=len(classes),
+            sessions_requested=sessions_requested,
             precondition_errors=precondition_errors,
             class_preparation_errors=preparation['errors'],
         )
@@ -114,65 +116,75 @@ def generate_for_run(run):
 
     used_teachers = set()
     used_classrooms = set()
+    used_days_by_class = {}
     generated = 0
     unscheduled = 0
     unresolved_teachers = []
+    sessions_requested = 0
 
     for cls in classes:
+        class_demand = max(0, cls.subject.hours_per_week)
+        sessions_requested += class_demand
         resolved_teacher, resolved_teacher_id = _resolve_teacher(cls)
         if resolved_teacher_id is None:
             unresolved_teachers.append(cls.id)
-            unscheduled += 1
+            unscheduled += class_demand
             ConstraintViolation.objects.create(
                 run=run,
                 assignment=None,
                 severity='hard',
                 reason='No teacher resolved for class (missing class teacher and department teacher).',
-                metadata={'class_id': cls.id, 'unresolved_teacher': True},
+                metadata={'class_id': cls.id, 'unresolved_teacher': True, 'requested_sessions': class_demand},
             )
             continue
 
-        assigned = False
-        for slot in slots:
-            teacher_key = (slot.id, resolved_teacher_id)
-            classroom_key = (slot.id, cls.classroom_id)
-            if resolved_teacher_id and teacher_key in used_teachers:
-                continue
-            if cls.classroom_id and classroom_key in used_classrooms:
-                continue
-            if _is_blocked_by_constraints(cls, slot, constraints, resolved_teacher_id):
-                continue
+        class_used_days = used_days_by_class.setdefault(cls.id, set())
+        for _session_index in range(class_demand):
+            assigned = False
+            for slot in slots:
+                teacher_key = (slot.id, resolved_teacher_id)
+                classroom_key = (slot.id, cls.classroom_id)
+                if slot.day_of_week in class_used_days:
+                    continue
+                if resolved_teacher_id and teacher_key in used_teachers:
+                    continue
+                if cls.classroom_id and classroom_key in used_classrooms:
+                    continue
+                if _is_blocked_by_constraints(cls, slot, constraints, resolved_teacher_id):
+                    continue
 
-            ScheduleAssignment.objects.create(
-                run=run,
-                cls=cls,
-                slot=slot,
-                classroom=cls.classroom,
-                teacher=resolved_teacher,
-                source='generated',
-            )
-            if resolved_teacher_id:
-                used_teachers.add(teacher_key)
-            if cls.classroom_id:
-                used_classrooms.add(classroom_key)
-            generated += 1
-            assigned = True
-            break
+                ScheduleAssignment.objects.create(
+                    run=run,
+                    cls=cls,
+                    slot=slot,
+                    classroom=cls.classroom,
+                    teacher=resolved_teacher,
+                    source='generated',
+                )
+                class_used_days.add(slot.day_of_week)
+                if resolved_teacher_id:
+                    used_teachers.add(teacher_key)
+                if cls.classroom_id:
+                    used_classrooms.add(classroom_key)
+                generated += 1
+                assigned = True
+                break
 
-        if not assigned:
-            unscheduled += 1
-            ConstraintViolation.objects.create(
-                run=run,
-                assignment=None,
-                severity='hard',
-                reason='No available slot after active scheduling constraints.',
-                metadata={'class_id': cls.id, 'constraint_related': True},
-            )
+            if not assigned:
+                unscheduled += 1
+                ConstraintViolation.objects.create(
+                    run=run,
+                    assignment=None,
+                    severity='hard',
+                    reason='No available slot after active scheduling constraints.',
+                    metadata={'class_id': cls.id, 'constraint_related': True},
+                )
 
     hard_violations = unscheduled
     soft_violations = 0
     metadata = _build_generator_metadata(
         classes_considered=len(classes),
+        sessions_requested=sessions_requested,
         precondition_errors=[],
         class_preparation_errors=preparation['errors'],
     )

@@ -188,26 +188,24 @@ class ClassSerializer(serializers.ModelSerializer):
             capacity = obj.max_students or 30
         return max(0, capacity - enrolled)
 
-    def _canonical_assignment(self, obj):
+    def _published_assignments(self, obj):
         assignments = getattr(obj, 'published_schedule_assignments', None)
         if assignments is None:
             assignments = list(
                 obj.schedule_assignments.filter(run__status='published').select_related('slot', 'run').order_by('-run__created_at', '-id')
             )
         period_match = [a for a in assignments if a.run.period_id == obj.period_id]
-        return period_match[0] if period_match else None
+        return sorted(period_match, key=lambda a: (a.slot.day_of_week, a.slot.start_time, a.id))
 
     def get_schedules(self, obj):
-        assignment = self._canonical_assignment(obj)
-        if not assignment:
-            return []
-        return [serialize_assignment_schedule(assignment)]
+        assignments = self._published_assignments(obj)
+        return [serialize_assignment_schedule(assignment) for assignment in assignments]
 
     def get_schedule_source(self, obj):
         return 'generated'
 
     def get_schedule_available(self, obj):
-        return self._canonical_assignment(obj) is not None
+        return len(self._published_assignments(obj)) > 0
 
     def get_schedule_unavailable_reason(self, obj):
         return None if self.get_schedule_available(obj) else 'schedule_unavailable'

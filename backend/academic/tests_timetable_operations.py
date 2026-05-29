@@ -3,6 +3,7 @@ from io import StringIO
 
 from django.core.management import call_command
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -84,6 +85,10 @@ def make_class(period, suffix='A'):
     )
 
 
+def unwrap_results(payload):
+    return payload.get('results', payload) if isinstance(payload, dict) else payload
+
+
 class TimeSlotModelTests(TestCase):
     def test_slot_accepts_valid_boundaries(self):
         period = make_period('P2026TS1')
@@ -117,7 +122,9 @@ class TimetableGenerateAndPublishTests(TestCase):
 
     def test_generate_completed_with_assignments(self):
         period = make_period('P2026GEN1')
-        make_class(period, 'G1')
+        cls = make_class(period, 'G1')
+        cls.subject.hours_per_week = 1
+        cls.subject.save(update_fields=['hours_per_week'])
         TimeSlot.objects.create(
             period=period,
             day_of_week=1,
@@ -294,6 +301,8 @@ class TimetableGenerateAndPublishTests(TestCase):
         department = Department.objects.create(name='Departamento G7', code='DEP-G7', teacher=fallback_teacher)
         career = Career.objects.create(name='Career G7', code='CAR-G7')
         subject = Subject.objects.create(name='Subject G7', code='SUB-G7', career=career, department=department)
+        subject.hours_per_week = 1
+        subject.save(update_fields=['hours_per_week'])
         classroom = Classroom.objects.create(name='Room G7', building='Main', capacity=30, type='lecture')
         cls = Class.objects.create(subject=subject, teacher=None, period=period, classroom=classroom, max_students=30)
         TimeSlot.objects.create(period=period, day_of_week=1, start_time=time(9, 0), end_time=time(10, 0))
@@ -367,6 +376,115 @@ class TimetableGenerateAndPublishTests(TestCase):
         violation = ConstraintViolation.objects.get(run=run)
         self.assertTrue(violation.metadata.get('unresolved_teacher'))
 
+    def test_generate_uses_subject_hours_per_week_as_weekly_demand(self):
+        period = make_period('P2026GEN10')
+        cls = make_class(period, 'G10')
+        cls.subject.hours_per_week = 3
+        cls.subject.save(update_fields=['hours_per_week'])
+        TimeSlot.objects.create(period=period, day_of_week=0, start_time=time(8, 0), end_time=time(9, 0))
+        TimeSlot.objects.create(period=period, day_of_week=2, start_time=time(8, 0), end_time=time(9, 0))
+        TimeSlot.objects.create(period=period, day_of_week=4, start_time=time(8, 0), end_time=time(9, 0))
+        run = TimetableRun.objects.create(period=period)
+
+        response = self.client.post(f'/api/academic/timetable-runs/{run.id}/generate/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        run.refresh_from_db()
+        self.assertEqual(run.assignments.filter(cls=cls).count(), 3)
+        self.assertEqual(run.metadata['generator']['sessions_requested'], 3)
+        self.assertEqual(run.metadata['generator']['generated_assignments'], 3)
+        self.assertEqual(run.metadata['generator']['unscheduled_sessions'], 0)
+
+    def test_generate_never_repeats_same_class_on_same_day(self):
+        period = make_period('P2026GEN11')
+        cls = make_class(period, 'G11')
+        cls.subject.hours_per_week = 3
+        cls.subject.save(update_fields=['hours_per_week'])
+        TimeSlot.objects.create(period=period, day_of_week=0, start_time=time(8, 0), end_time=time(9, 0))
+        TimeSlot.objects.create(period=period, day_of_week=0, start_time=time(9, 0), end_time=time(10, 0))
+        TimeSlot.objects.create(period=period, day_of_week=2, start_time=time(8, 0), end_time=time(9, 0))
+        TimeSlot.objects.create(period=period, day_of_week=4, start_time=time(8, 0), end_time=time(9, 0))
+        run = TimetableRun.objects.create(period=period)
+
+        response = self.client.post(f'/api/academic/timetable-runs/{run.id}/generate/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        run.refresh_from_db()
+        assignments = list(run.assignments.filter(cls=cls).select_related('slot').order_by('slot__day_of_week', 'slot__start_time'))
+        self.assertEqual(len(assignments), 3)
+        self.assertEqual(len({a.slot.day_of_week for a in assignments}), 3)
+
+    def test_generate_keeps_teacher_consistent_for_class_across_sessions(self):
+        period = make_period('P2026GEN12')
+        class_teacher = User.objects.create_user(
+            username='teacher_cls_g12',
+            email='teacher_cls_g12@test.com',
+            password='testpass123',
+            role='t',
+        )
+        department_teacher = User.objects.create_user(
+            username='teacher_dep_g12',
+            email='teacher_dep_g12@test.com',
+            password='testpass123',
+            role='t',
+        )
+        department = Department.objects.create(name='Departamento G12', code='DEP-G12', teacher=department_teacher)
+        career = Career.objects.create(name='Career G12', code='CAR-G12')
+        subject = Subject.objects.create(name='Subject G12', code='SUB-G12', career=career, department=department, hours_per_week=2)
+        classroom = Classroom.objects.create(name='Room G12', building='Main', capacity=30, type='lecture')
+        cls = Class.objects.create(subject=subject, teacher=class_teacher, period=period, classroom=classroom, max_students=30)
+        TimeSlot.objects.create(period=period, day_of_week=1, start_time=time(8, 0), end_time=time(9, 0))
+        TimeSlot.objects.create(period=period, day_of_week=3, start_time=time(8, 0), end_time=time(9, 0))
+        run = TimetableRun.objects.create(period=period)
+
+        response = self.client.post(f'/api/academic/timetable-runs/{run.id}/generate/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        run.refresh_from_db()
+        teacher_ids = set(run.assignments.filter(cls=cls).values_list('teacher_id', flat=True))
+        self.assertEqual(teacher_ids, {class_teacher.id})
+
+    def test_generate_reports_partial_when_hours_exceed_distinct_days(self):
+        period = make_period('P2026GEN13')
+        cls = make_class(period, 'G13')
+        cls.subject.hours_per_week = 4
+        cls.subject.save(update_fields=['hours_per_week'])
+        TimeSlot.objects.create(period=period, day_of_week=0, start_time=time(8, 0), end_time=time(9, 0))
+        TimeSlot.objects.create(period=period, day_of_week=2, start_time=time(8, 0), end_time=time(9, 0))
+        run = TimetableRun.objects.create(period=period)
+
+        response = self.client.post(f'/api/academic/timetable-runs/{run.id}/generate/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        run.refresh_from_db()
+        self.assertEqual(run.status, 'partial')
+        self.assertEqual(run.assignments.filter(cls=cls).count(), 2)
+        self.assertEqual(run.metadata['generator']['sessions_requested'], 4)
+        self.assertEqual(run.metadata['generator']['unscheduled_sessions'], 2)
+
+    def test_allows_multiple_assignments_same_run_and_class_different_slots(self):
+        period = make_period('P2026SAC1')
+        cls = make_class(period, 'SAC1')
+        slot_a = TimeSlot.objects.create(period=period, day_of_week=0, start_time=time(8, 0), end_time=time(9, 0))
+        slot_b = TimeSlot.objects.create(period=period, day_of_week=2, start_time=time(8, 0), end_time=time(9, 0))
+        run = TimetableRun.objects.create(period=period)
+
+        ScheduleAssignment.objects.create(run=run, cls=cls, slot=slot_a, classroom=cls.classroom, teacher=cls.teacher)
+        ScheduleAssignment.objects.create(run=run, cls=cls, slot=slot_b, classroom=cls.classroom, teacher=cls.teacher)
+
+        self.assertEqual(ScheduleAssignment.objects.filter(run=run, cls=cls).count(), 2)
+
+    def test_rejects_duplicate_assignment_same_run_class_and_slot(self):
+        period = make_period('P2026SAC2')
+        cls = make_class(period, 'SAC2')
+        slot = TimeSlot.objects.create(period=period, day_of_week=1, start_time=time(9, 0), end_time=time(10, 0))
+        run = TimetableRun.objects.create(period=period)
+
+        ScheduleAssignment.objects.create(run=run, cls=cls, slot=slot, classroom=cls.classroom, teacher=cls.teacher)
+
+        with self.assertRaises(IntegrityError):
+            ScheduleAssignment.objects.create(run=run, cls=cls, slot=slot, classroom=cls.classroom, teacher=cls.teacher)
+
     def test_publish_rejects_failed_run(self):
         period = make_period('P2026PUB1')
         run = TimetableRun.objects.create(period=period, status='failed')
@@ -409,7 +527,7 @@ class TimetableFilteringTests(TestCase):
         })
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        results = response.data.get('results', response.data)
+        results = unwrap_results(response.data)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]['period'], period_a.id)
         self.assertEqual(results[0]['status'], 'published')
@@ -430,7 +548,7 @@ class TimetableFilteringTests(TestCase):
         })
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        results = response.data.get('results', response.data)
+        results = unwrap_results(response.data)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]['cls'], cls_b.id)
 
@@ -450,7 +568,7 @@ class TimetableFilteringTests(TestCase):
         response = self.client.get('/api/academic/schedule-assignments/', {'run': run.id})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        results = response.data.get('results', response.data)
+        results = unwrap_results(response.data)
         self.assertEqual(len(results), 1)
         row = results[0]
         self.assertEqual(row['id'], assignment.id)
@@ -477,7 +595,7 @@ class TimetableFilteringTests(TestCase):
         response = self.client.get('/api/academic/schedule-assignments/', {'run': run.id})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        results = response.data.get('results', response.data)
+        results = unwrap_results(response.data)
         self.assertEqual(len(results), 1)
         row = results[0]
         self.assertIsNone(row['teacher'])
@@ -486,6 +604,74 @@ class TimetableFilteringTests(TestCase):
         self.assertIsNone(row['classroom_name'])
         self.assertEqual(row['subject_name'], cls.subject.name)
         self.assertEqual(row['subject_code'], cls.subject.code)
+
+    def test_assignments_run_filter_returns_full_dataset_without_pagination_cut(self):
+        period = make_period('P2026FA4')
+        slot = TimeSlot.objects.create(period=period, day_of_week=0, start_time=time(8, 0), end_time=time(9, 0))
+        run = TimetableRun.objects.create(period=period, status='completed')
+
+        for index in range(25):
+            cls = make_class(period, f'FALL{index}')
+            ScheduleAssignment.objects.create(
+                run=run,
+                cls=cls,
+                slot=slot,
+                classroom=cls.classroom,
+                teacher=cls.teacher,
+            )
+
+        response = self.client.get('/api/academic/schedule-assignments/', {'run': run.id})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsInstance(response.data, list)
+        self.assertEqual(len(response.data), 25)
+
+    def test_assignments_career_filter_returns_all_matching_rows_without_pagination_cut(self):
+        period = make_period('P2026FA5')
+        slot = TimeSlot.objects.create(period=period, day_of_week=1, start_time=time(10, 0), end_time=time(11, 0))
+        run = TimetableRun.objects.create(period=period, status='completed')
+        target_career = Career.objects.create(name='Career Target FA5', code='CAR-FA5-T')
+
+        for index in range(24):
+            subject = Subject.objects.create(
+                name=f'Subject Target {index}',
+                code=f'SUB-FA5-T-{index}',
+                career=target_career,
+            )
+            teacher = User.objects.create_user(
+                username=f'teacher_fa5_target_{index}',
+                email=f'teacher_fa5_target_{index}@test.com',
+                password='testpass123',
+                role='t',
+            )
+            classroom = Classroom.objects.create(
+                name=f'Room FA5 T{index}',
+                building='Main',
+                capacity=40,
+                type='lecture',
+            )
+            cls = Class.objects.create(
+                subject=subject,
+                teacher=teacher,
+                period=period,
+                classroom=classroom,
+                max_students=30,
+            )
+            ScheduleAssignment.objects.create(run=run, cls=cls, slot=slot, classroom=classroom, teacher=teacher)
+
+        for index in range(4):
+            cls = make_class(period, f'FA5O{index}')
+            ScheduleAssignment.objects.create(run=run, cls=cls, slot=slot, classroom=cls.classroom, teacher=cls.teacher)
+
+        response = self.client.get('/api/academic/schedule-assignments/', {
+            'run': run.id,
+            'career': target_career.id,
+        })
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsInstance(response.data, list)
+        self.assertEqual(len(response.data), 24)
+        self.assertTrue(all(row['career_id'] == target_career.id for row in response.data))
 
     def test_violations_support_run_assignment_and_severity_filters(self):
         period = make_period('P2026FV1')
@@ -509,7 +695,7 @@ class TimetableFilteringTests(TestCase):
         })
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        results = response.data.get('results', response.data)
+        results = unwrap_results(response.data)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]['severity'], 'hard')
 
@@ -561,6 +747,34 @@ class MyScheduleCompatibilityTests(TestCase):
         self.assertEqual(row['source'], 'legacy')
         self.assertEqual(row['class_id'], self.cls.id)
         self.assertIsNone(row['assignment_id'])
+
+    def test_my_schedule_returns_all_generated_sessions_for_same_class(self):
+        slot_a = TimeSlot.objects.create(period=self.period, day_of_week=1, start_time=time(10, 0), end_time=time(11, 0))
+        slot_b = TimeSlot.objects.create(period=self.period, day_of_week=3, start_time=time(10, 0), end_time=time(11, 0))
+        run = TimetableRun.objects.create(period=self.period, status='published')
+        assignment_a = ScheduleAssignment.objects.create(
+            run=run,
+            cls=self.cls,
+            slot=slot_a,
+            classroom=self.cls.classroom,
+            teacher=self.cls.teacher,
+        )
+        assignment_b = ScheduleAssignment.objects.create(
+            run=run,
+            cls=self.cls,
+            slot=slot_b,
+            classroom=self.cls.classroom,
+            teacher=self.cls.teacher,
+        )
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get('/api/academic/classes/my-schedule/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        assignment_ids = {row['assignment_id'] for row in response.data}
+        self.assertEqual(assignment_ids, {assignment_a.id, assignment_b.id})
+        self.assertTrue(all(row['source'] == 'generated' for row in response.data))
 
 
 class CareerClassesCanonicalScheduleTests(TestCase):
@@ -622,6 +836,34 @@ class CareerClassesCanonicalScheduleTests(TestCase):
         self.assertEqual(row['schedule_unavailable_reason'], 'schedule_unavailable')
         self.assertEqual(row['schedules'], [])
 
+    def test_classes_endpoint_returns_multiple_published_schedules_for_class(self):
+        slot_a = TimeSlot.objects.create(period=self.period, day_of_week=1, start_time=time(9, 0), end_time=time(10, 0))
+        slot_b = TimeSlot.objects.create(period=self.period, day_of_week=3, start_time=time(9, 0), end_time=time(10, 0))
+        run = TimetableRun.objects.create(period=self.period, status='published')
+        assignment_a = ScheduleAssignment.objects.create(
+            run=run,
+            cls=self.cls,
+            slot=slot_a,
+            classroom=self.classroom,
+            teacher=self.teacher,
+        )
+        assignment_b = ScheduleAssignment.objects.create(
+            run=run,
+            cls=self.cls,
+            slot=slot_b,
+            classroom=self.classroom,
+            teacher=self.teacher,
+        )
+
+        response = self.client.get(f'/api/academic/careers/{self.career.id}/classes/', {'period': self.period.id})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        row = response.data[0]
+        self.assertTrue(row['schedule_available'])
+        self.assertEqual(len(row['schedules']), 2)
+        assignment_ids = {s['assignment_id'] for s in row['schedules']}
+        self.assertEqual(assignment_ids, {assignment_a.id, assignment_b.id})
+
 
 class SchedulingConstraintsTests(TestCase):
     def setUp(self):
@@ -651,7 +893,7 @@ class SchedulingConstraintsTests(TestCase):
 
         response = self.client.get('/api/academic/schedule-assignments/', {'run': run.id, 'career': self.cls.subject.career_id})
         self.assertEqual(response.status_code, 200)
-        row = response.data.get('results', response.data)[0]
+        row = unwrap_results(response.data)[0]
         self.assertEqual(row['career_id'], self.cls.subject.career_id)
         self.assertEqual(row['career_code'], self.cls.subject.career.code)
         self.assertEqual(row['career_name'], self.cls.subject.career.name)

@@ -278,7 +278,7 @@ class ScheduleAssignment(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['run', 'cls'], name='unique_run_class_assignment'),
+            models.UniqueConstraint(fields=['run', 'cls', 'slot'], name='unique_run_class_slot'),
             models.UniqueConstraint(fields=['run', 'slot', 'classroom'], name='unique_run_slot_classroom'),
             models.UniqueConstraint(fields=['run', 'slot', 'teacher'], name='unique_run_slot_teacher'),
         ]

@@ -28,7 +28,7 @@ from .serializers import (
     SchedulingConstraintSerializer,
 )
 from .timetabling import generate_for_run
-from .schedule_source import serialize_assignment_schedule
+from .schedule_source import serialize_assignment_schedule, published_assignments_map_for_period
 from shared.permissions import IsAdminOrManagement
 
 SAFE_METHODS = ('GET', 'HEAD', 'OPTIONS')
@@ -201,46 +201,39 @@ class ClassViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Only students and teachers have schedules'}, status=403)
 
         class_ids = [cls.id for cls in classes]
-        published_assignments = ScheduleAssignment.objects.filter(
-            run__period__in={cls.period_id for cls in classes},
-            run__status='published',
-            cls_id__in=class_ids,
-        ).select_related(
-            'run__period',
-            'cls__subject',
-            'cls__teacher',
-            'cls__classroom',
-            'slot',
-            'teacher',
-            'classroom',
-        )
-        assignments_by_class = {assignment.cls_id: assignment for assignment in published_assignments}
+        assignments_by_period_and_class = {}
+        for period_id in {cls.period_id for cls in classes}:
+            assignments_by_period_and_class[period_id] = published_assignments_map_for_period(
+                period_id,
+                class_ids,
+            )
 
         schedule_data = []
         for i, cls in enumerate(classes):
-            assignment = assignments_by_class.get(cls.id)
-            if assignment:
-                teacher = assignment.teacher or cls.teacher
-                classroom = assignment.classroom or cls.classroom
-                schedule_data.append({
-                    'schedule_id': assignment.slot_id,
-                    'assignment_id': assignment.id,
-                    'source': assignment.source,
-                    'class_id': cls.id,
-                    'subject_name': cls.subject.name,
-                    'subject_code': cls.subject.code,
-                    'period_name': cls.period.name,
-                    'teacher_name': (
-                        f"{teacher.first_name} {teacher.last_name}".strip()
-                        if teacher else ''
-                    ),
-                    'classroom': str(classroom) if classroom else '',
-                    'day_of_week': assignment.slot.day_of_week,
-                    'day_name': assignment.slot.get_day_of_week_display(),
-                    'start_time': assignment.slot.start_time.strftime('%H:%M'),
-                    'end_time': assignment.slot.end_time.strftime('%H:%M'),
-                    'color': COLORS[i % len(COLORS)],
-                })
+            assignments = assignments_by_period_and_class.get(cls.period_id, {}).get(cls.id, [])
+            if assignments:
+                for assignment in assignments:
+                    teacher = assignment.teacher or cls.teacher
+                    classroom = assignment.classroom or cls.classroom
+                    schedule_data.append({
+                        'schedule_id': assignment.slot_id,
+                        'assignment_id': assignment.id,
+                        'source': assignment.source,
+                        'class_id': cls.id,
+                        'subject_name': cls.subject.name,
+                        'subject_code': cls.subject.code,
+                        'period_name': cls.period.name,
+                        'teacher_name': (
+                            f"{teacher.first_name} {teacher.last_name}".strip()
+                            if teacher else ''
+                        ),
+                        'classroom': str(classroom) if classroom else '',
+                        'day_of_week': assignment.slot.day_of_week,
+                        'day_name': assignment.slot.get_day_of_week_display(),
+                        'start_time': assignment.slot.start_time.strftime('%H:%M'),
+                        'end_time': assignment.slot.end_time.strftime('%H:%M'),
+                        'color': COLORS[i % len(COLORS)],
+                    })
                 continue
 
             for sched in cls.schedules.all():
@@ -347,6 +340,7 @@ class TimetableRunViewSet(viewsets.ModelViewSet):
 
 class ScheduleAssignmentViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ScheduleAssignmentSerializer
+    pagination_class = None
 
     def get_queryset(self):
         qs = ScheduleAssignment.objects.select_related('run', 'cls__subject__career', 'slot', 'classroom', 'teacher').all()
@@ -362,7 +356,7 @@ class ScheduleAssignmentViewSet(viewsets.ReadOnlyModelViewSet):
             qs = qs.filter(cls_id=cls)
         if career:
             qs = qs.filter(cls__subject__career_id=career)
-        return qs
+        return qs.order_by('id')
 
     def get_permissions(self):
         return [IsAuthenticated()]

@@ -1,9 +1,7 @@
-from collections import defaultdict
-
 from academic.models import ScheduleAssignment
 
 
-def canonical_assignment_map_for_period(period_id, class_ids):
+def published_assignments_map_for_period(period_id, class_ids):
     assignments = (
         ScheduleAssignment.objects.filter(
             run__period_id=period_id,
@@ -11,13 +9,21 @@ def canonical_assignment_map_for_period(period_id, class_ids):
             cls_id__in=class_ids,
         )
         .select_related('slot', 'teacher', 'classroom', 'run')
-        .order_by('-run__created_at', '-id')
+        .order_by('-run__created_at', 'slot__day_of_week', 'slot__start_time', 'id')
     )
 
-    by_class = {}
+    by_class = {class_id: [] for class_id in class_ids}
     for assignment in assignments:
-        if assignment.cls_id not in by_class:
-            by_class[assignment.cls_id] = assignment
+        by_class.setdefault(assignment.cls_id, []).append(assignment)
+    return by_class
+
+
+def canonical_assignment_map_for_period(period_id, class_ids):
+    grouped = published_assignments_map_for_period(period_id, class_ids)
+    by_class = {}
+    for class_id, assignments in grouped.items():
+        if assignments:
+            by_class[class_id] = assignments[0]
     return by_class
 
 
