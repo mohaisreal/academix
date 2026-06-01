@@ -12,6 +12,19 @@ export type AssignmentGridRow = { id: number; cls?: number; subject_name?: strin
 export type TimetableGridBlock = { id: number; day: number; hour: string; label: string; careerId: number | null; careerName: string | null };
 export type TimetableGridRow = { hour: string; cells: Array<{ day: number; blocks: TimetableGridBlock[] }> };
 export type ConstraintFormValues = { kind: string; scope: string; period: string; teacher: string; classroom: string; career: string; dayOfWeek: string; startTime: string; endTime: string; isActive: boolean };
+export type SchedulingConstraintLike = {
+  kind?: string | null;
+  kind_label?: string | null;
+  scope?: string | null;
+  scope_label?: string | null;
+  day_of_week?: number | null;
+  day_label?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  teacher_name?: string | null;
+  classroom_name?: string | null;
+  career_name?: string | null;
+};
 
 export type BulkBreakRange = { start: string; end: string };
 export type SlotPayload = { period: number; day_of_week: number; start_time: string; end_time: string };
@@ -37,8 +50,8 @@ export function parseTimeslotBreakRanges(value: string): TimeslotBreakRange[] {
 export function buildTimeslotBatch(values: TimeslotBatchFormValues): TimeslotPayload[] {
   const period = Number(values.period); const dayOfWeek = Number(values.dayOfWeek); const intervalMinutes = Number(values.intervalMinutes);
   const startMinutes = timeToMinutes(values.startTime); const endMinutes = timeToMinutes(values.endTime);
-  if (!Number.isInteger(period) || period <= 0) throw new Error('Seleccioná un período válido antes de crear franjas.');
-  if (!Number.isInteger(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) throw new Error('Seleccioná un día válido.');
+  if (!Number.isInteger(period) || period <= 0) throw new Error('Selecciona un periodo válido antes de crear franjas.');
+  if (!Number.isInteger(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) throw new Error('Selecciona un día válido.');
   if (!Number.isFinite(intervalMinutes) || intervalMinutes <= 0) throw new Error('La duración debe ser mayor que 0.');
   if (startMinutes >= endMinutes) throw new Error('La hora de fin debe ser posterior a la hora de inicio.');
   const breaks = values.breakRanges.map((range) => ({ start: timeToMinutes(range.startTime), end: timeToMinutes(range.endTime) }));
@@ -51,25 +64,29 @@ export function buildTimeslotBatch(values: TimeslotBatchFormValues): TimeslotPay
   return slots;
 }
 
-export function requireSelectedPeriod(periodValue: string, errorMessage = 'Seleccioná un período antes de continuar.') {
+export function requireSelectedPeriod(periodValue: string, errorMessage = 'Selecciona un periodo antes de continuar.') {
   const period = Number(periodValue);
   if (!Number.isInteger(period) || period <= 0) throw new Error(errorMessage);
   return period;
 }
 
 export function buildDraftRunPayload(period: string | number) {
-  return { period: requireSelectedPeriod(String(period), 'Seleccioná un período para crear la ejecución.'), status: 'draft', metadata: {} };
+  return { period: requireSelectedPeriod(String(period), 'Selecciona un periodo para crear la ejecución.'), status: 'draft', metadata: {} };
 }
 
 export function buildManualTimeslotPayload(input: { period: string | number; dayOfWeek: string | number; startTime: string; endTime: string }): TimeslotPayload {
-  const periodId = requireSelectedPeriod(String(input.period), 'Seleccioná un período para crear franjas.');
+  const periodId = requireSelectedPeriod(String(input.period), 'Selecciona un periodo para crear franjas.');
   const dayOfWeek = Number(input.dayOfWeek);
-  if (!Number.isInteger(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) throw new Error('Seleccioná un día válido.');
+  if (!Number.isInteger(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) throw new Error('Selecciona un día válido.');
   if (timeToMinutes(input.startTime) >= timeToMinutes(input.endTime)) throw new Error('La hora de fin debe ser posterior a la hora de inicio.');
   return { period: periodId, day_of_week: dayOfWeek, start_time: input.startTime, end_time: input.endTime };
 }
 
-export function classifyTimetableActionError(error: unknown, action: 'generate' | 'publish' | 'draft' | 'timeslot') {
+export function canDeleteTimetableRunStatus(status: string | null | undefined) {
+  return ['draft', 'failed', 'partial', 'completed'].includes(String(status || '').toLowerCase());
+}
+
+export function classifyTimetableActionError(error: unknown, action: 'generate' | 'publish' | 'draft' | 'timeslot' | 'delete') {
   const typedError = error as TimetableApiError;
   const status = typedError?.status;
   const payload = typedError?.payload;
@@ -83,7 +100,7 @@ export function classifyTimetableActionError(error: unknown, action: 'generate' 
 
   if (status === 400 && action === 'generate' && (detail.includes('failed') || payload?.status === 'failed')) {
     if (categories.includes('missing_classes')) {
-      return 'No se pudo generar: faltan clases activas para el período seleccionado.';
+      return 'No se pudo generar: faltan clases activas para el periodo seleccionado.';
     }
     if (categories.includes('missing_teachers')) {
       return 'No se pudo generar: hay clases sin docente asignado.';
@@ -92,13 +109,13 @@ export function classifyTimetableActionError(error: unknown, action: 'generate' 
       return 'No se pudo generar: hay clases sin aula asignada.';
     }
     if (categories.includes('missing_time_slots')) {
-      return 'No se pudo generar: faltan franjas horarias para el período seleccionado.';
+      return 'No se pudo generar: faltan franjas horarias para el periodo seleccionado.';
     }
     if (preparationCategories.includes('class_preparation_insufficient_subjects')) {
-      return 'No se pudo generar: faltan materias activas para preparar clases del período.';
+      return 'No se pudo generar: faltan materias activas para preparar clases del periodo.';
     }
     if (preparationCategories.includes('class_preparation_insufficient_classrooms')) {
-      return 'No se pudo generar: faltan aulas disponibles para preparar clases del período.';
+      return 'No se pudo generar: faltan aulas disponibles para preparar clases del periodo.';
     }
     if (Array.isArray(unresolvedTeachers) && unresolvedTeachers.length > 0) {
       return `No se pudo generar: hay docentes sin resolver en ${unresolvedTeachers.length} clase(s).`;
@@ -106,13 +123,16 @@ export function classifyTimetableActionError(error: unknown, action: 'generate' 
     if (detail.includes('faltan')) {
       return String(payload?.detail || typedError?.message || 'No se pudo generar.');
     }
-    return 'No se pudo generar: faltan datos válidos o hay conflictos duros. Revisá clases, franjas y recursos del período.';
+    return 'No se pudo generar: faltan datos válidos o hay conflictos duros. Revisá clases, franjas y recursos del periodo.';
   }
   if (status === 400 && action === 'publish' && detail.includes('cannot publish a failed run')) {
     return 'No se puede publicar una ejecución fallida. Generá nuevamente tras corregir los datos.';
   }
+  if (status === 400 && action === 'delete' && detail.includes('publicad')) {
+    return 'No se puede eliminar una ejecución publicada.';
+  }
   if (status === 400 && fieldError) {
-    return 'Validación incompleta: revisá período, día y rango horario antes de enviar.';
+    return 'Validación incompleta: revisá periodo, día y rango horario antes de enviar.';
   }
   return typedError?.message || 'Error técnico inesperado.';
 }
@@ -210,14 +230,44 @@ export function normalizeMyScheduleRows(rows: MyScheduleRow[]) {
   return rows.map((row) => ({ ...row, source: row.source || 'legacy', schedule: normalizeScheduleEntries(row) }));
 }
 
+const WEEKDAY_LABEL_TO_INDEX: Record<string, number> = {
+  monday: 0,
+  lunes: 0,
+  tuesday: 1,
+  martes: 1,
+  wednesday: 2,
+  miercoles: 2,
+  thursday: 3,
+  jueves: 3,
+  friday: 4,
+  viernes: 4,
+  saturday: 5,
+  sabado: 5,
+  sunday: 6,
+  domingo: 6,
+};
+
+function normalizeWeekdayLabel(value: unknown) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function resolveWeekdayIndex(value: unknown): number | null {
+  const normalized = normalizeWeekdayLabel(value);
+  if (!normalized) return null;
+  return WEEKDAY_LABEL_TO_INDEX[normalized] ?? null;
+}
+
 export function groupAssignmentsByClass(assignments: Array<Record<string, any>>) {
   const bucket = new Map<number, { cls: number; items: Array<Record<string, any>> }>();
   for (const assignment of assignments) { const cls = Number(assignment.cls ?? assignment.cls_id); if (!bucket.has(cls)) bucket.set(cls, { cls, items: [] }); bucket.get(cls)!.items.push(assignment); }
-  const dayOrder: Record<string, number> = { monday: 0, tuesday: 1, wednesday: 2, thursday: 3, friday: 4, saturday: 5, sunday: 6 };
   for (const entry of bucket.values()) {
     entry.items.sort((a, b) => {
-      const dayA = dayOrder[String(a.timeslot_day_name || '').toLowerCase()] ?? 99;
-      const dayB = dayOrder[String(b.timeslot_day_name || '').toLowerCase()] ?? 99;
+      const dayA = resolveWeekdayIndex(a.timeslot_day_name) ?? 99;
+      const dayB = resolveWeekdayIndex(b.timeslot_day_name) ?? 99;
       if (dayA !== dayB) return dayA - dayB;
       const timeA = String(a.timeslot_start_time || '99:99:99');
       const timeB = String(b.timeslot_start_time || '99:99:99');
@@ -226,30 +276,6 @@ export function groupAssignmentsByClass(assignments: Array<Record<string, any>>)
     });
   }
   return Array.from(bucket.values());
-}
-
-export function buildRunPreviewInfo(run: Record<string, any> | null, assignments: Array<Record<string, any>>) {
-  const status = String(run?.status || 'draft').toLowerCase();
-  const statusLabelMap: Record<string, string> = {
-    draft: 'Borrador', running: 'En ejecución', completed: 'Completada', partial: 'Parcial', failed: 'Fallida', published: 'Publicada',
-  };
-  const metadata = run?.metadata && typeof run.metadata === 'object' ? run.metadata : {};
-  const score = metadata.score ?? metadata.summary?.score ?? metadata.metrics?.score;
-  const metadataRows = Object.entries(metadata)
-    .filter(([key]) => key !== 'score')
-    .map(([key, value]) => ({ key, value: typeof value === 'string' ? value : JSON.stringify(value) }));
-  const assignmentsCount = Number(run?.assignments_count ?? run?.asignaciones_count ?? assignments.length ?? 0);
-  const violationsCount = Number(run?.violations_count ?? 0);
-
-  return {
-    periodLabel: run?.period_name || run?.period?.name || `Ejecución #${run?.id ?? '—'}`,
-    statusLabel: statusLabelMap[status] || status,
-    assignmentsCount,
-    violationsCount,
-    scoreLabel: Number.isFinite(Number(score)) ? String(score) : '—',
-    metadataRows,
-    hasAssignments: assignmentsCount > 0,
-  };
 }
 
 export function extractCareerOptions(assignments: AssignmentGridRow[]) {
@@ -261,16 +287,11 @@ export function extractCareerOptions(assignments: AssignmentGridRow[]) {
   return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
 }
 
-const DAY_TO_INDEX: Record<string, number> = {
-  monday: 0, tuesday: 1, wednesday: 2, thursday: 3, friday: 4,
-};
-
 export function normalizeAssignmentsToWeekGrid(assignments: AssignmentGridRow[], selectedCareerId: number | null = null) {
   return assignments
     .filter((a) => (selectedCareerId ? Number(a.career_id) === Number(selectedCareerId) : true))
     .map<TimetableGridBlock>((a) => {
-      const dayName = String(a.timeslot_day_name || '').toLowerCase();
-      const day = DAY_TO_INDEX[dayName] ?? -1;
+      const day = resolveWeekdayIndex(a.timeslot_day_name) ?? -1;
       const hour = String(a.timeslot_start_time || '00:00:00').slice(0, 5);
       const label = `${a.subject_code || a.subject_name || 'Clase'} · ${a.classroom_name || 'Sin aula'}`;
       return { id: Number(a.id), day, hour, label, careerId: a.career_id ? Number(a.career_id) : null, careerName: a.career_name || null };
@@ -289,6 +310,56 @@ export function buildWeekGridRows(blocks: TimetableGridBlock[]): TimetableGridRo
         .sort((a, b) => Number(a.id) - Number(b.id)),
     })),
   }));
+}
+
+const CONSTRAINT_KIND_LABELS: Record<string, string> = {
+  teacher_unavailable: 'Docente no disponible',
+  classroom_unavailable: 'Aula no disponible',
+  career_unavailable: 'Carrera no disponible',
+};
+
+const CONSTRAINT_SCOPE_LABELS: Record<string, string> = {
+  period: 'Periodo',
+  global: 'Global',
+};
+
+const CONSTRAINT_DAY_LABELS: Record<number, string> = {
+  0: 'Lunes', 1: 'Martes', 2: 'Miércoles', 3: 'Jueves', 4: 'Viernes', 5: 'Sábado', 6: 'Domingo',
+};
+
+function normalizeTimeLabel(value: string | null | undefined) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  return raw.slice(0, 5);
+}
+
+export function formatConstraintKind(constraint: SchedulingConstraintLike) {
+  const backendLabel = String(constraint.kind_label || '').trim();
+  if (backendLabel) return backendLabel;
+  return CONSTRAINT_KIND_LABELS[String(constraint.kind || '').trim()] || 'Tipo no especificado';
+}
+
+export function formatConstraintScope(constraint: SchedulingConstraintLike) {
+  const backendLabel = String(constraint.scope_label || '').trim();
+  if (backendLabel) return backendLabel;
+  return CONSTRAINT_SCOPE_LABELS[String(constraint.scope || '').trim()] || 'Alcance no especificado';
+}
+
+export function formatConstraintDay(constraint: SchedulingConstraintLike) {
+  const backendLabel = String(constraint.day_label || '').trim();
+  if (backendLabel) return backendLabel;
+  const day = Number(constraint.day_of_week);
+  return Number.isInteger(day) ? (CONSTRAINT_DAY_LABELS[day] || 'Día no especificado') : 'Día no especificado';
+}
+
+export function formatConstraintEntity(constraint: SchedulingConstraintLike) {
+  return String(constraint.teacher_name || constraint.classroom_name || constraint.career_name || '').trim() || 'Entidad no especificada';
+}
+
+export function formatConstraintTimeRange(constraint: SchedulingConstraintLike) {
+  const start = normalizeTimeLabel(constraint.start_time);
+  const end = normalizeTimeLabel(constraint.end_time);
+  return start && end ? `${start}–${end}` : 'Horario no especificado';
 }
 
 export function buildConstraintPayload(values: ConstraintFormValues) {

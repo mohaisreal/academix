@@ -671,7 +671,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 const opts = q.options.slice().sort((a, b) => a.order - b.order);
                 return `${labelHtml}
                     <select id="q-${q.id}" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring" data-qtype="select">
-                        <option value="">-- Seleccioná una opción --</option>
+                        <option value="">-- Selecciona una opción --</option>
                         ${opts.map(o => `<option value="${o.value}" ${currentVal === o.value ? "selected" : ""}>${o.label}</option>`).join("")}
                     </select>`;
             }
@@ -725,7 +725,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 if (!careerId) {
                     return `${labelHtml}
                         <div class="rounded-lg border border-border bg-muted/30 p-4 text-center text-sm text-muted-foreground">
-                            Seleccioná primero una carrera para ver las asignaturas disponibles.
+                            Selecciona primero una carrera para ver las asignaturas disponibles.
                         </div>`;
                 }
                 const subjects = state.subjectsByCareer[careerId] ?? [];

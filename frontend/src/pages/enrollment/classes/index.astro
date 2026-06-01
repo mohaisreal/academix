@@ -37,7 +37,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     <div class="flex items-center justify-between border-b border-border px-6 py-4">
         <div>
             <h1 class="text-xl font-semibold text-foreground">Selección de asignaturas</h1>
-            <p id="page-subtitle" class="text-sm text-muted-foreground">Seleccioná tus clases para este período.</p>
+            <p id="page-subtitle" class="text-sm text-muted-foreground">Selecciona tus clases para este periodo.</p>
         </div>
         <a href="/enrollment" class="text-sm text-muted-foreground hover:text-foreground transition-colors">
             ← Matrícula
@@ -112,7 +112,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg>
             </div>
             <h3 class="text-base font-medium text-foreground">No hay clases disponibles</h3>
-            <p class="text-sm text-muted-foreground mt-1">No se ofrecen clases para esta carrera y período.</p>
+            <p class="text-sm text-muted-foreground mt-1">No se ofrecen clases para esta carrera y periodo.</p>
         </div>
 
         <!-- Error -->
@@ -489,7 +489,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             enrollmentPeriodName = enrollment.period_name ?? enrollment.period?.name ?? enrollment.academic_period?.name ?? "";
 
             document.getElementById("page-subtitle")!.textContent =
-                `${enrollmentCareerName} — ${enrollmentPeriodName || "Período actual"}`;
+                `${enrollmentCareerName} — ${enrollmentPeriodName || "periodo actual"}`;
 
             // Carga matrículas de clase desde BD → inicializa originalEnrollIds y draftEnrollIds
             const classEnrollRes = await apiFetch("/enrollment/class-enrollments/");

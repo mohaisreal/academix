@@ -131,7 +131,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
     // ---- Definición de pasos ----
     const STEPS = [
-        { label: "Período", icon: "📅" },
+        { label: "periodo", icon: "📅" },
         { label: "Vía de acceso", icon: "🎓" },
         { label: "Datos académicos", icon: "📊" },
         { label: "Titulaciones", icon: "📋" },
@@ -226,11 +226,11 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
     // ---- Renderizadores de pasos ----
 
-    // Paso 0 — Selección de período
+    // Paso 0 — Selección de periodo
     function renderStep0() {
         const panel = document.getElementById("step-panel")!;
         panel.innerHTML = `
-            <h2 class="text-base font-semibold text-foreground mb-1">Selección de período académico</h2>
+            <h2 class="text-base font-semibold text-foreground mb-1">Selección de periodo académico</h2>
             <p class="text-sm text-muted-foreground mb-6">Elige el periodo al que quieres preinscribirte.</p>
             <div id="periods-loading" class="space-y-2">
                 <div class="h-12 bg-muted animate-pulse rounded-lg"></div>
@@ -245,7 +245,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     async function loadPeriods() {
         try {
             const res = await apiFetch("/academic/periods/");
-            if (!res.ok) { document.getElementById("periods-error")!.textContent = "Error al cargar períodos."; document.getElementById("periods-error")!.classList.remove("hidden"); return; }
+            if (!res.ok) { document.getElementById("periods-error")!.textContent = "Error al cargar periodos."; document.getElementById("periods-error")!.classList.remove("hidden"); return; }
             const data = await res.json();
             periods = Array.isArray(data) ? data : (data.results ?? []);
             renderPeriodsList();
@@ -260,7 +260,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         const list = document.getElementById("periods-list")!;
         list.classList.remove("hidden");
         if (periods.length === 0) {
-            list.innerHTML = `<p class="text-sm text-muted-foreground">No hay períodos activos disponibles.</p>`;
+            list.innerHTML = `<p class="text-sm text-muted-foreground">No hay periodos activos disponibles.</p>`;
             return;
         }
         list.innerHTML = periods.map(p => {
@@ -673,10 +673,10 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     </div>
                 </div>
 
-                <!-- Período -->
+                <!-- periodo -->
                 <div class="rounded-lg border border-border bg-card overflow-hidden">
                     <div class="px-4 py-2.5 bg-muted/40 border-b border-border">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Período académico</p>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">periodo académico</p>
                     </div>
                     <div class="px-4 py-3 text-sm">
                         <p class="font-medium">${period?.name ?? '—'}</p>

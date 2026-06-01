@@ -1,7 +1,7 @@
 ---
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
-<DashboardLayout title="Períodos académicos — Academix" currentPath="/periods">
+<DashboardLayout title="periodos académicos — Academix" currentPath="/periods">
   <div id="page-loading" class="p-6 space-y-4">
     <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
     <div class="h-64 bg-card rounded-xl border border-border animate-pulse"></div>
@@ -10,12 +10,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   <div id="page-content" class="hidden">
     <div class="flex items-center justify-between border-b border-border px-6 py-4">
       <div>
-        <h1 class="text-xl font-semibold text-foreground">Períodos académicos</h1>
-        <p class="text-sm text-muted-foreground">Gestiona semestres y períodos académicos</p>
+        <h1 class="text-xl font-semibold text-foreground">periodos académicos</h1>
+        <p class="text-sm text-muted-foreground">Gestiona semestres y periodos académicos</p>
       </div>
       <button id="new-period-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Nuevo período
+        Nuevo periodo
       </button>
     </div>
 
@@ -23,7 +23,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       <!-- Aviso de advertencia -->
       <div class="flex items-start gap-3 rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-4">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 mt-0.5 shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        <p class="text-sm text-yellow-400">Activar un período desactivará todos los demás. Solo un período puede estar activo a la vez.</p>
+        <p class="text-sm text-yellow-400">Activar un periodo desactivará todos los demás. Solo un periodo puede estar activo a la vez.</p>
       </div>
 
       <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
@@ -43,7 +43,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <tbody id="periods-table-body"></tbody>
           </table>
         </div>
-        <div id="periods-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No se encontraron períodos</div>
+        <div id="periods-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No se encontraron periodos</div>
         <div id="periods-pagination" class="hidden mt-4 items-center justify-between">
           <p id="periods-pagination-summary" class="text-sm text-muted-foreground"></p>
           <div class="flex gap-2 items-center">
@@ -61,7 +61,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     <div class="w-full max-w-lg rounded-xl border border-border bg-background shadow-2xl max-h-[90vh] flex flex-col">
       <!-- Cabecera -->
       <div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-        <h2 id="modal-title" class="text-base font-semibold text-foreground">Nuevo período</h2>
+        <h2 id="modal-title" class="text-base font-semibold text-foreground">Nuevo periodo</h2>
         <button id="modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -210,8 +210,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       btn.addEventListener('click', () => {
         const id = (btn as HTMLElement).dataset.id;
         window.confirmAction({
-          title: "Activar período",
-          description: "Todos los demás períodos se desactivarán. ¿Continuar?",
+          title: "Activar periodo",
+          description: "Todos los demás periodos se desactivarán. ¿Continuar?",
           confirmLabel: "Activar",
           onConfirm: async () => {
             try {
@@ -282,7 +282,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       (document.getElementById('period-admission-close') as HTMLInputElement).value = period.admission_close_date?.slice(0, 16) ?? '';
       (document.getElementById('period-active') as HTMLInputElement).checked = period.is_active === true;
     } else {
-      if (title) title.textContent = 'Nuevo período';
+      if (title) title.textContent = 'Nuevo periodo';
       if (idEl) idEl.value = '';
       (document.getElementById('period-form') as HTMLFormElement)?.reset();
     }
@@ -326,14 +326,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         await loadPeriods();
       } catch {
         errEl?.classList.remove('hidden');
-        if (errEl) errEl.textContent = 'No se pudo guardar el período';
+        if (errEl) errEl.textContent = 'No se pudo guardar el periodo';
       }
     };
 
     if (is_active && !id) {
       window.confirmAction({
-        title: "Activar período",
-        description: "Activar este período desactivará todos los demás. ¿Continuar?",
+        title: "Activar periodo",
+        description: "Activar este periodo desactivará todos los demás. ¿Continuar?",
         confirmLabel: "Activar",
         onConfirm: doSave,
       });

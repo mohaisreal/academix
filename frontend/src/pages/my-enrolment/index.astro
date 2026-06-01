@@ -131,7 +131,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <div class="flex items-center justify-between">
             <div>
               <p class="text-xl font-bold text-foreground">${escHtml(enrollment.career_name || enrollment.career?.name || 'Carrera desconocida')}</p>
-              <p class="text-sm text-muted-foreground mt-1">${escHtml(enrollment.period_name || enrollment.period?.name || 'Período desconocido')}</p>
+              <p class="text-sm text-muted-foreground mt-1">${escHtml(enrollment.period_name || enrollment.period?.name || 'periodo desconocido')}</p>
               <p class="text-xs text-muted-foreground mt-1">Inscrito: ${formatDate(enrollment.enrolled_at || enrollment.created_at)}</p>
             </div>
             <span class="inline-flex items-center rounded-full ${statusColor} px-3 py-1 text-sm font-medium capitalize">${escHtml(enrollment.status || 'unknown')}</span>

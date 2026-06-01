@@ -14,7 +14,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       <div class="flex items-center justify-between border-b border-border px-6 py-4">
         <div>
           <h1 class="text-xl font-semibold text-foreground">Horario semanal</h1>
-          <p class="text-sm text-muted-foreground">Tu horario de clases para este período</p>
+          <p class="text-sm text-muted-foreground">Tu horario de clases para este periodo</p>
         </div>
         <span id="student-period-badge" class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"></span>
       </div>
@@ -40,7 +40,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
               <tbody id="student-table-body"></tbody>
             </table>
           </div>
-          <div id="student-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No hay clases programadas para este período</div>
+          <div id="student-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No hay clases programadas para este periodo</div>
         </div>
       </div>
     </div>
@@ -50,7 +50,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       <div class="flex items-center justify-between border-b border-border px-6 py-4">
         <div>
           <h1 class="text-xl font-semibold text-foreground">Horario semanal</h1>
-          <p class="text-sm text-muted-foreground">Tu horario de docencia para este período</p>
+          <p class="text-sm text-muted-foreground">Tu horario de docencia para este periodo</p>
         </div>
         <span id="teacher-period-badge" class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"></span>
       </div>
@@ -76,7 +76,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
               <tbody id="teacher-table-body"></tbody>
             </table>
           </div>
-          <div id="teacher-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No hay clases programadas para este período</div>
+          <div id="teacher-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No hay clases programadas para este periodo</div>
         </div>
       </div>
     </div>
@@ -309,7 +309,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         classes = groupRowsAsClasses(normalized);
       }
 
-    // Determina la etiqueta del período actual
+    // Determina la etiqueta del periodo actual
       const periodName = classes[0]?.period_name || classes[0]?.period?.name || '';
 
       if (role === 's') {

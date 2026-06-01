@@ -25,7 +25,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <p class="text-sm text-muted-foreground">Crear, filtrar, generar, publicar o eliminar borradores.</p>
         </div>
         <div class="flex flex-col gap-2 sm:flex-row">
-          <select id="run-period-filter" class="bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="">Todos los períodos</option></select>
+          <select id="run-period-filter" class="bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="">Todos los periodos</option></select>
           <select id="run-status-filter" class="bg-input border border-border rounded-lg px-3 py-2 text-sm">
             <option value="">Todos los estados</option><option value="draft">Borrador</option><option value="running">En ejecución</option><option value="completed">Completada</option><option value="partial">Parcial</option><option value="failed">Fallida</option><option value="published">Publicada</option>
           </select>
@@ -40,7 +40,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         </div>
         <form id="run-form" class="rounded-xl border border-border bg-background p-4 space-y-3">
           <h3 class="text-sm font-semibold">Crear ejecución borrador</h3>
-          <div><label class="text-xs text-muted-foreground">Período *</label><select id="run-period-create" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="">Seleccioná un período</option></select></div>
+          <div><label class="text-xs text-muted-foreground">periodo *</label><select id="run-period-create" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="">Selecciona un periodo</option></select></div>
           <div id="run-form-error" class="hidden rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300"></div>
           <button class="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Crear ejecución</button>
         </form>
@@ -82,52 +82,39 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     </section>
 
     <section class="grid gap-6 xl:grid-cols-[1.6fr,1fr]">
-      <div class="xl:col-span-2 bg-card border border-border rounded-xl p-5 space-y-4">
-        <h2 class="text-lg font-semibold">Preview de ejecución generada</h2>
-        <p id="preview-helper" class="text-sm text-muted-foreground">Seleccioná una ejecución y usá “Preview” para revisar cómo quedó generada antes de publicar.</p>
-        <div class="grid gap-3 sm:grid-cols-4">
-          <div class="rounded-lg border border-border p-3"><p class="text-xs text-muted-foreground">Período</p><p id="preview-period" class="text-sm font-medium">—</p></div>
-          <div class="rounded-lg border border-border p-3"><p class="text-xs text-muted-foreground">Estado</p><p id="preview-status" class="text-sm font-medium">—</p></div>
-          <div class="rounded-lg border border-border p-3"><p class="text-xs text-muted-foreground">Asignaciones</p><p id="preview-assignments" class="text-sm font-medium">0</p></div>
-          <div class="rounded-lg border border-border p-3"><p class="text-xs text-muted-foreground">Score</p><p id="preview-score" class="text-sm font-medium">—</p></div>
-        </div>
-        <div>
-          <h3 class="text-sm font-semibold mb-2">Metadata de generación</h3>
-          <ul id="preview-metadata" class="space-y-1 text-sm"></ul>
-          <p id="preview-metadata-empty" class="text-sm text-muted-foreground">Sin metadata disponible para esta ejecución.</p>
-        </div>
-        <div id="preview-empty" class="hidden rounded-lg border border-dashed border-border px-4 py-6 text-sm text-muted-foreground">Esta ejecución no tiene asignaciones generadas todavía.</div>
-      </div>
-      <div class="bg-card border border-border rounded-xl p-5 space-y-3">
-        <h2 class="text-lg font-semibold">Asignaciones</h2>
-        <p id="asignaciones-helper" class="text-sm text-muted-foreground">Seleccioná una ejecución para ver sus asignaciones.</p>
-        <div class="overflow-x-auto"><table class="w-full"><thead><tr class="border-b border-border"><th class="text-left text-xs uppercase pb-3">Asignatura</th><th class="text-left text-xs uppercase pb-3">Actividad</th><th class="text-left text-xs uppercase pb-3">Docente</th><th class="text-left text-xs uppercase pb-3">Franja</th><th class="text-left text-xs uppercase pb-3">Aula</th><th class="text-left text-xs uppercase pb-3">Estado</th></tr></thead><tbody id="asignaciones-table-body"></tbody></table></div>
-        <div id="asignaciones-empty" class="hidden rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">No hay asignaciones para esta ejecución.</div>
-      </div>
       <div class="bg-card border border-border rounded-xl p-5 space-y-3">
         <h2 class="text-lg font-semibold">Infracciones</h2>
         <select id="violations-severity-filter" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="">Todas</option><option value="hard">Dura</option><option value="soft">Blanda</option></select>
         <div class="flex flex-wrap gap-2 text-xs"><span id="violations-total" class="rounded-full bg-muted px-3 py-1">0 total</span><span id="violations-hard" class="rounded-full bg-red-500/10 text-red-300 px-3 py-1">0 duras</span><span id="violations-soft" class="rounded-full bg-amber-500/10 text-amber-300 px-3 py-1">0 blandas</span></div>
         <ul id="violations-table-body" class="space-y-2 text-sm"></ul>
       </div>
-      <div class="bg-card border border-border rounded-xl p-5 space-y-3">
-        <h2 class="text-lg font-semibold">Restricciones</h2>
-        <p class="text-sm text-muted-foreground">Configurá y desactivá restricciones globales o por período sin abrir el preview.</p>
-        <div id="constraints-list" class="mt-2 space-y-1 text-xs"></div>
-        <form id="constraint-form" class="mt-3 grid gap-2 sm:grid-cols-3">
-          <select id="constraint-kind" class="rounded border border-border bg-input px-2 py-1 text-xs"><option value="teacher_unavailable">Docente no disponible</option><option value="classroom_unavailable">Aula no disponible</option><option value="career_unavailable">Carrera no disponible</option></select>
-          <select id="constraint-scope" class="rounded border border-border bg-input px-2 py-1 text-xs"><option value="period">Período</option><option value="global">Global</option></select>
-          <input id="constraint-period" class="rounded border border-border bg-input px-2 py-1 text-xs" placeholder="Period ID" />
-          <input id="constraint-teacher" class="rounded border border-border bg-input px-2 py-1 text-xs" placeholder="Teacher ID" />
-          <input id="constraint-classroom" class="rounded border border-border bg-input px-2 py-1 text-xs" placeholder="Classroom ID" />
-          <input id="constraint-career" class="rounded border border-border bg-input px-2 py-1 text-xs" placeholder="Career ID" />
-          <select id="constraint-day" class="rounded border border-border bg-input px-2 py-1 text-xs"><option value="0">Lunes</option><option value="1">Martes</option><option value="2">Miércoles</option><option value="3">Jueves</option><option value="4">Viernes</option></select>
-          <input id="constraint-start" type="time" class="rounded border border-border bg-input px-2 py-1 text-xs" />
-          <input id="constraint-end" type="time" class="rounded border border-border bg-input px-2 py-1 text-xs" />
-          <div id="constraint-form-error" class="hidden rounded border border-red-500/20 bg-red-500/10 px-2 py-1 text-xs text-red-300 sm:col-span-3"></div>
-          <button class="rounded border border-primary/40 px-3 py-1 text-xs text-primary sm:col-span-3">Guardar restricción</button>
-        </form>
+    </section>
+
+    <section class="bg-card border border-border rounded-xl p-5 space-y-4">
+      <h2 class="text-lg font-semibold">Restricciones</h2>
+      <p class="text-sm text-muted-foreground">Configura y desactiva restricciones globales o por periodo.</p>
+      <div id="constraints-list" class="space-y-2 text-sm">
+        <p id="constraints-empty" class="text-muted-foreground">Sin restricciones activas.</p>
       </div>
+      <form id="constraint-form" class="rounded-xl border border-border bg-background p-4 space-y-3">
+        <div class="grid gap-2 sm:grid-cols-2">
+          <select id="constraint-kind" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="teacher_unavailable">Docente no disponible</option><option value="classroom_unavailable">Aula no disponible</option><option value="career_unavailable">Carrera no disponible</option></select>
+          <select id="constraint-scope" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="period">Periodo</option><option value="global">Global</option></select>
+        </div>
+        <div class="grid gap-2 sm:grid-cols-2">
+          <select id="constraint-period" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="">Selecciona periodo</option></select>
+          <select id="constraint-teacher" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm" disabled><option value="">Selecciona docente</option></select>
+          <select id="constraint-classroom" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm" disabled><option value="">Selecciona aula</option></select>
+          <select id="constraint-career" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm" disabled><option value="">Selecciona carrera</option></select>
+        </div>
+        <div class="grid gap-2 sm:grid-cols-3">
+          <select id="constraint-day" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="0">Lunes</option><option value="1">Martes</option><option value="2">Miércoles</option><option value="3">Jueves</option><option value="4">Viernes</option></select>
+          <input id="constraint-start" type="time" class="bg-input border border-border rounded-lg px-3 py-2 text-sm" />
+          <input id="constraint-end" type="time" class="bg-input border border-border rounded-lg px-3 py-2 text-sm" />
+        </div>
+        <div id="constraint-form-error" class="hidden rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300"></div>
+        <button class="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Guardar restricción</button>
+      </form>
     </section>
   </div>
   <div id="preview-modal" class="hidden fixed inset-0 z-50 bg-black/60 p-4">
@@ -153,7 +140,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
 <script>
   import { toast } from '@/components/starwind/toast';
-  import { buildTimeslotBatch, parseTimeslotBreakRanges, summarizeViolations, getRunDisplayName, formatActivityType, buildRunPreviewInfo, classifyTimetableActionError, buildDraftRunPayload, buildManualTimeslotPayload, extractCareerOptions, normalizeAssignmentsToWeekGrid, buildWeekGridRows, buildConstraintPayload, mapConstraintFieldErrors, resolveAssignmentTeacherDisplay } from '@/utils/timetable-management-utils';
+  import { buildTimeslotBatch, parseTimeslotBreakRanges, summarizeViolations, getRunDisplayName, classifyTimetableActionError, buildDraftRunPayload, buildManualTimeslotPayload, extractCareerOptions, normalizeAssignmentsToWeekGrid, buildWeekGridRows, buildConstraintPayload, mapConstraintFieldErrors, formatConstraintKind, formatConstraintScope, formatConstraintDay, formatConstraintEntity, formatConstraintTimeRange, canDeleteTimetableRunStatus } from '@/utils/timetable-management-utils';
 
   const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000/api';
   const token = localStorage.getItem('access_token');
@@ -171,7 +158,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   const esc = (v) => { const e = document.createElement('div'); e.textContent = String(v ?? ''); return e.innerHTML; };
   const err = (e, fb) => (e instanceof Error && e.message ? e.message : fb);
 
-  let periods = []; let runs = []; let timeslots = []; let assignments = []; let violations = []; let constraints = []; let selectedRunId = null;
+  let periods = []; let teachers = []; let classrooms = []; let careers = []; let runs = []; let timeslots = []; let assignments = []; let violations = []; let constraints = []; let selectedRunId = null;
   let selectedCareerId = null;
   let timeslotsPage = 1; let timeslotsPages = 1; let timeslotsCount = 0;
 
@@ -214,9 +201,37 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     if (!(a instanceof HTMLSelectElement) || !(b instanceof HTMLSelectElement)) return;
     const av = a.value; const bv = b.value;
     const opts = periods.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
-    a.innerHTML = `<option value="">Todos los períodos</option>${opts}`;
-    b.innerHTML = `<option value="">Seleccioná un período</option>${opts}`;
+    a.innerHTML = `<option value="">Todos los periodos</option>${opts}`;
+    b.innerHTML = `<option value="">Selecciona un periodo</option>${opts}`;
     a.value = av; b.value = bv;
+  }
+
+  function renderConstraintCatalogSelects() {
+    const period = q('constraint-period'); const teacher = q('constraint-teacher'); const classroom = q('constraint-classroom'); const career = q('constraint-career');
+    if (!(period instanceof HTMLSelectElement) || !(teacher instanceof HTMLSelectElement) || !(classroom instanceof HTMLSelectElement) || !(career instanceof HTMLSelectElement)) return;
+    const periodValue = period.value; const teacherValue = teacher.value; const classroomValue = classroom.value; const careerValue = career.value;
+    period.innerHTML = `<option value="">Selecciona periodo</option>${periods.map((x) => `<option value="${x.id}">${esc(x.name || `periodo #${x.id}`)}</option>`).join('')}`;
+    teacher.innerHTML = `<option value="">Selecciona docente</option>${teachers.map((x) => `<option value="${x.id}">${esc(x.full_name || x.username || `Docente #${x.id}`)}</option>`).join('')}`;
+    classroom.innerHTML = `<option value="">Selecciona aula</option>${classrooms.map((x) => `<option value="${x.id}">${esc(x.name || x.code || `Aula #${x.id}`)}</option>`).join('')}`;
+    career.innerHTML = `<option value="">Selecciona carrera</option>${careers.map((x) => `<option value="${x.id}">${esc(x.name || `Carrera #${x.id}`)}</option>`).join('')}`;
+    period.value = periodValue; teacher.value = teacherValue; classroom.value = classroomValue; career.value = careerValue;
+  }
+
+  function syncConstraintSelectors() {
+    const kind = q('constraint-kind'); const scope = q('constraint-scope'); const period = q('constraint-period'); const teacher = q('constraint-teacher'); const classroom = q('constraint-classroom'); const career = q('constraint-career');
+    if (!(kind instanceof HTMLSelectElement) || !(scope instanceof HTMLSelectElement) || !(period instanceof HTMLSelectElement) || !(teacher instanceof HTMLSelectElement) || !(classroom instanceof HTMLSelectElement) || !(career instanceof HTMLSelectElement)) return;
+    const globalScope = scope.value === 'global';
+    period.disabled = globalScope;
+    if (globalScope) period.value = '';
+    const teacherEnabled = kind.value === 'teacher_unavailable';
+    const classroomEnabled = kind.value === 'classroom_unavailable';
+    const careerEnabled = kind.value === 'career_unavailable';
+    teacher.disabled = !teacherEnabled;
+    classroom.disabled = !classroomEnabled;
+    career.disabled = !careerEnabled;
+    if (!teacherEnabled) teacher.value = '';
+    if (!classroomEnabled) classroom.value = '';
+    if (!careerEnabled) career.value = '';
   }
 
   function renderRunBadge() { const b = q('selected-run-badge'); if (b) b.textContent = selectedRun() ? getRunDisplayName(selectedRun()) : 'Ninguna ejecución seleccionada'; }
@@ -227,12 +242,13 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     if (runs.length === 0) { tbody.innerHTML = ''; empty?.classList.remove('hidden'); renderRunBadge(); return; }
     empty?.classList.add('hidden');
     tbody.innerHTML = runs.map((run) => {
-      const isSel = Number(run.id) === Number(selectedRunId); const canDelete = run.status === 'draft'; const canGenerate = run.status !== 'published';
-      return `<tr class="border-b border-border ${isSel ? 'bg-primary/5' : ''}"><td class="py-3 pr-2"><div class="font-medium">${esc(run.period_name || run.period?.name || `Ejecución #${run.id}`)}</div><div class="text-xs text-muted-foreground">#${run.id}</div></td><td class="py-3 pr-2"><span class="inline-flex rounded-full ${RUN_BADGES[run.status] || 'bg-muted'} px-2.5 py-0.5 text-xs">${esc(RUN_STATUS_LABELS[run.status] || run.status)}</span></td><td class="py-3 pr-2 text-sm">${run.assignments_count ?? run.asignaciones_count ?? 0}</td><td class="py-3 pr-2 text-sm">${run.violations_count ?? 0}</td><td class="py-3"><div class="flex flex-wrap gap-2"><button class="select-run-btn rounded border border-border px-2 py-1 text-xs" data-id="${run.id}">${isSel ? 'Seleccionada' : 'Seleccionar'}</button><button class="preview-run-btn rounded border border-indigo-500/30 text-indigo-300 px-2 py-1 text-xs" data-id="${run.id}">Preview</button><button class="generate-run-btn rounded border border-primary/40 text-primary px-2 py-1 text-xs ${canGenerate ? '' : 'opacity-60'}" data-id="${run.id}" ${canGenerate ? '' : 'disabled'}>Generar</button><button class="publish-run-btn rounded border border-green-500/30 text-green-300 px-2 py-1 text-xs ${run.status === 'published' ? 'opacity-60' : ''}" data-id="${run.id}" ${run.status === 'published' ? 'disabled' : ''}>Publicar</button><button class="delete-run-btn rounded border border-red-500/30 text-red-300 px-2 py-1 text-xs ${canDelete ? '' : 'opacity-60'}" data-id="${run.id}" ${canDelete ? '' : 'disabled'}>Eliminar</button></div></td></tr>`;
+      const isSel = Number(run.id) === Number(selectedRunId); const canDelete = canDeleteTimetableRunStatus(run.status); const canGenerate = run.status !== 'published';
+      const deleteBlockedReason = 'No se puede eliminar una ejecución publicada';
+      return `<tr class="border-b border-border ${isSel ? 'bg-primary/5' : ''}"><td class="py-3 pr-2"><div class="font-medium">${esc(run.period_name || run.period?.name || `Ejecución #${run.id}`)}</div><div class="text-xs text-muted-foreground">#${run.id}</div></td><td class="py-3 pr-2"><span class="inline-flex rounded-full ${RUN_BADGES[run.status] || 'bg-muted'} px-2.5 py-0.5 text-xs">${esc(RUN_STATUS_LABELS[run.status] || run.status)}</span></td><td class="py-3 pr-2 text-sm">${run.assignments_count ?? run.asignaciones_count ?? 0}</td><td class="py-3 pr-2 text-sm">${run.violations_count ?? 0}</td><td class="py-3"><div class="flex flex-wrap gap-2"><button class="select-run-btn rounded border border-border px-2 py-1 text-xs" data-id="${run.id}">${isSel ? 'Seleccionada' : 'Seleccionar'}</button><button class="preview-run-btn rounded border border-indigo-500/30 text-indigo-300 px-2 py-1 text-xs" data-id="${run.id}">Preview</button><button class="generate-run-btn rounded border border-primary/40 text-primary px-2 py-1 text-xs ${canGenerate ? '' : 'opacity-60'}" data-id="${run.id}" ${canGenerate ? '' : 'disabled'}>Generar</button><button class="publish-run-btn rounded border border-green-500/30 text-green-300 px-2 py-1 text-xs ${run.status === 'published' ? 'opacity-60' : ''}" data-id="${run.id}" ${run.status === 'published' ? 'disabled' : ''}>Publicar</button><button class="delete-run-btn rounded border border-red-500/30 text-red-300 px-2 py-1 text-xs ${canDelete ? '' : 'opacity-60'}" data-id="${run.id}" aria-label="Eliminar ejecución" title="${canDelete ? 'Eliminar ejecución' : deleteBlockedReason}" ${canDelete ? '' : 'disabled'}>Eliminar</button></div></td></tr>`;
     }).join('');
 
     tbody.querySelectorAll('.select-run-btn').forEach((b) => b.addEventListener('click', async () => { selectedRunId = Number(b.getAttribute('data-id')); renderRuns(); renderRunBadge(); await Promise.all([loadAssignments(), loadViolations()]); }));
-    tbody.querySelectorAll('.preview-run-btn').forEach((b) => b.addEventListener('click', async () => { selectedRunId = Number(b.getAttribute('data-id')); await Promise.all([loadAssignments(), loadViolations()]); renderPreview(); renderRuns(); renderRunBadge(); openPreviewModal(); }));
+    tbody.querySelectorAll('.preview-run-btn').forEach((b) => b.addEventListener('click', async () => { selectedRunId = Number(b.getAttribute('data-id')); await Promise.all([loadAssignments(), loadViolations()]); renderRuns(); renderRunBadge(); openPreviewModal(); }));
     tbody.querySelectorAll('.publish-run-btn').forEach((b) => b.addEventListener('click', async () => publishRun(Number(b.getAttribute('data-id')))));
     tbody.querySelectorAll('.generate-run-btn').forEach((b) => b.addEventListener('click', async () => generateRun(Number(b.getAttribute('data-id')))));
     tbody.querySelectorAll('.delete-run-btn').forEach((b) => b.addEventListener('click', async () => deleteRun(Number(b.getAttribute('data-id')))));
@@ -263,15 +279,6 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     tbody.innerHTML = timeslots.map((s) => `<tr class="border-b border-border"><td class="py-3">${esc(s.day_name || DAY_NAMES[Number(s.day_of_week)] || '—')}</td><td class="py-3">${esc(s.start_time || '—')}</td><td class="py-3">${esc(s.end_time || '—')}</td></tr>`).join('');
   }
 
-  function renderAssignments() {
-    const helper = q('asignaciones-helper'); const tbody = q('asignaciones-table-body'); const empty = q('asignaciones-empty');
-    if (helper) helper.textContent = selectedRunId ? `Ejecución #${selectedRunId} · asignaciones` : 'Seleccioná una ejecución para ver sus asignaciones.';
-    if (!tbody) return;
-    if (!selectedRunId || assignments.length === 0) { tbody.innerHTML = ''; empty?.classList.remove('hidden'); return; }
-    empty?.classList.add('hidden');
-    tbody.innerHTML = assignments.map((a) => `<tr class="border-b border-border"><td class="py-3"><div class="font-medium">${esc(a.asignatura_name || a.subject_name || 'Clase')}</div><div class="text-xs text-muted-foreground">${esc(a.asignatura_code || a.subject_code || '')}</div></td><td class="py-3">${esc(formatActivityType(a.activity_type || 'theory'))}</td><td class="py-3">${esc(resolveAssignmentTeacherDisplay(a))}</td><td class="py-3">${esc(a.timeslot_day_name ? `${a.timeslot_day_name} · ${a.timeslot_start_time}-${a.timeslot_end_time}` : '—')}</td><td class="py-3">${esc(a.classroom_name || '—')}</td><td class="py-3">${esc(a.status || 'assigned')}</td></tr>`).join('');
-  }
-
   function renderViolations() {
     const list = q('violations-table-body'); if (!list) return;
     const sum = summarizeViolations(violations);
@@ -279,30 +286,6 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     if (total) total.textContent = `${sum.total} total`; if (hard) hard.textContent = `${sum.hard} duras`; if (soft) soft.textContent = `${sum.soft} blandas`;
     if (!selectedRunId || violations.length === 0) { list.innerHTML = '<li class="text-sm text-muted-foreground">No hay infracciones para esta ejecución.</li>'; return; }
     list.innerHTML = violations.map((v) => `<li class="rounded-lg border border-border p-2"><strong>${esc(v.severity === 'hard' ? 'Dura' : 'Blanda')}</strong> · ${esc(v.rule_kind || 'regla')} · ${esc(v.assignment_asignatura_code || '—')} · penalización ${Number(v.penalty ?? 0)}<div class="text-muted-foreground">${esc(v.mensaje || v.message || '')}</div></li>`).join('');
-  }
-
-  function renderPreview() {
-    const helper = q('preview-helper'); const metadataList = q('preview-metadata'); const metadataEmpty = q('preview-metadata-empty'); const assignmentsEmpty = q('preview-empty');
-    const run = selectedRun();
-    if (!run) {
-      if (helper) helper.textContent = 'Seleccioná una ejecución y usá “Preview” para revisar cómo quedó generada antes de publicar.';
-      if (q('preview-period')) q('preview-period').textContent = '—';
-      if (q('preview-status')) q('preview-status').textContent = '—';
-      if (q('preview-assignments')) q('preview-assignments').textContent = '0';
-      if (q('preview-score')) q('preview-score').textContent = '—';
-      if (metadataList) metadataList.innerHTML = '';
-      metadataEmpty?.classList.remove('hidden'); assignmentsEmpty?.classList.add('hidden');
-      return;
-    }
-    const preview = buildRunPreviewInfo(run, assignments);
-    if (helper) helper.textContent = `Preview de ejecución #${run.id} · ${preview.statusLabel}.`;
-    if (q('preview-period')) q('preview-period').textContent = String(preview.periodLabel || '—');
-    if (q('preview-status')) q('preview-status').textContent = preview.statusLabel;
-    if (q('preview-assignments')) q('preview-assignments').textContent = String(preview.assignmentsCount);
-    if (q('preview-score')) q('preview-score').textContent = preview.scoreLabel;
-    if (metadataList) metadataList.innerHTML = preview.metadataRows.map((row) => `<li><span class="text-muted-foreground">${esc(row.key)}:</span> ${esc(row.value)}</li>`).join('');
-    metadataEmpty?.classList.toggle('hidden', preview.metadataRows.length > 0);
-    assignmentsEmpty?.classList.toggle('hidden', preview.hasAssignments);
   }
 
   function openPreviewModal() { q('preview-modal')?.classList.remove('hidden'); renderPreviewGrid(); renderCareerFilter(); }
@@ -344,8 +327,20 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   function renderConstraints() {
     const box = q('constraints-list');
     if (!box) return;
-    if (!constraints.length) { box.innerHTML = '<p class="text-muted-foreground">Sin restricciones activas.</p>'; return; }
-    box.innerHTML = constraints.map((c) => `<div class="rounded border border-border p-2">#${c.id} · ${esc(c.kind)} · día ${c.day_of_week} ${String(c.start_time).slice(0,5)}-${String(c.end_time).slice(0,5)} <button class="deactivate-constraint-btn ml-2 rounded border border-border px-1" data-id="${c.id}">Desactivar</button></div>`).join('');
+    if (!constraints.length) { box.innerHTML = '<p id="constraints-empty" class="text-muted-foreground">Sin restricciones activas.</p>'; return; }
+    box.innerHTML = constraints.map((c) => `<div class="rounded-xl border border-border/80 bg-muted/20 p-3">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div class="space-y-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">${esc(formatConstraintKind(c))}</span>
+            <span class="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs text-foreground">${esc(formatConstraintScope(c))}</span>
+          </div>
+          <p class="text-sm text-foreground">${esc(formatConstraintEntity(c))}</p>
+          <p class="text-xs text-muted-foreground">${esc(formatConstraintDay(c))} · ${esc(formatConstraintTimeRange(c))}</p>
+        </div>
+        <button class="deactivate-constraint-btn self-start rounded border border-border px-2 py-1 text-xs" data-id="${c.id}">Desactivar</button>
+      </div>
+    </div>`).join('');
     box.querySelectorAll('.deactivate-constraint-btn').forEach((btn) => btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-id');
       await apiFetch(`/academic/scheduling-constraints/${id}/`, { method: 'PATCH', body: JSON.stringify({ is_active: false }) });
@@ -354,9 +349,36 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     }));
   }
 
+  async function loadAllPages(path) {
+    const first = await apiFetch(path);
+    if (Array.isArray(first)) return first;
+    const rows = Array.isArray(first?.results) ? [...first.results] : [];
+    let nextUrl = first?.next;
+    while (nextUrl) {
+      const normalizedNext = String(nextUrl);
+      const relativeNext = normalizedNext.startsWith(API_URL) ? normalizedNext.slice(API_URL.length) : normalizedNext;
+      const page = await apiFetch(relativeNext);
+      const nextRows = Array.isArray(page?.results) ? page.results : unwrap(page);
+      rows.push(...nextRows);
+      nextUrl = page?.next;
+    }
+    return rows.length ? rows : unwrap(first);
+  }
+
   async function loadCatalogs() {
-    periods = unwrap(await apiFetch('/academic/periods/'));
+    const [periodRows, teacherRows, classroomRows, careerRows] = await Promise.all([
+      loadAllPages('/academic/periods/'),
+      loadAllPages('/users/teachers/'),
+      loadAllPages('/academic/classrooms/'),
+      loadAllPages('/academic/careers/'),
+    ]);
+    periods = periodRows;
+    teachers = teacherRows;
+    classrooms = classroomRows;
+    careers = careerRows;
     renderPeriodSelects();
+    renderConstraintCatalogSelects();
+    syncConstraintSelectors();
     await loadTimeslots(1);
   }
   async function loadRuns() {
@@ -378,17 +400,17 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       : 1;
     renderTimeslots();
   }
-  async function loadAssignments() { if (!selectedRunId) { assignments = []; renderAssignments(); renderPreview(); return; } assignments = await loadScheduleAssignmentsByRun(selectedRunId); renderAssignments(); renderPreview(); }
+  async function loadAssignments() { if (!selectedRunId) { assignments = []; return; } assignments = await loadScheduleAssignmentsByRun(selectedRunId); }
   async function loadViolations() {
-    if (!selectedRunId) { violations = []; renderViolations(); renderPreview(); return; }
+    if (!selectedRunId) { violations = []; renderViolations(); return; }
     const params = new URLSearchParams({ run: String(selectedRunId) }); const sf = q('violations-severity-filter');
     if (sf instanceof HTMLSelectElement && sf.value) params.set('severity', sf.value);
-    violations = unwrap(await apiFetch(`/academic/constraint-violations/?${params.toString()}`)); renderViolations(); renderPreview();
+    violations = unwrap(await apiFetch(`/academic/constraint-violations/?${params.toString()}`)); renderViolations();
   }
 
   async function publishRun(id) { try { await apiFetch(`/academic/timetable-runs/${id}/publish/`, { method: 'POST' }); toast.success('Ejecución publicada'); await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(classifyTimetableActionError(e, 'publish')); } }
   async function generateRun(id) { try { selectedRunId = id; await apiFetch(`/academic/timetable-runs/${id}/generate/`, { method: 'POST' }); toast.success('Horario generado'); await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(classifyTimetableActionError(e, 'generate')); } }
-  async function deleteRun(id) { try { await apiFetch(`/academic/timetable-runs/${id}/`, { method: 'DELETE' }); if (Number(selectedRunId) === Number(id)) selectedRunId = null; toast.success('Ejecución borrador eliminada'); await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(err(e, 'No se pudo eliminar')); } }
+  async function deleteRun(id) { try { await apiFetch(`/academic/timetable-runs/${id}/`, { method: 'DELETE' }); if (Number(selectedRunId) === Number(id)) selectedRunId = null; toast.success('Ejecución eliminada'); await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(classifyTimetableActionError(e, 'delete')); } }
 
   q('reload-runs-btn')?.addEventListener('click', async () => { try { await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(err(e, 'No se pudieron recargar ejecuciones')); } });
   q('run-period-filter')?.addEventListener('change', async () => { try { await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(err(e, 'No se pudo aplicar filtro')); } });
@@ -422,7 +444,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     if (start.value >= end.value) { if (error) error.textContent = 'La hora de fin debe ser posterior a la hora de inicio.'; error?.classList.remove('hidden'); return; }
     try {
       const period = q('run-period-create');
-      if (!(period instanceof HTMLSelectElement)) throw new Error('No se encontró el selector de período.');
+      if (!(period instanceof HTMLSelectElement)) throw new Error('No se encontró el selector de periodo.');
       const payload = buildManualTimeslotPayload({ period: period.value, dayOfWeek: day.value, startTime: start.value, endTime: end.value });
       await apiFetch('/academic/time-slots/', { method: 'POST', body: JSON.stringify(payload) });
       toast.success('Franja creada');
@@ -439,7 +461,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     if (!(day instanceof HTMLSelectElement) || !(start instanceof HTMLInputElement) || !(end instanceof HTMLInputElement) || !(interval instanceof HTMLInputElement) || !(breaks instanceof HTMLTextAreaElement)) return;
     try {
       const period = q('run-period-create');
-      if (!(period instanceof HTMLSelectElement)) throw new Error('No se encontró el selector de período.');
+      if (!(period instanceof HTMLSelectElement)) throw new Error('No se encontró el selector de periodo.');
       const batch = buildTimeslotBatch({ period: period.value, dayOfWeek: day.value, startTime: start.value, endTime: end.value, intervalMinutes: interval.value, breakRanges: parseTimeslotBreakRanges(breaks.value) });
       if (batch.length === 0) throw new Error('No se crearían franjas con el rango indicado.');
       const key = (x) => `${x.day_of_week}|${String(x.start_time).slice(0, 5)}|${String(x.end_time).slice(0, 5)}`;
@@ -471,7 +493,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const kindEl = q('constraint-kind'); const scopeEl = q('constraint-scope'); const periodEl = q('constraint-period');
     const teacherEl = q('constraint-teacher'); const classroomEl = q('constraint-classroom'); const careerEl = q('constraint-career');
     const dayEl = q('constraint-day'); const startEl = q('constraint-start'); const endEl = q('constraint-end');
-    if (!(kindEl instanceof HTMLSelectElement) || !(scopeEl instanceof HTMLSelectElement) || !(periodEl instanceof HTMLInputElement) || !(teacherEl instanceof HTMLInputElement) || !(classroomEl instanceof HTMLInputElement) || !(careerEl instanceof HTMLInputElement) || !(dayEl instanceof HTMLSelectElement) || !(startEl instanceof HTMLInputElement) || !(endEl instanceof HTMLInputElement)) return;
+    if (!(kindEl instanceof HTMLSelectElement) || !(scopeEl instanceof HTMLSelectElement) || !(periodEl instanceof HTMLSelectElement) || !(teacherEl instanceof HTMLSelectElement) || !(classroomEl instanceof HTMLSelectElement) || !(careerEl instanceof HTMLSelectElement) || !(dayEl instanceof HTMLSelectElement) || !(startEl instanceof HTMLInputElement) || !(endEl instanceof HTMLInputElement)) return;
     try {
       const payload = buildConstraintPayload({
         kind: kindEl.value,
@@ -494,6 +516,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       error?.classList.remove('hidden');
     }
   });
+
+  q('constraint-kind')?.addEventListener('change', syncConstraintSelectors);
+  q('constraint-scope')?.addEventListener('change', syncConstraintSelectors);
 
   (async () => {
     try { await loadCatalogs(); await loadRuns(); await Promise.all([loadAssignments(), loadViolations(), loadConstraints()]); renderConstraints(); }

@@ -61,7 +61,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                             <p id="app-submitted-date" class="text-foreground font-medium">—</p>
                         </div>
                         <div>
-                            <p class="text-muted-foreground">Período</p>
+                            <p class="text-muted-foreground">periodo</p>
                             <p id="app-period" class="text-foreground font-medium">—</p>
                         </div>
                     </div>
@@ -219,7 +219,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         else if (["rejected", "withdrawn", "expired", "waitlisted"].includes(status)) {
             const final = document.getElementById("actions-final")!;
             const messages: Record<string, string> = {
-                rejected: "Tu solicitud no fue aceptada para este período.",
+                rejected: "Tu solicitud no fue aceptada para este periodo.",
                 withdrawn: "Te retiraste de esta solicitud.",
                 expired: "Esta solicitud venció.",
                 waitlisted: "Estás en lista de espera. Te avisaremos si se libera una vacante.",
@@ -426,7 +426,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 const periods = Array.isArray(periodsData) ? periodsData : (periodsData.results ?? []);
                 activePeriod = periods.find((p: any) => p.is_active) ?? periods[0] ?? null;
                 if (activePeriod) {
-                    document.getElementById("period-info")!.textContent = `Período: ${activePeriod.name}`;
+                    document.getElementById("period-info")!.textContent = `periodo: ${activePeriod.name}`;
                 }
             }
 
@@ -462,7 +462,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 createError.classList.add("hidden");
 
                 if (!activePeriod) {
-                    createError.textContent = "No se encontró un período académico activo.";
+                    createError.textContent = "No se encontró un periodo académico activo.";
                     createError.classList.remove("hidden");
                     btn.disabled = false;
                     btn.textContent = "Crear borrador de solicitud";

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildBulkTimeSlots,
   buildTimeslotBatch,
-  buildRunPreviewInfo,
+  canDeleteTimetableRunStatus,
   classifyTimetableActionError,
   requireSelectedPeriod,
   buildDraftRunPayload,
@@ -13,6 +13,11 @@ import {
   normalizeAssignmentsToWeekGrid,
   buildWeekGridRows,
   buildConstraintPayload,
+  formatConstraintDay,
+  formatConstraintEntity,
+  formatConstraintKind,
+  formatConstraintScope,
+  formatConstraintTimeRange,
   mapConstraintFieldErrors,
   resolveAssignmentTeacherDisplay,
 } from '../timetable-management-utils';
@@ -77,7 +82,7 @@ describe('buildTimeslotBatch', () => {
     ]);
   });
 
-  it('falla cuando el período no está seleccionado', () => {
+  it('falla cuando el periodo no está seleccionado', () => {
     expect(() => buildTimeslotBatch({
       period: '',
       dayOfWeek: '1',
@@ -85,7 +90,7 @@ describe('buildTimeslotBatch', () => {
       endTime: '09:00',
       intervalMinutes: '30',
       breakRanges: [],
-    })).toThrow('Seleccioná un período válido antes de crear franjas.');
+    })).toThrow('Selecciona un periodo válido antes de crear franjas.');
   });
 
   it('falla cuando el intervalo es inválido (start >= end)', () => {
@@ -101,12 +106,12 @@ describe('buildTimeslotBatch', () => {
 });
 
 describe('requireSelectedPeriod', () => {
-  it('devuelve id numérico cuando hay período válido', () => {
+  it('devuelve id numérico cuando hay periodo válido', () => {
     expect(requireSelectedPeriod('12')).toBe(12);
   });
 
-  it('rechaza cuando falta período', () => {
-    expect(() => requireSelectedPeriod('')).toThrow('Seleccioná un período antes de continuar.');
+  it('rechaza cuando falta periodo', () => {
+    expect(() => requireSelectedPeriod('')).toThrow('Selecciona un periodo antes de continuar.');
   });
 });
 
@@ -121,7 +126,7 @@ describe('classifyTimetableActionError', () => {
       status: 400,
       payload: {
         status: 'failed',
-        detail: 'No se pudo generar: faltan clases para el período.',
+        detail: 'No se pudo generar: faltan clases para el periodo.',
         metadata: { generator: { precondition_errors: ['missing_classes'] } },
       },
     });
@@ -179,12 +184,33 @@ describe('classifyTimetableActionError', () => {
 
   it('mapea 400 de validación/precondición por campos', () => {
     const e = Object.assign(new Error('Bad request'), { status: 400, payload: { period: ['This field is required.'] } });
-    expect(classifyTimetableActionError(e, 'timeslot')).toBe('Validación incompleta: revisá período, día y rango horario antes de enviar.');
+    expect(classifyTimetableActionError(e, 'timeslot')).toBe('Validación incompleta: revisá periodo, día y rango horario antes de enviar.');
   });
 
   it('mapea 400 de negocio en publish failed', () => {
     const e = Object.assign(new Error('Cannot publish a failed run.'), { status: 400, payload: { detail: 'Cannot publish a failed run.' } });
     expect(classifyTimetableActionError(e, 'publish')).toContain('No se puede publicar una ejecución fallida');
+  });
+
+  it('mapea 400 de negocio en delete published', () => {
+    const e = Object.assign(new Error('No se puede eliminar una ejecución publicada.'), { status: 400, payload: { detail: 'No se puede eliminar una ejecución publicada.' } });
+    expect(classifyTimetableActionError(e, 'delete')).toContain('publicada');
+  });
+});
+
+describe('canDeleteTimetableRunStatus', () => {
+  it('habilita delete para runs no publicadas', () => {
+    expect(canDeleteTimetableRunStatus('draft')).toBe(true);
+    expect(canDeleteTimetableRunStatus('failed')).toBe(true);
+    expect(canDeleteTimetableRunStatus('partial')).toBe(true);
+    expect(canDeleteTimetableRunStatus('completed')).toBe(true);
+  });
+
+  it('bloquea delete para published y desconocidos', () => {
+    expect(canDeleteTimetableRunStatus('published')).toBe(false);
+    expect(canDeleteTimetableRunStatus('archived')).toBe(false);
+    expect(canDeleteTimetableRunStatus(undefined)).toBe(false);
+    expect(canDeleteTimetableRunStatus(null)).toBe(false);
   });
 });
 
@@ -193,8 +219,8 @@ describe('payload helpers', () => {
     expect(buildDraftRunPayload('12')).toEqual({ period: 12, status: 'draft', metadata: {} });
   });
 
-  it('bloquea draft cuando falta período', () => {
-    expect(() => buildDraftRunPayload('')).toThrow('Seleccioná un período para crear la ejecución.');
+  it('bloquea draft cuando falta periodo', () => {
+    expect(() => buildDraftRunPayload('')).toThrow('Selecciona un periodo para crear la ejecución.');
   });
 
   it('arma payload de slot manual con period y horario', () => {
@@ -206,8 +232,8 @@ describe('payload helpers', () => {
     });
   });
 
-  it('bloquea slot manual cuando falta período', () => {
-    expect(() => buildManualTimeslotPayload({ period: '', dayOfWeek: '2', startTime: '08:00', endTime: '09:00' })).toThrow('Seleccioná un período para crear franjas.');
+  it('bloquea slot manual cuando falta periodo', () => {
+    expect(() => buildManualTimeslotPayload({ period: '', dayOfWeek: '2', startTime: '08:00', endTime: '09:00' })).toThrow('Selecciona un periodo para crear franjas.');
   });
 });
 
@@ -284,73 +310,6 @@ describe('groupAssignmentsByClass', () => {
   });
 });
 
-describe('buildRunPreviewInfo', () => {
-  it('arma resumen de preview con metadata y score en distintas rutas', () => {
-    const preview = buildRunPreviewInfo(
-      {
-        id: 33,
-        status: 'completed',
-        period_name: '2026-1',
-        assignments_count: 4,
-        violations_count: 1,
-        metadata: {
-          score: 87.5,
-          generator: 'greedy-v2',
-          summary: { created: 4, unassigned: 0 },
-        },
-      },
-      [{ id: 1 }, { id: 2 }],
-    );
-
-    expect(preview.statusLabel).toBe('Completada');
-    expect(preview.assignmentsCount).toBe(4);
-    expect(preview.violationsCount).toBe(1);
-    expect(preview.scoreLabel).toBe('87.5');
-    expect(preview.metadataRows).toEqual([
-      { key: 'generator', value: 'greedy-v2' },
-      { key: 'summary', value: '{"created":4,"unassigned":0}' },
-    ]);
-    expect(preview.hasAssignments).toBe(true);
-  });
-
-  it('tolera metadata vacía y usa fallback con lista real de asignaciones', () => {
-    const preview = buildRunPreviewInfo(
-      {
-        id: 34,
-        status: 'partial',
-        period_name: '2026-2',
-        metadata: null,
-      },
-      [{ id: 1 }, { id: 2 }, { id: 3 }],
-    );
-
-    expect(preview.statusLabel).toBe('Parcial');
-    expect(preview.assignmentsCount).toBe(3);
-    expect(preview.violationsCount).toBe(0);
-    expect(preview.scoreLabel).toBe('—');
-    expect(preview.metadataRows).toEqual([]);
-    expect(preview.hasAssignments).toBe(true);
-  });
-
-  it('muestra preview vacío sin asignaciones y sin endpoint dedicado', () => {
-    const preview = buildRunPreviewInfo(
-      {
-        id: 35,
-        status: 'draft',
-        period_name: '2026-3',
-        metadata: {},
-      },
-      [],
-    );
-
-    expect(preview.statusLabel).toBe('Borrador');
-    expect(preview.assignmentsCount).toBe(0);
-    expect(preview.violationsCount).toBe(0);
-    expect(preview.hasAssignments).toBe(false);
-    expect(preview.metadataRows).toEqual([]);
-  });
-});
-
 describe('preview grid + constraints helpers', () => {
   it('extrae carreras únicas desde asignaciones', () => {
     const careers = extractCareerOptions([
@@ -369,6 +328,41 @@ describe('preview grid + constraints helpers', () => {
     expect(grid).toHaveLength(1);
     expect(grid[0].day).toBe(0);
     expect(grid[0].hour).toBe('08:00');
+  });
+
+  it('mapea días en español (Lunes..Viernes) a índices válidos de preview', () => {
+    const grid = normalizeAssignmentsToWeekGrid([
+      { id: 21, subject_code: 'MAT', classroom_name: 'A1', timeslot_day_name: 'Lunes', timeslot_start_time: '08:00:00' },
+      { id: 22, subject_code: 'FIS', classroom_name: 'A2', timeslot_day_name: 'Martes', timeslot_start_time: '09:00:00' },
+      { id: 23, subject_code: 'QUI', classroom_name: 'A3', timeslot_day_name: 'Miércoles', timeslot_start_time: '10:00:00' },
+      { id: 24, subject_code: 'HIS', classroom_name: 'A4', timeslot_day_name: 'Jueves', timeslot_start_time: '11:00:00' },
+      { id: 25, subject_code: 'BIO', classroom_name: 'A5', timeslot_day_name: 'Viernes', timeslot_start_time: '12:00:00' },
+    ]);
+
+    expect(grid.map((b) => b.day)).toEqual([0, 1, 2, 3, 4]);
+  });
+
+  it('normaliza variantes con/sin tilde y case-insensitive de Miércoles', () => {
+    const grid = normalizeAssignmentsToWeekGrid([
+      { id: 31, subject_code: 'ALG', classroom_name: 'A1', timeslot_day_name: 'miércoles', timeslot_start_time: '08:00:00' },
+      { id: 32, subject_code: 'ALG', classroom_name: 'A1', timeslot_day_name: 'MIERCOLES', timeslot_start_time: '09:00:00' },
+      { id: 33, subject_code: 'ALG', classroom_name: 'A1', timeslot_day_name: 'Miercoles', timeslot_start_time: '10:00:00' },
+    ]);
+
+    expect(grid).toHaveLength(3);
+    expect(grid.every((b) => b.day === 2)).toBe(true);
+  });
+
+  it('mantiene compatibilidad legacy en inglés y excluye etiquetas inválidas', () => {
+    const grid = normalizeAssignmentsToWeekGrid([
+      { id: 41, subject_code: 'ING', classroom_name: 'B1', timeslot_day_name: 'Monday', timeslot_start_time: '08:00:00' },
+      { id: 42, subject_code: 'INV', classroom_name: 'B2', timeslot_day_name: 'Funday', timeslot_start_time: '09:00:00' },
+      { id: 43, subject_code: 'VAC', classroom_name: 'B3', timeslot_day_name: '', timeslot_start_time: '10:00:00' },
+    ]);
+
+    expect(grid).toHaveLength(1);
+    expect(grid[0].id).toBe(41);
+    expect(grid[0].day).toBe(0);
   });
 
   it('mantiene colisiones en misma celda día/hora para render múltiple', () => {
@@ -401,5 +395,29 @@ describe('preview grid + constraints helpers', () => {
     expect(resolveAssignmentTeacherDisplay({ teacher_name: 'Ada Lovelace', department_teacher_name: 'Grace Hopper' })).toBe('Ada Lovelace');
     expect(resolveAssignmentTeacherDisplay({ teacher_name: '', department_teacher_name: 'Grace Hopper' })).toContain('Grace Hopper');
     expect(resolveAssignmentTeacherDisplay({ teacher_name: '', department_teacher_name: '' })).toBe('No resuelto');
+  });
+
+  it('prioriza labels de backend para kind/scope/day', () => {
+    expect(formatConstraintKind({ kind: 'teacher_unavailable', kind_label: 'Docente bloqueado' } as any)).toBe('Docente bloqueado');
+    expect(formatConstraintScope({ scope: 'period', scope_label: 'Periodo académico' } as any)).toBe('Periodo académico');
+    expect(formatConstraintDay({ day_of_week: 0, day_label: 'Lunes (backend)' } as any)).toBe('Lunes (backend)');
+  });
+
+  it('usa fallback conocido y placeholder neutral para códigos desconocidos', () => {
+    expect(formatConstraintKind({ kind: 'classroom_unavailable' } as any)).toBe('Aula no disponible');
+    expect(formatConstraintScope({ scope: 'global' } as any)).toBe('Global');
+    expect(formatConstraintKind({ kind: 'x_unknown' } as any)).toBe('Tipo no especificado');
+    expect(formatConstraintScope({ scope: 'x_unknown' } as any)).toBe('Alcance no especificado');
+    expect(formatConstraintDay({ day_of_week: 99 } as any)).toBe('Día no especificado');
+  });
+
+  it('formatea entidad y rango horario en formato amigable', () => {
+    expect(formatConstraintEntity({ teacher_name: 'Ada Lovelace' } as any)).toBe('Ada Lovelace');
+    expect(formatConstraintEntity({ classroom_name: 'Aula 101' } as any)).toBe('Aula 101');
+    expect(formatConstraintEntity({ career_name: 'Ingeniería' } as any)).toBe('Ingeniería');
+    expect(formatConstraintEntity({} as any)).toBe('Entidad no especificada');
+
+    expect(formatConstraintTimeRange({ start_time: '08:00:00', end_time: '09:30:00' } as any)).toBe('08:00–09:30');
+    expect(formatConstraintTimeRange({ start_time: '', end_time: '' } as any)).toBe('Horario no especificado');
   });
 });

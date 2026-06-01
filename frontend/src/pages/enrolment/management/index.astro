@@ -41,7 +41,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
               <tr class="border-b border-border bg-muted/50">
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Estudiante</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Carrera</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Período</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">periodo</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Estado</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3">Acciones</th>
               </tr>
@@ -79,19 +79,19 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <div>
             <label class="text-xs font-medium text-muted-foreground">Estudiante *</label>
             <select id="enrolment-student" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-              <option value="">Seleccioná un estudiante...</option>
+              <option value="">Selecciona un estudiante...</option>
             </select>
           </div>
           <div>
             <label class="text-xs font-medium text-muted-foreground">Carrera *</label>
             <select id="enrolment-career" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-              <option value="">Seleccioná una carrera...</option>
+              <option value="">Selecciona una carrera...</option>
             </select>
           </div>
           <div>
-            <label class="text-xs font-medium text-muted-foreground">Período *</label>
+            <label class="text-xs font-medium text-muted-foreground">periodo *</label>
             <select id="enrolment-period" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-              <option value="">Seleccioná un período...</option>
+              <option value="">Selecciona un periodo...</option>
             </select>
           </div>
           <div>
@@ -182,7 +182,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     tbody.innerHTML = filtered.map(e => {
       const studentName = e.student?.full_name ?? (`${e.student?.first_name ?? ''} ${e.student?.last_name ?? ''}`.trim() || `Student #${e.student?.id ?? '?'}`);
       const careerName = e.career_name ?? `Carrera #?`;
-      const periodName = e.period_name ?? `Período #?`;
+      const periodName = e.period_name ?? `periodo #?`;
       const colorClass = STATUS_COLORS[e.status] ?? 'bg-muted text-muted-foreground';
       return `<tr class="border-b border-border hover:bg-muted/40 transition-colors">
         <td class="px-4 py-3 text-sm font-medium text-foreground">${escHtml(studentName)}</td>
@@ -301,7 +301,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
     const careerSel = document.getElementById('enrolment-career') as HTMLSelectElement;
     if (careerSel) {
-      careerSel.innerHTML = '<option value="">Seleccioná una carrera...</option>';
+      careerSel.innerHTML = '<option value="">Selecciona una carrera...</option>';
       careers.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c.id; opt.textContent = c.name;
@@ -311,7 +311,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
     const periodSel = document.getElementById('enrolment-period') as HTMLSelectElement;
     if (periodSel) {
-      periodSel.innerHTML = '<option value="">Seleccioná un período...</option>';
+      periodSel.innerHTML = '<option value="">Selecciona un periodo...</option>';
       periods.forEach(p => {
         const opt = document.createElement('option');
         opt.value = p.id; opt.textContent = p.name;
@@ -354,7 +354,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     students = Array.isArray(sData) ? sData : (sData?.results ?? []);
     const sel = document.getElementById('enrolment-student') as HTMLSelectElement;
     if (sel) {
-      sel.innerHTML = '<option value="">Seleccioná un estudiante...</option>';
+      sel.innerHTML = '<option value="">Selecciona un estudiante...</option>';
       students.forEach(s => {
         const opt = document.createElement('option');
         opt.value = s.id;

@@ -56,7 +56,7 @@ import Button from "@/components/starwind/button/Button.astro";
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground/50"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 6 3 6 3s3 0 6-3v-5"/></svg>
                         </div>
                         <p id="stu-active-courses" class="text-3xl font-bold text-foreground mt-2">—</p>
-                        <p class="text-xs text-success mt-1">Período actual</p>
+                        <p class="text-xs text-success mt-1">periodo actual</p>
                     </div>
                     <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
                         <div class="flex items-center justify-between">
@@ -72,7 +72,7 @@ import Button from "@/components/starwind/button/Button.astro";
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground/50"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                         </div>
                         <p id="stu-avg-grade" class="text-3xl font-bold text-foreground mt-2">—</p>
-                        <p class="text-xs text-success mt-1">Período actual</p>
+                        <p class="text-xs text-success mt-1">periodo actual</p>
                     </div>
                     <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
                         <div class="flex items-center justify-between">
@@ -80,7 +80,7 @@ import Button from "@/components/starwind/button/Button.astro";
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground/50"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
                         </div>
                         <p id="stu-teachers-count" class="text-3xl font-bold text-foreground mt-2">—</p>
-                        <p class="text-xs text-muted-foreground mt-1">Este período</p>
+                        <p class="text-xs text-muted-foreground mt-1">Este periodo</p>
                     </div>
                 </div>
 
@@ -174,7 +174,7 @@ import Button from "@/components/starwind/button/Button.astro";
                 <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
                     <p class="text-sm text-muted-foreground">Clases activas</p>
                     <p id="tch-classes" class="text-3xl font-bold text-foreground mt-2">—</p>
-                    <p class="text-xs text-muted-foreground mt-1">Período actual</p>
+                    <p class="text-xs text-muted-foreground mt-1">periodo actual</p>
                 </div>
                 <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
                     <p class="text-sm text-muted-foreground">Total de estudiantes</p>
@@ -189,7 +189,7 @@ import Button from "@/components/starwind/button/Button.astro";
                 <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
                     <p class="text-sm text-muted-foreground">Promedio de clase</p>
                     <p id="tch-avg-score" class="text-3xl font-bold text-foreground mt-2">—</p>
-                    <p class="text-xs text-success mt-1">Período actual</p>
+                    <p class="text-xs text-success mt-1">periodo actual</p>
                 </div>
             </div>
 
@@ -731,7 +731,7 @@ import Button from "@/components/starwind/button/Button.astro";
             // Resumen de matrícula
             const enrollmentEl = document.getElementById("stu-enrollment-summary")!;
             const career = activeEnroll.career_name ?? activeEnroll.career?.name ?? "Carrera";
-            const period = activeEnroll.period_name ?? activeEnroll.period?.name ?? activeEnroll.academic_period?.name ?? "Período";
+            const period = activeEnroll.period_name ?? activeEnroll.period?.name ?? activeEnroll.academic_period?.name ?? "periodo";
             const enrollStatus = (activeEnroll.status ?? "pending").charAt(0).toUpperCase() + (activeEnroll.status ?? "pending").slice(1);
             const statusClass = ["active", "completed"].includes(activeEnroll.status) ? "text-emerald-400" : "text-yellow-400";
             enrollmentEl.innerHTML = `
@@ -755,7 +755,7 @@ import Button from "@/components/starwind/button/Button.astro";
                 document.getElementById("tch-avg-score")!.textContent = avg !== '—' ? avg + '%' : '—';
                 const tbody = document.getElementById("tch-classes-table")!;
                 if (classes.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-sm text-muted-foreground">No hay clases asignadas para el período actual</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-sm text-muted-foreground">No hay clases asignadas para el periodo actual</td></tr>`;
                 } else {
                     tbody.innerHTML = classes.slice(0, 5).map((c: any) => {
                         const avgStr = c.avg_score !== null ? `${c.avg_score}%` : '—';

@@ -83,7 +83,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
             <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <label class="space-y-1">
-                    <span class="text-xs font-medium text-muted-foreground">Período académico</span>
+                    <span class="text-xs font-medium text-muted-foreground">periodo académico</span>
                     <select id="ranking-period" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30">
                         <option value="">Cargando periodos...</option>
                     </select>
@@ -139,7 +139,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     <tr class="border-b border-border bg-muted/30">
                         <th class="text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">Estudiante</th>
                         <th class="text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">Carrera</th>
-                        <th class="text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">Período</th>
+                        <th class="text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">periodo</th>
                         <th class="text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">Estado</th>
                         <th class="text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">Enviada</th>
                         <th class="text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground px-5 py-3">Acción</th>
@@ -292,12 +292,12 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         try {
             const res = await apiFetch("/academic/periods/");
             if (!res.ok) {
-                select.innerHTML = `<option value="">No se pudieron cargar los períodos</option>`;
+                select.innerHTML = `<option value="">No se pudieron cargar los periodos</option>`;
                 return;
             }
             const data = await res.json();
             periodsList = Array.isArray(data) ? data : (data.results ?? []);
-            select.innerHTML = `<option value="">Seleccionar período</option>`;
+            select.innerHTML = `<option value="">Seleccionar periodo</option>`;
             periodsList.forEach((p: any) => {
                 const label = `${p.name}${p.is_active ? " · activo" : ""}`;
                 const opt = new Option(label, String(p.id));
@@ -305,7 +305,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 select.appendChild(opt);
             });
         } catch {
-            select.innerHTML = `<option value="">No se pudieron cargar los períodos</option>`;
+            select.innerHTML = `<option value="">No se pudieron cargar los periodos</option>`;
         }
     }
 
