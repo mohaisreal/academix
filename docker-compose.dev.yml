@@ -38,6 +38,8 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: academix-frontend-dev
+    env_file:
+      - .env.dev
     ports:
       - "4321:4321"
     # Montajes de volúmenes para desarrollo con recarga en caliente

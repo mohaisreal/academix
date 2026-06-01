@@ -1,4 +1,5 @@
 ---
+import API_BASE_URL from '@/config/api';
 import DashboardLayout from "@/layouts/DashboardLayout.astro";
 ---
 
@@ -162,7 +163,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 </DashboardLayout>
 
 <script>
-    const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
+    const API_URL = API_BASE_URL;
     const token = localStorage.getItem("access_token");
 
     function getUser(): Record<string, any> | null {

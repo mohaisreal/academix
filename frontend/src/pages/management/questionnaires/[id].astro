@@ -1,4 +1,5 @@
 ---
+import API_BASE_URL from '@/config/api';
 // NOTA: esta página está enlazada desde /management/questionnaires (index.astro) mediante botones "Editar".
 // El enlace de navegación /management/questionnaires ya existe en DashboardLayout.astro.
 export const prerender = false;
@@ -318,7 +319,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 <script>
     import { formatQuestionIdBadge, QUESTION_ID_BADGE_CLASS } from "@/utils/questionnaire-editor-utils";
 
-    const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
+    const API_URL = API_BASE_URL;
 
     function getToken(): string | null { return localStorage.getItem("access_token"); }
     function getUser(): Record<string, any> | null {

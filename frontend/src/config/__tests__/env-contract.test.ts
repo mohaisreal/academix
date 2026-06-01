@@ -1,0 +1,77 @@
+import { describe, expect, it } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
+
+function readEnvFile(fileName: string): Record<string, string> {
+  const fullPath = path.resolve(process.cwd(), '..', fileName);
+  const content = fs.readFileSync(fullPath, 'utf8');
+  const lines = content.split(/\r?\n/);
+  const result: Record<string, string> = {};
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+    const eq = line.indexOf('=');
+    if (eq <= 0) continue;
+    const key = line.slice(0, eq).trim();
+    const value = line.slice(eq + 1).trim();
+    result[key] = value;
+  }
+
+  return result;
+}
+
+describe('ENV contract root files', () => {
+  it('.env.dev incluye variables frontend/backend requeridas', () => {
+    const env = readEnvFile('.env.dev');
+    const required = [
+      'PUBLIC_API_URL',
+      'BACKEND_API_URL',
+      'FRONTEND_URL',
+      'DATABASE_PATH',
+      'STRIPE_SECRET_KEY',
+      'STRIPE_PUBLIC_KEY',
+      'STRIPE_WEBHOOK_SECRET',
+    ];
+
+    for (const key of required) {
+      expect(env[key], `missing key: ${key}`).toBeDefined();
+    }
+
+    expect(env.PUBLIC_API_URL).toBe('http://localhost:8000/api');
+  });
+
+  it('.env.prod usa proxy relativo para frontend', () => {
+    const env = readEnvFile('.env.prod');
+    expect(env.PUBLIC_API_URL).toBe('/api');
+    expect(env.ALLOWED_HOSTS).not.toContain('localhost');
+  });
+});
+
+describe('Regression fallback localhost en frontend', () => {
+  it('no deja fallback inline localhost:8000/api en src', () => {
+    const srcDir = path.resolve(process.cwd(), 'src');
+    const filesToScan: string[] = [];
+
+    function walk(dir: string) {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          if (entry.name === '__tests__') continue;
+          walk(full);
+          continue;
+        }
+        if (/\.(astro|ts|tsx)$/.test(entry.name)) filesToScan.push(full);
+      }
+    }
+
+    walk(srcDir);
+    const offenders: string[] = [];
+    for (const file of filesToScan) {
+      const content = fs.readFileSync(file, 'utf8');
+      if (content.includes('http://localhost:8000/api')) offenders.push(file);
+    }
+
+    expect(offenders).toEqual([]);
+  });
+});

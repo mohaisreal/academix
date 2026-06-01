@@ -49,7 +49,12 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: production
+      args:
+        PUBLIC_API_URL: ${PUBLIC_API_URL}
+        BACKEND_API_URL: ${BACKEND_API_URL}
     container_name: academix-frontend-prod
+    env_file:
+      - .env.prod
     ports:
       - "80:80"
     depends_on:

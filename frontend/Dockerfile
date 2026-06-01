@@ -20,6 +20,12 @@ RUN pnpm install --frozen-lockfile
 # Copia el código fuente
 COPY . .
 
+# Variables de build para Astro (import.meta.env.PUBLIC_*)
+ARG PUBLIC_API_URL
+ARG BACKEND_API_URL
+ENV PUBLIC_API_URL=${PUBLIC_API_URL}
+ENV BACKEND_API_URL=${BACKEND_API_URL}
+
 # Construye el sitio estático
 RUN pnpm run build
 

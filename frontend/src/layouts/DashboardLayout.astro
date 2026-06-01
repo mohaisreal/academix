@@ -1,4 +1,5 @@
 ---
+import API_BASE_URL from '@/config/api';
 import "@/styles/starwind.css";
 import Avatar from "@/components/starwind/avatar/Avatar.astro";
 import AvatarFallback from "@/components/starwind/avatar/AvatarFallback.astro";
@@ -342,7 +343,7 @@ const { title, currentPath } = Astro.props;
 <script>
     const STORAGE_KEY = "user-storage";
     const TOKEN_KEY = "access_token";
-    const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/api";
+    const API_URL = API_BASE_URL;
 
     function getUser(): Record<string, any> | null {
         try {
