@@ -507,6 +507,27 @@ class TimetableGenerateAndPublishTests(TestCase):
         self.assertEqual(previous.status, 'completed')
         self.assertEqual(TimetableRun.objects.filter(period=period, status='published').count(), 1)
 
+    def test_delete_allows_non_published_statuses(self):
+        period = make_period('P2026DEL1')
+        for idx, run_status in enumerate(['draft', 'failed', 'partial', 'completed']):
+            run = TimetableRun.objects.create(period=period, status=run_status)
+
+            response = self.client.delete(f'/api/academic/timetable-runs/{run.id}/')
+
+            self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT, msg=f'estado {run_status} debería poder eliminarse')
+            self.assertFalse(TimetableRun.objects.filter(id=run.id).exists())
+
+    def test_delete_blocks_published_status(self):
+        period = make_period('P2026DEL2')
+        run = TimetableRun.objects.create(period=period, status='published')
+
+        response = self.client.delete(f'/api/academic/timetable-runs/{run.id}/')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('detail', response.data)
+        self.assertIn('publicada', str(response.data['detail']).lower())
+        self.assertTrue(TimetableRun.objects.filter(id=run.id).exists())
+
 
 class TimetableFilteringTests(TestCase):
     def setUp(self):
@@ -886,6 +907,42 @@ class SchedulingConstraintsTests(TestCase):
         }, format='json')
         self.assertEqual(valid.status_code, 201)
         self.assertEqual(SchedulingConstraint.objects.count(), 1)
+
+        row = valid.data
+        self.assertEqual(row['kind'], 'teacher_unavailable')
+        self.assertEqual(row['scope'], 'period')
+        self.assertEqual(row['day_of_week'], 0)
+        self.assertEqual(row['kind_label'], 'Docente no disponible')
+        self.assertEqual(row['scope_label'], 'Periodo')
+        self.assertEqual(row['day_label'], 'Lunes')
+        self.assertEqual(row['period_name'], self.period.name)
+        self.assertTrue(row['teacher_name'])
+        self.assertIsNone(row['classroom_name'])
+        self.assertIsNone(row['career_name'])
+
+    def test_constraints_labels_use_neutral_placeholders_for_unknown_or_missing(self):
+        constraint = SchedulingConstraint.objects.create(
+            kind='teacher_unavailable',
+            scope='period',
+            period=self.period,
+            teacher=self.cls.teacher,
+            day_of_week=1,
+            start_time=time(8, 0),
+            end_time=time(9, 0),
+            is_active=True,
+        )
+        SchedulingConstraint.objects.filter(id=constraint.id).update(kind='unknown_kind', scope='unknown_scope', day_of_week=9)
+
+        response = self.client.get('/api/academic/scheduling-constraints/', {'is_active': 'true'})
+        self.assertEqual(response.status_code, 200)
+        row = unwrap_results(response.data)[0]
+
+        self.assertEqual(row['kind'], 'unknown_kind')
+        self.assertEqual(row['scope'], 'unknown_scope')
+        self.assertEqual(row['day_of_week'], 9)
+        self.assertEqual(row['kind_label'], 'Tipo no especificado')
+        self.assertEqual(row['scope_label'], 'Alcance no especificado')
+        self.assertEqual(row['day_label'], 'Día no especificado')
 
     def test_assignments_include_career_fields_and_filter(self):
         run = TimetableRun.objects.create(period=self.period, status='completed')

@@ -93,7 +93,7 @@ class CareerEnrollmentTests(TestCase):
     # --- Prueba 3: doble matrícula → 400 ----------------------------------------
 
     def test_student_cannot_enroll_twice(self):
-        """Un estudiante no puede matricularse dos veces en la misma carrera/período."""
+        """Un estudiante no puede matricularse dos veces en la misma carrera/periodo."""
         # Primera matrícula manual
         CareerEnrollment.objects.create(
             student=self.student, career=self.career, period=self.period, status='pending',
@@ -231,7 +231,7 @@ class ClassEnrollmentTests(TestCase):
         # Horario: Lunes 08:00-10:00
         self.schedule = ClassSchedule.objects.create(
             cls=self.cls,
-            day_of_week=0,  # Monday
+            day_of_week=0, # Lunes
             start_time='08:00',
             end_time='10:00',
         )

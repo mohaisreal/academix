@@ -175,8 +175,8 @@ class Class(models.Model):
 
 class ClassSchedule(models.Model):
     DAY_CHOICES = [
-        (0, 'Monday'), (1, 'Tuesday'), (2, 'Wednesday'),
-        (3, 'Thursday'), (4, 'Friday'), (5, 'Saturday'), (6, 'Sunday'),
+        (0, 'Lunes'), (1, 'Martes'), (2, 'Miércoles'),
+        (3, 'Jueves'), (4, 'Viernes'), (5, 'Sábado'), (6, 'Domingo'),
     ]
     cls = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='schedules')
     day_of_week = models.PositiveSmallIntegerField(choices=DAY_CHOICES)

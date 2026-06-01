@@ -3,7 +3,7 @@ from notifications.utils import create_notification
 
 def compact_waitlist_positions(career, academic_period):
     """
-    Recalcula las posiciones de espera publicadas para una carrera/período.
+    Recalcula las posiciones de espera publicadas para una carrera/periodo.
     Las solicitudes retiradas, admitidas o rechazadas quedan fuera de la lista.
     """
     from admissions.models import AdmissionPreference
@@ -23,7 +23,7 @@ def compact_waitlist_positions(career, academic_period):
 def notify_next_waitlisted(career, academic_period):
     """
     Promueve y notifica al primer estudiante en lista de espera para la
-    carrera/período dado.
+    carrera/periodo dado.
     """
     from admissions.models import AdmissionPreference
 

@@ -1076,12 +1076,12 @@ class ClassEnrollmentCreateDeleteView(generics.GenericAPIView):
         if ce.status == 'dropped':
             return Response({"detail": "Ya estás dado de baja de esta clase."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Verificar período de modificación
+        # Verificar periodo de modificación
         period = ce.cls.period
         if hasattr(period, 'enrollment_modification_deadline') and period.enrollment_modification_deadline:
             if timezone.now().date() > period.enrollment_modification_deadline:
                 return Response(
-                    {"detail": "El período de modificación de matrícula ha cerrado."},
+                    {"detail": "El periodo de modificación de matrícula ha cerrado."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 

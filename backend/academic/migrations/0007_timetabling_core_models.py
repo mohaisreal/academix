@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
             name='TimeSlot',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('day_of_week', models.PositiveSmallIntegerField(choices=[(0, 'Monday'), (1, 'Tuesday'), (2, 'Wednesday'), (3, 'Thursday'), (4, 'Friday'), (5, 'Saturday'), (6, 'Sunday')])) ,
+                ('day_of_week', models.PositiveSmallIntegerField(choices=[(0, 'Lunes'), (1, 'Martes'), (2, 'Miércoles'), (3, 'Jueves'), (4, 'Viernes'), (5, 'Sábado'), (6, 'Domingo')])) ,
                 ('start_time', models.TimeField()),
                 ('end_time', models.TimeField()),
                 ('period', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='time_slots', to='academic.academicperiod')),

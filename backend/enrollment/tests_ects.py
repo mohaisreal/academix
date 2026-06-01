@@ -207,7 +207,7 @@ class EnrollmentCostTests(TestCase):
         # Matrícula pasada (ya existe en BD)
         ClassEnrollment.objects.create(student=self.student, cls=cls_past, status='enrolled')
 
-        # Nueva matrícula en el período actual
+        # Nueva matrícula en el periodo actual
         ce_new = self._make_enrolled(subject)
 
         result = calculate_enrollment_cost(self.student, [ce_new])

@@ -153,19 +153,19 @@ class AdmissionApplicationViewSet(
             period_obj = AcademicPeriod.objects.get(pk=period)
         except (AcademicPeriod.DoesNotExist, TypeError, ValueError):
             return Response(
-                {"detail": "Período académico no encontrado."},
+                {"detail": "periodo académico no encontrado."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         now = timezone.now()
         if period_obj.admission_open_date and now < period_obj.admission_open_date:
             return Response(
-                {"detail": "La ventana de admisión para este período aún no está abierta."},
+                {"detail": "La ventana de admisión para este periodo aún no está abierta."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if period_obj.admission_close_date and now > period_obj.admission_close_date:
             return Response(
-                {"detail": "La ventana de admisión para este período ya está cerrada."},
+                {"detail": "La ventana de admisión para este periodo ya está cerrada."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return super().create(request, *args, **kwargs)
@@ -704,7 +704,7 @@ class AdmissionApplicationViewSet(
             period = AcademicPeriod.objects.get(pk=period_id)
             career = Career.objects.get(pk=career_id)
         except (AcademicPeriod.DoesNotExist, Career.DoesNotExist, TypeError, ValueError):
-            return Response({"detail": "Período académico o carrera no encontrados."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "periodo académico o carrera no encontrados."}, status=status.HTTP_400_BAD_REQUEST)
 
         candidates = list(
             AdmissionPreference.objects.select_related(
@@ -837,7 +837,7 @@ class AdmissionApplicationViewSet(
             period = AcademicPeriod.objects.get(pk=period_id)
             career = Career.objects.get(pk=career_id)
         except (AcademicPeriod.DoesNotExist, Career.DoesNotExist, TypeError, ValueError):
-            return Response({"detail": "Período académico o carrera no encontrados."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "periodo académico o carrera no encontrados."}, status=status.HTTP_400_BAD_REQUEST)
 
         draft_rows = list(
             AdmissionPreference.objects.select_related(
@@ -861,7 +861,7 @@ class AdmissionApplicationViewSet(
 
         if not draft_rows:
             return Response(
-                {"detail": "No hay un borrador de ranking pendiente para publicar en esta carrera y período."},
+                {"detail": "No hay un borrador de ranking pendiente para publicar en esta carrera y periodo."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

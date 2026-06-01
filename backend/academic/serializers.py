@@ -290,9 +290,65 @@ class ConstraintViolationSerializer(serializers.ModelSerializer):
 
 
 class SchedulingConstraintSerializer(serializers.ModelSerializer):
+    kind_label = serializers.SerializerMethodField()
+    scope_label = serializers.SerializerMethodField()
+    day_label = serializers.SerializerMethodField()
+    period_name = serializers.CharField(source='period.name', read_only=True)
+    teacher_name = serializers.SerializerMethodField()
+    classroom_name = serializers.SerializerMethodField()
+    career_name = serializers.SerializerMethodField()
+
+    KIND_LABELS = {
+        'teacher_unavailable': 'Docente no disponible',
+        'classroom_unavailable': 'Aula no disponible',
+        'career_unavailable': 'Carrera no disponible',
+    }
+    SCOPE_LABELS = {
+        'period': 'Periodo',
+        'global': 'Global',
+    }
+    DAY_LABELS = {
+        0: 'Lunes',
+        1: 'Martes',
+        2: 'Miércoles',
+        3: 'Jueves',
+        4: 'Viernes',
+        5: 'Sábado',
+        6: 'Domingo',
+    }
+
+    def get_kind_label(self, obj):
+        return self.KIND_LABELS.get(obj.kind, 'Tipo no especificado')
+
+    def get_scope_label(self, obj):
+        return self.SCOPE_LABELS.get(obj.scope, 'Alcance no especificado')
+
+    def get_day_label(self, obj):
+        return self.DAY_LABELS.get(obj.day_of_week, 'Día no especificado')
+
+    def get_teacher_name(self, obj):
+        if not obj.teacher:
+            return None
+        full_name = f"{obj.teacher.first_name} {obj.teacher.last_name}".strip()
+        return full_name or obj.teacher.username
+
+    def get_period_name(self, obj):
+        return obj.period.name if obj.period else None
+
+    def get_classroom_name(self, obj):
+        return obj.classroom.name if obj.classroom else None
+
+    def get_career_name(self, obj):
+        return obj.career.name if obj.career else None
+
     class Meta:
         model = SchedulingConstraint
-        fields = ['id', 'kind', 'scope', 'period', 'teacher', 'classroom', 'career', 'day_of_week', 'start_time', 'end_time', 'is_active', 'metadata', 'created_at', 'updated_at']
+        fields = [
+            'id', 'kind', 'kind_label', 'scope', 'scope_label',
+            'period', 'period_name', 'teacher', 'teacher_name', 'classroom', 'classroom_name', 'career', 'career_name',
+            'day_of_week', 'day_label', 'start_time', 'end_time',
+            'is_active', 'metadata', 'created_at', 'updated_at',
+        ]
 
     def validate(self, attrs):
         base = {

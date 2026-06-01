@@ -300,6 +300,12 @@ class TimetableRunViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
+    def destroy(self, request, *args, **kwargs):
+        run = self.get_object()
+        if run.status == 'published':
+            return Response({'detail': 'No se puede eliminar una ejecución publicada.'}, status=status.HTTP_400_BAD_REQUEST)
+        return super().destroy(request, *args, **kwargs)
+
     @action(detail=True, methods=['post'])
     def generate(self, request, pk=None):
         run = self.get_object()
@@ -309,12 +315,12 @@ class TimetableRunViewSet(viewsets.ModelViewSet):
             preconditions = (run.metadata or {}).get('generator', {}).get('precondition_errors', [])
             preparation_errors = (run.metadata or {}).get('generator', {}).get('class_preparation_errors', [])
             reason_map = {
-                'missing_classes': 'faltan clases para el período',
+                'missing_classes': 'faltan clases para el periodo',
                 'missing_teachers': 'faltan docentes asignados en una o más clases',
                 'missing_classrooms': 'faltan aulas asignadas en una o más clases',
-                'missing_time_slots': 'faltan franjas horarias del período',
-                'class_preparation_insufficient_subjects': 'faltan materias activas para preparar clases del período',
-                'class_preparation_insufficient_classrooms': 'faltan aulas disponibles para preparar clases del período',
+                'missing_time_slots': 'faltan franjas horarias del periodo',
+                'class_preparation_insufficient_subjects': 'faltan materias activas para preparar clases del periodo',
+                'class_preparation_insufficient_classrooms': 'faltan aulas disponibles para preparar clases del periodo',
             }
             reasons_source = [*preconditions, *preparation_errors]
             if reasons_source:
