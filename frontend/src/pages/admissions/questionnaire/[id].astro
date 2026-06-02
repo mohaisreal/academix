@@ -1,5 +1,4 @@
 ---
-import API_BASE_URL from '@/config/api';
 export const prerender = false;
 import DashboardLayout from "@/layouts/DashboardLayout.astro";
 ---
@@ -177,6 +176,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 </style>
 
 <script>
+    import API_BASE_URL from '@/config/api';
     const API_URL = API_BASE_URL;
 
     // ── Utilidades ──────────────────────────────────────────────────────────────
@@ -1320,3 +1320,4 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     // ── Inicialización ──────────────────────────────────────────────────────────────────
     init();
 </script>
+

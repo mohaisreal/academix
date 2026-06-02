@@ -6,11 +6,11 @@ type RuntimeEnv = {
 };
 
 export function resolveApiBaseUrl(env: RuntimeEnv): string {
-  const backend = env.BACKEND_API_URL?.trim();
-  if (backend) return backend;
-
   const publicUrl = env.PUBLIC_API_URL?.trim();
   if (publicUrl) return publicUrl;
+
+  const backend = env.BACKEND_API_URL?.trim();
+  if (backend) return backend;
 
   const isDev = env.DEV === true || env.MODE === 'development';
   const devLocalApi = 'http://localhost:8000' + '/api';

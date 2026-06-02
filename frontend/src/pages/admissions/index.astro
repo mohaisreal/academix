@@ -1,5 +1,4 @@
 ---
-import API_BASE_URL from '@/config/api';
 import DashboardLayout from "@/layouts/DashboardLayout.astro";
 ---
 
@@ -85,6 +84,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 </DashboardLayout>
 
 <script>
+  import API_BASE_URL from '@/config/api';
     const API_URL = API_BASE_URL;
     const token = localStorage.getItem("access_token");
 
@@ -121,3 +121,4 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
     checkExisting();
 </script>
+

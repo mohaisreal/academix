@@ -1,5 +1,4 @@
 ---
-import API_BASE_URL from '@/config/api';
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
 <DashboardLayout title="Expedientes de estudiantes — Academix" currentPath="/files">
@@ -73,6 +72,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 </DashboardLayout>
 
 <script>
+  import API_BASE_URL from '@/config/api';
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
   const API_URL = API_BASE_URL;
@@ -323,3 +323,4 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     showContent();
   })();
 </script>
+

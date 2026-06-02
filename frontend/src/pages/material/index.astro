@@ -1,5 +1,4 @@
 ---
-import API_BASE_URL from '@/config/api';
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
 <DashboardLayout title="Materiales didácticos — Academix" currentPath="/material">
@@ -96,6 +95,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 </DashboardLayout>
 
 <script>
+  import API_BASE_URL from '@/config/api';
   import { toast } from "@/components/starwind/toast";
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
@@ -378,3 +378,4 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     showContent();
   })();
 </script>
+

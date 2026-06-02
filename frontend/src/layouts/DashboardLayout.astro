@@ -1,5 +1,4 @@
 ---
-import API_BASE_URL from '@/config/api';
 import "@/styles/starwind.css";
 import Avatar from "@/components/starwind/avatar/Avatar.astro";
 import AvatarFallback from "@/components/starwind/avatar/AvatarFallback.astro";
@@ -341,6 +340,8 @@ const { title, currentPath } = Astro.props;
 </html>
 
 <script>
+    import API_BASE_URL from '@/config/api';
+    
     const STORAGE_KEY = "user-storage";
     const TOKEN_KEY = "access_token";
     const API_URL = API_BASE_URL;
@@ -669,3 +670,4 @@ const { title, currentPath } = Astro.props;
         });
     };
 </script>
+

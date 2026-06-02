@@ -1,5 +1,4 @@
 ---
-import API_BASE_URL from '@/config/api';
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
 <DashboardLayout title="Configuración del sistema — Academix" currentPath="/management/system">
@@ -213,6 +212,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   </div>
 
   <script>
+  import API_BASE_URL from '@/config/api';
     import { toast } from "@/components/starwind/toast";
     const API_URL = API_BASE_URL;
     const token = localStorage.getItem("access_token");
@@ -596,3 +596,4 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     init();
   </script>
 </DashboardLayout>
+

@@ -10,11 +10,20 @@ describe('resolveApiBaseUrl', () => {
     expect(resolveApiBaseUrl({ MODE: 'production', DEV: false })).toBe('/api');
   });
 
-  it('prioriza BACKEND_API_URL sobre PUBLIC_API_URL', () => {
+  it('prioriza PUBLIC_API_URL sobre BACKEND_API_URL', () => {
     expect(
       resolveApiBaseUrl({
         BACKEND_API_URL: 'http://backend:8000/api',
         PUBLIC_API_URL: '/api',
+        MODE: 'production',
+      }),
+    ).toBe('/api');
+  });
+
+  it('usa BACKEND_API_URL cuando PUBLIC_API_URL no existe', () => {
+    expect(
+      resolveApiBaseUrl({
+        BACKEND_API_URL: 'http://backend:8000/api',
         MODE: 'production',
       }),
     ).toBe('http://backend:8000/api');

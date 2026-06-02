@@ -1,5 +1,4 @@
 ---
-import API_BASE_URL from '@/config/api';
 import DashboardLayout from "@/layouts/DashboardLayout.astro";
 import Button from "@/components/starwind/button/Button.astro";
 ---
@@ -317,6 +316,8 @@ import Button from "@/components/starwind/button/Button.astro";
 </DashboardLayout>
 
 <script>
+    import API_BASE_URL from '@/config/api';
+
     const STORAGE_KEY = "user-storage";
     const TOKEN_KEY = "access_token";
     const API_URL = API_BASE_URL;

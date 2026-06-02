@@ -1,5 +1,4 @@
 ---
-import API_BASE_URL from '@/config/api';
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
 <DashboardLayout title="periodos académicos — Academix" currentPath="/periods">
@@ -112,6 +111,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 </DashboardLayout>
 
 <script>
+  import API_BASE_URL from '@/config/api';
   import { toast } from "@/components/starwind/toast";
   import { buildPaginatedEndpoint, getTotalPages, normalizePaginatedResponse, paginationSummary } from '@/utils/pagination-utils';
   const STORAGE_KEY = "user-storage";
@@ -349,3 +349,4 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     showContent();
   })();
 </script>
+

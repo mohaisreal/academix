@@ -1,5 +1,4 @@
 ---
-import API_BASE_URL from '@/config/api';
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
 
@@ -140,6 +139,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 </DashboardLayout>
 
 <script>
+  import API_BASE_URL from '@/config/api';
   import { toast } from '@/components/starwind/toast';
   import { buildTimeslotBatch, parseTimeslotBreakRanges, summarizeViolations, getRunDisplayName, classifyTimetableActionError, buildDraftRunPayload, buildManualTimeslotPayload, extractCareerOptions, normalizeAssignmentsToWeekGrid, buildWeekGridRows, buildConstraintPayload, mapConstraintFieldErrors, formatConstraintKind, formatConstraintScope, formatConstraintDay, formatConstraintEntity, formatConstraintTimeRange, canDeleteTimetableRunStatus } from '@/utils/timetable-management-utils';
 

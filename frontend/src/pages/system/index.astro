@@ -1,5 +1,4 @@
 ---
-import API_BASE_URL from '@/config/api';
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 import {
   createEmptyChargeRow,
@@ -89,6 +88,7 @@ import {
 </DashboardLayout>
 
 <script>
+  import API_BASE_URL from '@/config/api';
   import {
     createEmptyChargeRow,
     normalizeExtraChargeRows,
@@ -260,3 +260,4 @@ import {
 
   loadSystemSettings();
 </script>
+
