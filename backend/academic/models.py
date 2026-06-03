@@ -159,6 +159,7 @@ class Class(models.Model):
         default=5.00,
         help_text='Nota mínima para superar la asignatura (0.00–10.00)',
     )
+    is_generated_by_timetable = models.BooleanField(default=False, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

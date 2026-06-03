@@ -4,6 +4,7 @@ from io import StringIO
 from django.core.management import call_command
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
+from django.test import override_settings
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -34,6 +35,18 @@ def make_manager(username='mgr_timetable'):
         is_active=True,
     )
     user.role = 'm'
+    user.save()
+    return user
+
+
+def make_admin(username='admin_timetable'):
+    user = User.objects.create_user(
+        username=username,
+        email=f'{username}@test.com',
+        password='testpass123',
+        is_active=True,
+    )
+    user.role = 'a'
     user.save()
     return user
 
@@ -225,6 +238,56 @@ class TimetableGenerateAndPublishTests(TestCase):
         run.refresh_from_db()
         self.assertEqual(Class.objects.filter(period=period).count(), 1)
         self.assertEqual(run.metadata['generator'].get('classes_created'), 0)
+
+    def test_generate_marks_newly_prepared_classes_as_generated(self):
+        period = make_period('P2026GEN4B2')
+        dep_teacher = User.objects.create_user(
+            username='teacher_dep_g4b2',
+            email='teacher_dep_g4b2@test.com',
+            password='testpass123',
+            role='t',
+        )
+        department = Department.objects.create(name='Departamento G4B2', code='DEP-G4B2', teacher=dep_teacher)
+        career = Career.objects.create(name='Career G4B2', code='CAR-G4B2')
+        Subject.objects.create(name='Subject G4B2', code='SUB-G4B2', career=career, department=department, is_active=True)
+        Classroom.objects.create(name='Room G4B2', building='Main', capacity=35, type='lecture')
+        TimeSlot.objects.create(period=period, day_of_week=0, start_time=time(8, 0), end_time=time(9, 0))
+        run = TimetableRun.objects.create(period=period)
+
+        response = self.client.post(f'/api/academic/timetable-runs/{run.id}/generate/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        generated_class = Class.objects.get(period=period)
+        self.assertTrue(generated_class.is_generated_by_timetable)
+
+    def test_generate_does_not_touch_existing_manual_classes(self):
+        period = make_period('P2026GEN4B3')
+        dep_teacher = User.objects.create_user(
+            username='teacher_dep_g4b3',
+            email='teacher_dep_g4b3@test.com',
+            password='testpass123',
+            role='t',
+        )
+        department = Department.objects.create(name='Departamento G4B3', code='DEP-G4B3', teacher=dep_teacher)
+        career = Career.objects.create(name='Career G4B3', code='CAR-G4B3')
+        subject = Subject.objects.create(name='Subject G4B3', code='SUB-G4B3', career=career, department=department, is_active=True)
+        classroom = Classroom.objects.create(name='Room G4B3', building='Main', capacity=35, type='lecture')
+        manual_class = Class.objects.create(
+            subject=subject,
+            teacher=None,
+            period=period,
+            classroom=classroom,
+            max_students=30,
+            is_generated_by_timetable=False,
+        )
+        TimeSlot.objects.create(period=period, day_of_week=0, start_time=time(8, 0), end_time=time(9, 0))
+        run = TimetableRun.objects.create(period=period)
+
+        response = self.client.post(f'/api/academic/timetable-runs/{run.id}/generate/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        manual_class.refresh_from_db()
+        self.assertFalse(manual_class.is_generated_by_timetable)
 
     def test_generate_fails_when_no_active_subjects_for_preparation(self):
         period = make_period('P2026GEN4C')
@@ -527,6 +590,69 @@ class TimetableGenerateAndPublishTests(TestCase):
         self.assertIn('detail', response.data)
         self.assertIn('publicada', str(response.data['detail']).lower())
         self.assertTrue(TimetableRun.objects.filter(id=run.id).exists())
+
+
+class TimetableCleanupTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = make_admin()
+        self.student = make_student('student_cleanup')
+
+    @override_settings(DEBUG=True)
+    def test_cleanup_requires_admin_or_management(self):
+        period = make_period('P2026CLN1')
+        self.client.force_authenticate(user=self.student)
+
+        response = self.client.post('/api/academic/timetable-runs/cleanup/generated-classes/', {'period': period.id})
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    @override_settings(DEBUG=False)
+    def test_cleanup_is_blocked_outside_debug(self):
+        period = make_period('P2026CLN2')
+        self.client.force_authenticate(user=self.admin)
+
+        response = self.client.post('/api/academic/timetable-runs/cleanup/generated-classes/', {'period': period.id})
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    @override_settings(DEBUG=True)
+    def test_cleanup_deletes_only_generated_classes_for_period_and_cascades(self):
+        period_a = make_period('P2026CLN3A')
+        period_b = make_period('P2026CLN3B')
+        generated_a = make_class(period_a, 'CLN3GA')
+        generated_a.is_generated_by_timetable = True
+        generated_a.save(update_fields=['is_generated_by_timetable'])
+        manual_a = make_class(period_a, 'CLN3MA')
+        manual_a.is_generated_by_timetable = False
+        manual_a.save(update_fields=['is_generated_by_timetable'])
+        generated_b = make_class(period_b, 'CLN3GB')
+        generated_b.is_generated_by_timetable = True
+        generated_b.save(update_fields=['is_generated_by_timetable'])
+
+        slot_a = TimeSlot.objects.create(period=period_a, day_of_week=1, start_time=time(9, 0), end_time=time(10, 0))
+        run_a = TimetableRun.objects.create(period=period_a, status='published')
+        assignment = ScheduleAssignment.objects.create(
+            run=run_a,
+            cls=generated_a,
+            slot=slot_a,
+            classroom=generated_a.classroom,
+            teacher=generated_a.teacher,
+        )
+        ClassSchedule.objects.create(cls=generated_a, day_of_week=1, start_time=time(11, 0), end_time=time(12, 0))
+        ConstraintViolation.objects.create(run=run_a, assignment=assignment, severity='hard', reason='cleanup')
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.post('/api/academic/timetable-runs/cleanup/generated-classes/', {'period': period_a.id})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['deleted_classes'], 1)
+        self.assertFalse(Class.objects.filter(id=generated_a.id).exists())
+        self.assertTrue(Class.objects.filter(id=manual_a.id).exists())
+        self.assertTrue(Class.objects.filter(id=generated_b.id).exists())
+        self.assertFalse(ClassSchedule.objects.filter(cls_id=generated_a.id).exists())
+        self.assertFalse(ScheduleAssignment.objects.filter(id=assignment.id).exists())
+        self.assertFalse(ConstraintViolation.objects.filter(run=run_a).exists())
 
 
 class TimetableFilteringTests(TestCase):

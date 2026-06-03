@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.db.models import Q
 
 from academic.models import Class, Subject, Classroom, ScheduleAssignment, SchedulingConstraint, ConstraintViolation
@@ -38,6 +39,7 @@ def prepare_classes_for_period(period):
                 'teacher': None,
                 'classroom': classroom,
                 'max_students': classroom.capacity,
+                'is_generated_by_timetable': True,
             },
         )
         if was_created:
@@ -205,3 +207,14 @@ def generate_for_run(run):
 
     run.save(update_fields=['status', 'metadata', 'updated_at'])
     return run
+
+
+def delete_generated_classes_for_period(period, scope='period'):
+    if scope != 'period':
+        raise ValueError('Unsupported cleanup scope.')
+
+    with transaction.atomic():
+        classes_qs = Class.objects.filter(period=period, is_generated_by_timetable=True)
+        deleted_count = classes_qs.count()
+        classes_qs.delete()
+    return deleted_count

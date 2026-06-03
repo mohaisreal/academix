@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.db.models import Prefetch
+from django.conf import settings
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -28,6 +29,7 @@ from .serializers import (
     SchedulingConstraintSerializer,
 )
 from .timetabling import generate_for_run
+from .timetabling import delete_generated_classes_for_period
 from .schedule_source import serialize_assignment_schedule, published_assignments_map_for_period
 from shared.permissions import IsAdminOrManagement
 
@@ -342,6 +344,25 @@ class TimetableRunViewSet(viewsets.ModelViewSet):
             run.status = 'published'
             run.save(update_fields=['status', 'updated_at'])
         return Response(TimetableRunSerializer(run).data)
+
+    @action(detail=False, methods=['post'], url_path='cleanup/generated-classes')
+    def cleanup_generated_classes(self, request):
+        if not settings.DEBUG:
+            return Response({'detail': 'Unavailable outside DEBUG.'}, status=status.HTTP_404_NOT_FOUND)
+        if getattr(request.user, 'role', None) not in ('a', 'm'):
+            return Response({'detail': 'Forbidden.'}, status=status.HTTP_403_FORBIDDEN)
+
+        period_id = request.data.get('period') or request.query_params.get('period')
+        if not period_id:
+            return Response({'detail': 'period is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            period = AcademicPeriod.objects.get(pk=period_id)
+        except AcademicPeriod.DoesNotExist:
+            return Response({'detail': 'Period not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        deleted_count = delete_generated_classes_for_period(period, scope=request.data.get('scope', 'period'))
+        return Response({'deleted_classes': deleted_count})
 
 
 class ScheduleAssignmentViewSet(viewsets.ReadOnlyModelViewSet):

@@ -9,6 +9,14 @@ function readPage() {
 }
 
 describe('management timetable page layout cleanup', () => {
+  it('expone el botón destructivo de limpieza de clases generadas', () => {
+    const source = readPage();
+
+    expect(source).toContain('id="cleanup-generated-classes-btn"');
+    expect(source).toContain('Eliminar clases generadas');
+    expect(source).toContain('title="Elimina las clases generadas automáticamente del periodo de la ejecución seleccionada"');
+  });
+
   it('usa helper para habilitar eliminar y no hardcodea solo draft', () => {
     const source = readPage();
 
@@ -84,5 +92,21 @@ describe('management timetable page layout cleanup', () => {
     expect(source).toContain('formatConstraintTimeRange');
     expect(source).not.toContain('· ${esc(c.kind)} · día ${c.day_of_week}');
     expect(source).not.toContain('${c.kind}');
+  });
+
+  it('confirma antes de limpiar y cancela sin pegarle al endpoint', () => {
+    const source = readPage();
+
+    expect(source).toContain('window.confirm');
+    expect(source).toContain('cleanup/generated-classes');
+    expect(source).toContain("body: JSON.stringify({ period: periodId })");
+    expect(source).toContain("toast.success('Clases generadas eliminadas')");
+    expect(source).toContain('Selecciona una ejecución con periodo antes de limpiar las clases generadas.');
+  });
+
+  it('refresca runs, assignments y violations tras limpiar', () => {
+    const source = readPage();
+
+    expect(source).toContain('await Promise.all([loadRuns(), loadAssignments(), loadViolations()]);');
   });
 });

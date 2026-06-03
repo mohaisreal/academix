@@ -15,7 +15,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <h1 class="text-xl font-semibold text-foreground">Gestión de horarios</h1>
         <p class="text-sm text-muted-foreground">Generá borradores, publicá ejecuciones y revisá asignaciones/conflictos.</p>
       </div>
-      <span id="selected-run-badge" class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">Ninguna ejecución seleccionada</span>
+      <div class="flex flex-col items-start gap-2 sm:flex-row sm:items-center">
+        <span id="selected-run-badge" class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">Ninguna ejecución seleccionada</span>
+        <button id="cleanup-generated-classes-btn" type="button" class="rounded-lg border border-red-500/30 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-500/10" title="Elimina las clases generadas automáticamente del periodo de la ejecución seleccionada">
+          Eliminar clases generadas
+        </button>
+      </div>
     </div>
 
     <section class="bg-card border border-border rounded-xl p-5 space-y-4">
@@ -196,6 +201,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   function showContent() { q('page-loading')?.classList.add('hidden'); q('page-content')?.classList.remove('hidden'); }
   function selectedRun() { return runs.find((r) => Number(r.id) === Number(selectedRunId)) || null; }
+  function selectedRunPeriodId() { return selectedRun()?.period?.id ?? selectedRun()?.period_id ?? null; }
 
   function renderPeriodSelects() {
     const a = q('run-period-filter'); const b = q('run-period-create');
@@ -412,12 +418,29 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   async function publishRun(id) { try { await apiFetch(`/academic/timetable-runs/${id}/publish/`, { method: 'POST' }); toast.success('Ejecución publicada'); await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(classifyTimetableActionError(e, 'publish')); } }
   async function generateRun(id) { try { selectedRunId = id; await apiFetch(`/academic/timetable-runs/${id}/generate/`, { method: 'POST' }); toast.success('Horario generado'); await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(classifyTimetableActionError(e, 'generate')); } }
   async function deleteRun(id) { try { await apiFetch(`/academic/timetable-runs/${id}/`, { method: 'DELETE' }); if (Number(selectedRunId) === Number(id)) selectedRunId = null; toast.success('Ejecución eliminada'); await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(classifyTimetableActionError(e, 'delete')); } }
+  async function cleanupGeneratedClasses() {
+    const periodId = selectedRunPeriodId();
+    if (!periodId) {
+      toast.error('Selecciona una ejecución con periodo antes de limpiar las clases generadas.');
+      return;
+    }
+    const confirmed = window.confirm('¿Eliminar todas las clases generadas automáticamente para el periodo seleccionado? Esta acción no se puede deshacer.');
+    if (!confirmed) return;
+    try {
+      await apiFetch('/academic/timetable-runs/cleanup/generated-classes/', { method: 'POST', body: JSON.stringify({ period: periodId }) });
+      toast.success('Clases generadas eliminadas');
+      await Promise.all([loadRuns(), loadAssignments(), loadViolations()]);
+    } catch (e) {
+      toast.error(err(e, 'No se pudieron eliminar las clases generadas'));
+    }
+  }
 
   q('reload-runs-btn')?.addEventListener('click', async () => { try { await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(err(e, 'No se pudieron recargar ejecuciones')); } });
   q('run-period-filter')?.addEventListener('change', async () => { try { await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(err(e, 'No se pudo aplicar filtro')); } });
   q('run-status-filter')?.addEventListener('change', async () => { try { await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(err(e, 'No se pudo aplicar filtro')); } });
   q('violations-severity-filter')?.addEventListener('change', async () => { try { await loadViolations(); } catch (e) { toast.error(err(e, 'No se pudo aplicar filtro de gravedad')); } });
   q('preview-modal-close')?.addEventListener('click', closePreviewModal);
+  q('cleanup-generated-classes-btn')?.addEventListener('click', async () => { await cleanupGeneratedClasses(); });
   q('preview-career-filter')?.addEventListener('change', (event) => {
     if (event.target instanceof HTMLSelectElement) selectedCareerId = event.target.value ? Number(event.target.value) : null;
     renderPreviewGrid();
