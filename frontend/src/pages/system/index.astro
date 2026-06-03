@@ -48,6 +48,26 @@ import {
 
       <section class="bg-card text-card-foreground rounded-xl border border-border overflow-hidden">
         <div class="px-5 py-4 border-b border-border">
+          <h2 class="text-sm font-semibold text-foreground">Lista de espera</h2>
+          <p class="text-xs text-muted-foreground mt-0.5">Configura cuántos días de gracia tiene un admitido en lista de espera para completar su matrícula</p>
+        </div>
+        <div class="px-5 py-4 space-y-4">
+          <div class="space-y-1.5 max-w-sm">
+            <label for="admission-waitlist-grace-days" class="text-xs font-medium text-muted-foreground">Días de gracia</label>
+            <input id="admission-waitlist-grace-days" type="number" min="0" step="1"
+              class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
+          <div class="flex items-center gap-3">
+            <button id="save-grace-days" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+              Guardar días de gracia
+            </button>
+            <span id="grace-days-status" class="hidden text-xs"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="bg-card text-card-foreground rounded-xl border border-border overflow-hidden">
+        <div class="px-5 py-4 border-b border-border">
           <h2 class="text-sm font-semibold text-foreground">Cargos de pago de matrícula</h2>
           <p class="text-xs text-muted-foreground mt-0.5">Configura los cargos administrativos añadidos después de la selección de asignaturas</p>
         </div>
@@ -188,8 +208,10 @@ import {
       if (input && data.student_id_format) input.value = data.student_id_format;
       const schoolInsurance = document.getElementById('school-insurance-fee') as HTMLInputElement;
       const transcriptOpening = document.getElementById('transcript-opening-fee') as HTMLInputElement;
+      const graceDays = document.getElementById('admission-waitlist-grace-days') as HTMLInputElement;
       if (schoolInsurance) schoolInsurance.value = String(data.school_insurance_fee ?? '0.00');
       if (transcriptOpening) transcriptOpening.value = String(data.transcript_opening_fee ?? '0.00');
+      if (graceDays) graceDays.value = String(data.admission_waitlist_grace_days ?? 7);
       extraChargeRows = normalizeExtraChargeRows(data.enrollment_extra_charges ?? []);
       renderExtraChargeRows();
     } catch { /* ignore */ }
@@ -211,6 +233,23 @@ import {
       });
       if (status) { status.classList.remove('hidden'); setTimeout(() => status.classList.add('hidden'), 2500); }
     } catch { /* ignore */ }
+  });
+
+  document.getElementById('save-grace-days')?.addEventListener('click', async () => {
+    const input = document.getElementById('admission-waitlist-grace-days') as HTMLInputElement;
+    const status = document.getElementById('grace-days-status');
+    const value = input?.value?.trim();
+    if (!value) return;
+    try {
+      const data = await apiFetch('/notifications/system-settings/', {
+        method: 'PATCH',
+        body: JSON.stringify({ admission_waitlist_grace_days: Number(value) }),
+      });
+      if (input) input.value = String(data.admission_waitlist_grace_days ?? value);
+      if (status) { status.textContent = 'Guardado'; status.className = 'text-xs text-emerald-400'; status.classList.remove('hidden'); setTimeout(() => status.classList.add('hidden'), 2500); }
+    } catch (err: any) {
+      if (status) { status.textContent = err?.message ?? 'No se pudieron guardar los días de gracia.'; status.className = 'text-xs text-red-400'; status.classList.remove('hidden'); }
+    }
   });
 
   document.getElementById('add-extra-charge')?.addEventListener('click', () => {

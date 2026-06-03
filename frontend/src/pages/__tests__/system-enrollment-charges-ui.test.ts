@@ -16,4 +16,14 @@ describe('system enrollment extra charges visual editor', () => {
     expect(systemPage).toContain('id="add-extra-charge"');
     expect(systemPage).toContain('data-extra-charge-row');
   });
+
+  it('mantiene el control de días de gracia y su wiring de guardado en /system', () => {
+    const systemPage = readProjectFile('src/pages/system/index.astro');
+
+    expect(systemPage).toContain('id="admission-waitlist-grace-days"');
+    expect(systemPage).toContain('data.admission_waitlist_grace_days ?? 7');
+    expect(systemPage).toContain('id="save-grace-days"');
+    expect(systemPage).toContain('admission_waitlist_grace_days: Number(value)');
+    expect(systemPage).toContain('apiFetch(\'/notifications/system-settings/\'');
+  });
 });

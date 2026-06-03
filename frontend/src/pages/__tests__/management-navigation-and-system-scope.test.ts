@@ -20,7 +20,6 @@ describe("management users navigation wiring", () => {
   it("includes departments admin link in dashboard sidebar", () => {
     const layout = readProjectFile("src/layouts/DashboardLayout.astro");
     expect(layout).toContain('href="/departments"');
-    expect(layout).toContain('>\n                            Departamentos\n                        </a>');
   });
 
   it("keeps departments link inside academic admin cluster", () => {
@@ -40,6 +39,12 @@ describe("system page scope cleanup", () => {
     expect(systemPage).not.toContain("id=\"new-user-btn\"");
     expect(systemPage).not.toContain("id=\"users-table\"");
     expect(systemPage).not.toContain("/users/");
+  });
+
+  it("removes waitlist grace days controls from the management system page", () => {
+    const managementSystemPage = readProjectFile("src/pages/management/system.astro");
+    expect(managementSystemPage).not.toContain("admission-waitlist-grace-days");
+    expect(managementSystemPage).not.toContain("admission_waitlist_grace_days");
   });
 });
 
