@@ -160,6 +160,7 @@ class SystemSettingsSerializer(serializers.ModelSerializer):
             'admission_public_dni_mask_replacement',
             'school_insurance_fee',
             'transcript_opening_fee',
+            'admission_waitlist_grace_days',
             'enrollment_extra_charges',
         ]
 

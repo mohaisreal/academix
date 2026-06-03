@@ -87,3 +87,6 @@ htmlcov/
 *.temp
 .sass-cache/
 *.map
+
+# SDD / skill registry cache
+.atl/

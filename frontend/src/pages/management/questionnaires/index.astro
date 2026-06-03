@@ -233,6 +233,8 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     let allQuestionnaires: any[] = [];
     let allCareers: any[] = [];
     let isActiveToggle = true;
+    let currentPage = 1;
+    let pagination = { count: 0, next: null as string | null, previous: null as string | null };
 
     function el<T extends HTMLElement>(id: string): T { return document.getElementById(id) as T; }
     function show(id: string) { el(id).classList.remove("hidden"); }
@@ -750,7 +752,6 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             }
             const created = await res.json();
             allQuestionnaires.unshift(created);
-            filterAndRender();
             showToast("success", "Template created", `"${created.title}" is ready to edit.`);
         } catch {
             showToast("error", "Error de red", "No se pudo crear a partir de la plantilla.");
@@ -787,5 +788,3 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     // ── Inicialización ──────────────────────────────────────────────────────────────────
     loadData();
 </script>
-    let currentPage = 1;
-    let pagination = { count: 0, next: null as string | null, previous: null as string | null };

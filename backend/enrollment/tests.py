@@ -53,7 +53,7 @@ class CareerEnrollmentTests(TestCase):
         # Admisión confirmada para el estudiante principal
         self.confirmed_app = AdmissionApplication.objects.create(
             student=self.student,
-            career=self.career,
+            assigned_career=self.career,
             academic_period=self.period,
             status='confirmed',
         )
@@ -88,6 +88,19 @@ class CareerEnrollmentTests(TestCase):
             'career_id': self.career.pk,
             'period_id': self.period.pk,
         })
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_student_cannot_enroll_with_only_admitted_status(self):
+        """La admisión debe estar confirmada; admitted no basta para matricularse."""
+        self.confirmed_app.status = 'admitted'
+        self.confirmed_app.save(update_fields=['status'])
+        self.client.force_authenticate(user=self.student)
+
+        response = self.client.post(self._enroll_url(), {
+            'career_id': self.career.pk,
+            'period_id': self.period.pk,
+        })
+
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     # --- Prueba 3: doble matrícula → 400 ----------------------------------------

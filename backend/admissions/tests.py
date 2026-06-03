@@ -1,6 +1,8 @@
 from decimal import Decimal
+from datetime import timedelta
 
 from django.test import TestCase
+from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework import status
 
@@ -108,6 +110,56 @@ class AdmissionApplicationTests(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['status'], 'confirmed')
+
+    def test_student_cannot_confirm_after_admission_expiry(self):
+        app = AdmissionApplication.objects.create(
+            student=self.student,
+            academic_period=self.period,
+            assigned_career=self.career,
+            status='admitted',
+            admission_expiry_date=timezone.now() - timedelta(days=1),
+        )
+        self.client.force_authenticate(user=self.student)
+
+        response = self.client.patch(f'/api/admissions/applications/{app.pk}/confirm/')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        app.refresh_from_db()
+        self.assertEqual(app.status, 'expired')
+
+    def test_publish_ranking_sets_expiry_for_admitted_application(self):
+        self.career.total_spots = 1
+        self.career.save(update_fields=['total_spots'])
+        app = AdmissionApplication.objects.create(
+            student=self.student,
+            academic_period=self.period,
+            status='submitted',
+            admission_score=Decimal('11.500'),
+        )
+        AdmissionPreference.objects.create(
+            application=app,
+            career=self.career,
+            preference_order=1,
+        )
+
+        self.client.force_authenticate(user=self.manager)
+        draft_response = self.client.post('/api/admissions/applications/generate-ranking/', {
+            'academic_period_id': self.period.pk,
+            'career_id': self.career.pk,
+            'score_source': 'admission_score',
+            'publish': False,
+        }, format='json')
+        self.assertEqual(draft_response.status_code, status.HTTP_200_OK)
+
+        response = self.client.post('/api/admissions/applications/publish-ranking/', {
+            'academic_period_id': self.period.pk,
+            'career_id': self.career.pk,
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        app.refresh_from_db()
+        self.assertEqual(app.status, 'admitted')
+        self.assertIsNotNone(app.admission_expiry_date)
 
     def test_student_cannot_access_all_applications(self):
         """Un estudiante no puede ver las solicitudes de otro estudiante."""
@@ -268,3 +320,88 @@ class AdmissionApplicationTests(TestCase):
         self.assertEqual(waitlisted_pref.status, 'waitlisted')
         self.assertEqual(waitlisted_pref.waitlist_position, 1)
         self.assertEqual(waitlisted_app.status, 'waitlisted')
+
+    def test_withdraw_promotes_waitlisted_career_without_touching_other_program_waitlist(self):
+        """Una renuncia libera solo la carrera afectada y conserva la espera de otras carreras."""
+        self.career.total_spots = 1
+        self.career.save(update_fields=['total_spots'])
+
+        other_career = Career.objects.create(
+            name='Derecho Test', code='DTEST', duration_years=4, is_active=True,
+        )
+
+        promoted_student = User.objects.create_user(
+            username='promoted_waitlist', email='promoted@test.com',
+            password='testpass123', role='s', is_active=True,
+        )
+        other_waitlisted_student = User.objects.create_user(
+            username='other_waitlist', email='other_waitlist@test.com',
+            password='testpass123', role='s', is_active=True,
+        )
+
+        admitted_app = AdmissionApplication.objects.create(
+            student=self.student,
+            academic_period=self.period,
+            status='admitted',
+            assigned_career=self.career,
+            assigned_preference_order=1,
+        )
+        AdmissionPreference.objects.create(
+            application=admitted_app,
+            career=self.career,
+            preference_order=1,
+            status='admitted',
+            is_assigned=True,
+            waitlist_position=None,
+        )
+        AdmissionPreference.objects.create(
+            application=admitted_app,
+            career=other_career,
+            preference_order=2,
+            status='waitlisted',
+            waitlist_position=1,
+        )
+
+        promoted_app = AdmissionApplication.objects.create(
+            student=promoted_student,
+            academic_period=self.period,
+            status='waitlisted',
+        )
+        AdmissionPreference.objects.create(
+            application=promoted_app,
+            career=self.career,
+            preference_order=1,
+            status='waitlisted',
+            waitlist_position=1,
+        )
+
+        other_waitlisted_app = AdmissionApplication.objects.create(
+            student=other_waitlisted_student,
+            academic_period=self.period,
+            status='waitlisted',
+        )
+        AdmissionPreference.objects.create(
+            application=other_waitlisted_app,
+            career=other_career,
+            preference_order=1,
+            status='waitlisted',
+            waitlist_position=1,
+        )
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.patch(
+            f'/api/admissions/applications/{admitted_app.pk}/withdraw/',
+            {},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        admitted_app.refresh_from_db()
+        promoted_app.refresh_from_db()
+        other_waitlisted_app.refresh_from_db()
+
+        self.assertEqual(admitted_app.status, 'withdrawn')
+        self.assertEqual(promoted_app.status, 'admitted')
+        self.assertEqual(promoted_app.assigned_career, self.career)
+        self.assertEqual(other_waitlisted_app.status, 'waitlisted')

@@ -23,6 +23,7 @@ env = environ.Env(
     CSRF_TRUSTED_ORIGINS=(list, ['http://localhost:4321']),
     JWT_ACCESS_TOKEN_LIFETIME=(int, 60),
     JWT_REFRESH_TOKEN_LIFETIME=(int, 1440),
+    ADMISSION_WAITLIST_GRACE_DAYS=(int, 7),
 )
 
 # Construye rutas dentro del proyecto así: BASE_DIR / 'subdir'.
@@ -240,6 +241,8 @@ SIMPLE_JWT = {
 
     'JTI_CLAIM': 'jti',
 }
+
+ADMISSION_WAITLIST_GRACE_DAYS = env('ADMISSION_WAITLIST_GRACE_DAYS')
 
 
 # ============================================================================

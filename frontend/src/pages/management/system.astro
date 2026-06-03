@@ -31,6 +31,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           </div>
         </div>
 
+        <div class="mb-4 p-4 bg-muted/50 rounded-lg space-y-2">
+          <div>
+            <label for="admission-waitlist-grace-days" class="text-sm font-medium text-foreground">Días de gracia para lista de espera</label>
+            <p class="text-xs text-muted-foreground mt-0.5">Tiempo permitido para que un admitido en lista de espera complete su matrícula antes de expirar.</p>
+          </div>
+          <input id="admission-waitlist-grace-days" type="number" min="0" step="1" class="w-40 bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+        </div>
+
         <div class="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
           <div>
             <p class="text-sm font-medium text-foreground">Enviar notificaciones por correo</p>
@@ -269,6 +277,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     // ─── Sección 1: interruptor de correo ─────────────────────────────────────────────────
 
     const toggle = document.getElementById("system-email-toggle") as HTMLButtonElement;
+    const graceDaysInput = document.getElementById("admission-waitlist-grace-days") as HTMLInputElement;
     let systemEnabled = true;
 
     function updateToggleUI(enabled: boolean, toggleEl: HTMLButtonElement) {
@@ -306,6 +315,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         const data = await res.json();
         systemEnabled = data.email_notifications_enabled;
         updateToggleUI(systemEnabled, toggle);
+        if (graceDaysInput) graceDaysInput.value = String(data.admission_waitlist_grace_days ?? 7);
       } catch {
         showStatus("No se pudo cargar la configuración del sistema", true);
       } finally {
@@ -321,12 +331,16 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         const res = await fetch(`${API_URL}/notifications/system-settings/`, {
           method: "PATCH",
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ email_notifications_enabled: newValue }),
+          body: JSON.stringify({
+            email_notifications_enabled: newValue,
+            admission_waitlist_grace_days: graceDaysInput?.value ? Number(graceDaysInput.value) : 7,
+          }),
         });
         if (!res.ok) throw new Error("No se pudo actualizar");
         const data = await res.json();
         systemEnabled = data.email_notifications_enabled;
         updateToggleUI(systemEnabled, toggle);
+        if (graceDaysInput) graceDaysInput.value = String(data.admission_waitlist_grace_days ?? 7);
         showStatus(
           systemEnabled
             ? "Notificaciones por correo activadas en todo el sistema"

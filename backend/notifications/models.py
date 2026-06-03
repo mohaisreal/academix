@@ -183,6 +183,10 @@ class SystemSettings(models.Model):
         default=0,
         help_text='Importe fijo de apertura de expediente para alumnos sin matrículas previas.',
     )
+    admission_waitlist_grace_days = models.PositiveIntegerField(
+        default=7,
+        help_text='Días de gracia para que un admitido en lista de espera complete la matrícula.',
+    )
     enrollment_extra_charges = models.JSONField(
         default=list,
         blank=True,

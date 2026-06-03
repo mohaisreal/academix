@@ -207,6 +207,15 @@ class StartResponseView(APIView):
 
             if questionnaire.is_preinscripcion_wizard:
                 period = _resolve_current_admission_period()
+                if not period:
+                    return Response(
+                        {
+                            'detail': (
+                                'La preinscripción solo está disponible durante la ventana de admisión activa.'
+                            )
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
                 blocking_qs = AdmissionApplication.objects.filter(
                     student=request.user,
                     status__in=blocking_statuses,
@@ -361,20 +370,9 @@ class ResponseDetailView(generics.RetrieveUpdateAPIView):
 # ---------------------------------------------------------------------------
 
 def _resolve_current_admission_period():
-    from academic.models import AcademicPeriod
+    from admissions.utils import get_current_admission_period
 
-    now = timezone.now()
-    return (
-        AcademicPeriod.objects
-        .filter(admission_open_date__lte=now, admission_close_date__gte=now)
-        .order_by('-admission_open_date')
-        .first()
-    ) or (
-        AcademicPeriod.objects
-        .filter(is_active=True)
-        .order_by('-start_date')
-        .first()
-    )
+    return get_current_admission_period()
 
 
 def _create_admission_from_questionnaire(response_obj):
@@ -383,9 +381,8 @@ def _create_admission_from_questionnaire(response_obj):
     submitted QuestionnaireResponse whose questionnaire is flagged as
     is_preinscripcion_wizard=True.
 
-    - Finds the active academic period with an open admission window; falls
-      back to any active period if none has a window configured.
-    - Skips silently if a period cannot be resolved or if the student already
+    - Finds the active academic period with an open admission window.
+    - Rejects silently if no admission window is open or if the student already
       has an application for that period.
     - Extracts access_route from any `radio` answer whose value matches one
       of the ACCESS_ROUTE_CHOICES keys.

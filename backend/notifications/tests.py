@@ -264,13 +264,22 @@ class SystemSettingsAPITests(TestCase):
             [{'label': 'Carné universitario', 'amount': '12.00', 'active': True}],
         )
 
+    def test_admin_can_update_admission_waitlist_grace_days(self):
+        res = self.admin_client.patch(
+            '/api/notifications/system-settings/',
+            {'admission_waitlist_grace_days': 12},
+            format='json',
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data['admission_waitlist_grace_days'], 12)
+
 
 class WithdrawNotifyWaitlistIntegrationTest(TestCase):
     """Prueba de integración: withdraw → notify_next_waitlisted → create_notification (S-02)."""
 
     def setUp(self):
         from academic.models import Career, AcademicPeriod
-        from admissions.models import AdmissionApplication
+        from admissions.models import AdmissionApplication, AdmissionPreference
         from datetime import date
 
         self.career = Career.objects.create(name='CS', code='CS01', total_spots=1)
@@ -280,11 +289,17 @@ class WithdrawNotifyWaitlistIntegrationTest(TestCase):
         self.waitlisted_student = User.objects.create_user(
             username='waitlisted', email='wait@test.com', password='testpass123', role='s'
         )
-        AdmissionApplication.objects.create(
+        self.application = AdmissionApplication.objects.create(
             student=self.waitlisted_student,
-            career=self.career,
             academic_period=self.period,
             status='waitlisted',
+        )
+        AdmissionPreference.objects.create(
+            application=self.application,
+            career=self.career,
+            preference_order=1,
+            status='waitlisted',
+            waitlist_position=1,
         )
         SystemSettings.objects.get_or_create(pk=1, defaults={'email_notifications_enabled': True})
         UserEmailPreference.objects.create(user=self.waitlisted_student, email_enabled=True)

@@ -26,7 +26,7 @@ from .serializers import (
     AdmissionDocumentSerializer,
 )
 from .permissions import IsStudent, IsManagement, IsOwnerOrManagement
-from .utils import compact_waitlist_positions, notify_next_waitlisted
+from .utils import compact_waitlist_positions, notify_next_waitlisted, get_waitlist_admission_expiry
 from notifications.utils import create_notification
 
 
@@ -282,18 +282,6 @@ class AdmissionApplicationViewSet(
         if app.status != 'draft':
             return Response(
                 {"detail": f"Solo puedes enviar solicitudes en estado borrador. Estado actual: {app.status}."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if not app.preferences.exists():
-            return Response(
-                {"detail": "Debés seleccionar al menos una titulación antes de enviar."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if not app.access_route:
-            return Response(
-                {"detail": "Debés indicar la vía de acceso antes de enviar."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -605,8 +593,7 @@ class AdmissionApplicationViewSet(
                 app.assigned_career = admitted_pref.career
                 app.assigned_preference_order = admitted_pref.preference_order
                 if not app.admission_expiry_date:
-                    expiry_days = getattr(settings, 'ADMISSION_EXPIRY_DAYS', 7)
-                    app.admission_expiry_date = now + timedelta(days=expiry_days)
+                    app.admission_expiry_date = get_waitlist_admission_expiry(now)
             elif waitlisted_exists:
                 app.status = 'waitlisted'
                 app.assigned_career = None
@@ -1119,4 +1106,3 @@ class PublicAdmissionResultsView(APIView):
             'count': len(rows),
             'results': rows,
         })
-
