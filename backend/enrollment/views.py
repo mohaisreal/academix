@@ -15,11 +15,22 @@ from .models import CareerEnrollment, ClassEnrollment, EnrollmentFee
 from .serializers import CareerEnrollmentSerializer, ClassEnrollmentSerializer, EnrollmentFeeSerializer
 from .services import refresh_enrollment_fee
 from academic.models import AcademicPeriod
-from academic.schedule_source import canonical_assignment_map_for_period, schedules_overlap
+from academic.schedule_source import (
+    canonical_assignment_map_for_period,
+    resolve_assignment_teacher_for_class,
+    schedules_overlap,
+)
 from notifications.utils import create_notification
 from shared.permissions import IsAdminOrManagement, IsStudent
 
 User = get_user_model()
+
+
+def _resolve_assignment_teacher_name(cls):
+    teacher = resolve_assignment_teacher_for_class(cls)
+    if not teacher:
+        return None
+    return teacher.get_full_name() or teacher.username
 
 
 def _is_production_stripe_enabled():
@@ -120,9 +131,13 @@ class MyEnrollmentView(APIView):
         )
 
         classes = []
+        assignment_map = canonical_assignment_map_for_period(
+            career_enrollment.period_id,
+            [ce.cls_id for ce in class_enrollments],
+        )
         for ce in class_enrollments:
             cls = ce.cls
-            t = cls.teacher
+            t = resolve_assignment_teacher_for_class(cls, assignment_map)
             classes.append({
                 'id': ce.id,
                 'class_id': cls.id,
@@ -164,6 +179,10 @@ class MySubjectsView(APIView):
             enrollments = enrollments.filter(cls__period=active_period)
 
         result = []
+        assignment_map = canonical_assignment_map_for_period(
+            active_period.id if active_period else None,
+            [enr.cls_id for enr in enrollments],
+        ) if active_period else None
         for enr in enrollments:
             evals = Evaluation.objects.filter(cls=enr.cls)
             grades = Grade.objects.filter(
@@ -176,7 +195,7 @@ class MySubjectsView(APIView):
                 if g.evaluation.max_score and g.evaluation.max_score > 0
             ]
             avg = sum(percentages) / len(percentages) if percentages else None
-            t = enr.cls.teacher
+            t = resolve_assignment_teacher_for_class(enr.cls, assignment_map) if assignment_map is not None else enr.cls.teacher
             result.append({
                 'enrollment_id': enr.id,
                 'class_id': enr.cls.id,
@@ -211,10 +230,14 @@ class MyTeachersView(APIView):
             enrollments = enrollments.filter(cls__period=active_period)
 
         teachers_map = {}
+        assignment_map = canonical_assignment_map_for_period(
+            active_period.id if active_period else None,
+            [enr.cls_id for enr in enrollments],
+        ) if active_period else None
         for enr in enrollments:
-            if not enr.cls.teacher:
+            t = resolve_assignment_teacher_for_class(enr.cls, assignment_map) if assignment_map is not None else enr.cls.teacher
+            if not t:
                 continue
-            t = enr.cls.teacher
             if t.id not in teachers_map:
                 teachers_map[t.id] = {
                     'id': t.id,
@@ -619,7 +642,7 @@ def _build_enrollment_receipt_data(enrollment):
             'class_id': cls.pk,
             'subject_name': cls.subject.name,
             'subject_credits': cls.subject.credits,
-            'teacher_name': cls.teacher.get_full_name() if cls.teacher else None,
+            'teacher_name': _resolve_assignment_teacher_name(cls),
             'classroom': cls.classroom.name if cls.classroom else None,
             'schedules': schedules,
         })

@@ -27,6 +27,13 @@ def canonical_assignment_map_for_period(period_id, class_ids):
     return by_class
 
 
+def resolve_assignment_teacher_for_class(cls, assignment_map=None):
+    if assignment_map is None:
+        assignment_map = canonical_assignment_map_for_period(cls.period_id, [cls.id])
+    assignment = assignment_map.get(cls.id)
+    return (assignment.teacher if assignment and assignment.teacher else cls.teacher)
+
+
 def serialize_assignment_schedule(assignment):
     slot = assignment.slot
     return {

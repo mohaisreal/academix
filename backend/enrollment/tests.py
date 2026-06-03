@@ -447,6 +447,40 @@ class ReceiptTests(TestCase):
             status='paid',
         )
 
+        self.teacher = User.objects.create_user(
+            username='teacher_receipt',
+            email='teacher_receipt@test.com',
+            password='testpass123',
+        )
+        self.teacher.role = 't'
+        self.teacher.save(update_fields=['role'])
+
+        self.subject = Subject.objects.create(
+            name='Física I', code='FIS1', career=self.career, credits=4,
+        )
+        self.cls = Class.objects.create(
+            subject=self.subject,
+            period=self.period,
+            classroom=None,
+            teacher=None,
+            max_students=30,
+        )
+        self.run = TimetableRun.objects.create(period=self.period, status='published')
+        self.slot = TimeSlot.objects.create(
+            period=self.period,
+            day_of_week=0,
+            start_time='08:00',
+            end_time='10:00',
+        )
+        ScheduleAssignment.objects.create(
+            run=self.run,
+            cls=self.cls,
+            slot=self.slot,
+            classroom=None,
+            teacher=self.teacher,
+        )
+        ClassEnrollment.objects.create(student=self.student, cls=self.cls, status='enrolled')
+
     def _receipt_url(self, pk):
         return f'/api/enrollment/career-enrollments/{pk}/receipt/'
 
@@ -470,3 +504,20 @@ class ReceiptTests(TestCase):
         self.client.force_authenticate(user=self.other_student)
         response = self.client.get(self._receipt_url(self.enrollment.pk))
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_student_receipt_uses_published_assignment_teacher(self):
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get(self._receipt_url(self.enrollment.pk))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['classes'][0]['teacher_name'], self.teacher.get_full_name() or self.teacher.username)
+
+    def test_my_subjects_and_enrollment_use_published_assignment_teacher(self):
+        self.client.force_authenticate(user=self.student)
+
+        subjects_response = self.client.get('/api/enrollment/my-subjects/')
+        self.assertEqual(subjects_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(subjects_response.data[0]['teacher_name'], self.teacher.get_full_name() or self.teacher.username)
+
+        enrollment_response = self.client.get('/api/enrollment/my-enrollment/')
+        self.assertEqual(enrollment_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(enrollment_response.data['classes'][0]['teacher_name'], self.teacher.get_full_name() or self.teacher.username)

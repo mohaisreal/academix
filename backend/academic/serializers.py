@@ -14,7 +14,7 @@ from .models import (
     ConstraintViolation,
     SchedulingConstraint,
 )
-from .schedule_source import serialize_assignment_schedule
+from .schedule_source import serialize_assignment_schedule, resolve_assignment_teacher_for_class
 
 User = get_user_model()
 
@@ -262,10 +262,11 @@ class ScheduleAssignmentSerializer(serializers.ModelSerializer):
     career_name = serializers.CharField(source='cls.subject.career.name', read_only=True)
 
     def get_teacher_name(self, obj):
-        if not obj.teacher:
+        teacher = resolve_assignment_teacher_for_class(obj.cls)
+        if not teacher:
             return None
-        full_name = f"{obj.teacher.first_name} {obj.teacher.last_name}".strip()
-        return full_name or obj.teacher.username
+        full_name = f"{teacher.first_name} {teacher.last_name}".strip()
+        return full_name or teacher.username
 
     def get_classroom_name(self, obj):
         if not obj.classroom:
