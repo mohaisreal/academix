@@ -27,6 +27,7 @@ from .serializers import (
 )
 from .permissions import IsStudent, IsManagement, IsOwnerOrManagement
 from .utils import compact_waitlist_positions, notify_next_waitlisted, get_waitlist_admission_expiry
+from .services.career_resolver import resolve_assigned_preference
 from notifications.utils import create_notification
 
 
@@ -586,7 +587,7 @@ class AdmissionApplicationViewSet(
         for app in AdmissionApplication.objects.filter(
             pk__in=affected_app_ids
         ).prefetch_related('preferences__career'):
-            admitted_pref = app.preferences.filter(status='admitted').order_by('preference_order').first()
+            admitted_pref = resolve_assigned_preference(app)
             waitlisted_exists = app.preferences.filter(status='waitlisted').exists()
             if admitted_pref:
                 app.status = 'admitted'
