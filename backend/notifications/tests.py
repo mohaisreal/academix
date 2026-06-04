@@ -1,11 +1,14 @@
 from unittest.mock import patch
+from importlib import import_module
 
 from django.test import TestCase
 from rest_framework.test import APIClient
+from django.conf import settings as django_settings
+from django.apps import apps as django_apps
 
 from users.models import User
 from .models import Notification, UserEmailPreference, SystemSettings, EmailTemplate
-from .utils import create_notification
+from .utils import build_frontend_url, create_notification, wrap_in_email_layout
 from admissions.utils import notify_next_waitlisted
 
 
@@ -140,6 +143,93 @@ class CreateNotificationEmailTests(TestCase):
         self.assertIsNone(notif)
         self.assertFalse(Notification.objects.filter(user=self.user, title='Grade').exists())
         mock_send.assert_not_called()
+
+
+class EmailTemplateBrandingTests(TestCase):
+    def setUp(self):
+        self.settings = SystemSettings.objects.create(
+            pk=1,
+            email_header_color='#0f766e',
+            email_footer_text='Academix support',
+        )
+
+    def test_wrap_in_email_layout_adds_brand_shell(self):
+        html = wrap_in_email_layout('<p>Hello</p>', self.settings)
+        self.assertIn('Notificaciones oficiales de la plataforma', html)
+        self.assertIn('Academix', html)
+        self.assertIn('linear-gradient', html)
+        self.assertIn('<p>Hello</p>', html)
+
+    def test_build_frontend_url_uses_configured_base(self):
+        original = django_settings.FRONTEND_URL
+        try:
+            django_settings.FRONTEND_URL = 'https://portal.example.edu/'
+            self.assertEqual(build_frontend_url('/verify-email'), 'https://portal.example.edu/verify-email')
+        finally:
+            django_settings.FRONTEND_URL = original
+
+    def test_migration_preserves_custom_template_content(self):
+        migration_module = import_module('notifications.migrations.0011_branded_default_email_templates')
+
+        template, _ = EmailTemplate.objects.get_or_create(
+            name='notification_default',
+            defaults={
+                'subject_template': '{{title}}',
+                'body_template': '<p>Custom content</p>',
+                'description': 'Custom',
+                'is_active': True,
+            },
+        )
+        EmailTemplate.objects.filter(pk=template.pk).update(body_template='<p>Custom content</p>')
+
+        migration_module.migrate_default_templates(django_apps, None)
+
+        template = EmailTemplate.objects.get(name='notification_default')
+        self.assertEqual(template.body_template, '<p>Custom content</p>')
+
+
+class EmailTemplatePreviewSendTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username='manager1', email='manager@test.com', password='testpass123', role='m'
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.admin)
+        self.template, _ = EmailTemplate.objects.get_or_create(
+            name='email_verification',
+            defaults={
+                'subject_template': '{{title}}',
+                'body_template': '<p><a href="{{verification_url}}">Verificar cuenta</a></p>',
+                'description': 'Verification template',
+                'is_active': True,
+            },
+        )
+        EmailTemplate.objects.filter(pk=self.template.pk).update(
+            body_template='<p><a href="{{verification_url}}">Verificar cuenta</a></p>'
+        )
+
+    def test_preview_uses_configured_frontend_url(self):
+        original = django_settings.FRONTEND_URL
+        try:
+            django_settings.FRONTEND_URL = 'https://portal.example.edu/'
+            res = self.client.post(f'/api/notifications/email-templates/{self.template.pk}/preview/', {}, format='json')
+            self.assertEqual(res.status_code, 200)
+            self.assertIn('https://portal.example.edu/verify-email', res.data['html'])
+            self.assertNotIn('http://localhost:4321', res.data['html'])
+        finally:
+            django_settings.FRONTEND_URL = original
+
+    @patch('notifications.views.send_mail')
+    def test_send_test_uses_configured_frontend_url(self, mock_send):
+        original = django_settings.FRONTEND_URL
+        try:
+            django_settings.FRONTEND_URL = 'https://portal.example.edu/'
+            res = self.client.post(f'/api/notifications/email-templates/{self.template.pk}/send-test/', {}, format='json')
+            self.assertEqual(res.status_code, 200)
+            mock_send.assert_called_once()
+            self.assertIn('https://portal.example.edu/verify-email', mock_send.call_args.kwargs['html_message'])
+        finally:
+            django_settings.FRONTEND_URL = original
 
 
 class EmailPreferenceAPITests(TestCase):

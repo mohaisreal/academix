@@ -12,7 +12,7 @@ from .serializers import (
     SystemSettingsSerializer,
     EmailTemplateSerializer,
 )
-from .utils import render_template, wrap_in_email_layout
+from .utils import build_frontend_url, render_template, wrap_in_email_layout
 
 
 class NotificationListView(APIView):
@@ -190,17 +190,7 @@ class EmailTemplatePreviewView(APIView):
     """
     permission_classes = [IsManagement]
 
-    def post(self, request, pk):
-        try:
-            template = EmailTemplate.objects.get(pk=pk)
-        except EmailTemplate.DoesNotExist:
-            return Response({'error': 'Not found'}, status=404)
-
-        extra_context = request.data.get('context', {})
-        if not isinstance(extra_context, dict):
-            return Response({'error': '"context" must be a JSON object'}, status=400)
-
-        # Built-ins — caller may override any of these
+    def _build_context(self, request, extra_context):
         base_context = {
             'app_name': 'Academix',
             'user_name': request.user.get_full_name() or request.user.username,
@@ -216,9 +206,22 @@ class EmailTemplatePreviewView(APIView):
             'message_preview': 'Este es un extracto del mensaje interno.',
             'material_title': 'Material de ejemplo',
             'uploaded_by': 'Profesor Ejemplo',
-            'verification_url': 'http://localhost:4321/verify-email',
+            'verification_url': build_frontend_url('/verify-email'),
         }
         base_context.update(extra_context)
+        return base_context
+
+    def post(self, request, pk):
+        try:
+            template = EmailTemplate.objects.get(pk=pk)
+        except EmailTemplate.DoesNotExist:
+            return Response({'error': 'Not found'}, status=404)
+
+        extra_context = request.data.get('context', {})
+        if not isinstance(extra_context, dict):
+            return Response({'error': '"context" must be a JSON object'}, status=400)
+
+        base_context = self._build_context(request, extra_context)
 
         rendered_subject = render_template(template.subject_template, base_context)
         rendered_body = render_template(template.body_template, base_context)
@@ -241,20 +244,7 @@ class EmailTemplateSendTestView(APIView):
     """
     permission_classes = [IsManagement]
 
-    def post(self, request, pk):
-        try:
-            template = EmailTemplate.objects.get(pk=pk)
-        except EmailTemplate.DoesNotExist:
-            return Response({'error': 'Not found'}, status=404)
-
-        recipient = request.user.email
-        if not recipient:
-            return Response({'error': 'Your account has no email address configured'}, status=400)
-
-        extra_context = request.data.get('context', {})
-        if not isinstance(extra_context, dict):
-            return Response({'error': '"context" must be a JSON object'}, status=400)
-
+    def _build_context(self, request, recipient, extra_context):
         base_context = {
             'app_name': 'Academix',
             'user_name': request.user.get_full_name() or request.user.username,
@@ -270,9 +260,26 @@ class EmailTemplateSendTestView(APIView):
             'message_preview': 'Este es un extracto del mensaje interno.',
             'material_title': 'Material de ejemplo',
             'uploaded_by': 'Profesor Ejemplo',
-            'verification_url': 'http://localhost:4321/verify-email',
+            'verification_url': build_frontend_url('/verify-email'),
         }
         base_context.update(extra_context)
+        return base_context
+
+    def post(self, request, pk):
+        try:
+            template = EmailTemplate.objects.get(pk=pk)
+        except EmailTemplate.DoesNotExist:
+            return Response({'error': 'Not found'}, status=404)
+
+        recipient = request.user.email
+        if not recipient:
+            return Response({'error': 'Your account has no email address configured'}, status=400)
+
+        extra_context = request.data.get('context', {})
+        if not isinstance(extra_context, dict):
+            return Response({'error': '"context" must be a JSON object'}, status=400)
+
+        base_context = self._build_context(request, recipient, extra_context)
 
         rendered_subject = render_template(template.subject_template, base_context)
         rendered_body = render_template(template.body_template, base_context)

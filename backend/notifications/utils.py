@@ -21,6 +21,13 @@ from .models import (
 logger = logging.getLogger(__name__)
 
 
+def build_frontend_url(path=''):
+    base = (getattr(settings, 'FRONTEND_URL', '') or '').rstrip('/')
+    if not path:
+        return base
+    return f"{base}/{path.lstrip('/')}"
+
+
 # ---------------------------------------------------------------------------
 # Utilidades de renderizado de plantillas
 # ---------------------------------------------------------------------------
@@ -57,12 +64,13 @@ def wrap_in_email_layout(html_body, system_settings):
     """
     header_color = system_settings.email_header_color or '#4F46E5'
     footer_text = system_settings.email_footer_text or 'Academix'
+    app_name = 'Academix'
 
     logo_html = ''
     if system_settings.email_logo_url:
         logo_html = (
             f'<img src="{system_settings.email_logo_url}" '
-            f'alt="Academix" style="max-height:48px;display:block;" />'
+            f'alt="{app_name}" class="logo" />'
         )
 
     return f"""<!DOCTYPE html>
@@ -71,19 +79,36 @@ def wrap_in_email_layout(html_body, system_settings):
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body {{ margin: 0; padding: 0; background-color: #f4f4f5; font-family: Arial, sans-serif; }}
-    .wrapper {{ max-width: 600px; margin: 32px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.08); }}
-    .header {{ background-color: {header_color}; padding: 24px 32px; }}
-    .body {{ padding: 32px; color: #111827; font-size: 15px; line-height: 1.6; }}
+    body {{ margin: 0; padding: 0; background: #eef2ff; font-family: Arial, sans-serif; }}
+    .page {{ width: 100%; padding: 32px 16px; }}
+    .wrapper {{ max-width: 640px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 18px 45px rgba(15,23,42,.12); border: 1px solid rgba(79,70,229,.10); }}
+    .hero {{ background: linear-gradient(135deg, {header_color}, #312e81); padding: 28px 32px; color: #fff; }}
+    .brand {{ font-size: 18px; font-weight: 700; letter-spacing: .2px; margin: 0 0 8px; }}
+    .tagline {{ margin: 0; opacity: .9; font-size: 13px; line-height: 1.5; }}
+    .header {{ display: flex; align-items: center; gap: 12px; }}
+    .logo {{ max-height: 44px; display: block; }}
+    .body {{ padding: 32px; color: #111827; font-size: 15px; line-height: 1.7; background: #fff; }}
     .body img {{ max-width: 100%; height: auto; }}
-    .footer {{ background-color: #f9fafb; border-top: 1px solid #e5e7eb; padding: 16px 32px; font-size: 12px; color: #6b7280; text-align: center; }}
+    .body a {{ color: {header_color}; text-decoration: underline; word-break: break-word; }}
+    .body .button, .body .cta {{ display: inline-block; margin: 8px 0; padding: 12px 18px; border-radius: 12px; background: {header_color}; color: #fff !important; text-decoration: none; font-weight: 700; }}
+    .footer {{ background: #f8fafc; border-top: 1px solid #e5e7eb; padding: 18px 32px; font-size: 12px; color: #64748b; text-align: center; }}
   </style>
 </head>
 <body>
-  <div class="wrapper">
-    <div class="header">{logo_html}</div>
+  <div class="page">
+    <div class="wrapper">
+    <div class="hero">
+      <div class="header">
+        {logo_html}
+        <div>
+          <p class="brand">{app_name}</p>
+          <p class="tagline">Notificaciones oficiales de la plataforma</p>
+        </div>
+      </div>
+    </div>
     <div class="body">{html_body}</div>
     <div class="footer">{footer_text}</div>
+    </div>
   </div>
 </body>
 </html>"""
