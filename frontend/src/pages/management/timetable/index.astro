@@ -13,7 +13,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     <div class="flex flex-col gap-3 border-b border-border pb-4 lg:flex-row lg:items-center lg:justify-between">
       <div>
         <h1 class="text-xl font-semibold text-foreground">Gestión de horarios</h1>
-        <p class="text-sm text-muted-foreground">Generá borradores, publicá ejecuciones y revisá asignaciones/conflictos.</p>
+        <p class="text-sm text-muted-foreground">Genera borradores, publica ejecuciones y revisa asignaciones/conflictos.</p>
       </div>
       <div class="flex flex-col items-start gap-2 sm:flex-row sm:items-center">
         <span id="selected-run-badge" class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">Ninguna ejecución seleccionada</span>
@@ -86,15 +86,6 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       </div>
     </section>
 
-    <section class="grid gap-6 xl:grid-cols-[1.6fr,1fr]">
-      <div class="bg-card border border-border rounded-xl p-5 space-y-3">
-        <h2 class="text-lg font-semibold">Infracciones</h2>
-        <select id="violations-severity-filter" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="">Todas</option><option value="hard">Dura</option><option value="soft">Blanda</option></select>
-        <div class="flex flex-wrap gap-2 text-xs"><span id="violations-total" class="rounded-full bg-muted px-3 py-1">0 total</span><span id="violations-hard" class="rounded-full bg-red-500/10 text-red-300 px-3 py-1">0 duras</span><span id="violations-soft" class="rounded-full bg-amber-500/10 text-amber-300 px-3 py-1">0 blandas</span></div>
-        <ul id="violations-table-body" class="space-y-2 text-sm"></ul>
-      </div>
-    </section>
-
     <section class="bg-card border border-border rounded-xl p-5 space-y-4">
       <h2 class="text-lg font-semibold">Restricciones</h2>
       <p class="text-sm text-muted-foreground">Configura y desactiva restricciones globales o por periodo.</p>
@@ -146,7 +137,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 <script>
   import API_BASE_URL from '@/config/api';
   import { toast } from '@/components/starwind/toast';
-  import { buildTimeslotBatch, parseTimeslotBreakRanges, summarizeViolations, getRunDisplayName, classifyTimetableActionError, buildDraftRunPayload, buildManualTimeslotPayload, extractCareerOptions, normalizeAssignmentsToWeekGrid, buildWeekGridRows, buildConstraintPayload, mapConstraintFieldErrors, formatConstraintKind, formatConstraintScope, formatConstraintDay, formatConstraintEntity, formatConstraintTimeRange, canDeleteTimetableRunStatus } from '@/utils/timetable-management-utils';
+  import { buildTimeslotBatch, parseTimeslotBreakRanges, summarizeViolations, getRunDisplayName, classifyTimetableActionError, buildDraftRunPayload, buildManualTimeslotPayload, extractCareerOptions, normalizeAssignmentsToWeekGrid, buildWeekGridRows, buildConstraintPayload, mapConstraintFieldErrors, formatConstraintKind, formatConstraintScope, formatConstraintDay, formatConstraintEntity, formatConstraintTimeRange, canDeleteTimetableRunStatus, resolveTimetableRunPeriodId, filterClassesForRunPeriod } from '@/utils/timetable-management-utils';
 
   const API_URL = API_BASE_URL;
   const token = localStorage.getItem('access_token');
@@ -201,7 +192,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   function showContent() { q('page-loading')?.classList.add('hidden'); q('page-content')?.classList.remove('hidden'); }
   function selectedRun() { return runs.find((r) => Number(r.id) === Number(selectedRunId)) || null; }
-  function selectedRunPeriodId() { return selectedRun()?.period?.id ?? selectedRun()?.period_id ?? null; }
+  function selectedRunPeriodId() { return resolveTimetableRunPeriodId(selectedRun()); }
 
   function renderPeriodSelects() {
     const a = q('run-period-filter'); const b = q('run-period-create');

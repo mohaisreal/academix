@@ -20,6 +20,8 @@ import {
   formatConstraintTimeRange,
   mapConstraintFieldErrors,
   resolveAssignmentTeacherDisplay,
+  resolveTimetableRunPeriodId,
+  filterClassesForRunPeriod,
 } from '../timetable-management-utils';
 
 describe('buildBulkTimeSlots', () => {
@@ -211,6 +213,39 @@ describe('canDeleteTimetableRunStatus', () => {
     expect(canDeleteTimetableRunStatus('archived')).toBe(false);
     expect(canDeleteTimetableRunStatus(undefined)).toBe(false);
     expect(canDeleteTimetableRunStatus(null)).toBe(false);
+  });
+});
+
+describe('resolveTimetableRunPeriodId', () => {
+  it('resuelve period numérico plano', () => {
+    expect(resolveTimetableRunPeriodId({ id: 1, period: 7 })).toBe(7);
+  });
+
+  it('resuelve period_id y period.id', () => {
+    expect(resolveTimetableRunPeriodId({ id: 1, period_id: 8 })).toBe(8);
+    expect(resolveTimetableRunPeriodId({ id: 1, period: { id: 9 } })).toBe(9);
+  });
+
+  it('rechaza valores inválidos', () => {
+    expect(resolveTimetableRunPeriodId({ id: 1, period: 0 })).toBeNull();
+    expect(resolveTimetableRunPeriodId({ id: 1, period_id: 'x' as any })).toBeNull();
+    expect(resolveTimetableRunPeriodId({ id: 1, period: { id: null as any } })).toBeNull();
+  });
+});
+
+describe('filterClassesForRunPeriod', () => {
+  it('filtra clases por periodo cuando la ejecución resuelve periodo', () => {
+    const classes = [{ id: 1, period: { id: 3 } }, { id: 2, period: { id: 4 } }];
+    const runs = [{ id: 10, period: 3 }];
+
+    expect(filterClassesForRunPeriod(classes, runs as any, 10)).toEqual([{ id: 1, period: { id: 3 } }]);
+  });
+
+  it('conserva fallback cuando la ejecución no resuelve periodo', () => {
+    const classes = [{ id: 1, period: { id: 3 } }, { id: 2, period: { id: 4 } }];
+    const runs = [{ id: 10, period: null }];
+
+    expect(filterClassesForRunPeriod(classes, runs as any, 10)).toEqual(classes);
   });
 });
 

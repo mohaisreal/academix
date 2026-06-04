@@ -1,4 +1,4 @@
-type TimetableRunLike = { id: number; period?: { id: number; name?: string | null } | null; period_name?: string | null; status?: string | null; assignments_count?: number | null };
+type TimetableRunLike = { id: number; period?: number | { id?: number | null; name?: string | null } | null; period_id?: number | null; period_name?: string | null; status?: string | null; assignments_count?: number | null };
 type TimetableClassLike = { id: number; period?: { id: number } | null };
 type TimetableViolationLike = { severity?: string | null; penalty?: number | null };
 
@@ -172,9 +172,20 @@ export function buildBulkTimeSlots(input: { periodId: number; daysOfWeek: number
 export function filterClassesForRunPeriod<T extends TimetableClassLike>(classes: T[], runs: TimetableRunLike[], selectedRunId: number | null) {
   if (!selectedRunId) return classes;
   const run = runs.find((r) => Number(r.id) === Number(selectedRunId));
-  const periodId = run?.period?.id;
+  const periodId = resolveTimetableRunPeriodId(run);
   if (!periodId) return classes;
   return classes.filter((cls) => Number(cls.period?.id) === Number(periodId));
+}
+
+export function resolveTimetableRunPeriodId(run: TimetableRunLike | null | undefined) {
+  if (!run) return null;
+  const directPeriod = Number((run as any).period);
+  if (Number.isInteger(directPeriod) && directPeriod > 0) return directPeriod;
+
+  const periodId = Number(run.period_id ?? run.period?.id);
+  if (Number.isInteger(periodId) && periodId > 0) return periodId;
+
+  return null;
 }
 
 export function buildTareaPayload(values: TimetableTareaFormValues, runId: number, fallbackTeacherId: number | null) {

@@ -99,6 +99,7 @@ describe('management timetable page layout cleanup', () => {
 
     expect(source).toContain('window.confirm');
     expect(source).toContain('cleanup/generated-classes');
+    expect(source).toContain('resolveTimetableRunPeriodId(selectedRun())');
     expect(source).toContain("body: JSON.stringify({ period: periodId })");
     expect(source).toContain("toast.success('Clases generadas eliminadas')");
     expect(source).toContain('Selecciona una ejecución con periodo antes de limpiar las clases generadas.');
