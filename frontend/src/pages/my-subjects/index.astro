@@ -125,7 +125,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         const classId = getClassId(s);
         const name = s.subject_name || s.name || 'Asignatura';
         const code = s.subject_code || s.code || '';
-        const teacher = s.teacher_name || s.teacher || 'Profesor desconocido';
+        const teacher = s.teacher_name || 'Profesor desconocido';
         const credits = s.credits || 0;
         const grade = s.current_grade ?? s.grade;
         const gradeDisplay = grade != null ? `${parseFloat(grade).toFixed(1)}%` : 'Sin calificar todavía';

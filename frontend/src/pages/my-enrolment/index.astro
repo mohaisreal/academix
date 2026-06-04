@@ -173,7 +173,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         tbody.innerHTML = classes.map(c => {
           const subject = c.subject_name || c.subject?.name || 'Asignatura';
           const code = c.subject_code || c.code || '-';
-          const teacher = c.teacher_name || c.teacher?.full_name || '-';
+          const teacher = c.teacher_name || '-';
           const classroom = c.classroom_name || c.classroom?.name || '-';
           const credits = c.credits || '-';
           const classStatus = c.status || 'active';

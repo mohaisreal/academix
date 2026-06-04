@@ -71,7 +71,11 @@ class ClassEnrollmentSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
 
     def get_teacher_name(self, obj):
-        t = obj.cls.teacher
+        assignment_map = self.context.get('canonical_assignment_map')
+        if assignment_map is None:
+            assignment_map = canonical_assignment_map_for_period(obj.cls.period_id, [obj.cls_id])
+        assignment = assignment_map.get(obj.cls_id)
+        t = assignment.teacher if assignment else obj.cls.teacher
         if not t:
             return ''
         return f"{t.first_name} {t.last_name}".strip() or t.username

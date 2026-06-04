@@ -252,7 +252,15 @@ class ClassEnrollmentTests(TestCase):
         self.slot_b_overlap = TimeSlot.objects.create(period=self.period, day_of_week=0, start_time='09:00', end_time='11:00')
         self.slot_c_no_overlap = TimeSlot.objects.create(period=self.period, day_of_week=0, start_time='10:00', end_time='12:00')
         self.run = TimetableRun.objects.create(period=self.period, status='published')
-        ScheduleAssignment.objects.create(run=self.run, cls=self.cls, slot=self.slot_a, classroom=self.classroom, teacher=None)
+        self.legacy_teacher = User.objects.create_user(username='legacy_teacher', email='legacy_teacher@test.com', password='testpass123')
+        self.legacy_teacher.role = 't'
+        self.legacy_teacher.save()
+        self.teacher = User.objects.create_user(username='teacher_assigned', email='teacher_assigned@test.com', password='testpass123')
+        self.teacher.role = 't'
+        self.teacher.save()
+        self.cls.teacher = self.legacy_teacher
+        self.cls.save(update_fields=['teacher'])
+        ScheduleAssignment.objects.create(run=self.run, cls=self.cls, slot=self.slot_a, classroom=self.classroom, teacher=self.teacher)
 
         # CareerEnrollment activo para el estudiante
         self.career_enrollment = CareerEnrollment.objects.create(
@@ -323,6 +331,16 @@ class ClassEnrollmentTests(TestCase):
             'class_id': self.cls.pk,
         })
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_class_enrollment_serializer_uses_canonical_assignment_teacher(self):
+        """La API devuelve el docente publicado, no el docente legado de la clase."""
+        ClassEnrollment.objects.create(student=self.student, cls=self.cls, status='enrolled')
+        self.client.force_authenticate(user=self.student)
+
+        response = self.client.get(self._class_enroll_url())
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]['teacher_name'], self.teacher.get_full_name() or self.teacher.username)
 
     # --- Prueba 12: solapamiento de horario → 400 --------------------------------
 

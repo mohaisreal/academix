@@ -28,10 +28,12 @@ def canonical_assignment_map_for_period(period_id, class_ids):
 
 
 def resolve_assignment_teacher_for_class(cls, assignment_map=None):
+    if cls.teacher_id:
+        return cls.teacher
     if assignment_map is None:
         assignment_map = canonical_assignment_map_for_period(cls.period_id, [cls.id])
     assignment = assignment_map.get(cls.id)
-    return (assignment.teacher if assignment and assignment.teacher else cls.teacher)
+    return assignment.teacher if assignment and assignment.teacher else None
 
 
 def serialize_assignment_schedule(assignment):

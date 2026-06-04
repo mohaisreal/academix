@@ -38,6 +38,12 @@ COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
           '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#a855f7']
 
 
+def _teacher_display_name(teacher):
+    if not teacher:
+        return ''
+    return f"{teacher.first_name} {teacher.last_name}".strip() or teacher.username
+
+
 class CareerViewSet(viewsets.ModelViewSet):
     queryset = Career.objects.all()
     serializer_class = CareerSerializer
@@ -215,7 +221,7 @@ class ClassViewSet(viewsets.ModelViewSet):
             assignments = assignments_by_period_and_class.get(cls.period_id, {}).get(cls.id, [])
             if assignments:
                 for assignment in assignments:
-                    teacher = assignment.teacher or cls.teacher
+                    teacher = cls.teacher or assignment.teacher
                     classroom = assignment.classroom or cls.classroom
                     schedule_data.append({
                         'schedule_id': assignment.slot_id,
@@ -225,10 +231,7 @@ class ClassViewSet(viewsets.ModelViewSet):
                         'subject_name': cls.subject.name,
                         'subject_code': cls.subject.code,
                         'period_name': cls.period.name,
-                        'teacher_name': (
-                            f"{teacher.first_name} {teacher.last_name}".strip()
-                            if teacher else ''
-                        ),
+                    'teacher_name': _teacher_display_name(teacher),
                         'classroom': str(classroom) if classroom else '',
                         'day_of_week': assignment.slot.day_of_week,
                         'day_name': assignment.slot.get_day_of_week_display(),
@@ -247,10 +250,7 @@ class ClassViewSet(viewsets.ModelViewSet):
                     'subject_name': cls.subject.name,
                     'subject_code': cls.subject.code,
                     'period_name': cls.period.name,
-                    'teacher_name': (
-                        f"{cls.teacher.first_name} {cls.teacher.last_name}".strip()
-                        if cls.teacher else ''
-                    ),
+                    'teacher_name': _teacher_display_name(cls.teacher),
                     'classroom': str(cls.classroom) if cls.classroom else '',
                     'day_of_week': sched.day_of_week,
                     'day_name': sched.get_day_of_week_display(),

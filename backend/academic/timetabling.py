@@ -65,6 +65,44 @@ def _resolve_teacher(cls):
     return None, None
 
 
+def backfill_generated_class_teachers():
+    updated = 0
+    skipped_empty = 0
+    skipped_ambiguous = 0
+    skipped_existing_teacher = Class.objects.filter(is_generated_by_timetable=True).exclude(teacher__isnull=True).count()
+
+    generated_classes = (
+        Class.objects.filter(is_generated_by_timetable=True, teacher__isnull=True)
+        .select_related('subject', 'subject__department', 'subject__department__teacher')
+        .order_by('id')
+    )
+
+    for cls in generated_classes:
+        teacher_ids = list(
+            ScheduleAssignment.objects.filter(run__status='published', cls=cls)
+            .exclude(teacher__isnull=True)
+            .values_list('teacher_id', flat=True)
+            .distinct()
+        )
+        if not teacher_ids:
+            skipped_empty += 1
+            continue
+        if len(teacher_ids) > 1:
+            skipped_ambiguous += 1
+            continue
+
+        cls.teacher_id = teacher_ids[0]
+        cls.save(update_fields=['teacher'])
+        updated += 1
+
+    return {
+        'updated': updated,
+        'skipped_existing_teacher': skipped_existing_teacher,
+        'skipped_empty': skipped_empty,
+        'skipped_ambiguous': skipped_ambiguous,
+    }
+
+
 def _is_blocked_by_constraints(cls, slot, constraints, teacher_id):
     for c in constraints:
         if not _slot_overlaps_constraint(slot, c):
@@ -139,6 +177,10 @@ def generate_for_run(run):
                 metadata={'class_id': cls.id, 'unresolved_teacher': True, 'requested_sessions': class_demand},
             )
             continue
+
+        if cls.is_generated_by_timetable and cls.teacher_id is None:
+            cls.teacher = resolved_teacher
+            cls.save(update_fields=['teacher'])
 
         class_used_days = used_days_by_class.setdefault(cls.id, set())
         for _session_index in range(class_demand):

@@ -23,6 +23,7 @@ from academic.models import (
     SchedulingConstraint,
     Department,
 )
+from academic.timetabling import backfill_generated_class_teachers, generate_for_run
 from enrollment.models import ClassEnrollment
 from users.models import User
 
@@ -153,6 +154,62 @@ class TimetableGenerateAndPublishTests(TestCase):
         self.assertEqual(run.status, 'completed')
         self.assertGreater(run.assignments.count(), 0)
         self.assertIn('generator', run.metadata)
+
+    def test_generate_persists_teacher_on_generated_class(self):
+        period = make_period('P2026GEN1T')
+        teacher = User.objects.create_user(
+            username='teacher_gen_persist',
+            email='teacher_gen_persist@test.com',
+            password='testpass123',
+            role='t',
+        )
+        department = Department.objects.create(name='Departamento GENP', code='DEP-GENP', teacher=teacher)
+        career = Career.objects.create(name='Career GENP', code='CAR-GENP')
+        subject = Subject.objects.create(
+            name='Subject GENP', code='SUB-GENP', career=career, department=department, hours_per_week=1
+        )
+        classroom = Classroom.objects.create(name='Room GENP', building='Main', capacity=40, type='lecture')
+        TimeSlot.objects.create(period=period, day_of_week=1, start_time=time(9, 0), end_time=time(10, 0))
+        cls = Class.objects.create(subject=subject, teacher=None, period=period, classroom=classroom, max_students=30, is_generated_by_timetable=True)
+        run = TimetableRun.objects.create(period=period)
+
+        generate_for_run(run)
+
+        cls.refresh_from_db()
+        assignment = ScheduleAssignment.objects.get(run=run, cls=cls)
+        self.assertEqual(cls.teacher_id, teacher.id)
+        self.assertEqual(assignment.teacher_id, teacher.id)
+
+    def test_generate_does_not_overwrite_manual_class_teacher(self):
+        period = make_period('P2026GEN1M')
+        persisted_teacher = User.objects.create_user(
+            username='teacher_manual_persist',
+            email='teacher_manual_persist@test.com',
+            password='testpass123',
+            role='t',
+        )
+        department_teacher = User.objects.create_user(
+            username='teacher_dept_manual_persist',
+            email='teacher_dept_manual_persist@test.com',
+            password='testpass123',
+            role='t',
+        )
+        department = Department.objects.create(name='Departamento GENM', code='DEP-GENM', teacher=department_teacher)
+        career = Career.objects.create(name='Career GENM', code='CAR-GENM')
+        subject = Subject.objects.create(
+            name='Subject GENM', code='SUB-GENM', career=career, department=department, hours_per_week=1
+        )
+        classroom = Classroom.objects.create(name='Room GENM', building='Main', capacity=40, type='lecture')
+        TimeSlot.objects.create(period=period, day_of_week=1, start_time=time(11, 0), end_time=time(12, 0))
+        cls = Class.objects.create(subject=subject, teacher=persisted_teacher, period=period, classroom=classroom, max_students=30, is_generated_by_timetable=False)
+        run = TimetableRun.objects.create(period=period)
+
+        generate_for_run(run)
+
+        cls.refresh_from_db()
+        assignment = ScheduleAssignment.objects.get(run=run, cls=cls)
+        self.assertEqual(cls.teacher_id, persisted_teacher.id)
+        self.assertEqual(assignment.teacher_id, persisted_teacher.id)
 
     def test_generate_with_limited_slots_keeps_run_non_failed(self):
         period = make_period('P2026GEN2')
@@ -922,6 +979,77 @@ class MyScheduleCompatibilityTests(TestCase):
         assignment_ids = {row['assignment_id'] for row in response.data}
         self.assertEqual(assignment_ids, {assignment_a.id, assignment_b.id})
         self.assertTrue(all(row['source'] == 'generated' for row in response.data))
+
+    def test_my_schedule_prefers_persisted_class_teacher_over_assignment_teacher(self):
+        persisted_teacher = User.objects.create_user(
+            username='teacher_persisted_ms',
+            email='teacher_persisted_ms@test.com',
+            password='testpass123',
+            role='t',
+        )
+        assignment_teacher = User.objects.create_user(
+            username='teacher_assignment_ms',
+            email='teacher_assignment_ms@test.com',
+            password='testpass123',
+            role='t',
+        )
+        run = TimetableRun.objects.create(period=self.period, status='published')
+        slot = TimeSlot.objects.create(period=self.period, day_of_week=2, start_time=time(12, 0), end_time=time(13, 0))
+        self.cls.teacher = persisted_teacher
+        self.cls.save(update_fields=['teacher'])
+        ScheduleAssignment.objects.create(
+            run=run,
+            cls=self.cls,
+            slot=slot,
+            classroom=self.cls.classroom,
+            teacher=assignment_teacher,
+        )
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get('/api/academic/classes/my-schedule/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['teacher_name'], f'{persisted_teacher.first_name} {persisted_teacher.last_name}'.strip() or persisted_teacher.username)
+
+
+class GeneratedTeacherBackfillTests(TestCase):
+    def test_backfill_populates_only_unambiguous_generated_classes_and_is_idempotent(self):
+        period = make_period('P2026BF1')
+        career = Career.objects.create(name='Career BF', code='CAR-BF')
+        teacher = User.objects.create_user(username='teacher_bf1', email='teacher_bf1@test.com', password='testpass123', role='t')
+        teacher2 = User.objects.create_user(username='teacher_bf2', email='teacher_bf2@test.com', password='testpass123', role='t')
+        classroom = Classroom.objects.create(name='Room BF', building='Main', capacity=40, type='lecture')
+        classroom2 = Classroom.objects.create(name='Room BF2', building='Main', capacity=40, type='lecture')
+        subject1 = Subject.objects.create(name='Subject BF1', code='SUB-BF1', career=career, hours_per_week=1)
+        subject2 = Subject.objects.create(name='Subject BF2', code='SUB-BF2', career=career, hours_per_week=1)
+        subject3 = Subject.objects.create(name='Subject BF3', code='SUB-BF3', career=career, hours_per_week=1)
+        cls_backfill = Class.objects.create(subject=subject1, teacher=None, period=period, classroom=classroom, max_students=30, is_generated_by_timetable=True)
+        cls_ambiguous = Class.objects.create(subject=subject2, teacher=None, period=period, classroom=classroom, max_students=30, is_generated_by_timetable=True)
+        cls_existing = Class.objects.create(subject=subject3, teacher=teacher2, period=period, classroom=classroom2, max_students=30, is_generated_by_timetable=True)
+        run = TimetableRun.objects.create(period=period, status='published')
+        slot_a = TimeSlot.objects.create(period=period, day_of_week=1, start_time=time(8, 0), end_time=time(9, 0))
+        slot_b = TimeSlot.objects.create(period=period, day_of_week=2, start_time=time(8, 0), end_time=time(9, 0))
+        ScheduleAssignment.objects.create(run=run, cls=cls_backfill, slot=slot_a, classroom=classroom, teacher=teacher)
+        ScheduleAssignment.objects.create(run=run, cls=cls_ambiguous, slot=slot_b, classroom=classroom, teacher=teacher)
+        ScheduleAssignment.objects.create(run=run, cls=cls_ambiguous, slot=slot_a, classroom=classroom2, teacher=teacher2)
+        ScheduleAssignment.objects.create(run=run, cls=cls_existing, slot=slot_b, classroom=classroom2, teacher=teacher2)
+
+        first_result = backfill_generated_class_teachers()
+        second_result = backfill_generated_class_teachers()
+
+        cls_backfill.refresh_from_db()
+        cls_ambiguous.refresh_from_db()
+        cls_existing.refresh_from_db()
+
+        self.assertEqual(first_result['updated'], 1)
+        self.assertEqual(first_result['skipped_ambiguous'], 1)
+        self.assertEqual(first_result['skipped_existing_teacher'], 1)
+        self.assertEqual(first_result['skipped_empty'], 0)
+        self.assertEqual(second_result['updated'], 0)
+        self.assertEqual(cls_backfill.teacher_id, teacher.id)
+        self.assertIsNone(cls_ambiguous.teacher_id)
+        self.assertEqual(cls_existing.teacher_id, teacher2.id)
 
 
 class CareerClassesCanonicalScheduleTests(TestCase):
