@@ -14,6 +14,7 @@ from pathlib import Path
 from datetime import timedelta
 import environ
 import os
+from django.core.exceptions import ImproperlyConfigured
 
 # Inicializa las variables de entorno
 env = environ.Env(
@@ -168,6 +169,118 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Ficheros multimedia (contenido subido por usuarios)
 MEDIA_URL = env('MEDIA_URL', default='/media/')
 MEDIA_ROOT = BASE_DIR / env('MEDIA_ROOT', default='media')
+
+AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID', default='')
+AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY', default='')
+AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME', default='')
+AWS_S3_REGION_NAME = env('AWS_S3_REGION_NAME', default='')
+
+
+def _missing_production_media_settings(
+    access_key: str,
+    secret_key: str,
+    bucket_name: str,
+    region_name: str,
+) -> list[str]:
+    required_aws = {
+        'AWS_ACCESS_KEY_ID': access_key,
+        'AWS_SECRET_ACCESS_KEY': secret_key,
+        'AWS_STORAGE_BUCKET_NAME': bucket_name,
+        'AWS_S3_REGION_NAME': region_name,
+    }
+    return [key for key, value in required_aws.items() if not value]
+
+
+def _missing_production_email_settings(
+    backend: str,
+    host: str,
+    port: str | int,
+    host_user: str,
+    host_password: str,
+) -> list[str]:
+    required_email = {
+        'EMAIL_HOST': host,
+        'EMAIL_PORT': port,
+        'EMAIL_HOST_USER': host_user,
+        'EMAIL_HOST_PASSWORD': host_password,
+    }
+    missing = [key for key, value in required_email.items() if value in ('', None)]
+    if backend != 'django.core.mail.backends.smtp.EmailBackend':
+        missing.insert(0, 'EMAIL_BACKEND')
+    return missing
+
+
+def _missing_production_stripe_settings(
+    secret_key: str,
+    public_key: str,
+    webhook_secret: str,
+    live_payments_enabled: bool,
+) -> list[str]:
+    required_stripe = {
+        'STRIPE_SECRET_KEY': secret_key,
+        'STRIPE_PUBLIC_KEY': public_key,
+        'STRIPE_WEBHOOK_SECRET': webhook_secret,
+        'STRIPE_LIVE_PAYMENTS_ENABLED': live_payments_enabled,
+    }
+    return [key for key, value in required_stripe.items() if not value]
+
+if not DEBUG:
+    missing_aws = _missing_production_media_settings(
+        AWS_ACCESS_KEY_ID,
+        AWS_SECRET_ACCESS_KEY,
+        AWS_STORAGE_BUCKET_NAME,
+        AWS_S3_REGION_NAME,
+    )
+    if missing_aws:
+        raise ImproperlyConfigured(
+            'Production media storage requires AWS S3 settings: ' + ', '.join(missing_aws)
+        )
+
+    missing_email = _missing_production_email_settings(
+        EMAIL_BACKEND,
+        EMAIL_HOST,
+        EMAIL_PORT,
+        EMAIL_HOST_USER,
+        EMAIL_HOST_PASSWORD,
+    )
+    if missing_email:
+        raise ImproperlyConfigured(
+            'Production email delivery requires SMTP settings: ' + ', '.join(missing_email)
+        )
+
+    missing_stripe = _missing_production_stripe_settings(
+        STRIPE_SECRET_KEY,
+        STRIPE_PUBLIC_KEY,
+        STRIPE_WEBHOOK_SECRET,
+        STRIPE_LIVE_PAYMENTS_ENABLED,
+    )
+    if missing_stripe:
+        raise ImproperlyConfigured(
+            'Production Stripe payments require settings: ' + ', '.join(missing_stripe)
+        )
+
+    INSTALLED_APPS += ['storages']
+    STORAGES = {
+        'default': {
+            'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
+        },
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        },
+    }
+
+    MEDIA_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/'
+    AWS_DEFAULT_ACL = None
+    AWS_QUERYSTRING_AUTH = False
+else:
+    STORAGES = {
+        'default': {
+            'BACKEND': 'django.core.files.storage.FileSystemStorage',
+        },
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        },
+    }
 
 # Tipo de campo por defecto para la clave primaria
 # https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field

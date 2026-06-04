@@ -46,6 +46,20 @@ describe('ENV contract root files', () => {
     expect(env.PUBLIC_API_URL).toBe('/api');
     expect(env.ALLOWED_HOSTS).not.toContain('localhost');
   });
+
+  it('.env.prod incluye conexión AWS/S3 para archivos', () => {
+    const env = readEnvFile('.env.prod');
+    const required = [
+      'AWS_ACCESS_KEY_ID',
+      'AWS_SECRET_ACCESS_KEY',
+      'AWS_STORAGE_BUCKET_NAME',
+      'AWS_S3_REGION_NAME',
+    ];
+
+    for (const key of required) {
+      expect(env[key], `missing key: ${key}`).toBeDefined();
+    }
+  });
 });
 
 describe('Regression fallback localhost en frontend', () => {

@@ -24,3 +24,6 @@ psycopg2-binary>=2.9.0
 
 # Stripe payment processing
 stripe>=7.0.0
+
+# AWS S3 media storage
+django-storages[boto3]>=1.14.0
