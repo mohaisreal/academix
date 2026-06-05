@@ -9,6 +9,7 @@ export default defineConfig({
 	},
 	server: {
 		host: true,
+		allowedHosts: ['academix.cv'],
 		port: 4321,
 	},
 });

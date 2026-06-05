@@ -41,8 +41,12 @@ describe('ENV contract root files', () => {
     expect(env.PUBLIC_API_URL).toBe('http://localhost:8000/api');
   });
 
-  it('.env.prod usa proxy relativo para frontend', () => {
+  it('.env.prod usa el dominio academix.cv y proxy relativo para frontend', () => {
     const env = readEnvFile('.env.prod');
+    expect(env.ALLOWED_HOSTS).toBe('academix.cv');
+    expect(env.CORS_ALLOWED_ORIGINS).toBe('https://academix.cv');
+    expect(env.CSRF_TRUSTED_ORIGINS).toBe('https://academix.cv');
+    expect(env.FRONTEND_URL).toBe('https://academix.cv');
     expect(env.PUBLIC_API_URL).toBe('/api');
     expect(env.ALLOWED_HOSTS).not.toContain('localhost');
   });
@@ -59,6 +63,19 @@ describe('ENV contract root files', () => {
     for (const key of required) {
       expect(env[key], `missing key: ${key}`).toBeDefined();
     }
+  });
+});
+
+describe('Frontend dev server host config', () => {
+  it('permite academix.cv en Astro/Vite sin crear vite.config.js', () => {
+    const configPath = path.resolve(process.cwd(), 'astro.config.mjs');
+    const content = fs.readFileSync(configPath, 'utf8');
+
+    expect(content).toContain('server:');
+    expect(content).toContain('host: true');
+    expect(content).toContain('port: 4321');
+    expect(content).toContain('academix.cv');
+    expect(content).not.toContain('vite.config.js');
   });
 });
 

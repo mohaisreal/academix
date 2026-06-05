@@ -228,7 +228,7 @@ Run `make help` to see all available commands. The most commonly used ones:
 
 ## Environment Variables
 
-Production frontend usa proxy relativo `/api` (Nginx → backend). No debe apuntar a `localhost` en bundle productivo.
+Production frontend usa proxy relativo `/api` (Nginx → backend). No debe apuntar a `localhost` en bundle productivo. En VPS, el dominio público es `https://academix.cv` detrás de Nginx Proxy Manager.
 
 ### `.env.dev`
 
@@ -248,11 +248,12 @@ DATABASE_PATH=db.sqlite3
 ```env
 SECRET_KEY=your-secure-secret-key
 DEBUG=False
-ALLOWED_HOSTS=your-domain.com
-CORS_ALLOWED_ORIGINS=https://your-domain.com
+ALLOWED_HOSTS=academix.cv
+CORS_ALLOWED_ORIGINS=https://academix.cv
 PUBLIC_API_URL=/api
 BACKEND_API_URL=http://backend:8000/api
-FRONTEND_URL=https://your-domain.com
+CSRF_TRUSTED_ORIGINS=https://academix.cv
+FRONTEND_URL=https://academix.cv
 
 POSTGRES_DB=academix
 POSTGRES_USER=academix_user
@@ -264,7 +265,7 @@ POSTGRES_PORT=5432
 ### Manual validation checklist
 
 - Backend health responde en `http://localhost:8000/api/health/`.
-- Frontend en producción consume API vía `/api` (sin fallback a localhost).
+- Frontend en producción consume API vía `/api` (sin fallback a localhost) y se publica en `https://academix.cv`.
 - `docker-compose.dev.yml` y `docker-compose.prod.yml` inyectan contrato ENV al frontend.
 
 ---
