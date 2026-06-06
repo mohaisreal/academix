@@ -21,7 +21,7 @@ NOTIFICATION_EVENT_DEFINITIONS = [
         'key': 'message_received',
         'label': 'Has recibido un mensaje',
         'description': 'Avisos cuando otro usuario te envía un mensaje interno.',
-        'template_name': 'message_received',
+        'template_name': 'chat_message_received',
     },
     {
         'key': 'material_added',

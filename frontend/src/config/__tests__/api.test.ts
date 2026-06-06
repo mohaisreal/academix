@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveApiBaseUrl } from '../api';
+import { resolveApiBaseUrl, resolveWebSocketBaseUrl } from '../api';
 
 describe('resolveApiBaseUrl', () => {
   it('usa localhost en development cuando no hay env', () => {
@@ -27,5 +27,13 @@ describe('resolveApiBaseUrl', () => {
         MODE: 'production',
       }),
     ).toBe('http://backend:8000/api');
+  });
+
+  it('convierte la base API a websocket ws en desarrollo', () => {
+    expect(resolveWebSocketBaseUrl({ MODE: 'development', DEV: true })).toBe('ws://localhost:8000');
+  });
+
+  it('convierte https a wss para websocket', () => {
+    expect(resolveWebSocketBaseUrl({ PUBLIC_API_URL: 'https://portal.example.edu/api' })).toBe('wss://portal.example.edu');
   });
 });

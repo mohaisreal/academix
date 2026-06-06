@@ -86,6 +86,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
 <script>
   import API_BASE_URL from '@/config/api';
+  import { resolveWebSocketBaseUrl } from '@/config/api';
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
   const API_URL = API_BASE_URL;
@@ -152,6 +153,73 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   let activeTab = 'inbox';
   let selectedMessageId = null;
+  let ws = null;
+  let reconnectTimer = null;
+  let reconnectAttempts = 0;
+  let destroyed = false;
+
+  function buildMessagesSocketUrl() {
+    const wsBase = resolveWebSocketBaseUrl(import.meta.env);
+    return `${wsBase}/ws/messaging/?token=${encodeURIComponent(token)}`;
+  }
+
+  function scheduleReconnect() {
+    if (destroyed) return;
+    window.clearTimeout(reconnectTimer);
+    const delay = Math.min(1000 * (reconnectAttempts + 1), 5000);
+    reconnectAttempts += 1;
+    reconnectTimer = window.setTimeout(connectSocket, delay);
+  }
+
+  function refreshAfterRealtimeEvent(payload) {
+    if (!payload || payload.type !== 'message.created') return;
+    if (payload.sender_id !== user?.id && payload.recipient_id !== user?.id) return;
+    loadMessages();
+    refreshUnreadCount();
+    if (selectedMessageId && String(payload.root_id ?? payload.message_id) === String(selectedMessageId)) {
+      loadThread(selectedMessageId);
+    }
+  }
+
+  function connectSocket() {
+    if (destroyed || !window.WebSocket) return;
+    try {
+      ws?.close();
+    } catch {}
+    try {
+      ws = new WebSocket(buildMessagesSocketUrl());
+      ws.onopen = () => { reconnectAttempts = 0; };
+      ws.onmessage = (event) => {
+        try {
+          refreshAfterRealtimeEvent(JSON.parse(event.data));
+        } catch {}
+      };
+      ws.onclose = scheduleReconnect;
+      ws.onerror = () => {
+        try { ws?.close(); } catch {}
+      };
+    } catch {
+      scheduleReconnect();
+    }
+  }
+
+  async function refreshUnreadCount() {
+    try {
+      const data = await apiFetch('/messaging/unread-count/');
+      const count = Number(data?.count ?? 0);
+      const text = count > 99 ? '99+' : String(count);
+      for (const id of ['messages-badge', 'messages-badge-sidebar']) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        if (count > 0) {
+          el.textContent = text;
+          el.classList.remove('hidden');
+        } else {
+          el.classList.add('hidden');
+        }
+      }
+    } catch {}
+  }
 
   function renderMessageList(messages) {
     const list = document.getElementById('message-list');
@@ -252,6 +320,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         }).join('');
         msgs.scrollTop = msgs.scrollHeight;
       }
+      refreshUnreadCount();
     } catch {
       if (header) header.innerHTML = '<div class="text-sm text-red-400">No se pudo cargar la conversación</div>';
     }
@@ -287,6 +356,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       });
       (document.getElementById('reply-body') as HTMLTextAreaElement).value = '';
       loadThread(selectedMessageId);
+      refreshUnreadCount();
     } catch { (window as any).showToast?.('error', 'No se pudo enviar la respuesta'); }
   });
 
@@ -338,7 +408,15 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   (async () => {
     await loadMessages();
+    refreshUnreadCount();
     showContent();
+    connectSocket();
   })();
+
+  window.addEventListener('beforeunload', () => {
+    destroyed = true;
+    window.clearTimeout(reconnectTimer);
+    try { ws?.close(); } catch {}
+  });
 </script>
 

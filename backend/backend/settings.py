@@ -75,6 +75,8 @@ INSTALLED_APPS = [
     'questionnaire',
 ]
 
+ASGI_APPLICATION = 'backend.asgi.application'
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # MUST be first — intercepts OPTIONS preflight before any other middleware
     'django.middleware.security.SecurityMiddleware',
@@ -286,6 +288,13 @@ else:
 # https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    }
+}
 
 
 # ============================================================================

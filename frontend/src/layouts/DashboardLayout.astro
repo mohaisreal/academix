@@ -164,6 +164,11 @@ const { title, currentPath } = Astro.props;
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
                                 Materiales
                             </a>
+                            <a href="/messages" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                Mensajes
+                                <span id="messages-badge-sidebar" class="ml-auto hidden text-xs bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 leading-none">0</span>
+                            </a>
                         </div>
                         <div id="nav-student-enrolment-actions">
                             <p class="px-3 mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Admision</p>
@@ -221,6 +226,7 @@ const { title, currentPath } = Astro.props;
                         <a href="/messages" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                             Mensajes
+                            <span id="messages-badge" class="hidden text-xs bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 leading-none">0</span>
                         </a>
                     </div>
 

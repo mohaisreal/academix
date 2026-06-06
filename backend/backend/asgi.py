@@ -13,4 +13,18 @@ from django.core.asgi import get_asgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 
-application = get_asgi_application()
+django_asgi_app = get_asgi_application()
+
+try:
+    from channels.routing import ProtocolTypeRouter, URLRouter
+    import messaging.routing
+    from messaging.auth import JwtQueryStringAuthMiddlewareStack
+
+    application = ProtocolTypeRouter({
+        'http': django_asgi_app,
+        'websocket': JwtQueryStringAuthMiddlewareStack(
+            URLRouter(messaging.routing.websocket_urlpatterns)
+        ),
+    })
+except ModuleNotFoundError:
+    application = django_asgi_app

@@ -144,6 +144,31 @@ class CreateNotificationEmailTests(TestCase):
         self.assertFalse(Notification.objects.filter(user=self.user, title='Grade').exists())
         mock_send.assert_not_called()
 
+    @patch('notifications.utils.send_mail')
+    def test_message_received_uses_chat_template_name(self, mock_send):
+        SystemSettings.objects.get_or_create(pk=1, defaults={'email_notifications_enabled': True})
+        UserEmailPreference.objects.create(user=self.user, email_enabled=True)
+        EmailTemplate.objects.update_or_create(
+            name='chat_message_received',
+            defaults={
+                'subject_template': 'Chat: {{sender_name}}',
+                'body_template': '<p>{{message_subject}}</p>',
+                'description': 'Chat template',
+                'is_active': True,
+            },
+        )
+
+        create_notification(
+            self.user,
+            'Chat',
+            'Hello there',
+            event_type='message_received',
+            context={'sender_name': 'Alice', 'message_subject': 'Hello'},
+        )
+
+        mock_send.assert_called_once()
+        self.assertIn('Chat: Alice', mock_send.call_args.kwargs['subject'])
+
 
 class EmailTemplateBrandingTests(TestCase):
     def setUp(self):

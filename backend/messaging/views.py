@@ -1,10 +1,12 @@
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Message
 from .serializers import MessageSerializer
 from notifications.utils import create_notification
+from .realtime import broadcast_message_created
 
 User = get_user_model()
 
@@ -60,6 +62,7 @@ class ComposeView(APIView):
         serializer = MessageSerializer(data=data)
         if serializer.is_valid():
             msg = serializer.save(sender=request.user)
+            transaction.on_commit(lambda: broadcast_message_created(msg))
             if msg.recipient != request.user:
                 sender_name = request.user.get_full_name() or request.user.username
                 create_notification(
@@ -136,6 +139,7 @@ class ReplyView(APIView):
             body=body,
             parent=parent,
         )
+        transaction.on_commit(lambda: broadcast_message_created(msg))
         if recipient != request.user:
             sender_name = request.user.get_full_name() or request.user.username
             create_notification(
