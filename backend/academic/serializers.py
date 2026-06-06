@@ -14,6 +14,7 @@ from .models import (
     ConstraintViolation,
     SchedulingConstraint,
 )
+from .timetabling import build_warning_summary_for_run
 from .schedule_source import serialize_assignment_schedule, resolve_assignment_teacher_for_class
 
 User = get_user_model()
@@ -238,14 +239,18 @@ class TimeSlotSerializer(serializers.ModelSerializer):
 class TimetableRunSerializer(serializers.ModelSerializer):
     period_name = serializers.CharField(source='period.name', read_only=True)
     assignments_count = serializers.SerializerMethodField()
+    warning_summary = serializers.SerializerMethodField()
 
     class Meta:
         model = TimetableRun
-        fields = ['id', 'period', 'period_name', 'status', 'metadata', 'assignments_count', 'created_at', 'updated_at']
+        fields = ['id', 'period', 'period_name', 'status', 'metadata', 'assignments_count', 'warning_summary', 'created_at', 'updated_at']
         read_only_fields = ['status', 'metadata', 'created_at', 'updated_at']
 
     def get_assignments_count(self, obj):
         return obj.assignments.count()
+
+    def get_warning_summary(self, obj):
+        return build_warning_summary_for_run(obj)
 
 
 class ScheduleAssignmentSerializer(serializers.ModelSerializer):

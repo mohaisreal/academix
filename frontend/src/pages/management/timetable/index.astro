@@ -16,7 +16,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <p class="text-sm text-muted-foreground">Genera borradores, publica ejecuciones y revisa asignaciones/conflictos.</p>
       </div>
       <div class="flex flex-col items-start gap-2 sm:flex-row sm:items-center">
-        <span id="selected-run-badge" class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">Ninguna ejecución seleccionada</span>
+        <span id="selected-run-badge" class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">Ninguna ejecución seleccionada</span>
         <button id="cleanup-generated-classes-btn" type="button" class="rounded-lg border border-red-500/30 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-500/10" title="Elimina las clases generadas automáticamente del periodo de la ejecución seleccionada">
           Eliminar clases generadas
         </button>
@@ -112,6 +112,37 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <button class="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Guardar restricción</button>
       </form>
     </section>
+
+    <section class="bg-card border border-border rounded-xl p-5 space-y-4">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 class="text-lg font-semibold">Infracciones</h2>
+          <p class="text-sm text-muted-foreground">Revisa el resumen de infracciones detectadas para la ejecución seleccionada.</p>
+        </div>
+        <select id="violations-severity-filter" class="bg-input border border-border rounded-lg px-3 py-2 text-sm">
+          <option value="">Todas las severidades</option>
+          <option value="hard">Duras</option>
+          <option value="soft">Blandas</option>
+        </select>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-3">
+        <div class="rounded-xl border border-border/80 bg-muted/20 p-3">
+          <p class="text-xs uppercase tracking-wide text-muted-foreground">Total</p>
+          <p id="violations-total" class="mt-1 text-lg font-semibold">0 total</p>
+        </div>
+        <div class="rounded-xl border border-border/80 bg-muted/20 p-3">
+          <p class="text-xs uppercase tracking-wide text-muted-foreground">Duras</p>
+          <p id="violations-hard" class="mt-1 text-lg font-semibold">0 duras</p>
+        </div>
+        <div class="rounded-xl border border-border/80 bg-muted/20 p-3">
+          <p class="text-xs uppercase tracking-wide text-muted-foreground">Blandas</p>
+          <p id="violations-soft" class="mt-1 text-lg font-semibold">0 blandas</p>
+        </div>
+      </div>
+      <ul id="violations-table-body" class="space-y-2 text-sm">
+        <li class="text-sm text-muted-foreground">No hay infracciones para esta ejecución.</li>
+      </ul>
+    </section>
   </div>
   <div id="preview-modal" class="hidden fixed inset-0 z-50 bg-black/60 p-4">
     <div class="mx-auto mt-6 max-w-6xl rounded-xl border border-border bg-card p-4">
@@ -119,6 +150,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <h3 class="text-lg font-semibold">Preview semanal (L-V)</h3>
         <button id="preview-modal-close" class="rounded border border-border px-3 py-1 text-sm">Cerrar</button>
       </div>
+      <div id="preview-warning-summary" class="hidden mb-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-200"></div>
       <div class="mb-3 flex gap-2">
         <select id="preview-career-filter" class="rounded border border-border bg-input px-3 py-2 text-sm"><option value="">Todas las carreras</option></select>
       </div>
@@ -194,6 +226,32 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   function selectedRun() { return runs.find((r) => Number(r.id) === Number(selectedRunId)) || null; }
   function selectedRunPeriodId() { return resolveTimetableRunPeriodId(selectedRun()); }
 
+  function getRunWarningSummary(run) {
+    return run?.warning_summary || run?.metadata?.generator?.warning_summary || null;
+  }
+
+  function buildWarningSummaryText(summary) {
+    if (!summary || (!summary.total && !summary.hard_violations && !summary.soft_violations && !summary.precondition_errors?.length && !summary.class_preparation_errors?.length && !summary.unresolved_teachers?.length)) return '';
+    const parts = [];
+    if (summary.hard_violations) parts.push(`${summary.hard_violations} duras`);
+    if (summary.soft_violations) parts.push(`${summary.soft_violations} blandas`);
+    const preconditions = (summary.precondition_errors || []).length;
+    if (preconditions) parts.push(`${preconditions} precondición${preconditions === 1 ? '' : 'es'}`);
+    const preparations = (summary.class_preparation_errors || []).length;
+    if (preparations) parts.push(`${preparations} preparación${preparations === 1 ? '' : 'es'}`);
+    const unresolved = (summary.unresolved_teachers || []).length;
+    if (unresolved) parts.push(`${unresolved} docentes sin resolver`);
+    return parts.join(' · ');
+  }
+
+  function shouldBlockByWarnings(summary) {
+    return Boolean(summary?.blocks_publish || summary?.hard_violations > 0);
+  }
+
+  function hasSoftOnlyWarnings(summary) {
+    return Boolean(summary && !shouldBlockByWarnings(summary) && (summary.soft_violations > 0 || (summary.precondition_errors || []).length > 0 || (summary.class_preparation_errors || []).length > 0 || (summary.unresolved_teachers || []).length > 0));
+  }
+
   function renderPeriodSelects() {
     const a = q('run-period-filter'); const b = q('run-period-create');
     if (!(a instanceof HTMLSelectElement) || !(b instanceof HTMLSelectElement)) return;
@@ -232,7 +290,15 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     if (!careerEnabled) career.value = '';
   }
 
-  function renderRunBadge() { const b = q('selected-run-badge'); if (b) b.textContent = selectedRun() ? getRunDisplayName(selectedRun()) : 'Ninguna ejecución seleccionada'; }
+  function renderRunBadge() {
+    const b = q('selected-run-badge');
+    if (!b) return;
+    const run = selectedRun();
+    if (!run) { b.textContent = 'Ninguna ejecución seleccionada'; return; }
+    const summary = getRunWarningSummary(run);
+    const warningCount = summary?.total ?? run.violations_count ?? 0;
+    b.innerHTML = `${esc(getRunDisplayName(run))}<span class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-foreground">${warningCount} infracciones</span>`;
+  }
   function syncSelectedRun() { if (!selectedRunId || !runs.some((r) => Number(r.id) === Number(selectedRunId))) selectedRunId = runs[0]?.id ?? null; }
 
   function renderRuns() {
@@ -242,7 +308,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     tbody.innerHTML = runs.map((run) => {
       const isSel = Number(run.id) === Number(selectedRunId); const canDelete = canDeleteTimetableRunStatus(run.status); const canGenerate = run.status !== 'published';
       const deleteBlockedReason = 'No se puede eliminar una ejecución publicada';
-      return `<tr class="border-b border-border ${isSel ? 'bg-primary/5' : ''}"><td class="py-3 pr-2"><div class="font-medium">${esc(run.period_name || run.period?.name || `Ejecución #${run.id}`)}</div><div class="text-xs text-muted-foreground">#${run.id}</div></td><td class="py-3 pr-2"><span class="inline-flex rounded-full ${RUN_BADGES[run.status] || 'bg-muted'} px-2.5 py-0.5 text-xs">${esc(RUN_STATUS_LABELS[run.status] || run.status)}</span></td><td class="py-3 pr-2 text-sm">${run.assignments_count ?? run.asignaciones_count ?? 0}</td><td class="py-3 pr-2 text-sm">${run.violations_count ?? 0}</td><td class="py-3"><div class="flex flex-wrap gap-2"><button class="select-run-btn rounded border border-border px-2 py-1 text-xs" data-id="${run.id}">${isSel ? 'Seleccionada' : 'Seleccionar'}</button><button class="preview-run-btn rounded border border-indigo-500/30 text-indigo-300 px-2 py-1 text-xs" data-id="${run.id}">Preview</button><button class="generate-run-btn rounded border border-primary/40 text-primary px-2 py-1 text-xs ${canGenerate ? '' : 'opacity-60'}" data-id="${run.id}" ${canGenerate ? '' : 'disabled'}>Generar</button><button class="publish-run-btn rounded border border-green-500/30 text-green-300 px-2 py-1 text-xs ${run.status === 'published' ? 'opacity-60' : ''}" data-id="${run.id}" ${run.status === 'published' ? 'disabled' : ''}>Publicar</button><button class="delete-run-btn rounded border border-red-500/30 text-red-300 px-2 py-1 text-xs ${canDelete ? '' : 'opacity-60'}" data-id="${run.id}" aria-label="Eliminar ejecución" title="${canDelete ? 'Eliminar ejecución' : deleteBlockedReason}" ${canDelete ? '' : 'disabled'}>Eliminar</button></div></td></tr>`;
+      const summary = getRunWarningSummary(run); const warningCount = summary?.total ?? run.violations_count ?? 0;
+      return `<tr class="border-b border-border ${isSel ? 'bg-primary/5' : ''}"><td class="py-3 pr-2"><div class="font-medium">${esc(run.period_name || run.period?.name || `Ejecución #${run.id}`)}</div><div class="text-xs text-muted-foreground">#${run.id}</div></td><td class="py-3 pr-2"><span class="inline-flex rounded-full ${RUN_BADGES[run.status] || 'bg-muted'} px-2.5 py-0.5 text-xs">${esc(RUN_STATUS_LABELS[run.status] || run.status)}</span></td><td class="py-3 pr-2 text-sm">${run.assignments_count ?? run.asignaciones_count ?? 0}</td><td class="py-3 pr-2 text-sm"><span class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-foreground">${warningCount} infracciones</span></td><td class="py-3"><div class="flex flex-wrap gap-2"><button class="select-run-btn rounded border border-border px-2 py-1 text-xs" data-id="${run.id}">${isSel ? 'Seleccionada' : 'Seleccionar'}</button><button class="preview-run-btn rounded border border-indigo-500/30 text-indigo-300 px-2 py-1 text-xs" data-id="${run.id}">Preview</button><button class="generate-run-btn rounded border border-primary/40 text-primary px-2 py-1 text-xs ${canGenerate ? '' : 'opacity-60'}" data-id="${run.id}" ${canGenerate ? '' : 'disabled'}>Generar</button><button class="publish-run-btn rounded border border-green-500/30 text-green-300 px-2 py-1 text-xs ${run.status === 'published' ? 'opacity-60' : ''}" data-id="${run.id}" ${run.status === 'published' ? 'disabled' : ''}>Publicar</button><button class="delete-run-btn rounded border border-red-500/30 text-red-300 px-2 py-1 text-xs ${canDelete ? '' : 'opacity-60'}" data-id="${run.id}" aria-label="Eliminar ejecución" title="${canDelete ? 'Eliminar ejecución' : deleteBlockedReason}" ${canDelete ? '' : 'disabled'}>Eliminar</button></div></td></tr>`;
     }).join('');
 
     tbody.querySelectorAll('.select-run-btn').forEach((b) => b.addEventListener('click', async () => { selectedRunId = Number(b.getAttribute('data-id')); renderRuns(); renderRunBadge(); await Promise.all([loadAssignments(), loadViolations()]); }));
@@ -286,7 +353,17 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     list.innerHTML = violations.map((v) => `<li class="rounded-lg border border-border p-2"><strong>${esc(v.severity === 'hard' ? 'Dura' : 'Blanda')}</strong> · ${esc(v.rule_kind || 'regla')} · ${esc(v.assignment_asignatura_code || '—')} · penalización ${Number(v.penalty ?? 0)}<div class="text-muted-foreground">${esc(v.mensaje || v.message || '')}</div></li>`).join('');
   }
 
-  function openPreviewModal() { q('preview-modal')?.classList.remove('hidden'); renderPreviewGrid(); renderCareerFilter(); }
+  function renderPreviewWarningSummary() {
+    const box = q('preview-warning-summary');
+    if (!box) return;
+    const summary = getRunWarningSummary(selectedRun());
+    const text = buildWarningSummaryText(summary);
+    if (!text) { box.classList.add('hidden'); box.textContent = ''; return; }
+    box.classList.remove('hidden');
+    box.textContent = `Infracciones detectadas: ${text}`;
+  }
+
+  function openPreviewModal() { q('preview-modal')?.classList.remove('hidden'); renderPreviewWarningSummary(); renderPreviewGrid(); renderCareerFilter(); }
   function closePreviewModal() { q('preview-modal')?.classList.add('hidden'); }
 
   function renderCareerFilter() {
@@ -406,8 +483,20 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     violations = unwrap(await apiFetch(`/academic/constraint-violations/?${params.toString()}`)); renderViolations();
   }
 
-  async function publishRun(id) { try { await apiFetch(`/academic/timetable-runs/${id}/publish/`, { method: 'POST' }); toast.success('Ejecución publicada'); await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(classifyTimetableActionError(e, 'publish')); } }
-  async function generateRun(id) { try { selectedRunId = id; await apiFetch(`/academic/timetable-runs/${id}/generate/`, { method: 'POST' }); toast.success('Horario generado'); await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(classifyTimetableActionError(e, 'generate')); } }
+  async function publishRun(id) {
+    const run = runs.find((r) => Number(r.id) === Number(id)) || null;
+    const summary = getRunWarningSummary(run);
+    if (shouldBlockByWarnings(summary)) { toast.error('No se puede publicar: hay infracciones duras pendientes.'); return; }
+    if (hasSoftOnlyWarnings(summary) && !window.confirm(`Esta ejecución tiene infracciones blandas (${summary.soft_violations || 0}). ¿Deseas publicar de todos modos?`)) return;
+    try { await apiFetch(`/academic/timetable-runs/${id}/publish/`, { method: 'POST' }); toast.success('Ejecución publicada'); await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(classifyTimetableActionError(e, 'publish')); }
+  }
+  async function generateRun(id) {
+    const run = runs.find((r) => Number(r.id) === Number(id)) || null;
+    const summary = getRunWarningSummary(run);
+    if (shouldBlockByWarnings(summary)) { toast.error('No se puede generar: hay infracciones duras pendientes.'); return; }
+    if (hasSoftOnlyWarnings(summary) && !window.confirm(`Esta ejecución tiene advertencias blandas (${summary.soft_violations || 0}). ¿Deseas continuar con la generación?`)) return;
+    try { selectedRunId = id; await apiFetch(`/academic/timetable-runs/${id}/generate/`, { method: 'POST' }); toast.success('Horario generado'); await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(classifyTimetableActionError(e, 'generate')); }
+  }
   async function deleteRun(id) { try { await apiFetch(`/academic/timetable-runs/${id}/`, { method: 'DELETE' }); if (Number(selectedRunId) === Number(id)) selectedRunId = null; toast.success('Ejecución eliminada'); await Promise.all([loadRuns(), loadAssignments(), loadViolations()]); } catch (e) { toast.error(classifyTimetableActionError(e, 'delete')); } }
   async function cleanupGeneratedClasses() {
     const periodId = selectedRunPeriodId();

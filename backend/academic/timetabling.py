@@ -4,6 +4,40 @@ from django.db.models import Q
 from academic.models import Class, Subject, Classroom, ScheduleAssignment, SchedulingConstraint, ConstraintViolation
 
 
+def _build_warning_summary(hard_violations, soft_violations, precondition_errors, class_preparation_errors, unresolved_teachers):
+    blocking_reasons = []
+    if hard_violations > 0:
+        blocking_reasons.append('hard_violations')
+    if precondition_errors:
+        blocking_reasons.extend(precondition_errors)
+    if class_preparation_errors:
+        blocking_reasons.extend(class_preparation_errors)
+
+    return {
+        'has_warnings': bool(hard_violations or soft_violations or precondition_errors or class_preparation_errors or unresolved_teachers),
+        'hard_violations': hard_violations,
+        'soft_violations': soft_violations,
+        'precondition_errors': precondition_errors,
+        'class_preparation_errors': class_preparation_errors,
+        'unresolved_teachers': unresolved_teachers,
+        'blocks_publish': bool(blocking_reasons),
+        'blocking_reasons': blocking_reasons,
+    }
+
+
+def build_warning_summary_for_run(run):
+    metadata = (run.metadata or {}).get('generator', {})
+    hard_rows = run.violations.filter(severity='hard').count() if run.pk else 0
+    soft_rows = run.violations.filter(severity='soft').count() if run.pk else 0
+    summary = metadata.get('warning_summary', {}) or {}
+    hard_violations = max(int(summary.get('hard_violations', 0) or 0), hard_rows)
+    soft_violations = max(int(summary.get('soft_violations', 0) or 0), soft_rows)
+    precondition_errors = list(summary.get('precondition_errors', metadata.get('precondition_errors', [])))
+    class_preparation_errors = list(summary.get('class_preparation_errors', metadata.get('class_preparation_errors', [])))
+    unresolved_teachers = list(summary.get('unresolved_teachers', metadata.get('unresolved_teachers', [])))
+    return _build_warning_summary(hard_violations, soft_violations, precondition_errors, class_preparation_errors, unresolved_teachers)
+
+
 def _build_generator_metadata(classes_considered, sessions_requested, precondition_errors, class_preparation_errors):
     return {
         'strategy': 'greedy-v1',
@@ -18,6 +52,19 @@ def _build_generator_metadata(classes_considered, sessions_requested, preconditi
         'class_preparation_errors': class_preparation_errors,
         'unresolved_teachers': [],
     }
+
+
+def _persist_warning_summary(run, metadata, hard_violations, soft_violations):
+    summary = _build_warning_summary(
+        hard_violations=hard_violations,
+        soft_violations=soft_violations,
+        precondition_errors=list(metadata.get('precondition_errors', [])),
+        class_preparation_errors=list(metadata.get('class_preparation_errors', [])),
+        unresolved_teachers=list(metadata.get('unresolved_teachers', [])),
+    )
+    metadata['warning_summary'] = summary
+    run.metadata = {'generator': metadata}
+    return summary
 
 
 def prepare_classes_for_period(period):
@@ -142,8 +189,8 @@ def generate_for_run(run):
             class_preparation_errors=preparation['errors'],
         )
         metadata['classes_created'] = preparation['created']
+        _persist_warning_summary(run, metadata, hard_violations=0, soft_violations=0)
         run.status = 'failed'
-        run.metadata = {'generator': metadata}
         run.save(update_fields=['status', 'metadata', 'updated_at'])
         return run
 
@@ -238,7 +285,7 @@ def generate_for_run(run):
     metadata['hard_violations'] = hard_violations
     metadata['soft_violations'] = soft_violations
     metadata['unresolved_teachers'] = unresolved_teachers
-    run.metadata = {'generator': metadata}
+    _persist_warning_summary(run, metadata, hard_violations=hard_violations, soft_violations=soft_violations)
 
     if generated == 0:
         run.status = 'failed'

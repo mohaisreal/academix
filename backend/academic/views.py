@@ -28,7 +28,7 @@ from .serializers import (
     ConstraintViolationSerializer,
     SchedulingConstraintSerializer,
 )
-from .timetabling import generate_for_run
+from .timetabling import generate_for_run, build_warning_summary_for_run
 from .timetabling import delete_generated_classes_for_period
 from .schedule_source import serialize_assignment_schedule, published_assignments_map_for_period
 from shared.permissions import IsAdminOrManagement
@@ -338,6 +338,15 @@ class TimetableRunViewSet(viewsets.ModelViewSet):
             run = TimetableRun.objects.select_for_update().select_related('period').get(pk=pk)
             if run.status == 'failed':
                 return Response({'detail': 'Cannot publish a failed run.'}, status=status.HTTP_400_BAD_REQUEST)
+            warning_summary = build_warning_summary_for_run(run)
+            if warning_summary.get('blocks_publish') or warning_summary.get('hard_violations', 0) > 0:
+                return Response(
+                    {
+                        'detail': 'Cannot publish a run with hard infringements.',
+                        'warning_summary': warning_summary,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             TimetableRun.objects.select_for_update().filter(period=run.period, status='published').exclude(id=run.id).update(
                 status='completed'
             )

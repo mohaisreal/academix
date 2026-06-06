@@ -71,6 +71,38 @@ describe('management timetable page layout cleanup', () => {
     expect(source).not.toContain('placeholder="Career ID"');
   });
 
+  it('restores the infringements panel markup with the expected DOM targets', () => {
+    const source = readPage();
+
+    expect(source).toContain('<h2 class="text-lg font-semibold">Infracciones</h2>');
+    expect(source).toContain('id="violations-severity-filter"');
+    expect(source).toContain('id="violations-total"');
+    expect(source).toContain('id="violations-hard"');
+    expect(source).toContain('id="violations-soft"');
+    expect(source).toContain('id="violations-table-body"');
+    expect(source).toContain('id="constraints-list"');
+    expect(source).toContain('id="constraint-form"');
+    expect(source).toContain('loadViolations()');
+  });
+
+  it('shows persistent warning counters and preview summary hooks', () => {
+    const source = readPage();
+
+    expect(source).toContain('id="selected-run-badge"');
+    expect(source).toContain('id="preview-warning-summary"');
+    expect(source).toContain('infracciones');
+    expect(source).toContain('getRunWarningSummary');
+  });
+
+  it('guards publish and generate with soft-warning confirmation', () => {
+    const source = readPage();
+
+    expect(source).toContain('No se puede publicar: hay infracciones duras pendientes.');
+    expect(source).toContain('No se puede generar: hay infracciones duras pendientes.');
+    expect(source).toContain('¿Deseas publicar de todos modos?');
+    expect(source).toContain('¿Deseas continuar con la generación?');
+  });
+
   it('loads all restriction catalogs and syncs selector relevance', () => {
     const source = readPage();
 

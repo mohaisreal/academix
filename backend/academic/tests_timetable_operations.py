@@ -150,6 +150,7 @@ class TimetableGenerateAndPublishTests(TestCase):
         response = self.client.post(f'/api/academic/timetable-runs/{run.id}/generate/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('warning_summary', response.data)
         run.refresh_from_db()
         self.assertEqual(run.status, 'completed')
         self.assertGreater(run.assignments.count(), 0)
@@ -581,6 +582,8 @@ class TimetableGenerateAndPublishTests(TestCase):
         self.assertEqual(run.assignments.filter(cls=cls).count(), 2)
         self.assertEqual(run.metadata['generator']['sessions_requested'], 4)
         self.assertEqual(run.metadata['generator']['unscheduled_sessions'], 2)
+        self.assertEqual(run.metadata['generator']['warning_summary']['hard_violations'], 2)
+        self.assertTrue(run.metadata['generator']['warning_summary']['blocks_publish'])
 
     def test_allows_multiple_assignments_same_run_and_class_different_slots(self):
         period = make_period('P2026SAC1')
@@ -626,6 +629,35 @@ class TimetableGenerateAndPublishTests(TestCase):
         self.assertEqual(current.status, 'published')
         self.assertEqual(previous.status, 'completed')
         self.assertEqual(TimetableRun.objects.filter(period=period, status='published').count(), 1)
+
+    def test_publish_blocks_runs_with_hard_infringements(self):
+        period = make_period('P2026PUB3')
+        cls = make_class(period, 'PUB3')
+        slot = TimeSlot.objects.create(period=period, day_of_week=0, start_time=time(8, 0), end_time=time(9, 0))
+        run = TimetableRun.objects.create(period=period, status='completed', metadata={'generator': {'warning_summary': {'hard_violations': 1, 'soft_violations': 0, 'precondition_errors': [], 'class_preparation_errors': [], 'unresolved_teachers': [], 'blocks_publish': True, 'blocking_reasons': ['hard_violations']}}})
+        assignment = ScheduleAssignment.objects.create(run=run, cls=cls, slot=slot, classroom=cls.classroom, teacher=cls.teacher)
+        ConstraintViolation.objects.create(run=run, assignment=assignment, severity='hard', reason='Hard infringement', metadata={'code': 'teacher_conflict'})
+
+        response = self.client.post(f'/api/academic/timetable-runs/{run.id}/publish/')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('warning_summary', response.data)
+        self.assertEqual(response.data['warning_summary']['hard_violations'], 1)
+
+    def test_publish_allows_soft_only_warnings(self):
+        period = make_period('P2026PUB4')
+        cls = make_class(period, 'PUB4')
+        slot = TimeSlot.objects.create(period=period, day_of_week=1, start_time=time(8, 0), end_time=time(9, 0))
+        run = TimetableRun.objects.create(period=period, status='completed', metadata={'generator': {'warning_summary': {'hard_violations': 0, 'soft_violations': 1, 'precondition_errors': [], 'class_preparation_errors': [], 'unresolved_teachers': [], 'blocks_publish': False, 'blocking_reasons': []}}})
+        assignment = ScheduleAssignment.objects.create(run=run, cls=cls, slot=slot, classroom=cls.classroom, teacher=cls.teacher)
+        ConstraintViolation.objects.create(run=run, assignment=assignment, severity='soft', reason='Soft infringement', metadata={'code': 'preference_miss'})
+
+        response = self.client.post(f'/api/academic/timetable-runs/{run.id}/publish/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        run.refresh_from_db()
+        self.assertEqual(run.status, 'published')
+        self.assertEqual(response.data['warning_summary']['soft_violations'], 1)
 
     def test_delete_allows_non_published_statuses(self):
         period = make_period('P2026DEL1')
