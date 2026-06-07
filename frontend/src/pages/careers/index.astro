@@ -36,7 +36,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Código</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Duración</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Cupos totales</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Asignaturas</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Asignaturas vinculadas</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Estado</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Acciones</th>
               </tr>
@@ -95,6 +95,10 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <input id="career-active" type="checkbox" checked class="size-4 rounded border-border text-primary focus:ring-primary" />
             <label for="career-active" class="text-sm text-foreground">Activa</label>
           </div>
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">Asignaturas asociadas</label>
+            <div id="career-subjects" class="mt-1 max-h-56 overflow-y-auto rounded-lg border border-border bg-input/40 p-3 space-y-2"></div>
+          </div>
           <div id="form-error" class="hidden text-xs text-red-400"></div>
         </form>
       </div>
@@ -112,6 +116,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   import { toast } from "@/components/starwind/toast";
   import {
     DEFAULT_TOTAL_SPOTS,
+    getCareerSubjectIds,
     parseValidTotalSpots,
     resolveCareerTotalSpots,
   } from '@/utils/careers-form-utils';
@@ -168,8 +173,42 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   }
 
   let careers = [];
+  let subjects = [];
   let currentPage = 1;
   let pagination = { count: 0, next: null, previous: null };
+
+  function renderSubjectOptions(selectedIds = new Set()) {
+    const wrapper = document.getElementById('career-subjects');
+    if (!wrapper) return;
+    if (!subjects.length) {
+      wrapper.innerHTML = '<p class="text-xs text-muted-foreground">No hay asignaturas disponibles.</p>';
+      return;
+    }
+    wrapper.innerHTML = subjects.map(subject => {
+      const checked = selectedIds.has(String(subject.id));
+      const careerLabel = subject.primary_career_name || subject.career_name || '';
+      return `<label class="flex items-start gap-3 rounded-md px-2 py-1.5 hover:bg-muted/50 cursor-pointer">
+        <input type="checkbox" class="career-subject-option mt-1 size-4 rounded border-border text-primary focus:ring-primary" value="${subject.id}" ${checked ? 'checked' : ''} />
+        <span class="min-w-0 flex-1">
+          <span class="block text-sm text-foreground">${escHtml(subject.name)}</span>
+          <span class="block text-xs text-muted-foreground">${escHtml(subject.code)}${careerLabel ? ` · ${escHtml(careerLabel)}` : ''}</span>
+        </span>
+      </label>`;
+    }).join('');
+  }
+
+  async function loadAllSubjects() {
+    let page = 1;
+    let allSubjects = [];
+    while (true) {
+      const data = await apiFetch(buildPaginatedEndpoint('/academic/subjects/', page));
+      const normalized = normalizePaginatedResponse(data);
+      allSubjects = allSubjects.concat(normalized.results || []);
+      if (!normalized.next) break;
+      page += 1;
+    }
+    return allSubjects;
+  }
 
   function showPageError(message) {
     const error = document.getElementById('page-error');
@@ -197,13 +236,18 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     tbody.innerHTML = careers.map(c => {
       const active = c.is_active !== false;
       const subjects = c.subjects_count ?? c.subjects?.length ?? '-';
+      const subjectsCountLabel = Number.isFinite(Number(subjects))
+        ? `${subjects} ${Number(subjects) === 1 ? 'asignatura vinculada' : 'asignaturas vinculadas'}`
+        : 'Sin dato de asignaturas vinculadas';
       const totalSpots = resolveCareerTotalSpots(c.total_spots);
       return `<tr class="border-b border-border hover:bg-muted/40 transition-colors">
         <td class="py-3 pr-4 text-sm font-medium text-foreground">${escHtml(c.name)}</td>
         <td class="py-3 pr-4 text-sm text-muted-foreground font-mono">${escHtml(c.code)}</td>
         <td class="py-3 pr-4 text-sm text-muted-foreground">${c.duration_years || c.duration || '-'} años</td>
         <td class="py-3 pr-4 text-sm text-muted-foreground">${totalSpots}</td>
-        <td class="py-3 pr-4 text-sm text-muted-foreground">${subjects}</td>
+        <td class="py-3 pr-4 text-sm text-muted-foreground">
+          <span>${subjectsCountLabel}</span>
+        </td>
         <td class="py-3 pr-4">
           <span class="inline-flex items-center rounded-full ${active ? 'bg-green-500/15 text-green-400' : 'bg-muted text-muted-foreground'} px-2 py-0.5 text-xs font-medium">${active ? 'Activa' : 'Inactiva'}</span>
         </td>
@@ -299,6 +343,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const totalSpotsEl = document.getElementById('career-total-spots') as HTMLInputElement;
     const activeEl = document.getElementById('career-active') as HTMLInputElement;
     document.getElementById('form-error')?.classList.add('hidden');
+    renderSubjectOptions(getCareerSubjectIds(career));
 
     if (career) {
       if (title) title.textContent = 'Editar carrera';
@@ -315,6 +360,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       (document.getElementById('career-form') as HTMLFormElement)?.reset();
       if (totalSpotsEl) totalSpotsEl.value = String(DEFAULT_TOTAL_SPOTS);
       if (activeEl) activeEl.checked = true;
+      renderSubjectOptions(new Set());
     }
     document.getElementById('modal-backdrop')?.classList.remove('hidden');
   }
@@ -343,6 +389,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const totalSpotsRaw = (document.getElementById('career-total-spots') as HTMLInputElement).value;
     const total_spots = parseValidTotalSpots(totalSpotsRaw);
     const is_active = (document.getElementById('career-active') as HTMLInputElement).checked;
+    const subject_ids = Array.from(document.querySelectorAll('.career-subject-option:checked')).map((input) => Number((input as HTMLInputElement).value));
 
     if (total_spots === null) {
       errEl?.classList.remove('hidden');
@@ -353,9 +400,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     errEl?.classList.add('hidden');
     try {
       if (id) {
-        await apiFetch(`/academic/careers/${id}/`, { method: 'PATCH', body: JSON.stringify({ name, code, description, duration_years, total_spots, is_active }) });
+        await apiFetch(`/academic/careers/${id}/`, { method: 'PATCH', body: JSON.stringify({ name, code, description, duration_years, total_spots, is_active, subject_ids }) });
       } else {
-        await apiFetch('/academic/careers/', { method: 'POST', body: JSON.stringify({ name, code, description, duration_years, total_spots, is_active }) });
+        await apiFetch('/academic/careers/', { method: 'POST', body: JSON.stringify({ name, code, description, duration_years, total_spots, is_active, subject_ids }) });
       }
       closePanel();
       await loadCareers();
@@ -367,7 +414,15 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   (async () => {
     try {
-      await loadCareers();
+      const [careersData, subjectsData] = await Promise.all([
+        apiFetch(buildPaginatedEndpoint('/academic/careers/', 1)),
+        loadAllSubjects(),
+      ]);
+      const normalizedCareers = normalizePaginatedResponse(careersData);
+      careers = normalizedCareers.results;
+      pagination = { count: normalizedCareers.count, next: normalizedCareers.next, previous: normalizedCareers.previous };
+      subjects = subjectsData;
+      renderTable();
       showContent();
     } catch {
       document.getElementById('page-loading')?.classList.add('hidden');

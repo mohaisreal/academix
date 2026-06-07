@@ -1241,6 +1241,19 @@ class SchedulingConstraintsTests(TestCase):
         self.assertEqual(row['career_code'], self.cls.subject.career.code)
         self.assertEqual(row['career_name'], self.cls.subject.career.name)
 
+    def test_schedule_assignments_filter_includes_shared_career_relations(self):
+        shared_career = Career.objects.create(name='Shared Career', code='CAR-SHARED')
+        self.cls.subject.careers.add(shared_career)
+        run = TimetableRun.objects.create(period=self.period, status='completed')
+        ScheduleAssignment.objects.create(run=run, cls=self.cls, slot=self.slot, classroom=self.cls.classroom, teacher=self.cls.teacher)
+
+        response = self.client.get('/api/academic/schedule-assignments/', {'career': shared_career.id})
+
+        self.assertEqual(response.status_code, 200)
+        rows = unwrap_results(response.data)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]['cls'], self.cls.id)
+
     def test_generate_applies_active_constraints_and_registers_violation(self):
         run = TimetableRun.objects.create(period=self.period, status='draft')
         SchedulingConstraint.objects.create(
@@ -1253,6 +1266,21 @@ class SchedulingConstraintsTests(TestCase):
         run.refresh_from_db()
         self.assertIn(run.status, {'partial', 'failed'})
         self.assertEqual(run.assignments.count(), 0)
+        self.assertGreaterEqual(run.violations.count(), 1)
+
+    def test_generate_blocks_shared_career_constraints(self):
+        shared_career = Career.objects.create(name='Shared Career G', code='CAR-SHARED-G')
+        self.cls.subject.careers.add(shared_career)
+        run = TimetableRun.objects.create(period=self.period, status='draft')
+        SchedulingConstraint.objects.create(
+            kind='career_unavailable', scope='period', period=self.period,
+            career=shared_career, day_of_week=0, start_time=time(7, 0), end_time=time(11, 0), is_active=True,
+        )
+
+        response = self.client.post(f'/api/academic/timetable-runs/{run.id}/generate/')
+
+        self.assertEqual(response.status_code, 400)
+        run.refresh_from_db()
         self.assertGreaterEqual(run.violations.count(), 1)
 
     def test_seeded_dataset_generates_without_unresolved_teachers(self):

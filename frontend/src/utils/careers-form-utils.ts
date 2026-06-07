@@ -21,3 +21,8 @@ export function parseValidTotalSpots(rawValue: string): number | null {
 
   return parsed;
 }
+
+export function getCareerSubjectIds(career: any): Set<string> {
+  const ids = career?.subject_ids ?? career?.subjects ?? [];
+  return new Set((Array.isArray(ids) ? ids : []).map((id) => String(id)));
+}

@@ -79,12 +79,6 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <input id="subject-code" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="MATH101" />
           </div>
           <div>
-            <label class="text-xs font-medium text-muted-foreground">Carrera *</label>
-            <select id="subject-career" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-              <option value="">Selecciona una carrera</option>
-            </select>
-          </div>
-          <div>
             <label class="text-xs font-medium text-muted-foreground">Departamento</label>
             <select id="subject-department" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
               <option value="">Sin departamento</option>
@@ -299,16 +293,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const title = document.getElementById('modal-title');
     const idEl = document.getElementById('edit-id') as HTMLInputElement;
 
-    const careerSel = document.getElementById('subject-career') as HTMLSelectElement;
     const departmentSel = document.getElementById('subject-department') as HTMLSelectElement;
-    careerSel.innerHTML = '<option value="">Selecciona una carrera</option>';
     departmentSel.innerHTML = '<option value="">Sin departamento</option>';
-    careersList.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c.id;
-      opt.textContent = c.name;
-      careerSel.appendChild(opt);
-    });
     departmentsList.forEach(d => {
       const opt = document.createElement('option');
       opt.value = d.id;
@@ -321,7 +307,6 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       if (idEl) idEl.value = subject.id;
       (document.getElementById('subject-name') as HTMLInputElement).value = subject.name || '';
       (document.getElementById('subject-code') as HTMLInputElement).value = subject.code || '';
-      careerSel.value = subject.career || '';
       departmentSel.value = subject.department ? String(subject.department) : '';
       (document.getElementById('subject-credits') as HTMLInputElement).value = subject.credits || 3;
       (document.getElementById('price-first') as HTMLInputElement).value = formatMoney(subject.credit_price_first_enrollment ?? 16);
@@ -369,7 +354,6 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const id = (document.getElementById('edit-id') as HTMLInputElement).value;
     const name = (document.getElementById('subject-name') as HTMLInputElement).value;
     const code = (document.getElementById('subject-code') as HTMLInputElement).value;
-    const career = (document.getElementById('subject-career') as HTMLSelectElement).value;
     const departmentRaw = (document.getElementById('subject-department') as HTMLSelectElement).value;
     const credits = parseInt((document.getElementById('subject-credits') as HTMLInputElement).value);
     const credit_price_first_enrollment = (document.getElementById('price-first') as HTMLInputElement).value;
@@ -383,7 +367,6 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const payload = {
       name,
       code,
-      career,
       department: departmentRaw ? Number(departmentRaw) : null,
       credits,
       credit_price_first_enrollment,

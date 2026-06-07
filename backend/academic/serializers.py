@@ -39,6 +39,13 @@ class CareerSerializer(serializers.ModelSerializer):
     failed_convocations = serializers.SerializerMethodField()
     max_convocations = serializers.SerializerMethodField()
     convocation_block_reason = serializers.SerializerMethodField()
+    subjects = serializers.SerializerMethodField()
+    subject_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Subject.objects.all(),
+        write_only=True,
+        required=False,
+    )
 
     def get_subjects_count(self, obj):
         return obj.subjects.filter(is_active=True).count()
@@ -68,16 +75,42 @@ class CareerSerializer(serializers.ModelSerializer):
     def get_convocation_block_reason(self, obj):
         return None
 
+    def get_subjects(self, obj):
+        return list(obj.subjects.values_list('id', flat=True))
+
+    def _sync_subjects(self, career, subjects):
+        if subjects is None:
+            return
+        for subject in career.subjects.all():
+            subject.careers.remove(career)
+        for subject in subjects:
+            subject.careers.add(career)
+
+    def create(self, validated_data):
+        subjects = validated_data.pop('subject_ids', None)
+        career = super().create(validated_data)
+        self._sync_subjects(career, subjects)
+        return career
+
+    def update(self, instance, validated_data):
+        subjects = validated_data.pop('subject_ids', None)
+        career = super().update(instance, validated_data)
+        self._sync_subjects(career, subjects)
+        return career
+
     class Meta:
         model = Career
         fields = ['id', 'name', 'code', 'description', 'duration_years',
-                  'total_spots', 'available_spots', 'is_active', 'subjects_count',
+                  'total_spots', 'available_spots', 'is_active', 'subjects_count', 'subjects', 'subject_ids',
                   'convocation_eligibility', 'failed_convocations', 'max_convocations', 'convocation_block_reason',
                   'created_at', 'updated_at']
 
 
 class SubjectSerializer(serializers.ModelSerializer):
     career_name = serializers.CharField(source='career.name', read_only=True)
+    primary_career_id = serializers.IntegerField(source='primary_career.id', read_only=True)
+    primary_career_name = serializers.CharField(source='primary_career.name', read_only=True)
+    careers = CareerSerializer(many=True, read_only=True)
     department_name = serializers.CharField(source='department.name', read_only=True)
     department_teacher_name = serializers.SerializerMethodField()
 
@@ -90,7 +123,7 @@ class SubjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subject
-        fields = ['id', 'name', 'code', 'career', 'career_name', 'credits',
+        fields = ['id', 'name', 'code', 'career', 'career_name', 'primary_career_id', 'primary_career_name', 'careers', 'credits',
                   'department', 'department_name', 'department_teacher_name',
                   'credit_price_first_enrollment',
                   'credit_price_second_enrollment',
@@ -304,9 +337,9 @@ class ScheduleAssignmentSerializer(serializers.ModelSerializer):
     timeslot_end_time = serializers.TimeField(source='slot.end_time', read_only=True)
     subject_name = serializers.CharField(source='cls.subject.name', read_only=True)
     subject_code = serializers.CharField(source='cls.subject.code', read_only=True)
-    career_id = serializers.IntegerField(source='cls.subject.career_id', read_only=True)
-    career_code = serializers.CharField(source='cls.subject.career.code', read_only=True)
-    career_name = serializers.CharField(source='cls.subject.career.name', read_only=True)
+    career_id = serializers.IntegerField(source='cls.subject.primary_career.id', read_only=True)
+    career_code = serializers.CharField(source='cls.subject.primary_career.code', read_only=True)
+    career_name = serializers.CharField(source='cls.subject.primary_career.name', read_only=True)
 
     def get_teacher_name(self, obj):
         teacher = resolve_assignment_teacher_for_class(obj.cls)

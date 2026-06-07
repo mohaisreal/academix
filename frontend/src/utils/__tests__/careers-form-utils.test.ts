@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_TOTAL_SPOTS,
+  getCareerSubjectIds,
   parseValidTotalSpots,
   resolveCareerTotalSpots,
 } from '../careers-form-utils';
@@ -29,5 +30,12 @@ describe('parseValidTotalSpots', () => {
     expect(parseValidTotalSpots('-1')).toBeNull();
     expect(parseValidTotalSpots('1.5')).toBeNull();
     expect(parseValidTotalSpots('abc')).toBeNull();
+  });
+});
+
+describe('getCareerSubjectIds', () => {
+  it('prefiere subject_ids y cae a subjects para payloads legacy', () => {
+    expect(getCareerSubjectIds({ subject_ids: [1, '2'] })).toEqual(new Set(['1', '2']));
+    expect(getCareerSubjectIds({ subjects: [3, '4'] })).toEqual(new Set(['3', '4']));
   });
 });

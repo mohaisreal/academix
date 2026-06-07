@@ -31,7 +31,8 @@ class Subject(models.Model):
 
     name = models.CharField(max_length=200)
     code = models.CharField(max_length=20, unique=True)
-    career = models.ForeignKey(Career, on_delete=models.CASCADE, related_name='subjects')
+    career = models.ForeignKey(Career, on_delete=models.CASCADE, related_name='legacy_subjects')
+    careers = models.ManyToManyField(Career, through='SubjectCareer', related_name='subjects')
     department = models.ForeignKey(
         'Department',
         on_delete=models.SET_NULL,
@@ -81,6 +82,10 @@ class Subject(models.Model):
     def __str__(self):
         return f"{self.code} - {self.name}"
 
+    @property
+    def primary_career(self):
+        return self.careers.first() or self.career
+
     def get_credit_price_for_attempt(self, attempt_number):
         attempt = min(max(int(attempt_number or 1), 1), 4)
         if attempt == 1:
@@ -107,6 +112,20 @@ class AcademicPeriod(models.Model):
 
     class Meta:
         ordering = ['-start_date']
+
+
+class SubjectCareer(models.Model):
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    career = models.ForeignKey(Career, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['subject', 'career'], name='unique_subject_career_relation'),
+        ]
+
+    def __str__(self):
+        return f"{self.subject.code} ↔ {self.career.code}"
 
 
 class Department(models.Model):

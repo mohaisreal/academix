@@ -1,5 +1,5 @@
 from django.db import transaction
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.conf import settings
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -61,10 +61,11 @@ class CareerViewSet(viewsets.ModelViewSet):
         period_id = request.query_params.get('period')
 
         qs = Class.objects.filter(
-            subject__career=career
+            Q(subject__careers=career) | Q(subject__career=career)
         ).select_related(
             'subject', 'teacher', 'period', 'classroom'
         ).prefetch_related(
+            'subject__careers',
             Prefetch(
                 'schedule_assignments',
                 queryset=ScheduleAssignment.objects.filter(run__status='published').select_related('slot', 'run'),
@@ -93,10 +94,10 @@ class SubjectViewSet(viewsets.ModelViewSet):
         return [IsAdminOrManagement()]
 
     def get_queryset(self):
-        qs = Subject.objects.select_related('career', 'department', 'department__teacher').all()
+        qs = Subject.objects.select_related('career', 'department', 'department__teacher').prefetch_related('careers').all()
         career_id = self.request.query_params.get('career')
         if career_id:
-            qs = qs.filter(career_id=career_id)
+            qs = qs.filter(Q(careers__id=career_id) | Q(career_id=career_id)).distinct()
         return qs
 
 
@@ -160,7 +161,7 @@ class ClassViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Class.objects.select_related(
             'subject__career', 'teacher', 'period', 'classroom'
-        ).prefetch_related('schedules').all()
+        ).prefetch_related('schedules', 'subject__careers').all()
 
     @action(detail=False, methods=['get'], url_path='my-classes')
     def my_classes(self, request):
@@ -385,7 +386,7 @@ class ScheduleAssignmentViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = None
 
     def get_queryset(self):
-        qs = ScheduleAssignment.objects.select_related('run', 'cls__subject__career', 'slot', 'classroom', 'teacher').all()
+        qs = ScheduleAssignment.objects.select_related('run', 'cls__subject__career', 'slot', 'classroom', 'teacher').prefetch_related('cls__subject__careers').all()
         run = self.request.query_params.get('run')
         period = self.request.query_params.get('period')
         cls = self.request.query_params.get('cls')
@@ -397,7 +398,7 @@ class ScheduleAssignmentViewSet(viewsets.ReadOnlyModelViewSet):
         if cls:
             qs = qs.filter(cls_id=cls)
         if career:
-            qs = qs.filter(cls__subject__career_id=career)
+            qs = qs.filter(Q(cls__subject__careers__id=career) | Q(cls__subject__career_id=career)).distinct()
         return qs.order_by('id')
 
     def get_permissions(self):

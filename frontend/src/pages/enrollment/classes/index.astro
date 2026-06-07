@@ -242,6 +242,13 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 <h3 class="text-sm font-semibold text-foreground mb-3">
                     ${subjectName}
                     <span class="text-xs font-normal text-muted-foreground ml-1">${subjectClasses[0]?.subject?.code ?? ""} · ${subjectClasses[0]?.subject?.credits ?? 0} créditos</span>
+                    ${(() => {
+                        const careers = subjectClasses[0]?.subject?.careers ?? [];
+                        const careerCount = Array.isArray(careers) ? careers.length : 0;
+                        return careerCount > 1
+                            ? `<span class="ml-2 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">Compartida con ${careerCount} carreras</span>`
+                            : '';
+                    })()}
                 </h3>
                 <div class="space-y-2">
                     ${subjectClasses.map(cls => {
