@@ -137,6 +137,13 @@ describe('management timetable page layout cleanup', () => {
     expect(source).toContain('Selecciona una ejecución con periodo antes de limpiar las clases generadas.');
   });
 
+  it('mantiene el lote por intervalos conectado al parser de descansos', () => {
+    const source = readPage();
+
+    expect(source).toContain('buildTimeslotBatch({ period: period.value, dayOfWeek: day.value, startTime: start.value, endTime: end.value, intervalMinutes: interval.value, breakRanges: parseTimeslotBreakRanges(breaks.value) })');
+    expect(source).toContain('timeslot-batch-breaks');
+  });
+
   it('refresca runs, assignments y violations tras limpiar', () => {
     const source = readPage();
 

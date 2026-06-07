@@ -65,6 +65,77 @@ describe('buildBulkTimeSlots', () => {
       { day_of_week: 1, start_time: '08:00', end_time: '08:30', reason: 'duplicate' },
     ]);
   });
+
+  it('avanza tras un duplicado y sigue generando las siguientes franjas', () => {
+    const result = buildBulkTimeSlots({
+      periodId: 7,
+      daysOfWeek: [1],
+      startTime: '08:00',
+      endTime: '09:30',
+      intervalMinutes: 30,
+      breakRanges: [],
+      existingKeys: new Set<string>(['1|08:00|08:30']),
+    });
+
+    expect(result.toCreate.map((s) => `${s.start_time}-${s.end_time}`)).toEqual([
+      '08:30-09:00',
+      '09:00-09:30',
+    ]);
+    expect(result.skipped).toEqual([
+      { day_of_week: 1, start_time: '08:00', end_time: '08:30', reason: 'duplicate' },
+    ]);
+  });
+
+  it('salta un descanso y reanuda con la siguiente franja válida', () => {
+    const result = buildBulkTimeSlots({
+      periodId: 7,
+      daysOfWeek: [1],
+      startTime: '08:15',
+      endTime: '14:15',
+      intervalMinutes: 55,
+      breakRanges: [{ start: '11:00', end: '11:30' }],
+      existingKeys: new Set<string>(),
+    });
+
+    expect(result.toCreate.map((s) => `${s.start_time}-${s.end_time}`)).toEqual([
+      '08:15-09:10',
+      '09:10-10:05',
+      '10:05-11:00',
+      '11:30-12:25',
+      '12:25-13:20',
+      '13:20-14:15',
+    ]);
+    expect(result.skipped).toEqual([{ day_of_week: 1, start_time: '11:00', end_time: '11:55', reason: 'break' }]);
+  });
+
+  it('salta múltiples descansos en orden sin generar franjas dentro de ellos', () => {
+    const result = buildBulkTimeSlots({
+      periodId: 7,
+      daysOfWeek: [1],
+      startTime: '08:15',
+      endTime: '16:15',
+      intervalMinutes: 55,
+      breakRanges: [
+        { start: '11:00', end: '11:30' },
+        { start: '14:15', end: '14:45' },
+      ],
+      existingKeys: new Set<string>(),
+    });
+
+    expect(result.toCreate.map((s) => `${s.start_time}-${s.end_time}`)).toEqual([
+      '08:15-09:10',
+      '09:10-10:05',
+      '10:05-11:00',
+      '11:30-12:25',
+      '12:25-13:20',
+      '13:20-14:15',
+      '14:45-15:40',
+    ]);
+    expect(result.skipped).toEqual([
+      { day_of_week: 1, start_time: '11:00', end_time: '11:55', reason: 'break' },
+      { day_of_week: 1, start_time: '14:15', end_time: '15:10', reason: 'break' },
+    ]);
+  });
 });
 
 describe('buildTimeslotBatch', () => {

@@ -35,6 +35,7 @@ function assertTime(value: string) { if (!/^\d{2}:\d{2}$/.test(value)) throw new
 function timeToMinutes(value: string) { assertTime(value); const [h, m] = value.split(':').map(Number); if (h < 0 || h > 23 || m < 0 || m > 59) throw new Error('Usá el formato HH:MM.'); return h * 60 + m; }
 function minutesToTime(value: number) { const h = Math.floor(value / 60); const m = value % 60; return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`; }
 function rangesOverlap(start: number, end: number, breakStart: number, breakEnd: number) { return start < breakEnd && end > breakStart; }
+function findOverlappingBreak(cursor: number, next: number, breaks: Array<{ start: number; end: number }>) { return breaks.find((r) => rangesOverlap(cursor, next, r.start, r.end)) || null; }
 
 export function parseTimeslotBreakRanges(value: string): TimeslotBreakRange[] {
   const normalized = value.trim(); if (!normalized) return [];
@@ -56,10 +57,12 @@ export function buildTimeslotBatch(values: TimeslotBatchFormValues): TimeslotPay
   if (startMinutes >= endMinutes) throw new Error('La hora de fin debe ser posterior a la hora de inicio.');
   const breaks = values.breakRanges.map((range) => ({ start: timeToMinutes(range.startTime), end: timeToMinutes(range.endTime) }));
   const slots: TimeslotPayload[] = [];
-  for (let cursor = startMinutes; cursor + intervalMinutes <= endMinutes; cursor += intervalMinutes) {
+  for (let cursor = startMinutes; cursor + intervalMinutes <= endMinutes;) {
     const next = cursor + intervalMinutes;
-    if (breaks.some((r) => rangesOverlap(cursor, next, r.start, r.end))) continue;
+    const overlappingBreak = findOverlappingBreak(cursor, next, breaks);
+    if (overlappingBreak) { cursor = overlappingBreak.end; continue; }
     slots.push({ period, day_of_week: dayOfWeek, start_time: minutesToTime(cursor), end_time: minutesToTime(next) });
+    cursor = next;
   }
   return slots;
 }
@@ -152,18 +155,21 @@ export function buildBulkTimeSlots(input: { periodId: number; daysOfWeek: number
   const start = timeToMinutes(input.startTime); const end = timeToMinutes(input.endTime);
   const breaks = input.breakRanges.map((b) => ({ start: timeToMinutes(b.start), end: timeToMinutes(b.end) }));
   for (const dayOfWeek of input.daysOfWeek) {
-    for (let cursor = start; cursor + input.intervalMinutes <= end; cursor += input.intervalMinutes) {
+    for (let cursor = start; cursor + input.intervalMinutes <= end;) {
       const next = cursor + input.intervalMinutes;
       const startTime = minutesToTime(cursor);
       const endTime = minutesToTime(next);
-      if (breaks.some((r) => rangesOverlap(cursor, next, r.start, r.end))) {
+      const overlappingBreak = findOverlappingBreak(cursor, next, breaks);
+      if (overlappingBreak) {
         skipped.push({ day_of_week: dayOfWeek, start_time: startTime, end_time: endTime, reason: 'break' });
+        cursor = overlappingBreak.end;
         continue;
       }
       const key = `${dayOfWeek}|${startTime}|${endTime}`;
-      if (input.existingKeys.has(key)) { skipped.push({ day_of_week: dayOfWeek, start_time: startTime, end_time: endTime, reason: 'duplicate' }); continue; }
+      if (input.existingKeys.has(key)) { skipped.push({ day_of_week: dayOfWeek, start_time: startTime, end_time: endTime, reason: 'duplicate' }); cursor = next; continue; }
       input.existingKeys.add(key);
       toCreate.push({ period: input.periodId, day_of_week: dayOfWeek, start_time: startTime, end_time: endTime });
+      cursor = next;
     }
   }
   return { toCreate, skipped };
