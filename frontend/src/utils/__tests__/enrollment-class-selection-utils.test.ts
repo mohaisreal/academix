@@ -5,6 +5,8 @@ import {
   getScheduleSummaryLabel,
 } from '../enrollment-class-selection-utils';
 
+type EnrollmentClassLike = Parameters<typeof getEnrollmentClassAction>[0]['cls'];
+
 describe('enrollment-class-selection-utils', () => {
   it('marks class unavailable when schedule_available is false', () => {
     const cls = {
@@ -40,6 +42,35 @@ describe('enrollment-class-selection-utils', () => {
     expect(getEnrollmentClassAction({ cls, isEnrolled: false, isFull: false, isCompleted: false })).toEqual({
       key: 'unavailable',
       label: 'Sin horario disponible',
+      disabled: true,
+    });
+  });
+
+  it('returns grace action when convocation eligibility is extraordinary-grace', () => {
+    const cls: EnrollmentClassLike = {
+      schedule_available: true,
+      convocation_eligibility: 'extraordinary-grace',
+      schedules: [{ assignment_id: 1, source: 'generated' }],
+    };
+
+    expect(getEnrollmentClassAction({ cls, isEnrolled: false, isFull: false, isCompleted: false })).toEqual({
+      key: 'enroll-grace',
+      label: 'Caso excepcional',
+      disabled: false,
+    });
+  });
+
+  it('returns blocked action when convocation eligibility is blocked', () => {
+    const cls: EnrollmentClassLike = {
+      schedule_available: true,
+      convocation_eligibility: 'blocked',
+      convocation_block_reason: 'limit_reached',
+      schedules: [{ assignment_id: 1, source: 'generated' }],
+    };
+
+    expect(getEnrollmentClassAction({ cls, isEnrolled: false, isFull: false, isCompleted: false })).toEqual({
+      key: 'blocked',
+      label: 'Límite de convocatorias alcanzado',
       disabled: true,
     });
   });

@@ -1,11 +1,14 @@
 from decimal import Decimal
 
-from django.db.models import Q
+from django.db.models import Q, F
 from django.utils import timezone
 
 from academic.models import MatriculaConfig
+from academic.models import AcademicPeriod
 from enrollment.models import CareerEnrollment, ClassEnrollment, EnrollmentFee, StudentBenefit
+from enrollment.models import ExceptionalConvocationGrace
 from notifications.models import SystemSettings
+from grades.models import Grade
 
 # Beneficios que eximen del pago total
 _EXEMPT_BENEFITS = frozenset({
@@ -18,6 +21,10 @@ _EXEMPT_BENEFITS = frozenset({
 _DISCOUNT_BENEFITS = {
     'familia_numerosa_general': Decimal('50'),
 }
+
+CONVOCATION_ALLOWED = 'allowed'
+CONVOCATION_GRACE = 'extraordinary-grace'
+CONVOCATION_BLOCKED = 'blocked'
 
 
 # ---------------------------------------------------------------------------
@@ -96,6 +103,40 @@ def _get_price_per_credit(attempt_number, subject=None):
 
 def _money(value):
     return Decimal(str(value or '0')).quantize(Decimal('0.01'))
+
+
+def _final_failure_qs(student, subject, target_period):
+    # La elegibilidad se calcula en lectura/escritura solo con notas finales de periodos previos.
+    return Grade.objects.filter(
+        student=student,
+        evaluation__is_final_grade=True,
+        evaluation__cls__subject=subject,
+        evaluation__cls__period__start_date__lt=target_period.start_date,
+    ).exclude(score__gte=F('evaluation__cls__passing_grade'))
+
+
+def resolve_convocation_eligibility(student, subject, target_period):
+    # Un permiso extraordinario solo anula el bloqueo para la tupla exacta estudiante/asignatura/periodo.
+    failed_convocations = _final_failure_qs(student, subject, target_period).count()
+    max_convocations = subject.max_convocations or 6
+    has_grace = ExceptionalConvocationGrace.objects.filter(
+        student=student,
+        subject=subject,
+        period=target_period,
+        is_active=True,
+    ).exists()
+
+    if failed_convocations >= max_convocations:
+        eligibility = CONVOCATION_GRACE if has_grace else CONVOCATION_BLOCKED
+    else:
+        eligibility = CONVOCATION_ALLOWED
+
+    return {
+        'convocation_eligibility': eligibility,
+        'failed_convocations': failed_convocations,
+        'max_convocations': max_convocations,
+        'convocation_block_reason': 'limit_reached' if eligibility == CONVOCATION_BLOCKED else None,
+    }
 
 
 def _serialize_amount(value):

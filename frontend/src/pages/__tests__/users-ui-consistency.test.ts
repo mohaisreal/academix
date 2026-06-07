@@ -54,3 +54,14 @@ describe("users destructive actions use visual confirmation modal", () => {
     expect(usersPage).toContain("await loadUsers(currentPage);");
   });
 });
+
+describe("users exceptional cases entry point", () => {
+  it("exposes a dedicated button and modal for convocation grace", () => {
+    const usersPage = readProjectFile("src/pages/management/users.astro");
+
+    expect(usersPage).toContain("Casos excepcionales");
+    expect(usersPage).toContain('id="exceptional-backdrop"');
+    expect(usersPage).toContain('id="exceptional-save"');
+    expect(usersPage).toContain("/enrollment/students/${exceptionalStudent.id}/convocation-graces/");
+  });
+});

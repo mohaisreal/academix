@@ -119,6 +119,37 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       </div>
     </div>
   </div>
+
+  <div id="exceptional-backdrop" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-lg rounded-xl border border-border bg-background shadow-2xl max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+        <h2 class="text-base font-semibold text-foreground">Casos excepcionales</h2>
+        <button id="exceptional-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">×</button>
+      </div>
+      <div class="overflow-y-auto flex-1 px-5 py-4 space-y-4">
+        <p id="exceptional-student" class="text-sm text-muted-foreground"></p>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">ID asignatura</label>
+            <input id="exceptional-subject-id" type="number" min="1" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
+          <div>
+            <label class="text-xs font-medium text-muted-foreground">ID periodo</label>
+            <input id="exceptional-period-id" type="number" min="1" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-muted-foreground">Motivo</label>
+          <textarea id="exceptional-reason" rows="4" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+        </div>
+        <div id="exceptional-error" class="hidden text-xs text-red-400 bg-red-500/10 rounded-lg p-3"></div>
+      </div>
+      <div class="flex items-center justify-end gap-3 px-5 py-4 border-t border-border shrink-0">
+        <button id="exceptional-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancelar</button>
+        <button id="exceptional-save" type="button" class="inline-flex items-center justify-center rounded-md bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-400 transition-colors">Guardar</button>
+      </div>
+    </div>
+  </div>
 </DashboardLayout>
 
 <script>
@@ -139,7 +170,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   if (!token) window.location.replace('/login');
   const user = getUser();
   if (!user) window.location.replace('/login');
-  if (user.role !== 'a') window.location.replace('/');
+  if (!['a', 'm'].includes(user.role)) window.location.replace('/');
 
   async function apiFetch(path, options = {}) {
     const res = await fetch(`${API_URL}${path}`, {
@@ -163,6 +194,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   let roleFilter = '';
   let currentPage = 1;
   let totalCount = 0;
+  let exceptionalStudent: any = null;
 
   function renderPagination() {
     const totalPages = getTotalPages(totalCount, PAGE_SIZE);
@@ -198,6 +230,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <td class="px-5 py-3">
           <div class="flex items-center gap-2">
             <button class="edit-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors" data-id="${u.id}">Editar</button>
+            ${!isSelf ? `<button class="exceptional-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/30 transition-colors" data-id="${u.id}" data-name="${escHtml(u.first_name ?? '')} ${escHtml(u.last_name ?? '')}">Casos excepcionales</button>` : ''}
             ${!isSelf ? `<button class="delete-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-colors" data-id="${u.id}">Eliminar</button>` : ''}
             ${!isSelf ? `<button class="toggle-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium transition-colors ${active ? 'text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/30' : 'text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/30'}" data-id="${u.id}" data-active="${active}">${active ? 'Desactivar' : 'Activar'}</button>` : ''}
           </div>
@@ -238,12 +271,19 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           title: 'Eliminar usuario',
           description: '¿Eliminar este usuario de forma permanente? Esta acción no se puede deshacer.',
           confirmLabel: 'Eliminar',
-          variant: 'default',
+          variant: 'destructive',
           onConfirm: async () => {
             await apiFetch(`/users/${id}/`, { method: 'DELETE' });
             await loadUsers(currentPage);
           },
         });
+      });
+    });
+
+    tbody.querySelectorAll('.exceptional-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const target = users.find((x) => x.id == (btn as HTMLElement).dataset.id);
+        if (target) openExceptionalCases(target);
       });
     });
 
@@ -306,10 +346,25 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   function closePanel() { document.getElementById('modal-backdrop')?.classList.add('hidden'); }
 
+  function openExceptionalCases(u: any) {
+    exceptionalStudent = u;
+    (document.getElementById('exceptional-student') as HTMLElement).textContent = `Alumno: ${u.first_name ?? ''} ${u.last_name ?? ''} (${u.email ?? u.username})`;
+    (document.getElementById('exceptional-error') as HTMLElement).classList.add('hidden');
+    (document.getElementById('exceptional-subject-id') as HTMLInputElement).value = '';
+    (document.getElementById('exceptional-period-id') as HTMLInputElement).value = '';
+    (document.getElementById('exceptional-reason') as HTMLTextAreaElement).value = '';
+    document.getElementById('exceptional-backdrop')?.classList.remove('hidden');
+  }
+
+  function closeExceptionalCases() { document.getElementById('exceptional-backdrop')?.classList.add('hidden'); }
+
   document.getElementById('new-user-btn')?.addEventListener('click', () => openPanel());
   document.getElementById('modal-close')?.addEventListener('click', closePanel);
   document.getElementById('modal-cancel')?.addEventListener('click', closePanel);
   document.getElementById('modal-backdrop')?.addEventListener('click', (e) => { if (e.target === e.currentTarget) closePanel(); });
+  document.getElementById('exceptional-close')?.addEventListener('click', closeExceptionalCases);
+  document.getElementById('exceptional-cancel')?.addEventListener('click', closeExceptionalCases);
+  document.getElementById('exceptional-backdrop')?.addEventListener('click', (e) => { if (e.target === e.currentTarget) closeExceptionalCases(); });
 
   document.getElementById('prev-page')?.addEventListener('click', () => { if (currentPage > 1) loadUsers(currentPage - 1); });
   document.getElementById('next-page')?.addEventListener('click', () => { loadUsers(currentPage + 1); });
@@ -364,6 +419,30 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     } catch (err: any) {
       errEl?.classList.remove('hidden');
       if (errEl) errEl.textContent = String(err?.message || 'No se ha podido guardar el usuario');
+    }
+  });
+
+  document.getElementById('exceptional-save')?.addEventListener('click', async () => {
+    const errEl = document.getElementById('exceptional-error');
+    if (!exceptionalStudent) return;
+    const subjectId = Number((document.getElementById('exceptional-subject-id') as HTMLInputElement).value);
+    const periodId = Number((document.getElementById('exceptional-period-id') as HTMLInputElement).value);
+    const reason = (document.getElementById('exceptional-reason') as HTMLTextAreaElement).value.trim();
+    if (!subjectId || !periodId || !reason) {
+      errEl?.classList.remove('hidden');
+      if (errEl) errEl.textContent = 'Completa asignatura, periodo y motivo.';
+      return;
+    }
+    try {
+      await apiFetch(`/enrollment/students/${exceptionalStudent.id}/convocation-graces/`, {
+        method: 'POST',
+        body: JSON.stringify({ subject_id: subjectId, period_id: periodId, reason }),
+      });
+      closeExceptionalCases();
+      await loadUsers(currentPage);
+    } catch (err: any) {
+      errEl?.classList.remove('hidden');
+      if (errEl) errEl.textContent = String(err?.message || 'No se ha podido guardar el caso excepcional');
     }
   });
 

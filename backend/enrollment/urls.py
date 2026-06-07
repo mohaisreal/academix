@@ -10,6 +10,9 @@ from .views import (
     EnrollmentReceiptPdfView,
     EnrollmentCompleteView,
     ClassEnrollmentCreateDeleteView,
+    # Vista de contexto de casos excepcionales por estudiante.
+    ConvocationGraceGrantView,
+    ConvocationGraceDetailView,
 )
 
 urlpatterns = [
@@ -34,4 +37,7 @@ urlpatterns = [
     # Inscripción en clases (GET + POST + DELETE)
     path('class-enrollments/', ClassEnrollmentCreateDeleteView.as_view(), name='class-enrollment-list-create'),
     path('class-enrollments/<int:pk>/', ClassEnrollmentCreateDeleteView.as_view(), name='class-enrollment-delete'),
+    path('students/<int:student_id>/exceptional-cases/', ConvocationGraceGrantView.as_view(), name='student-exceptional-cases'),
+    path('students/<int:student_id>/convocation-graces/', ConvocationGraceGrantView.as_view(), name='convocation-grace-grant'),
+    path('convocation-graces/<int:pk>/', ConvocationGraceDetailView.as_view(), name='convocation-grace-detail'),
 ]

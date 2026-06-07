@@ -12,8 +12,9 @@ from decimal import Decimal
 import unicodedata
 
 from .models import CareerEnrollment, ClassEnrollment, EnrollmentFee
+from .models import ExceptionalConvocationGrace
 from .serializers import CareerEnrollmentSerializer, ClassEnrollmentSerializer, EnrollmentFeeSerializer
-from .services import refresh_enrollment_fee
+from .services import refresh_enrollment_fee, resolve_convocation_eligibility
 from academic.models import AcademicPeriod
 from academic.schedule_source import (
     canonical_assignment_map_for_period,
@@ -1020,6 +1021,18 @@ class ClassEnrollmentCreateDeleteView(generics.GenericAPIView):
         if ClassEnrollment.objects.filter(student=request.user, cls=cls).exists():
             return Response({"detail": "Ya estás inscripto en esta clase."}, status=status.HTTP_400_BAD_REQUEST)
 
+        eligibility = resolve_convocation_eligibility(request.user, cls.subject, cls.period)
+        if eligibility['convocation_eligibility'] == 'blocked':
+            # Las asignaturas bloqueadas siguen visibles en la matrícula, pero el POST se rechaza antes de validar cupo/horario.
+            return Response(
+                {
+                    'code': 'convocation_blocked',
+                    'detail': 'Límite de convocatorias alcanzado.',
+                    **eligibility,
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         assignment_map = canonical_assignment_map_for_period(cls.period_id, [cls.id])
         target_assignment = assignment_map.get(cls.id)
         if not target_assignment:
@@ -1134,6 +1147,95 @@ class ClassEnrollmentCreateDeleteView(generics.GenericAPIView):
                 )
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ConvocationGraceGrantView(APIView):
+    permission_classes = [IsAdminOrManagement]
+
+    def get(self, request, student_id):
+        period_id = request.query_params.get('period')
+        if not period_id:
+            return Response({'detail': 'period es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        student = get_object_or_404(User, pk=student_id, role='s')
+        from academic.models import AcademicPeriod, Class
+
+        period = get_object_or_404(AcademicPeriod, pk=period_id)
+        career_enrollment = CareerEnrollment.objects.filter(student=student, period=period).select_related('career', 'period').first()
+        if not career_enrollment:
+            return Response({'detail': 'La matrícula de carrera no existe para ese periodo.'}, status=status.HTTP_404_NOT_FOUND)
+
+        classes = (
+            Class.objects.filter(subject__career=career_enrollment.career, period=period)
+            .select_related('subject')
+            .order_by('subject__name', 'id')
+        )
+        subjects = []
+        seen_subject_ids = set()
+        for cls in classes:
+            if cls.subject_id in seen_subject_ids:
+                continue
+            seen_subject_ids.add(cls.subject_id)
+            eligibility = resolve_convocation_eligibility(student, cls.subject, period)
+            grace = ExceptionalConvocationGrace.objects.filter(
+                student=student,
+                subject=cls.subject,
+                period=period,
+            ).values('id', 'is_active').first()
+            subjects.append({
+                'id': cls.subject.id,
+                'name': cls.subject.name,
+                'code': cls.subject.code,
+                **eligibility,
+                'grace': grace,
+            })
+
+        return Response({
+            'student': {'id': student.id, 'full_name': student.get_full_name() or student.username},
+            'period': {'id': period.id, 'name': period.name},
+            'career': {'id': career_enrollment.career.id, 'name': career_enrollment.career.name},
+            'subjects': subjects,
+        })
+
+    def post(self, request, student_id):
+        student = get_object_or_404(User, pk=student_id, role='s')
+        subject_id = request.data.get('subject_id')
+        period_id = request.data.get('period_id')
+        reason = (request.data.get('reason') or '').strip()
+        if not subject_id or not period_id or not reason:
+            return Response({'detail': 'subject_id, period_id y reason son requeridos.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        from academic.models import Subject, AcademicPeriod
+        subject = get_object_or_404(Subject, pk=subject_id)
+        period = get_object_or_404(AcademicPeriod, pk=period_id)
+
+        grace, created = ExceptionalConvocationGrace.objects.get_or_create(
+            student=student,
+            subject=subject,
+            period=period,
+            defaults={'granted_by': request.user, 'reason': reason, 'is_active': True},
+        )
+        if not created:
+            grace.granted_by = request.user
+            grace.reason = reason
+            grace.is_active = True
+            grace.save(update_fields=['granted_by', 'reason', 'is_active', 'updated_at'])
+
+        eligibility = resolve_convocation_eligibility(student, subject, period)
+        return Response({'grace': {'id': grace.id, 'is_active': grace.is_active}, **eligibility}, status=status.HTTP_201_CREATED)
+
+
+class ConvocationGraceDetailView(APIView):
+    permission_classes = [IsAdminOrManagement]
+
+    def patch(self, request, pk):
+        grace = get_object_or_404(ExceptionalConvocationGrace, pk=pk)
+        if 'is_active' not in request.data:
+            return Response({'detail': 'is_active es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
+        grace.is_active = bool(request.data.get('is_active'))
+        grace.save(update_fields=['is_active', 'updated_at'])
+        eligibility = resolve_convocation_eligibility(grace.student, grace.subject, grace.period)
+        return Response({'grace': {'id': grace.id, 'is_active': grace.is_active}, **eligibility})
 
 
 class EnrollmentCompleteView(generics.GenericAPIView):

@@ -13,6 +13,10 @@ class Evaluation(models.Model):
     name = models.CharField(max_length=200)
     cls = models.ForeignKey('academic.Class', on_delete=models.CASCADE, related_name='evaluations')
     type = models.CharField(max_length=15, choices=TYPE_CHOICES, default='assignment')
+    is_final_grade = models.BooleanField(
+        default=False,
+        help_text='Indica si esta evaluación representa la nota final que cuenta para convocatorias.',
+    )
     max_score = models.DecimalField(max_digits=6, decimal_places=2, default=100)
     weight = models.DecimalField(
         max_digits=5,

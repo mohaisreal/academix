@@ -35,6 +35,10 @@ class TeacherBasicSerializer(serializers.ModelSerializer):
 class CareerSerializer(serializers.ModelSerializer):
     subjects_count = serializers.SerializerMethodField()
     available_spots = serializers.SerializerMethodField()
+    convocation_eligibility = serializers.SerializerMethodField()
+    failed_convocations = serializers.SerializerMethodField()
+    max_convocations = serializers.SerializerMethodField()
+    convocation_block_reason = serializers.SerializerMethodField()
 
     def get_subjects_count(self, obj):
         return obj.subjects.filter(is_active=True).count()
@@ -79,6 +83,7 @@ class SubjectSerializer(serializers.ModelSerializer):
                   'credit_price_second_enrollment',
                   'credit_price_third_enrollment',
                   'credit_price_fourth_or_more_enrollment',
+                  'max_convocations',
                   'subject_type', 'description', 'hours_per_week', 'is_active']
 
 
@@ -174,6 +179,10 @@ class ClassSerializer(serializers.ModelSerializer):
     schedule_unavailable_reason = serializers.SerializerMethodField()
     enrolled_count = serializers.SerializerMethodField()
     available_spots = serializers.SerializerMethodField()
+    convocation_eligibility = serializers.SerializerMethodField()
+    failed_convocations = serializers.SerializerMethodField()
+    max_convocations = serializers.SerializerMethodField()
+    convocation_block_reason = serializers.SerializerMethodField()
 
     def get_enrolled_count(self, obj):
         return obj.enrollments.filter(status='enrolled').count() if hasattr(obj, 'enrollments') else 0
@@ -211,13 +220,33 @@ class ClassSerializer(serializers.ModelSerializer):
     def get_schedule_unavailable_reason(self, obj):
         return None if self.get_schedule_available(obj) else 'schedule_unavailable'
 
+    def _convocation_context(self, obj):
+        return self.context.get('convocation_context', {}).get(obj.id)
+
+    def get_convocation_eligibility(self, obj):
+        ctx = self._convocation_context(obj)
+        return ctx['convocation_eligibility'] if ctx else None
+
+    def get_failed_convocations(self, obj):
+        ctx = self._convocation_context(obj)
+        return ctx['failed_convocations'] if ctx else None
+
+    def get_max_convocations(self, obj):
+        ctx = self._convocation_context(obj)
+        return ctx['max_convocations'] if ctx else None
+
+    def get_convocation_block_reason(self, obj):
+        ctx = self._convocation_context(obj)
+        return ctx['convocation_block_reason'] if ctx else None
+
     class Meta:
         model = Class
         fields = [
             'id', 'subject', 'subject_id', 'teacher', 'teacher_id',
             'period', 'period_id', 'classroom', 'classroom_id',
             'max_students', 'passing_grade', 'schedules', 'schedule_source', 'schedule_available',
-            'schedule_unavailable_reason', 'enrolled_count', 'available_spots', 'created_at',
+            'schedule_unavailable_reason', 'enrolled_count', 'available_spots',
+            'convocation_eligibility', 'failed_convocations', 'max_convocations', 'convocation_block_reason', 'created_at',
         ]
 
 

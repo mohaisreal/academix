@@ -12,6 +12,11 @@ describe("management users navigation wiring", () => {
     expect(indexPage).toContain('href="/management/users" id="quick-users-card"');
   });
 
+  it("allows management users to stay on the management users page", () => {
+    const usersPage = readProjectFile("src/pages/management/users.astro");
+    expect(usersPage).toContain("if (!['a', 'm'].includes(user.role)) window.location.replace('/');");
+  });
+
   it("includes users admin link in dashboard sidebar", () => {
     const layout = readProjectFile("src/layouts/DashboardLayout.astro");
     expect(layout).toContain('id="nav-users" href="/management/users"');

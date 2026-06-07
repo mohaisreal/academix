@@ -32,6 +32,7 @@ from .timetabling import generate_for_run, build_warning_summary_for_run
 from .timetabling import delete_generated_classes_for_period
 from .schedule_source import serialize_assignment_schedule, published_assignments_map_for_period
 from shared.permissions import IsAdminOrManagement
+from enrollment.services import resolve_convocation_eligibility
 
 SAFE_METHODS = ('GET', 'HEAD', 'OPTIONS')
 COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
@@ -74,7 +75,12 @@ class CareerViewSet(viewsets.ModelViewSet):
         if period_id:
             qs = qs.filter(period_id=period_id)
 
-        serializer = ClassSerializer(qs, many=True)
+        convocation_context = {}
+        if period_id and request.user.role == 's':
+            for cls in qs:
+                convocation_context[cls.id] = resolve_convocation_eligibility(request.user, cls.subject, cls.period)
+
+        serializer = ClassSerializer(qs, many=True, context={'request': request, 'convocation_context': convocation_context})
         return Response(serializer.data)
 
 

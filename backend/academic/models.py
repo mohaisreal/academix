@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.core.validators import MinValueValidator
 
 
 class Career(models.Model):
@@ -62,6 +63,11 @@ class Subject(models.Model):
         decimal_places=2,
         default=60.00,
         help_text='Precio por crédito para la 4ª matrícula o posteriores de esta asignatura.',
+    )
+    max_convocations = models.PositiveSmallIntegerField(
+        default=6,
+        validators=[MinValueValidator(1)],
+        help_text='Número máximo de convocatorias fallidas permitidas antes de bloquear la matrícula.',
     )
     subject_type = models.CharField(
         max_length=12,

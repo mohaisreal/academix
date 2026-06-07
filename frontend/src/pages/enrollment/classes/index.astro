@@ -130,6 +130,8 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
   import API_BASE_URL from '@/config/api';
     import { getEnrollmentClassAction, getEnrollmentClassAvailability, getScheduleSummaryLabel } from "@/utils/enrollment-class-selection-utils";
 
+    type ConvocationEligibility = 'allowed' | 'extraordinary-grace' | 'blocked' | null;
+
     const API_URL = API_BASE_URL;
     const token = localStorage.getItem("access_token");
 
@@ -243,6 +245,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 </h3>
                 <div class="space-y-2">
                     ${subjectClasses.map(cls => {
+                        const convocationEligibility = cls.convocation_eligibility as ConvocationEligibility;
                         const isEnrolled = draftEnrollIds.has(cls.id);
                         const spotsAvailable: number = cls.available_spots ??
                             (cls.max_students != null ? cls.max_students - (cls.enrolled_count ?? 0) : 30);
@@ -266,6 +269,10 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                             actionBtn = `<button disabled class="text-xs rounded-md border border-border px-3 py-1.5 text-muted-foreground opacity-50 cursor-not-allowed">Clase completa</button>`;
                         } else if (action.key === "unavailable") {
                             actionBtn = `<button disabled class="text-xs rounded-md border border-border px-3 py-1.5 text-muted-foreground opacity-50 cursor-not-allowed">Sin horario disponible</button>`;
+                        } else if (action.key === "enroll-grace") {
+                            actionBtn = `<button class="btn-enroll text-xs rounded-md bg-amber-500 px-3 py-1.5 text-white hover:bg-amber-400 transition-colors" data-class-id="${cls.id}">Caso excepcional</button>`;
+                        } else if (action.key === "blocked") {
+                            actionBtn = `<button disabled class="text-xs rounded-md border border-border px-3 py-1.5 text-muted-foreground opacity-50 cursor-not-allowed">Límite de convocatorias alcanzado</button>`;
                         } else {
                             actionBtn = `<button class="btn-enroll text-xs rounded-md bg-primary px-3 py-1.5 text-primary-foreground hover:bg-primary/90 transition-colors" data-class-id="${cls.id}">Seleccionar</button>`;
                         }
@@ -280,6 +287,8 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                             <div class="flex-1 min-w-0 space-y-1.5">
                                 <div class="flex items-center gap-2 flex-wrap">
                                     ${isEnrolled ? '<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-primary/15 text-primary">Matriculado</span>' : ""}
+                                    ${convocationEligibility === 'extraordinary-grace' ? '<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-500/15 text-amber-400">Caso excepcional</span>' : ''}
+                                    ${convocationEligibility === 'blocked' ? '<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-red-500/15 text-red-400">Límite de convocatorias alcanzado</span>' : ''}
                                     ${spotsLabel}
                                 </div>
                                 <div class="flex flex-wrap gap-4 text-xs text-muted-foreground">
@@ -326,6 +335,10 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         const clsObj = allClasses.find(c => c.id === classId);
         if (!clsObj || !getEnrollmentClassAvailability(clsObj).available) {
             showFeedback("Esta clase no tiene horario publicado disponible.", true);
+            return;
+        }
+        if ((clsObj.convocation_eligibility as ConvocationEligibility) === 'blocked') {
+            showFeedback("Límite de convocatorias alcanzado.", true);
             return;
         }
         draftEnrollIds.add(classId);

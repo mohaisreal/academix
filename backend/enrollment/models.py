@@ -60,6 +60,39 @@ class ClassEnrollment(models.Model):
         return f"{self.student.username} in {self.cls}"
 
 
+class ExceptionalConvocationGrace(models.Model):
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 's'},
+        related_name='convocation_graces',
+    )
+    subject = models.ForeignKey('academic.Subject', on_delete=models.CASCADE, related_name='convocation_graces')
+    period = models.ForeignKey('academic.AcademicPeriod', on_delete=models.CASCADE, related_name='convocation_graces')
+    granted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='granted_convocation_graces',
+    )
+    reason = models.TextField()
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['student', 'subject', 'period'], name='unique_student_subject_period_grace'),
+        ]
+        indexes = [
+            models.Index(fields=['student', 'subject', 'period', 'is_active'], name='grace_lookup_idx'),
+            models.Index(fields=['period', 'is_active'], name='grace_period_active_idx'),
+        ]
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Grace {self.student.username} - {self.subject.code} ({self.period.code})"
+
+
 class EnrollmentFee(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),

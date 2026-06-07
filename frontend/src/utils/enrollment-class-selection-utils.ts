@@ -1,6 +1,8 @@
 type EnrollmentClassLike = {
   schedule_available?: boolean;
   schedule_unavailable_reason?: string | null;
+  convocation_eligibility?: 'allowed' | 'extraordinary-grace' | 'blocked' | null;
+  convocation_block_reason?: string | null;
   schedules?: Array<{ assignment_id?: number | null; source?: string; day_name?: string; day?: string; start_time?: string; end_time?: string }>;
 };
 
@@ -32,6 +34,14 @@ export function getEnrollmentClassAction({ cls, isEnrolled, isFull, isCompleted 
   if (isEnrolled) return { key: 'unenroll', label: 'Quitar', disabled: false };
   if (!availability.available) return { key: 'unavailable', label: 'Sin horario disponible', disabled: true };
   if (isFull) return { key: 'full', label: 'Clase completa', disabled: true };
+
+  if (cls.convocation_eligibility === 'extraordinary-grace') {
+    return { key: 'enroll-grace', label: 'Caso excepcional', disabled: false };
+  }
+  if (cls.convocation_eligibility === 'blocked') {
+    return { key: 'blocked', label: 'Límite de convocatorias alcanzado', disabled: true };
+  }
+
   return { key: 'enroll', label: 'Seleccionar', disabled: false };
 }
 
