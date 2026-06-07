@@ -123,6 +123,10 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <input id="subject-hours" type="number" min="1" max="20" value="4" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
           <div>
+            <label class="text-xs font-medium text-muted-foreground">Máximo de convocatorias *</label>
+            <input id="subject-max-convocations" type="number" min="1" required value="4" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
+          <div>
             <label class="text-xs font-medium text-muted-foreground">Descripción</label>
             <textarea id="subject-desc" rows="3" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none" placeholder="Descripción breve..."></textarea>
           </div>
@@ -325,6 +329,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       (document.getElementById('price-third') as HTMLInputElement).value = formatMoney(subject.credit_price_third_enrollment ?? 45);
       (document.getElementById('price-fourth') as HTMLInputElement).value = formatMoney(subject.credit_price_fourth_or_more_enrollment ?? 60);
       (document.getElementById('subject-hours') as HTMLInputElement).value = subject.hours_per_week || subject.hours_week || 4;
+      (document.getElementById('subject-max-convocations') as HTMLInputElement).value = subject.max_convocations ?? 4;
       (document.getElementById('subject-desc') as HTMLTextAreaElement).value = subject.description || '';
       (document.getElementById('subject-active') as HTMLInputElement).checked = subject.is_active !== false;
     } else {
@@ -372,6 +377,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const credit_price_third_enrollment = (document.getElementById('price-third') as HTMLInputElement).value;
     const credit_price_fourth_or_more_enrollment = (document.getElementById('price-fourth') as HTMLInputElement).value;
     const hours_per_week = parseInt((document.getElementById('subject-hours') as HTMLInputElement).value);
+    const max_convocations = parseInt((document.getElementById('subject-max-convocations') as HTMLInputElement).value);
     const description = (document.getElementById('subject-desc') as HTMLTextAreaElement).value;
     const is_active = (document.getElementById('subject-active') as HTMLInputElement).checked;
     const payload = {
@@ -385,6 +391,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       credit_price_third_enrollment,
       credit_price_fourth_or_more_enrollment,
       hours_per_week,
+      max_convocations,
       description,
       is_active,
     };
