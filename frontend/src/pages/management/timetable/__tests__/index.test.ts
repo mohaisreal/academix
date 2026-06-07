@@ -158,4 +158,30 @@ describe('management timetable page layout cleanup', () => {
 
     expect(source).toContain('await Promise.all([loadRuns(), loadAssignments(), loadViolations()]);');
   });
+
+  it('expone selección múltiple y acción destructiva para franjas horarias', () => {
+    const source = readPage();
+
+    expect(source).toContain('Eliminar');
+    expect(source).toContain('timeslots-select-all');
+    expect(source).toContain('timeslot-row-checkbox');
+    expect(source).toContain('selectedTimeslotIds.size > 0');
+  });
+
+  it('confirma el borrado de franjas con aviso de cascada y endpoint delete', () => {
+    const source = readPage();
+
+    expect(source).toContain('window.confirm');
+    expect(source).toContain('puede afectar a asignaciones de horario relacionadas');
+    expect(source).toContain('apiFetch(`/academic/time-slots/${id}/`, { method: \'DELETE\' })');
+  });
+
+  it('refresca, limpia selección y conserva paginación tras eliminar franjas', () => {
+    const source = readPage();
+
+    expect(source).toContain('selectedTimeslotIds.clear()');
+    expect(source).toContain('await loadTimeslots(currentPage);');
+    expect(source).toContain('if (currentPage > 1 && timeslots.length === 0) await loadTimeslots(currentPage - 1);');
+    expect(source).toContain('toast.success(\'Franjas horarias eliminadas\')');
+  });
 });

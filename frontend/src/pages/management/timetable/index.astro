@@ -54,9 +54,13 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
     <section class="bg-card border border-border rounded-xl p-5 space-y-4">
       <h2 class="text-lg font-semibold">Franjas horarias</h2>
+      <div class="flex items-center justify-between gap-3">
+        <label class="inline-flex items-center gap-2 text-sm text-muted-foreground"><input id="timeslots-select-all" type="checkbox" class="rounded border-border bg-input" /> Seleccionar todas</label>
+        <button id="delete-timeslots-btn" type="button" disabled class="rounded-lg border border-red-500/30 px-4 py-2 text-sm font-medium text-red-300 transition disabled:opacity-50 hover:bg-red-500/10">Eliminar</button>
+      </div>
       <div class="grid gap-6 xl:grid-cols-[1.5fr,1fr]">
         <div>
-          <div class="overflow-x-auto"><table class="w-full"><thead><tr class="border-b border-border"><th class="text-left text-xs uppercase pb-3">Día</th><th class="text-left text-xs uppercase pb-3">Inicio</th><th class="text-left text-xs uppercase pb-3">Fin</th></tr></thead><tbody id="timeslots-table-body"></tbody></table></div>
+          <div class="overflow-x-auto"><table class="w-full"><thead><tr class="border-b border-border"><th class="text-left text-xs uppercase pb-3 w-10"><span class="sr-only">Seleccionar</span></th><th class="text-left text-xs uppercase pb-3">Día</th><th class="text-left text-xs uppercase pb-3">Inicio</th><th class="text-left text-xs uppercase pb-3">Fin</th></tr></thead><tbody id="timeslots-table-body"></tbody></table></div>
           <div id="timeslots-pagination" class="mt-3 hidden items-center justify-between gap-2 rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground sm:text-sm">
             <button id="timeslots-prev-btn" class="rounded border border-border px-2 py-1 disabled:opacity-50" disabled>Anterior</button>
             <span id="timeslots-page-info">Página 1 de 1 · 0 franjas</span>
@@ -196,6 +200,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   let periods = []; let teachers = []; let classrooms = []; let careers = []; let runs = []; let timeslots = []; let assignments = []; let violations = []; let constraints = []; let selectedRunId = null;
   let selectedCareerId = null;
+  let selectedTimeslotIds = new Set();
   let timeslotsPage = 1; let timeslotsPages = 1; let timeslotsCount = 0;
 
   async function apiFetch(path, options: RequestInit = {}) {
@@ -241,6 +246,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   function hidePageError() { q('page-error')?.classList.add('hidden'); }
   function selectedRun() { return runs.find((r) => Number(r.id) === Number(selectedRunId)) || null; }
   function selectedRunPeriodId() { return resolveTimetableRunPeriodId(selectedRun()); }
+  function selectedTimeslotsOnPage() { return timeslots.filter((slot) => selectedTimeslotIds.has(Number(slot.id))); }
+  function isTimeslotPageFullySelected() { return timeslots.length > 0 && timeslots.every((slot) => selectedTimeslotIds.has(Number(slot.id))); }
+  function syncTimeslotSelectionToPage() {
+    const visibleIds = new Set(timeslots.map((slot) => Number(slot.id)));
+    selectedTimeslotIds = new Set(Array.from(selectedTimeslotIds).filter((id) => visibleIds.has(Number(id))));
+  }
 
   function getRunWarningSummary(run) {
     return run?.warning_summary || run?.metadata?.generator?.warning_summary || null;
@@ -338,11 +349,16 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   function renderTimeslots() {
     const tbody = q('timeslots-table-body'); const empty = q('timeslots-empty'); const pager = q('timeslots-pagination'); if (!tbody) return;
+    syncTimeslotSelectionToPage();
     const prevBtn = q('timeslots-prev-btn'); const nextBtn = q('timeslots-next-btn'); const info = q('timeslots-page-info');
+    const bulkDeleteBtn = q('delete-timeslots-btn');
+    const selectAll = q('timeslots-select-all');
     if (timeslots.length === 0) {
       tbody.innerHTML = '';
       empty?.classList.remove('hidden');
       pager?.classList.add('hidden');
+      if (bulkDeleteBtn instanceof HTMLButtonElement) bulkDeleteBtn.disabled = true;
+      if (selectAll instanceof HTMLInputElement) selectAll.checked = false;
       if (info) info.textContent = 'Página 1 de 1 · 0 franjas';
       return;
     }
@@ -356,8 +372,46 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     }
     if (prevBtn instanceof HTMLButtonElement) prevBtn.disabled = timeslotsPage <= 1;
     if (nextBtn instanceof HTMLButtonElement) nextBtn.disabled = timeslotsPage >= timeslotsPages;
+    if (bulkDeleteBtn instanceof HTMLButtonElement) bulkDeleteBtn.disabled = selectedTimeslotIds.size === 0;
+    if (selectAll instanceof HTMLInputElement) {
+      selectAll.checked = isTimeslotPageFullySelected();
+      selectAll.indeterminate = selectedTimeslotIds.size > 0 && !selectAll.checked;
+    }
     if (info) info.textContent = `Página ${timeslotsPage} de ${timeslotsPages} · ${timeslotsCount} franjas`;
-    tbody.innerHTML = timeslots.map((s) => `<tr class="border-b border-border"><td class="py-3">${esc(s.day_name || DAY_NAMES[Number(s.day_of_week)] || '—')}</td><td class="py-3">${esc(s.start_time || '—')}</td><td class="py-3">${esc(s.end_time || '—')}</td></tr>`).join('');
+    tbody.innerHTML = timeslots.map((s) => {
+      const selected = selectedTimeslotIds.has(Number(s.id));
+      return `<tr class="border-b border-border ${selected ? 'bg-primary/5' : ''}"><td class="py-3"><input class="timeslot-row-checkbox" data-id="${s.id}" type="checkbox" ${selected ? 'checked' : ''} aria-label="Seleccionar franja ${esc(s.day_name || DAY_NAMES[Number(s.day_of_week)] || '—')} ${esc(s.start_time || '—')}" /></td><td class="py-3">${esc(s.day_name || DAY_NAMES[Number(s.day_of_week)] || '—')}</td><td class="py-3">${esc(s.start_time || '—')}</td><td class="py-3">${esc(s.end_time || '—')}</td></tr>`;
+    }).join('');
+    tbody.querySelectorAll('.timeslot-row-checkbox').forEach((input) => input.addEventListener('change', (event) => {
+      if (!(event.currentTarget instanceof HTMLInputElement)) return;
+      const id = Number(event.currentTarget.getAttribute('data-id'));
+      if (event.currentTarget.checked) selectedTimeslotIds.add(id); else selectedTimeslotIds.delete(id);
+      renderTimeslots();
+    }));
+  }
+
+  async function deleteSelectedTimeslots() {
+    if (selectedTimeslotIds.size === 0) return;
+    const confirmed = window.confirm('Eliminar las franjas horarias seleccionadas puede afectar a asignaciones de horario relacionadas. ¿Deseas continuar?');
+    if (!confirmed) return;
+    const ids = Array.from(selectedTimeslotIds);
+    const currentPage = timeslotsPage;
+    try {
+      const results = await Promise.allSettled(ids.map((id) => apiFetch(`/academic/time-slots/${id}/`, { method: 'DELETE' })));
+      const failedIds = results.flatMap((result, index) => result.status === 'rejected' ? [ids[index]] : []);
+      const deletedCount = ids.length - failedIds.length;
+      if (deletedCount > 0) toast.success('Franjas horarias eliminadas');
+      if (failedIds.length > 0) {
+        selectedTimeslotIds = new Set(failedIds);
+        toast.error(`No se pudieron eliminar ${failedIds.length} franja(s)`);
+      } else {
+        selectedTimeslotIds.clear();
+      }
+      await loadTimeslots(currentPage);
+      if (currentPage > 1 && timeslots.length === 0) await loadTimeslots(currentPage - 1);
+    } catch (e) {
+      toast.error(classifyTimetableActionError(e, 'delete'));
+    }
   }
 
   function renderViolations() {
@@ -605,6 +659,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     try { await loadTimeslots(timeslotsPage + 1); }
     catch (e) { toast.error(err(e, 'No se pudieron cargar las franjas horarias')); }
   });
+  q('timeslots-select-all')?.addEventListener('change', (event) => {
+    if (!(event.currentTarget instanceof HTMLInputElement)) return;
+    const visibleIds = timeslots.map((slot) => Number(slot.id));
+    if (event.currentTarget.checked) visibleIds.forEach((id) => selectedTimeslotIds.add(id));
+    else visibleIds.forEach((id) => selectedTimeslotIds.delete(id));
+    renderTimeslots();
+  });
+  q('delete-timeslots-btn')?.addEventListener('click', async () => { await deleteSelectedTimeslots(); });
 
   q('constraint-form')?.addEventListener('submit', async (event) => {
     event.preventDefault();

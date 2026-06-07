@@ -134,6 +134,9 @@ export function classifyTimetableActionError(error: unknown, action: 'generate' 
   if (status === 400 && action === 'delete' && detail.includes('publicad')) {
     return 'No se puede eliminar una ejecución publicada.';
   }
+  if (action === 'delete' && status === 404) {
+    return 'La franja horaria ya no existe o fue eliminada en otra sesión.';
+  }
   if (status === 400 && fieldError) {
     return 'Validación incompleta: revisá periodo, día y rango horario antes de enviar.';
   }
