@@ -85,6 +85,15 @@ describe('management timetable page layout cleanup', () => {
     expect(source).toContain('loadViolations()');
   });
 
+  it('renders a visible load failure state with retry action', () => {
+    const source = readPage();
+
+    expect(source).toContain('id="page-error"');
+    expect(source).toContain('id="page-error-message"');
+    expect(source).toContain('id="retry-management-timetable-btn"');
+    expect(source).toContain('showPageError(');
+  });
+
   it('shows persistent warning counters and preview summary hooks', () => {
     const source = readPage();
 

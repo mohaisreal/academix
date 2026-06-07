@@ -7,6 +7,13 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     <div class="h-64 bg-card rounded-xl border border-border animate-pulse"></div>
   </div>
 
+  <div id="page-error" class="hidden p-6">
+    <div class="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+      <p id="page-error-message">No se pudo cargar la página de carreras. Reintentá en unos segundos.</p>
+      <button id="retry-careers-btn" type="button" class="mt-3 rounded-md border border-red-500/30 px-3 py-1.5 text-xs font-medium text-red-200 hover:bg-red-500/10">Reintentar</button>
+    </div>
+  </div>
+
   <div id="page-content" class="hidden">
     <div class="flex items-center justify-between border-b border-border px-6 py-4">
       <div>
@@ -137,6 +144,15 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       ...options,
     });
     if (res.status === 401) window.location.replace('/login');
+    if (!res.ok) {
+      let message = `HTTP ${res.status}`;
+      try {
+        const data = await res.json();
+        if (typeof data?.detail === 'string' && data.detail.trim()) message = data.detail;
+      } catch {}
+      throw new Error(message);
+    }
+    if (res.status === 204) return null;
     return res.json();
   }
 
@@ -154,6 +170,19 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   let careers = [];
   let currentPage = 1;
   let pagination = { count: 0, next: null, previous: null };
+
+  function showPageError(message) {
+    const error = document.getElementById('page-error');
+    const errorMessage = document.getElementById('page-error-message');
+    errorMessage && (errorMessage.textContent = message);
+    document.getElementById('page-loading')?.classList.add('hidden');
+    document.getElementById('page-content')?.classList.add('hidden');
+    error?.classList.remove('hidden');
+  }
+
+  function hidePageError() {
+    document.getElementById('page-error')?.classList.add('hidden');
+  }
 
   function renderTable() {
     const tbody = document.getElementById('careers-table-body');
@@ -209,7 +238,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     tbody.querySelectorAll('.delete-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = (btn as HTMLElement).dataset.id;
-        window.confirmAction({
+        (window as any).confirmAction?.({
           title: "Eliminar carrera",
           description: "Esta acción no se puede deshacer.",
           confirmLabel: "Eliminar",
@@ -246,12 +275,18 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   async function loadCareers(page = currentPage) {
     try {
       currentPage = page;
+      hidePageError();
       const data = await apiFetch(buildPaginatedEndpoint('/academic/careers/', currentPage));
       const normalized = normalizePaginatedResponse(data);
       careers = normalized.results;
       pagination = { count: normalized.count, next: normalized.next, previous: normalized.previous };
       renderTable();
-    } catch { careers = []; }
+    } catch (error) {
+      careers = [];
+      renderTable();
+      showPageError(error instanceof Error && error.message ? error.message : 'No se pudo cargar la lista de carreras.');
+      throw error;
+    }
   }
 
   function openPanel(career = null) {
@@ -294,6 +329,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   document.getElementById('modal-backdrop')?.addEventListener('click', e => { if (e.target === e.currentTarget) closePanel(); });
   document.getElementById('careers-prev')?.addEventListener('click', () => { if (pagination.previous) loadCareers(currentPage - 1); });
   document.getElementById('careers-next')?.addEventListener('click', () => { if (pagination.next) loadCareers(currentPage + 1); });
+  document.getElementById('retry-careers-btn')?.addEventListener('click', () => { loadCareers(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
 
   document.getElementById('career-form')?.addEventListener('submit', async (e) => {
@@ -330,8 +366,13 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   });
 
   (async () => {
-    await loadCareers();
-    showContent();
+    try {
+      await loadCareers();
+      showContent();
+    } catch {
+      document.getElementById('page-loading')?.classList.add('hidden');
+      document.getElementById('page-error')?.classList.remove('hidden');
+    }
   })();
 </script>
 

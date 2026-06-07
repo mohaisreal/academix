@@ -56,10 +56,23 @@ class CareerSerializer(serializers.ModelSerializer):
         ).count()
         return max(0, obj.total_spots - enrolled)
 
+    def get_convocation_eligibility(self, obj):
+        return None
+
+    def get_failed_convocations(self, obj):
+        return None
+
+    def get_max_convocations(self, obj):
+        return None
+
+    def get_convocation_block_reason(self, obj):
+        return None
+
     class Meta:
         model = Career
         fields = ['id', 'name', 'code', 'description', 'duration_years',
                   'total_spots', 'available_spots', 'is_active', 'subjects_count',
+                  'convocation_eligibility', 'failed_convocations', 'max_convocations', 'convocation_block_reason',
                   'created_at', 'updated_at']
 
 
