@@ -79,8 +79,41 @@ class SeedAcademicBaseCommandTests(TestCase):
         self.assertTrue(all(not re.match(r"^Carrera\s+\d+$", c.name) for c in Career.objects.all()))
         self.assertTrue(all(a.name.startswith("Aula ") for a in Classroom.objects.all()))
 
-        self.assertEqual(Subject.objects.filter(career__isnull=True).count(), 0)
+        self.assertEqual(Subject.objects.filter(careers__isnull=True).count(), 0)
         self.assertEqual(Career.objects.filter(subjects__isnull=True).count(), 0)
+
+    def test_seed_assigns_numidif_only_to_students(self):
+        self._run_command()
+
+        students = list(User.objects.filter(role="s").order_by("id"))
+        teachers = User.objects.filter(role="t")
+
+        self.assertEqual(len(students), 60)
+        self.assertEqual([student.dni for student in students], [f"NUMIDIF{i}" for i in range(1, 61)])
+        self.assertTrue(all(re.fullmatch(r"NUMIDIF\d+", student.dni or "") for student in students))
+        self.assertTrue(all(user.dni is None for user in teachers))
+        self.assertEqual(User.objects.exclude(role="s").filter(dni__regex=r"^NUMIDIF\d+$").count(), 0)
+
+    def test_seed_populates_shared_career_subject_relations(self):
+        self._run_command()
+
+        careers = Career.objects.prefetch_related("subjects").order_by("code")
+        subjects = Subject.objects.prefetch_related("careers").order_by("code")
+
+        self.assertTrue(all(career.subjects.count() > 0 for career in careers))
+        self.assertTrue(all(subject.careers.count() > 0 for subject in subjects))
+        self.assertTrue(all(subject.career_id is not None for subject in subjects))
+
+    def test_seed_rerun_keeps_dni_sequence_deterministic_without_collisions(self):
+        self._run_command()
+        first_snapshot = list(User.objects.filter(role="s").order_by("id").values_list("dni", flat=True))
+
+        self._run_command()
+
+        second_snapshot = list(User.objects.filter(role="s").order_by("id").values_list("dni", flat=True))
+        self.assertEqual(first_snapshot, [f"NUMIDIF{i}" for i in range(1, 61)])
+        self.assertEqual(second_snapshot, first_snapshot)
+        self.assertEqual(User.objects.filter(dni__regex=r"^NUMIDIF\d+$").count(), 60)
 
     def test_seed_creates_submitted_pending_admission_applications(self):
         active_period = AcademicPeriod.objects.create(
@@ -154,6 +187,13 @@ class SeedAcademicBaseCommandTests(TestCase):
             "careers": tuple(Career.objects.order_by("code").values_list("code", "name")),
             "departments": tuple(Department.objects.order_by("code").values_list("code", "name")),
             "subjects": tuple(Subject.objects.order_by("code").values_list("code", "name", "career__code", "department__code")),
+            "subject_careers": tuple(
+                (
+                    subject.code,
+                    tuple(subject.careers.order_by("code").values_list("code", flat=True)),
+                )
+                for subject in Subject.objects.order_by("code")
+            ),
         }
 
         self._run_command()
@@ -161,6 +201,13 @@ class SeedAcademicBaseCommandTests(TestCase):
             "careers": tuple(Career.objects.order_by("code").values_list("code", "name")),
             "departments": tuple(Department.objects.order_by("code").values_list("code", "name")),
             "subjects": tuple(Subject.objects.order_by("code").values_list("code", "name", "career__code", "department__code")),
+            "subject_careers": tuple(
+                (
+                    subject.code,
+                    tuple(subject.careers.order_by("code").values_list("code", flat=True)),
+                )
+                for subject in Subject.objects.order_by("code")
+            ),
         }
 
         self.assertEqual(first_snapshot, second_snapshot)

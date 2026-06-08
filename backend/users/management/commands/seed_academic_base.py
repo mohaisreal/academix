@@ -93,7 +93,7 @@ SEED_TIME_SLOTS = [
 
 
 class Command(BaseCommand):
-    help = "Regenera dataset académico realista y suficiente para generación de horarios base."
+    help = "Regenera dataset académico realista y suficiente para generación de horarios base, con DNIs NUMIDIF<N> solo para estudiantes."
 
     def handle(self, *args, **options):
         with transaction.atomic():
@@ -135,7 +135,19 @@ class Command(BaseCommand):
     def _seed_students(self):
         for i in range(1, STUDENTS + 1):
             username = f"estudiante{i}"
-            User.objects.create_user(username=username, password="academix123", role="s", email=f"{username}@academix.local", first_name="Estudiante", last_name=str(i), is_active=True)
+            User.objects.create_user(
+                username=username,
+                password="academix123",
+                role="s",
+                dni=self._student_dni(i),
+                email=f"{username}@academix.local",
+                first_name="Estudiante",
+                last_name=str(i),
+                is_active=True,
+            )
+
+    def _student_dni(self, index):
+        return f"NUMIDIF{index}"
 
     def _seed_teachers(self):
         teachers = []
@@ -179,7 +191,7 @@ class Command(BaseCommand):
                     hours_per_week=4,
                     subject_type="obligatoria",
                     is_active=True,
-                )
+                ).careers.add(career)
 
     def _seed_classrooms(self):
         for i in range(1, CLASSROOMS + 1):
@@ -222,7 +234,7 @@ class Command(BaseCommand):
             period.time_slots.create(day_of_week=day, start_time=start_time, end_time=end_time)
 
     def _validate_distribution(self):
-        if Subject.objects.filter(career__isnull=True).exists():
+        if Subject.objects.filter(careers__isnull=True).exists():
             raise CommandError("Se detectaron asignaturas sin carrera asociada.")
         if Career.objects.filter(subjects__isnull=True).exists():
             raise CommandError("Se detectaron carreras sin asignaturas.")
