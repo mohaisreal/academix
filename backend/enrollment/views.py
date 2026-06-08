@@ -838,47 +838,47 @@ def _build_designed_receipt_pdf(data):
         ops.append(f'BT /{font} {size} Tf {x} {y} Td ({_pdf_safe_text(value)}) Tj ET')
 
     def amount_text(y, amount):
-        text(485, y, _format_pdf_money(amount), 9, (1, 1, 1), True)
+        text(485, y, _format_pdf_money(amount), 9, (0.09, 0.11, 0.16), True)
 
-    # Fondo y tarjeta principal, replicando el ticket oscuro del frontend.
-    rect(0, 0, 595, 842, (0.04, 0.04, 0.045))
-    rounded_rect(48, 34, 499, 774, 10, (0.075, 0.075, 0.075), (0.22, 0.22, 0.24), 1)
+    # Fondo y tarjeta principal, alineados con la estética clara del frontend.
+    rect(0, 0, 595, 842, (0.98, 0.98, 0.99))
+    rounded_rect(48, 34, 499, 774, 10, (1.0, 1.0, 1.0), (0.88, 0.89, 0.92), 1)
 
-    # Cabecera azul oscuro.
-    top_rounded_rect(48, 722, 499, 86, 10, (0.07, 0.09, 0.16))
-    line(48, 722, 547, 722, (0.19, 0.19, 0.22), 1)
+    # Cabecera clara.
+    top_rounded_rect(48, 722, 499, 86, 10, (0.94, 0.97, 1.0))
+    line(48, 722, 547, 722, (0.88, 0.89, 0.92), 1)
     book_logo(74, 770, 0.95)
-    text(94, 773, 'academix', 13, (1, 1, 1), True)
-    text(74, 752, 'Comprobante de matrícula', 9, (0.78, 0.80, 0.86))
+    text(94, 773, 'academix', 13, (0.09, 0.11, 0.16), True)
+    text(74, 752, 'Comprobante de matrícula', 9, (0.39, 0.43, 0.51))
 
-    text(477, 780, 'Receipt #', 7, (0.78, 0.80, 0.86))
-    text(493, 763, f"#{enrollment.get('id') or '-'}", 13, (1, 1, 1), True)
-    text(489, 745, _format_pdf_date(fee.get('paid_at') or enrollment.get('enrolled_at')), 8, (0.78, 0.80, 0.86))
+    text(477, 780, 'Receipt #', 7, (0.39, 0.43, 0.51))
+    text(493, 763, f"#{enrollment.get('id') or '-'}", 13, (0.09, 0.11, 0.16), True)
+    text(489, 745, _format_pdf_date(fee.get('paid_at') or enrollment.get('enrolled_at')), 8, (0.39, 0.43, 0.51))
 
     y = 690
-    text(74, y, 'STUDENT', 7, (0.72, 0.72, 0.76), True)
-    text(74, y - 18, student.get('full_name') or '-', 10, (1, 1, 1), True)
-    text(74, y - 33, student.get('email') or '-', 9, (0.82, 0.84, 0.88))
-    text(74, y - 48, f"DNI: {student.get('dni') or student.get('id') or '-'}", 7, (0.82, 0.84, 0.88))
+    text(74, y, 'STUDENT', 7, (0.39, 0.43, 0.51), True)
+    text(74, y - 18, student.get('full_name') or '-', 10, (0.09, 0.11, 0.16), True)
+    text(74, y - 33, student.get('email') or '-', 9, (0.35, 0.39, 0.47))
+    text(74, y - 48, f"DNI: {student.get('dni') or student.get('id') or '-'}", 7, (0.35, 0.39, 0.47))
 
-    line(74, 638, 520, 638, (0.17, 0.17, 0.18), 1)
+    line(74, 638, 520, 638, (0.88, 0.89, 0.92), 1)
 
-    text(74, 612, 'Career', 7, (0.72, 0.72, 0.76))
-    text(74, 599, _truncate_pdf_text(career.get('name') or '-', 32), 9, (1, 1, 1), True)
-    text(274, 612, 'Period', 7, (0.72, 0.72, 0.76))
-    text(274, 599, _truncate_pdf_text(period.get('name') or '-', 24), 9, (1, 1, 1), True)
-    text(74, 574, 'Fecha de matrícula', 7, (0.72, 0.72, 0.76))
-    text(74, 561, _format_pdf_date(enrollment.get('enrolled_at')), 9, (1, 1, 1), True)
-    text(274, 574, 'Estado', 7, (0.72, 0.72, 0.76))
-    text(274, 561, 'Active' if enrollment.get('status') == 'active' else str(enrollment.get('status') or '-').title(), 9, (0.15, 0.95, 0.55), True)
+    text(74, 612, 'Career', 7, (0.39, 0.43, 0.51))
+    text(74, 599, _truncate_pdf_text(career.get('name') or '-', 32), 9, (0.09, 0.11, 0.16), True)
+    text(274, 612, 'Period', 7, (0.39, 0.43, 0.51))
+    text(274, 599, _truncate_pdf_text(period.get('name') or '-', 24), 9, (0.09, 0.11, 0.16), True)
+    text(74, 574, 'Fecha de matrícula', 7, (0.39, 0.43, 0.51))
+    text(74, 561, _format_pdf_date(enrollment.get('enrolled_at')), 9, (0.09, 0.11, 0.16), True)
+    text(274, 574, 'Estado', 7, (0.39, 0.43, 0.51))
+    text(274, 561, 'Active' if enrollment.get('status') == 'active' else str(enrollment.get('status') or '-').title(), 9, (0.02, 0.51, 0.28), True)
 
-    line(74, 536, 520, 536, (0.17, 0.17, 0.18), 1)
-    text(74, 508, 'FEE DETAILS', 7, (0.72, 0.72, 0.76), True)
+    line(74, 536, 520, 536, (0.88, 0.89, 0.92), 1)
+    text(74, 508, 'FEE DETAILS', 7, (0.39, 0.43, 0.51), True)
 
     y = 489
     for item in fee.get('line_items') or []:
         if y < 300:
-            text(74, y, 'Detalle truncado. Consulta el ticket web para ver todas las líneas.', 8, (0.85, 0.72, 0.35))
+            text(74, y, 'Detalle truncado. Consulta el ticket web para ver todas las líneas.', 8, (0.67, 0.48, 0.13))
             y -= 18
             break
         if item.get('type') == 'subject':
@@ -886,47 +886,47 @@ def _build_designed_receipt_pdf(data):
                 f"{item.get('subject_code', '')} {item.get('subject_name') or item.get('label') or 'Asignatura'}".strip(),
                 42,
             )
-            text(74, y, label, 9, (1, 1, 1))
+            text(74, y, label, 9, (0.09, 0.11, 0.16))
             amount_text(y, item.get('subtotal') or '0.00')
             y -= 13
             text(74, y, f"{item.get('credits') or 0} ECTS × {_format_pdf_money(item.get('price_per_credit'))}/crédito", 7, (0.70, 0.72, 0.76))
             y -= 16
         else:
-            text(74, y, _truncate_pdf_text(item.get('label') or 'Cargo administrativo', 42), 9, (0.88, 0.90, 0.94))
+            text(74, y, _truncate_pdf_text(item.get('label') or 'Cargo administrativo', 42), 9, (0.09, 0.11, 0.16))
             amount_text(y, item.get('subtotal') or item.get('amount') or '0.00')
             y -= 18
 
     discount = Decimal(str(fee.get('discount_amount') or '0'))
     if discount > Decimal('0.00'):
-        text(74, y, f"Descuento {fee.get('discount_reason') or ''}", 9, (0.15, 0.95, 0.55))
-        text(485, y, f"-{_format_pdf_money(discount)}", 9, (0.15, 0.95, 0.55), True)
+        text(74, y, f"Descuento {fee.get('discount_reason') or ''}", 9, (0.02, 0.51, 0.28))
+        text(485, y, f"-{_format_pdf_money(discount)}", 9, (0.02, 0.51, 0.28), True)
         y -= 18
 
-    line(74, y + 4, 520, y + 4, (0.22, 0.22, 0.24), 1)
-    text(74, y - 15, 'Total Paid', 10, (1, 1, 1), True)
+    line(74, y + 4, 520, y + 4, (0.88, 0.89, 0.92), 1)
+    text(74, y - 15, 'Total Paid', 10, (0.09, 0.11, 0.16), True)
     amount_text(y - 15, fee.get('final_amount') or '0.00')
 
     y -= 48
-    line(74, y + 10, 520, y + 10, (0.17, 0.17, 0.18), 1)
-    text(74, y - 14, 'ENROLLED CLASSES', 7, (0.72, 0.72, 0.76), True)
+    line(74, y + 10, 520, y + 10, (0.88, 0.89, 0.92), 1)
+    text(74, y - 14, 'ENROLLED CLASSES', 7, (0.39, 0.43, 0.51), True)
     y -= 34
 
     for cls in data.get('classes') or []:
         if y < 86:
-            text(74, y, 'Lista truncada. Consulta el ticket web para ver todas las asignaturas.', 8, (0.85, 0.72, 0.35))
+            text(74, y, 'Lista truncada. Consulta el ticket web para ver todas las asignaturas.', 8, (0.67, 0.48, 0.13))
             y -= 14
             break
-        text(74, y, _truncate_pdf_text(cls.get('subject_name') or 'Asignatura', 42), 9, (1, 1, 1), True)
+        text(74, y, _truncate_pdf_text(cls.get('subject_name') or 'Asignatura', 42), 9, (0.09, 0.11, 0.16), True)
         teacher = cls.get('teacher_name') or ''
         if teacher:
-            text(432, y, _truncate_pdf_text(teacher, 22), 7, (0.82, 0.84, 0.88))
+            text(432, y, _truncate_pdf_text(teacher, 22), 7, (0.35, 0.39, 0.47))
         y -= 22
         line(74, y + 8, 520, y + 8, (0.13, 0.13, 0.14), 0.5)
 
-    line(74, 78, 520, 78, (0.17, 0.17, 0.18), 1)
-    text(74, 54, 'This document serves as official proof of enrollment.', 8, (0.82, 0.84, 0.88))
-    rounded_rect(472, 45, 48, 20, 10, (0.75, 1.0, 0.85))
-    text(483, 51, 'Valid', 8, (0.02, 0.40, 0.18), True)
+    line(74, 78, 520, 78, (0.88, 0.89, 0.92), 1)
+    text(74, 54, 'This document serves as official proof of enrollment.', 8, (0.35, 0.39, 0.47))
+    rounded_rect(472, 45, 48, 20, 10, (0.88, 0.97, 0.91))
+    text(483, 51, 'Valid', 8, (0.02, 0.51, 0.28), True)
 
     return _build_pdf_document(ops)
 

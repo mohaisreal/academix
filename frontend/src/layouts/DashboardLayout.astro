@@ -7,8 +7,9 @@ import { Toaster } from "@/components/starwind/toast";
 interface Props {
     title: string;
     currentPath: string;
+    forceLightTheme?: boolean;
 }
-const { title, currentPath } = Astro.props;
+const { title, currentPath, forceLightTheme = false } = Astro.props;
 ---
 
 <html lang="es" class="dark">
@@ -37,15 +38,15 @@ const { title, currentPath } = Astro.props;
             .nav-active { background-color: var(--color-muted) !important; color: var(--color-foreground) !important; }
         </style>
         <!-- Arranque del tema: por defecto es oscuro, pero respeta la preferencia guardada en el perfil antes de pintar. -->
-        <script>
+        <script define:vars={{ forceLightTheme }}>
             (function () {
                 try {
-                    var theme = localStorage.getItem("academix-theme") || "dark";
+                    var theme = forceLightTheme ? "light" : (localStorage.getItem("academix-theme") || "dark");
                     document.documentElement.classList.toggle("dark", theme !== "light");
                     document.documentElement.setAttribute("data-theme", theme === "light" ? "light" : "dark");
                 } catch (_) {
-                    document.documentElement.classList.add("dark");
-                    document.documentElement.setAttribute("data-theme", "dark");
+                    document.documentElement.classList.toggle("dark", !forceLightTheme);
+                    document.documentElement.setAttribute("data-theme", forceLightTheme ? "light" : "dark");
                 }
             })();
         </script>
@@ -345,7 +346,7 @@ const { title, currentPath } = Astro.props;
     </body>
 </html>
 
-<script>
+<script define:vars={{ forceLightTheme }}>
     import API_BASE_URL from '@/config/api';
     
     const STORAGE_KEY = "user-storage";
@@ -415,16 +416,18 @@ const { title, currentPath } = Astro.props;
     if (!user) { clearAuth(); window.location.replace("/login"); throw new Error("No user"); }
 
     try {
-        applyTheme(localStorage.getItem(THEME_STORAGE_KEY) || "dark");
-        const prefRes = await fetch(`${API_URL}/notifications/preferences/`, {
-            headers: { "Authorization": `Bearer ${token}` },
-        });
-        if (prefRes.ok) {
-            const prefData = await prefRes.json();
-            applyTheme(prefData?.theme || "dark");
+        applyTheme(forceLightTheme ? "light" : (localStorage.getItem(THEME_STORAGE_KEY) || "dark"));
+        if (!forceLightTheme) {
+            const prefRes = await fetch(`${API_URL}/notifications/preferences/`, {
+                headers: { "Authorization": `Bearer ${token}` },
+            });
+            if (prefRes.ok) {
+                const prefData = await prefRes.json();
+                applyTheme(prefData?.theme || "dark");
+            }
         }
     } catch {
-        applyTheme(localStorage.getItem(THEME_STORAGE_KEY) || "dark");
+        applyTheme(forceLightTheme ? "light" : (localStorage.getItem(THEME_STORAGE_KEY) || "dark"));
     }
 
     document.body.style.display = "";

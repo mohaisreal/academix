@@ -502,6 +502,9 @@ class ReceiptTests(TestCase):
     def _receipt_url(self, pk):
         return f'/api/enrollment/career-enrollments/{pk}/receipt/'
 
+    def _receipt_pdf_url(self, pk):
+        return f'/api/enrollment/career-enrollments/{pk}/receipt.pdf/'
+
     # --- Prueba 15: recibo propio -----------------------------------------------
 
     def test_student_can_get_own_receipt(self):
@@ -528,6 +531,17 @@ class ReceiptTests(TestCase):
         response = self.client.get(self._receipt_url(self.enrollment.pk))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['classes'][0]['teacher_name'], self.teacher.get_full_name() or self.teacher.username)
+
+    def test_receipt_pdf_uses_light_palette(self):
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get(self._receipt_pdf_url(self.enrollment.pk))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response['Content-Type'], 'application/pdf')
+        content = response.content.decode('latin1')
+        self.assertIn('0.98 0.98 0.99 rg', content)
+        self.assertIn('0.09 0.11 0.16 rg', content)
+        self.assertNotIn('1 1 1 rg', content)
+        self.assertIn('Comprobante de matrícula', content)
 
     def test_my_subjects_and_enrollment_use_published_assignment_teacher(self):
         self.client.force_authenticate(user=self.student)

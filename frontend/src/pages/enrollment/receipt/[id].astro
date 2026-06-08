@@ -3,7 +3,7 @@ export const prerender = false;
 import DashboardLayout from "@/layouts/DashboardLayout.astro";
 ---
 
-<DashboardLayout title="Comprobante de matrícula — Academix" currentPath="/enrollment">
+<DashboardLayout title="Comprobante de matrícula — Academix" currentPath="/enrollment" forceLightTheme={true}>
     <div class="flex items-center justify-between border-b border-border px-6 py-4 print:hidden">
         <div>
             <div class="flex items-center gap-2 text-sm text-muted-foreground mb-1">
@@ -75,7 +75,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                         </div>
                         <div>
                             <p class="text-xs text-muted-foreground">Estado</p>
-                            <p id="enrollment-status" class="font-medium text-emerald-400">—</p>
+                            <p id="enrollment-status" class="font-medium text-emerald-600">—</p>
                         </div>
                     </div>
 
@@ -123,6 +123,13 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 <style>
     @media print {
         body { background: white !important; color: black !important; }
+        html { color-scheme: light !important; }
+        #receipt-content, #receipt-content * {
+            background-color: white !important;
+            color: #111827 !important;
+            border-color: #e5e7eb !important;
+            box-shadow: none !important;
+        }
         .print\:hidden { display: none !important; }
         aside { display: none !important; }
         main { margin-left: 0 !important; }
@@ -240,7 +247,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 feeRows.push(`
                     <div class="flex justify-between text-sm">
                         <span class="text-muted-foreground">Descuento${fee.discount_reason ? ` (${fee.discount_reason})` : ""}</span>
-                        <span class="text-foreground text-emerald-400">-€${isNaN(discAmt) ? fee.discount_amount : discAmt.toFixed(2)}</span>
+                        <span class="text-foreground text-emerald-700">-€${isNaN(discAmt) ? fee.discount_amount : discAmt.toFixed(2)}</span>
                     </div>`);
             }
             if (feeRows.length > 0) {
