@@ -79,6 +79,15 @@ def _mask_identifier(identifier):
     return f'{raw[:3]}{"*" * max(len(raw) - 5, 3)}{raw[-2:]}'
 
 
+def _current_period_payload():
+    from academic.models import AcademicPeriod
+
+    period = AcademicPeriod.objects.filter(is_active=True).order_by('-start_date', '-id').first()
+    if not period:
+        return None
+    return {'id': period.id, 'name': period.name, 'code': period.code}
+
+
 class AdmissionApplicationViewSet(
     CreateModelMixin,
     RetrieveModelMixin,
@@ -129,6 +138,18 @@ class AdmissionApplicationViewSet(
             return qs
         else:
             return qs.filter(student=user)
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        if isinstance(response.data, dict):
+            response.data['current_period'] = _current_period_payload()
+        return response
+
+    def retrieve(self, request, *args, **kwargs):
+        response = super().retrieve(request, *args, **kwargs)
+        if isinstance(response.data, dict):
+            response.data['current_period'] = _current_period_payload()
+        return response
 
     def get_serializer_class(self):
         if self.action == 'list':

@@ -1,0 +1,15 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+---
+
+<DashboardLayout title="Selección docente — Academix" currentPath="/enrollment/teacher-subjects">
+  <div class="p-6 space-y-4">
+    <h1 class="text-xl font-semibold">Selección docente</h1>
+    <p class="text-sm text-muted-foreground">Envía tus asignaturas seleccionadas o marca ninguna.</p>
+    <form id="teacher-subject-selection-form" class="space-y-3 rounded-xl border border-border bg-card p-4">
+      <input id="teacher-subject-selection-mode" value="selected" />
+      <div id="teacher-subject-selection-list" data-empty-state="true">Selecciona asignaturas elegibles.</div>
+      <button id="teacher-subject-selection-submit-btn" type="button">Enviar selección</button>
+    </form>
+  </div>
+</DashboardLayout>

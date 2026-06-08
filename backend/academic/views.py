@@ -1,7 +1,9 @@
 from django.db import transaction
 from django.db.models import Prefetch, Q
 from django.conf import settings
+from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status
+from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -19,6 +21,8 @@ from .models import (
     ScheduleAssignment,
     ConstraintViolation,
     SchedulingConstraint,
+    TeacherSubjectDecision,
+    TeacherSubjectEligibility,
 )
 from .serializers import (
     CareerSerializer, SubjectSerializer, AcademicPeriodSerializer,
@@ -27,6 +31,9 @@ from .serializers import (
     TimeSlotSerializer, TimetableRunSerializer, ScheduleAssignmentSerializer,
     ConstraintViolationSerializer,
     SchedulingConstraintSerializer,
+    TeacherSubjectSelectionSerializer,
+    TeacherSubjectDecisionSerializer,
+    TeacherSubjectEligibilitySerializer,
 )
 from .timetabling import generate_for_run, build_warning_summary_for_run
 from .timetabling import delete_generated_classes_for_period
@@ -44,6 +51,22 @@ def _teacher_display_name(teacher):
     if not teacher:
         return ''
     return f"{teacher.first_name} {teacher.last_name}".strip() or teacher.username
+
+
+def _current_period_payload():
+    period = get_active_academic_period()
+    if not period:
+        return None
+    return {'id': period.id, 'name': period.name, 'code': period.code}
+
+
+def _department_for_teacher(user):
+    return Department.objects.filter(teacher=user).first()
+
+
+def _subject_is_active_and_owned(subject, teacher):
+    department = getattr(subject, 'department', None)
+    return bool(subject.is_active and department and department.teacher_id == teacher.id)
 
 
 class CareerViewSet(viewsets.ModelViewSet):
@@ -84,6 +107,117 @@ class CareerViewSet(viewsets.ModelViewSet):
 
         serializer = ClassSerializer(qs, many=True, context={'request': request, 'convocation_context': convocation_context})
         return Response(serializer.data)
+
+
+class TeacherSubjectSelectionSubmitView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if request.user.role != 't':
+            return Response({'detail': 'Only teachers can submit subject selection.'}, status=status.HTTP_403_FORBIDDEN)
+
+        period = get_active_academic_period()
+        if not period:
+            return Response({'detail': 'An active admission period is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = TeacherSubjectSelectionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        decision = serializer.validated_data['decision']
+        subject_ids = serializer.validated_data.get('subject_ids', [])
+        teacher = request.user
+
+        teacher_department = _department_for_teacher(teacher)
+
+        subjects = list(Subject.objects.select_related('department').filter(id__in=subject_ids, is_active=True))
+        if decision == 'selected' and len(subjects) != len(subject_ids):
+            return Response({'detail': 'All selected subjects must be active and exist.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        for subject in subjects:
+            if not subject.department_id:
+                return Response({'detail': 'Selected subjects must belong to a department.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if teacher_department and subject.department_id != teacher_department.id:
+                return Response({'detail': 'Selected subjects must belong to the teacher department.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            eligibility = TeacherSubjectEligibility.objects.filter(
+                teacher=teacher,
+                subject=subject,
+                period=period,
+            ).order_by('-updated_at').first()
+            if not eligibility or not eligibility.is_eligible:
+                return Response({'detail': 'Subject is not eligible for this teacher in the active period.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if decision == 'none':
+            eligible_subject_ids = list(
+                TeacherSubjectEligibility.objects.filter(
+                    teacher=teacher,
+                    period=period,
+                    is_eligible=True,
+                    subject__is_active=True,
+                ).values_list('subject_id', flat=True)
+            )
+            if teacher_department:
+                eligible_subject_ids = [
+                    subject_id
+                    for subject_id in eligible_subject_ids
+                    if Subject.objects.filter(id=subject_id, department=teacher_department).exists()
+                ]
+            for subject_id in eligible_subject_ids:
+                TeacherSubjectDecision.objects.update_or_create(
+                    teacher=teacher,
+                    subject_id=subject_id,
+                    period=period,
+                    defaults={'decision': 'none', 'decided_by': teacher, 'notes': ''},
+                )
+            return Response({'current_period': _current_period_payload(), 'results': []}, status=status.HTTP_200_OK)
+
+        created = []
+        for subject in subjects:
+            obj, _ = TeacherSubjectDecision.objects.update_or_create(
+                teacher=teacher,
+                subject=subject,
+                period=period,
+                defaults={'decision': 'selected', 'decided_by': teacher, 'notes': ''},
+            )
+            created.append(obj)
+
+        payload = TeacherSubjectDecisionSerializer(created, many=True, context={'request': request}).data
+        return Response({'current_period': _current_period_payload(), 'results': payload}, status=status.HTTP_200_OK)
+
+
+class TeacherSubjectDecisionReviewView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        decision = get_object_or_404(TeacherSubjectDecision.objects.select_related('subject__department', 'teacher'), pk=pk)
+        department = decision.subject.department
+        if request.user.role not in ('d', 'm'):
+            return Response({'detail': 'Only department heads or management can review decisions.'}, status=status.HTTP_403_FORBIDDEN)
+        if request.user.role == 'd' and department and department.teacher_id != request.user.id:
+            return Response({'detail': 'You can only review decisions for your department.'}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = TeacherSubjectDecisionSerializer(decision, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(decided_by=request.user)
+        updated = TeacherSubjectDecisionSerializer(decision, context={'request': request}).data
+        return Response(updated)
+
+
+class TeacherSubjectEligibilityView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        eligibility = get_object_or_404(TeacherSubjectEligibility.objects.select_related('subject__department', 'teacher'), pk=pk)
+        if request.user.role not in ('d', 'm'):
+            return Response({'detail': 'Only department heads or management can edit eligibility.'}, status=status.HTTP_403_FORBIDDEN)
+        if request.user.role == 'd' and eligibility.subject.department and eligibility.subject.department.teacher_id != request.user.id:
+            return Response({'detail': 'You can only edit eligibility for your department.'}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = TeacherSubjectEligibilitySerializer(eligibility, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(reviewed_by=request.user)
+        return Response(TeacherSubjectEligibilitySerializer(eligibility, context={'request': request}).data)
 
 
 class SubjectViewSet(viewsets.ModelViewSet):

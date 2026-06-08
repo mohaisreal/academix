@@ -35,6 +35,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Código</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Responsable</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Asignaturas</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Decisiones</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Estado</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Acciones</th>
               </tr>
@@ -203,6 +204,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <td class="py-3 pr-4 text-sm text-muted-foreground font-mono">${escHtml(d.code || '-')}</td>
         <td class="py-3 pr-4 text-sm text-muted-foreground">${escHtml(teacherName)}</td>
         <td class="py-3 pr-4 text-sm text-muted-foreground">${d.subjects_count ?? 0}</td>
+        <td class="py-3 pr-4 text-sm text-muted-foreground">${d.pending_subject_decisions ?? 0} pendientes</td>
         <td class="py-3 pr-4"><span class="inline-flex items-center rounded-full ${active ? 'bg-green-500/15 text-green-400' : 'bg-muted text-muted-foreground'} px-2 py-0.5 text-xs font-medium">${active ? 'Activo' : 'Inactivo'}</span></td>
         <td class="py-3"><div class="flex items-center gap-2"><button class="edit-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors" data-id="${d.id}">Editar</button><button class="delete-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-colors" data-id="${d.id}">Eliminar</button></div></td>
       </tr>`;

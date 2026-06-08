@@ -458,7 +458,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     empty?.classList.add('hidden');
     body.innerHTML = rows.map((row) => {
       const cells = row.cells.map((cell) => {
-        const labels = cell.blocks.map((block) => `<div class="rounded border border-border/60 bg-muted/40 px-1 py-0.5 mb-1 last:mb-0">${esc(block.label)}</div>`).join('');
+        const labels = cell.blocks.map((block) => `<div class="rounded border border-border/60 bg-muted/40 px-1 py-0.5 mb-1 last:mb-0">${esc(block.label)}${block.section_label ? ` · Sección ${esc(block.section_label)}` : ''}</div>`).join('');
         return `<td class="border border-border p-2 align-top">${labels}</td>`;
       }).join('');
       return `<tr><td class="border border-border p-2 font-medium">${row.hour}</td>${cells}</tr>`;

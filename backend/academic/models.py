@@ -97,6 +97,70 @@ class Subject(models.Model):
         return self.credit_price_fourth_or_more_enrollment
 
 
+class TeacherSubjectEligibility(models.Model):
+    teacher = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='subject_eligibilities',
+        limit_choices_to={'role': 't'},
+    )
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='teacher_eligibilities')
+    period = models.ForeignKey('AcademicPeriod', on_delete=models.CASCADE, related_name='teacher_eligibilities')
+    is_eligible = models.BooleanField(default=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_subject_eligibilities',
+        limit_choices_to={'role__in': ['d', 'm']},
+    )
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['teacher', 'subject', 'period'], name='unique_teacher_subject_eligibility'),
+        ]
+        ordering = ['period', 'subject', 'teacher']
+
+
+class TeacherSubjectDecision(models.Model):
+    DECISION_CHOICES = [
+        ('approve', 'Approve'),
+        ('reject', 'Reject'),
+        ('none', 'None'),
+    ]
+
+    teacher = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='subject_decisions',
+        limit_choices_to={'role': 't'},
+    )
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='teacher_decisions')
+    period = models.ForeignKey('AcademicPeriod', on_delete=models.CASCADE, related_name='teacher_decisions')
+    decision = models.CharField(max_length=12, choices=DECISION_CHOICES, default='none')
+    decided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='made_subject_decisions',
+        limit_choices_to={'role__in': ['d', 'm']},
+    )
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['teacher', 'subject', 'period'], name='unique_teacher_subject_decision'),
+        ]
+        ordering = ['period', 'subject', 'teacher']
+
+
 class AcademicPeriod(models.Model):
     name = models.CharField(max_length=100)
     code = models.CharField(max_length=20, unique=True)
@@ -178,6 +242,14 @@ class Class(models.Model):
     period = models.ForeignKey(AcademicPeriod, on_delete=models.CASCADE, related_name='classes')
     classroom = models.ForeignKey(Classroom, on_delete=models.SET_NULL, null=True, blank=True)
     max_students = models.PositiveSmallIntegerField(default=30)
+    section_label = models.CharField(max_length=10, default='A')
+    source_teacher_decision = models.ForeignKey(
+        TeacherSubjectDecision,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='source_classes',
+    )
     passing_grade = models.DecimalField(
         max_digits=4,
         decimal_places=2,
@@ -193,8 +265,8 @@ class Class(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['period', 'subject'],
-                name='unique_period_subject_class',
+                fields=['period', 'subject', 'section_label'],
+                name='unique_period_subject_section_class',
             ),
         ]
 

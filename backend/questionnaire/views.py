@@ -38,6 +38,7 @@ from .serializers import (
     QuestionWriteSerializer,
     ResponseUpdateSerializer,
 )
+from shared.periods import get_active_academic_period
 
 
 # ---------------------------------------------------------------------------
@@ -52,6 +53,13 @@ def _get_response_for_student(pk, user):
         ).prefetch_related('answers__question').get(pk=pk, student=user)
     except QuestionnaireResponse.DoesNotExist:
         return None
+
+
+def _current_period_payload():
+    period = get_active_academic_period()
+    if not period:
+        return None
+    return {'id': period.id, 'name': period.name, 'code': period.code}
 
 
 # ---------------------------------------------------------------------------
@@ -254,7 +262,7 @@ class StartResponseView(APIView):
                     created = True
                 serializer = QuestionnaireResponseSerializer(response_obj)
                 return Response(
-                    serializer.data,
+                    {'current_period': _current_period_payload(), **serializer.data},
                     status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
                 )
 
@@ -303,7 +311,7 @@ class StartResponseView(APIView):
 
         serializer = QuestionnaireResponseSerializer(response_obj)
         return Response(
-            serializer.data,
+            {'current_period': _current_period_payload(), **serializer.data},
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
 

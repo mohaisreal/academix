@@ -7,6 +7,8 @@ from .models import (
     AcademicPeriod,
     Classroom,
     Class,
+    TeacherSubjectDecision,
+    TeacherSubjectEligibility,
     ClassSchedule,
     TimeSlot,
     TimetableRun,
@@ -290,10 +292,81 @@ class ClassSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'subject', 'subject_id', 'teacher', 'teacher_id',
             'period', 'period_id', 'classroom', 'classroom_id',
+            'section_label', 'source_teacher_decision',
             'max_students', 'passing_grade', 'schedules', 'schedule_source', 'schedule_available',
             'schedule_unavailable_reason', 'enrolled_count', 'available_spots',
             'convocation_eligibility', 'failed_convocations', 'max_convocations', 'convocation_block_reason', 'created_at',
         ]
+
+
+class TeacherSubjectSelectionSerializer(serializers.Serializer):
+    decision = serializers.ChoiceField(choices=['selected', 'none'])
+    subject_ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        required=False,
+        allow_empty=False,
+    )
+
+    def validate(self, attrs):
+        decision = attrs.get('decision')
+        subject_ids = attrs.get('subject_ids') or []
+        if decision == 'selected' and not subject_ids:
+            raise serializers.ValidationError({'subject_ids': 'At least one subject is required when decision is selected.'})
+        if decision == 'none' and subject_ids:
+            raise serializers.ValidationError({'subject_ids': 'No subjects may be supplied when decision is none.'})
+        return attrs
+
+
+class TeacherSubjectDecisionSerializer(serializers.ModelSerializer):
+    subject_name = serializers.CharField(source='subject.name', read_only=True)
+    subject_code = serializers.CharField(source='subject.code', read_only=True)
+    department_name = serializers.CharField(source='subject.department.name', read_only=True)
+    reviewed_by_name = serializers.SerializerMethodField()
+    stale = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TeacherSubjectDecision
+        fields = [
+            'id', 'teacher', 'subject', 'subject_name', 'subject_code', 'department_name', 'period',
+            'decision', 'decided_by', 'reviewed_by_name', 'notes', 'created_at', 'updated_at', 'stale',
+        ]
+
+    def get_reviewed_by_name(self, obj):
+        reviewer = obj.decided_by
+        if not reviewer:
+            return None
+        return f"{reviewer.first_name} {reviewer.last_name}".strip() or reviewer.username
+
+    def get_stale(self, obj):
+        eligibility = TeacherSubjectEligibility.objects.filter(
+            teacher_id=obj.teacher_id,
+            subject_id=obj.subject_id,
+            period_id=obj.period_id,
+        ).first()
+        if not eligibility:
+            return True
+        if not eligibility.is_eligible:
+            return True
+        return eligibility.updated_at > obj.updated_at
+
+
+class TeacherSubjectEligibilitySerializer(serializers.ModelSerializer):
+    subject_name = serializers.CharField(source='subject.name', read_only=True)
+    subject_code = serializers.CharField(source='subject.code', read_only=True)
+    reviewer_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TeacherSubjectEligibility
+        fields = [
+            'id', 'teacher', 'subject', 'subject_name', 'subject_code', 'period',
+            'is_eligible', 'reviewed_by', 'reviewer_name', 'notes', 'created_at', 'updated_at',
+        ]
+
+    def get_reviewer_name(self, obj):
+        reviewer = obj.reviewed_by
+        if not reviewer:
+            return None
+        return f"{reviewer.first_name} {reviewer.last_name}".strip() or reviewer.username
 
 
 class TimeSlotSerializer(serializers.ModelSerializer):

@@ -123,7 +123,7 @@ class MyEnrollmentView(APIView):
             .first()
         )
         if not career_enrollment:
-            return Response({'id': None, 'classes': []})
+            return Response({'id': None, 'classes': [], 'current_period': None})
 
         class_enrollments = (
             ClassEnrollment.objects
@@ -160,6 +160,7 @@ class MyEnrollmentView(APIView):
             'status': career_enrollment.status,
             'career_name': career_enrollment.career.name,
             'period_name': career_enrollment.period.name,
+            'current_period': _current_period_payload(career_enrollment.period),
             'enrolled_at': career_enrollment.enrolled_at.isoformat() if career_enrollment.enrolled_at else None,
             'classes': classes,
         })
@@ -172,7 +173,7 @@ class MySubjectsView(APIView):
         from grades.models import Grade, Evaluation
         active_period = get_active_academic_period()
         if not active_period:
-            return Response([])
+            return Response({'current_period': None, 'results': []})
         enrollments = (
             ClassEnrollment.objects
             .filter(student=request.user, status='enrolled')
@@ -216,7 +217,7 @@ class MySubjectsView(APIView):
                     for s in enr.cls.schedules.all()
                 ],
             })
-        return Response(result)
+        return Response({'current_period': _current_period_payload(active_period), 'results': result})
 
 
 class MyTeachersView(APIView):
@@ -616,6 +617,12 @@ def _get_enrollment_for_receipt(request, pk):
         ),
         pk=pk,
     )
+
+
+def _current_period_payload(period):
+    if not period:
+        return None
+    return {'id': period.id, 'name': period.name, 'code': period.code}
     if request.user.role not in ('m', 'a') and enrollment.student != request.user:
         return None, Response({"detail": "No tienes permiso."}, status=status.HTTP_403_FORBIDDEN)
     return enrollment, None

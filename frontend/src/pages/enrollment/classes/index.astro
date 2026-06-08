@@ -196,7 +196,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 const dayIndex = DAY_NAME_TO_INDEX[dayName] ?? -1;
                 const startHour = sched.start_time ? parseInt(sched.start_time.split(":")[0]) : null;
                 if (dayIndex >= 0 && startHour !== null && grid[dayIndex] && grid[dayIndex][startHour] !== undefined) {
-                    grid[dayIndex][startHour].push({ name: cls.subject?.name ?? cls.subject_name ?? "Clase" });
+                    grid[dayIndex][startHour].push({ name: `${cls.subject?.name ?? cls.subject_name ?? "Clase"}${cls.section_label ? ` · Sección ${cls.section_label}` : ""}` });
                 }
             });
         });

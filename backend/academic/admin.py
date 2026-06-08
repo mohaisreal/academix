@@ -2,6 +2,8 @@ from django.contrib import admin
 from .models import (
     Career,
     Subject,
+    TeacherSubjectEligibility,
+    TeacherSubjectDecision,
     Department,
     AcademicPeriod,
     Classroom,
@@ -16,6 +18,8 @@ from .models import (
 
 admin.site.register(Career)
 admin.site.register(Subject)
+admin.site.register(TeacherSubjectEligibility)
+admin.site.register(TeacherSubjectDecision)
 admin.site.register(Department)
 admin.site.register(AcademicPeriod)
 admin.site.register(Classroom)

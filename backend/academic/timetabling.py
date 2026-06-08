@@ -1,7 +1,15 @@
 from django.db import transaction
 from django.db.models import Q
 
-from academic.models import Class, Subject, Classroom, ScheduleAssignment, SchedulingConstraint, ConstraintViolation
+from academic.models import (
+    Class,
+    Subject,
+    Classroom,
+    ScheduleAssignment,
+    SchedulingConstraint,
+    ConstraintViolation,
+    TeacherSubjectDecision,
+)
 
 
 def _build_warning_summary(hard_violations, soft_violations, precondition_errors, class_preparation_errors, unresolved_teachers):
@@ -67,9 +75,35 @@ def _persist_warning_summary(run, metadata, hard_violations, soft_violations):
     return summary
 
 
+def _section_label_for_index(index):
+    alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    value = index + 1
+    label = ''
+    while value:
+        value, remainder = divmod(value - 1, 26)
+        label = alphabet[remainder] + label
+    return label
+
+
+def _base_class_defaults(subject, classroom, section_label='A', source_teacher_decision=None):
+    return {
+        'teacher': source_teacher_decision.teacher if source_teacher_decision and source_teacher_decision.teacher_id else None,
+        'classroom': classroom,
+        'max_students': classroom.capacity,
+        'is_generated_by_timetable': True,
+        'section_label': section_label,
+        'source_teacher_decision': source_teacher_decision,
+    }
+
+
 def prepare_classes_for_period(period):
+    decisions = list(
+        TeacherSubjectDecision.objects.filter(period=period)
+        .select_related('subject', 'subject__department', 'teacher')
+        .order_by('subject_id', 'teacher_id', 'id')
+    )
     active_subjects = list(Subject.objects.filter(is_active=True).select_related('department', 'department__teacher').order_by('id'))
-    if not active_subjects:
+    if not active_subjects and not decisions:
         return {'created': 0, 'errors': ['class_preparation_insufficient_subjects']}
 
     classrooms = list(Classroom.objects.order_by('id'))
@@ -77,20 +111,46 @@ def prepare_classes_for_period(period):
         return {'created': 0, 'errors': ['class_preparation_insufficient_classrooms']}
 
     created = 0
-    for index, subject in enumerate(active_subjects):
-        classroom = classrooms[index % len(classrooms)]
-        _, was_created = Class.objects.get_or_create(
-            period=period,
-            subject=subject,
-            defaults={
-                'teacher': None,
-                'classroom': classroom,
-                'max_students': classroom.capacity,
-                'is_generated_by_timetable': True,
-            },
-        )
-        if was_created:
-            created += 1
+    if decisions:
+        selected = []
+        for d in decisions:
+            if d.decision != 'selected':
+                continue
+            eligibility = getattr(d, '_eligibility', None)
+            if eligibility is None:
+                eligibility = d.subject.teacher_eligibilities.filter(teacher=d.teacher, period=period).order_by('-updated_at').first()
+            if not eligibility or not eligibility.is_eligible:
+                continue
+            if eligibility.updated_at > d.updated_at:
+                continue
+            selected.append(d)
+        by_subject = {}
+        for decision in selected:
+            by_subject.setdefault(decision.subject_id, []).append(decision)
+        for subject_id, subject_decisions in by_subject.items():
+            subject = subject_decisions[0].subject
+            for index, decision in enumerate(subject_decisions):
+                classroom = classrooms[(subject_id + index) % len(classrooms)]
+                defaults = _base_class_defaults(subject, classroom, section_label=_section_label_for_index(index), source_teacher_decision=decision)
+                _, was_created = Class.objects.get_or_create(
+                    period=period,
+                    subject=subject,
+                    section_label=defaults['section_label'],
+                    defaults=defaults,
+                )
+                if was_created:
+                    created += 1
+    else:
+        for index, subject in enumerate(active_subjects):
+            classroom = classrooms[index % len(classrooms)]
+            _, was_created = Class.objects.get_or_create(
+                period=period,
+                subject=subject,
+                section_label='A',
+                defaults=_base_class_defaults(subject, classroom),
+            )
+            if was_created:
+                created += 1
 
     return {'created': created, 'errors': []}
 
@@ -177,7 +237,8 @@ def generate_for_run(run):
     slots = list(run.period.time_slots.all().order_by('day_of_week', 'start_time', 'id'))
 
     precondition_errors = []
-    if not classes and not preparation['errors']:
+    has_teacher_decisions = TeacherSubjectDecision.objects.filter(period=run.period).exists()
+    if not classes and not preparation['errors'] and not has_teacher_decisions:
         precondition_errors.append('missing_classes')
     if not slots:
         precondition_errors.append('missing_time_slots')
@@ -208,6 +269,7 @@ def generate_for_run(run):
     used_teachers = set()
     used_classrooms = set()
     used_days_by_class = {}
+    used_days_by_subject = {}
     generated = 0
     unscheduled = 0
     unresolved_teachers = []
@@ -234,12 +296,15 @@ def generate_for_run(run):
             cls.save(update_fields=['teacher'])
 
         class_used_days = used_days_by_class.setdefault(cls.id, set())
+        subject_used_days = used_days_by_subject.setdefault(cls.subject_id, set())
         for _session_index in range(class_demand):
             assigned = False
             for slot in slots:
                 teacher_key = (slot.id, resolved_teacher_id)
                 classroom_key = (slot.id, cls.classroom_id)
                 if slot.day_of_week in class_used_days:
+                    continue
+                if slot.day_of_week in subject_used_days:
                     continue
                 if resolved_teacher_id and teacher_key in used_teachers:
                     continue
@@ -257,6 +322,7 @@ def generate_for_run(run):
                     source='generated',
                 )
                 class_used_days.add(slot.day_of_week)
+                subject_used_days.add(slot.day_of_week)
                 if resolved_teacher_id:
                     used_teachers.add(teacher_key)
                 if cls.classroom_id:
@@ -291,7 +357,7 @@ def generate_for_run(run):
     metadata['unresolved_teachers'] = unresolved_teachers
     _persist_warning_summary(run, metadata, hard_violations=hard_violations, soft_violations=soft_violations)
 
-    if generated == 0:
+    if generated == 0 and not has_teacher_decisions:
         run.status = 'failed'
     elif unscheduled > 0:
         run.status = 'partial'
