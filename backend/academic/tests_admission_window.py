@@ -154,3 +154,14 @@ class AcademicPeriodAPIAdmissionWindowTests(TestCase):
         data = res.json()
         self.assertIsNotNone(data['admission_open_date'])
         self.assertIsNotNone(data['admission_close_date'])
+
+    def test_api_list_filters_by_is_active(self):
+        make_period(code='OLD-AP', is_active=False)
+        active_period = make_period(code='NEW-AP', is_active=True)
+
+        res = self.client.get('/api/academic/periods/', {'is_active': 'true'})
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        data = res.json()
+        periods = data.get('results', data) if isinstance(data, dict) else data
+        self.assertEqual([item['id'] for item in periods], [active_period.id])

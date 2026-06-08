@@ -18,6 +18,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <h1 class="text-xl font-semibold text-foreground">Mis calificaciones</h1>
         <p class="text-sm text-muted-foreground">Sigue tu rendimiento académico</p>
       </div>
+      <span id="period-badge" data-active-period-label="true" class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"></span>
     </div>
 
     <div class="p-6 space-y-6">
@@ -37,6 +38,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
 <script>
   import API_BASE_URL from '@/config/api';
+  import { fetchActivePeriodLabel } from '@/utils/period-display';
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
   const API_URL = API_BASE_URL;
@@ -147,8 +149,15 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     </svg>`;
   }
 
+  async function setActivePeriodLabel() {
+    const badge = document.getElementById('period-badge');
+    if (!badge) return;
+    badge.textContent = await fetchActivePeriodLabel(apiFetch);
+  }
+
   (async () => {
     try {
+      await setActivePeriodLabel();
       const data = await apiFetch('/grades/my-grades/');
       const gradesData = Array.isArray(data) ? data : (data.results || data.grades || []);
 

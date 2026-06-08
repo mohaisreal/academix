@@ -32,6 +32,7 @@ from .timetabling import generate_for_run, build_warning_summary_for_run
 from .timetabling import delete_generated_classes_for_period
 from .schedule_source import serialize_assignment_schedule, published_assignments_map_for_period
 from shared.permissions import IsAdminOrManagement
+from shared.periods import get_active_academic_period
 from enrollment.services import resolve_convocation_eligibility
 
 SAFE_METHODS = ('GET', 'HEAD', 'OPTIONS')
@@ -120,6 +121,13 @@ class AcademicPeriodViewSet(viewsets.ModelViewSet):
             return [IsAuthenticated()]
         return [IsAdminOrManagement()]
 
+    def get_queryset(self):
+        qs = AcademicPeriod.objects.all().order_by('-start_date', '-id')
+        is_active = self.request.query_params.get('is_active')
+        if is_active in {'true', 'false'}:
+            qs = qs.filter(is_active=(is_active == 'true'))
+        return qs
+
     def perform_create(self, serializer):
         instance = serializer.save()
         # Solo puede haber un periodo activo a la vez, incluidos los periodos recién creados
@@ -167,10 +175,11 @@ class ClassViewSet(viewsets.ModelViewSet):
     def my_classes(self, request):
         if request.user.role != 't':
             return Response({'error': 'Only teachers can access this endpoint'}, status=403)
-        active_period = AcademicPeriod.objects.filter(is_active=True).first()
+        active_period = get_active_academic_period()
+        if not active_period:
+            return Response([])
         qs = self.get_queryset().filter(teacher=request.user)
-        if active_period:
-            qs = qs.filter(period=active_period)
+        qs = qs.filter(period=active_period)
         # Anota el recuento de notas pendientes
         from grades.models import Evaluation, Grade
         from enrollment.models import ClassEnrollment
@@ -199,19 +208,23 @@ class ClassViewSet(viewsets.ModelViewSet):
         from enrollment.models import ClassEnrollment
         role = request.user.role
         if role == 's':
+            active_period = get_active_academic_period()
+            if not active_period:
+                return Response([])
             enrolled_ids = ClassEnrollment.objects.filter(
                 student=request.user, status='enrolled'
-            ).values_list('cls_id', flat=True)
-            classes = Class.objects.filter(id__in=enrolled_ids).select_related(
+            ).filter(cls__period=active_period).values_list('cls_id', flat=True)
+            classes = Class.objects.filter(id__in=enrolled_ids, period=active_period).select_related(
                 'subject', 'teacher', 'classroom', 'period'
             ).prefetch_related('schedules')
         elif role == 't':
-            active_period = AcademicPeriod.objects.filter(is_active=True).first()
+            active_period = get_active_academic_period()
+            if not active_period:
+                return Response([])
             classes = Class.objects.filter(teacher=request.user).select_related(
                 'subject', 'classroom', 'period'
             ).prefetch_related('schedules')
-            if active_period:
-                classes = classes.filter(period=active_period)
+            classes = classes.filter(period=active_period)
         else:
             return Response({'error': 'Only students and teachers have schedules'}, status=403)
 

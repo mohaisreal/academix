@@ -966,6 +966,27 @@ class MyScheduleCompatibilityTests(TestCase):
         self.assertEqual(row['assignment_id'], assignment.id)
         self.assertEqual(row['class_id'], self.cls.id)
 
+    def test_my_classes_returns_empty_without_active_period(self):
+        self.period.is_active = False
+        self.period.save(update_fields=['is_active'])
+
+        self.client.force_authenticate(user=self.cls.teacher)
+        response = self.client.get('/api/academic/classes/my-classes/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, [])
+
+    def test_my_schedule_ignores_inactive_period_classes(self):
+        inactive_period = make_period('P2026MS0', active=False)
+        inactive_class = make_class(inactive_period, 'MS0')
+        ClassEnrollment.objects.create(student=self.student, cls=inactive_class, status='enrolled')
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get('/api/academic/classes/my-schedule/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
+
     def test_my_schedule_falls_back_to_legacy_class_schedule(self):
         ClassSchedule.objects.create(
             cls=self.cls,
@@ -1011,6 +1032,16 @@ class MyScheduleCompatibilityTests(TestCase):
         assignment_ids = {row['assignment_id'] for row in response.data}
         self.assertEqual(assignment_ids, {assignment_a.id, assignment_b.id})
         self.assertTrue(all(row['source'] == 'generated' for row in response.data))
+
+    def test_my_schedule_teacher_branch_returns_empty_without_active_period(self):
+        self.period.is_active = False
+        self.period.save(update_fields=['is_active'])
+
+        self.client.force_authenticate(user=self.cls.teacher)
+        response = self.client.get('/api/academic/classes/my-schedule/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, [])
 
     def test_my_schedule_prefers_persisted_class_teacher_over_assignment_teacher(self):
         persisted_teacher = User.objects.create_user(

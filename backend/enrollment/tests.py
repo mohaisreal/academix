@@ -539,3 +539,23 @@ class ReceiptTests(TestCase):
         enrollment_response = self.client.get('/api/enrollment/my-enrollment/')
         self.assertEqual(enrollment_response.status_code, status.HTTP_200_OK)
         self.assertEqual(enrollment_response.data['classes'][0]['teacher_name'], self.teacher.get_full_name() or self.teacher.username)
+
+    def test_my_subjects_returns_empty_without_active_period(self):
+        self.period.is_active = False
+        self.period.save(update_fields=['is_active'])
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get('/api/enrollment/my-subjects/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, [])
+
+    def test_my_teachers_returns_empty_without_active_period(self):
+        self.period.is_active = False
+        self.period.save(update_fields=['is_active'])
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get('/api/enrollment/my-teachers/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, [])

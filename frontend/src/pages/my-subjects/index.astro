@@ -17,7 +17,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <h1 class="text-xl font-semibold text-foreground">Mis asignaturas</h1>
         <p class="text-sm text-muted-foreground">Tus asignaturas inscritas en este periodo</p>
       </div>
-      <span id="period-badge" class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"></span>
+      <span id="period-badge" data-active-period-label="true" class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"></span>
     </div>
 
     <div class="p-6">
@@ -35,6 +35,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
 <script>
   import API_BASE_URL from '@/config/api';
+  import { fetchActivePeriodLabel } from '@/utils/period-display';
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
   const API_URL = API_BASE_URL;
@@ -103,8 +104,15 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     return name.split(' ').map(p => p[0]).join('').toUpperCase().substring(0, 2);
   }
 
+  async function setActivePeriodLabel() {
+    const badge = document.getElementById('period-badge');
+    if (!badge) return;
+    badge.textContent = await fetchActivePeriodLabel(apiFetch);
+  }
+
   (async () => {
     try {
+      await setActivePeriodLabel();
       const data = await apiFetch('/enrollment/my-subjects/');
       const subjects = Array.isArray(data) ? data : (data.results || []);
 
@@ -118,8 +126,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         return;
       }
 
-      // Establece la insignia de periodo desde la primera asignatura
-      if (badge && subjects[0]?.period_name) badge.textContent = subjects[0].period_name;
+      if (badge && !badge.textContent && subjects[0]?.period_name) badge.textContent = subjects[0].period_name;
 
       grid.innerHTML = subjects.map(s => {
         const classId = getClassId(s);

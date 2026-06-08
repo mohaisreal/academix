@@ -142,6 +142,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 <script>
   import API_BASE_URL from '@/config/api';
   import { normalizeMyScheduleRows } from '@/utils/timetable-management-utils';
+  import { fetchActivePeriodLabel } from '@/utils/period-display';
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
   const API_URL = API_BASE_URL;
@@ -190,6 +191,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   function showContent() {
     document.getElementById('page-loading')?.classList.add('hidden');
     document.getElementById('page-content')?.classList.remove('hidden');
+  }
+
+  async function setPeriodBadge(id) {
+    const badge = document.getElementById(id);
+    if (!badge) return;
+    badge.textContent = await fetchActivePeriodLabel(apiFetch);
   }
 
   const DAY_MAP = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 0: 6 };
@@ -310,18 +317,13 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         classes = groupRowsAsClasses(normalized);
       }
 
-    // Determina la etiqueta del periodo actual
-      const periodName = classes[0]?.period_name || classes[0]?.period?.name || '';
-
       if (role === 's') {
         document.getElementById('timetable-student')?.classList.remove('hidden');
-        const badge = document.getElementById('student-period-badge');
-        if (badge && periodName) badge.textContent = periodName;
+        await setPeriodBadge('student-period-badge');
         buildGrid('student-grid', 'student-table-body', 'student-empty', classes);
       } else if (role === 't') {
         document.getElementById('timetable-teacher')?.classList.remove('hidden');
-        const badge = document.getElementById('teacher-period-badge');
-        if (badge && periodName) badge.textContent = periodName;
+        await setPeriodBadge('teacher-period-badge');
         buildGrid('teacher-grid', 'teacher-table-body', 'teacher-empty', classes);
       }
     } catch {

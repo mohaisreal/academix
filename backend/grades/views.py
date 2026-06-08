@@ -11,6 +11,7 @@ from academic.models import Class, AcademicPeriod
 from enrollment.models import ClassEnrollment, CareerEnrollment
 from notifications.utils import create_notification
 from shared.permissions import IsStudent, IsTeacher, IsTeacherOrAdmin, IsAdminOrManagement
+from shared.periods import get_active_academic_period
 
 User = get_user_model()
 
@@ -19,12 +20,13 @@ class MyGradesView(APIView):
     permission_classes = [IsStudent]
 
     def get(self, request):
-        active_period = AcademicPeriod.objects.filter(is_active=True).first()
+        active_period = get_active_academic_period()
+        if not active_period:
+            return Response([])
         enrollments = ClassEnrollment.objects.filter(
             student=request.user, status='enrolled'
         ).select_related('cls__subject', 'cls__period', 'cls__teacher')
-        if active_period:
-            enrollments = enrollments.filter(cls__period=active_period)
+        enrollments = enrollments.filter(cls__period=active_period)
 
         result = []
         for enr in enrollments:
@@ -434,13 +436,13 @@ class StatisticsView(APIView):
     def get(self, request):
         from academic.models import Career
 
+        active_period = get_active_academic_period()
         total_students = User.objects.filter(role='s', is_active=True).count()
         total_teachers = User.objects.filter(role='t', is_active=True).count()
-        active_period = AcademicPeriod.objects.filter(is_active=True).first()
         active_classes = Class.objects.filter(period=active_period).count() if active_period else 0
-        active_enrolments = CareerEnrollment.objects.filter(status='active').count()
+        active_enrolments = CareerEnrollment.objects.filter(status='active', period=active_period).count() if active_period else 0
 
-        all_grades = Grade.objects.all()
+        all_grades = Grade.objects.filter(evaluation__cls__period=active_period) if active_period else Grade.objects.none()
         total_grades = all_grades.count()
         pass_grades = sum(1 for g in all_grades if g.score >= 50)
         pass_rate = round(pass_grades / total_grades * 100, 1) if total_grades > 0 else 0
@@ -449,9 +451,9 @@ class StatisticsView(APIView):
         career_stats = []
         for c in Career.objects.filter(is_active=True):
             student_ids = CareerEnrollment.objects.filter(
-                career=c, status='active'
-            ).values_list('student_id', flat=True)
-            grades = Grade.objects.filter(student__in=student_ids)
+                career=c, status='active', period=active_period
+            ).values_list('student_id', flat=True) if active_period else CareerEnrollment.objects.none().values_list('student_id', flat=True)
+            grades = Grade.objects.filter(student__in=student_ids, evaluation__cls__period=active_period) if active_period else Grade.objects.none()
             avg = grades.aggregate(a=Avg('score'))['a']
             career_total_grades = grades.count()
             career_pass_grades = sum(1 for g in grades if g.score >= 50)
@@ -459,7 +461,7 @@ class StatisticsView(APIView):
                 round(career_pass_grades / career_total_grades * 100, 1)
                 if career_total_grades > 0 else 0
             )
-            career_class_count = Class.objects.filter(subject__career=c).count()
+            career_class_count = Class.objects.filter(subject__career=c, period=active_period).count() if active_period else 0
             career_stats.append({
                 'career_name': c.name,
                 'students': student_ids.count(),
@@ -474,7 +476,7 @@ class StatisticsView(APIView):
 
         enrolment_by_status = {
             row['status']: row['count']
-            for row in CareerEnrollment.objects.values('status').annotate(count=Count('id'))
+            for row in (CareerEnrollment.objects.filter(period=active_period).values('status').annotate(count=Count('id')) if active_period else [])
         }
 
         return Response({

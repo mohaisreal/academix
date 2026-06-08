@@ -23,6 +23,7 @@ from academic.schedule_source import (
 )
 from notifications.utils import create_notification
 from shared.permissions import IsAdminOrManagement, IsStudent
+from shared.periods import get_active_academic_period
 
 User = get_user_model()
 
@@ -169,21 +170,22 @@ class MySubjectsView(APIView):
 
     def get(self, request):
         from grades.models import Grade, Evaluation
-        active_period = AcademicPeriod.objects.filter(is_active=True).first()
+        active_period = get_active_academic_period()
+        if not active_period:
+            return Response([])
         enrollments = (
             ClassEnrollment.objects
             .filter(student=request.user, status='enrolled')
             .select_related('cls__subject', 'cls__teacher', 'cls__classroom', 'cls__period')
             .prefetch_related('cls__schedules')
         )
-        if active_period:
-            enrollments = enrollments.filter(cls__period=active_period)
+        enrollments = enrollments.filter(cls__period=active_period)
 
         result = []
         assignment_map = canonical_assignment_map_for_period(
-            active_period.id if active_period else None,
+            active_period.id,
             [enr.cls_id for enr in enrollments],
-        ) if active_period else None
+        )
         for enr in enrollments:
             evals = Evaluation.objects.filter(cls=enr.cls)
             grades = Grade.objects.filter(
@@ -221,20 +223,21 @@ class MyTeachersView(APIView):
     permission_classes = [IsStudent]
 
     def get(self, request):
-        active_period = AcademicPeriod.objects.filter(is_active=True).first()
+        active_period = get_active_academic_period()
+        if not active_period:
+            return Response([])
         enrollments = (
             ClassEnrollment.objects
             .filter(student=request.user, status='enrolled')
             .select_related('cls__teacher', 'cls__subject', 'cls__period')
         )
-        if active_period:
-            enrollments = enrollments.filter(cls__period=active_period)
+        enrollments = enrollments.filter(cls__period=active_period)
 
         teachers_map = {}
         assignment_map = canonical_assignment_map_for_period(
-            active_period.id if active_period else None,
+            active_period.id,
             [enr.cls_id for enr in enrollments],
-        ) if active_period else None
+        )
         for enr in enrollments:
             t = resolve_assignment_teacher_for_class(enr.cls, assignment_map) if assignment_map is not None else enr.cls.teacher
             if not t:
