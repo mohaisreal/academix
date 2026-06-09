@@ -15,21 +15,22 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   </div>
 
   <div id="page-content" class="hidden">
-    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+    <div class="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
       <div>
         <h1 class="text-xl font-semibold text-foreground">Carreras</h1>
         <p class="text-sm text-muted-foreground">Gestioná programas académicos y carreras</p>
       </div>
-      <button id="new-career-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+      <button id="new-career-btn" class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Nueva carrera
       </button>
     </div>
 
     <div class="p-6">
-      <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
-        <div class="overflow-x-auto">
-          <table class="w-full">
+      <div class="bg-card text-card-foreground rounded-xl border border-border p-4 sm:p-5">
+        <div id="careers-mobile-list" class="space-y-3 md:hidden"></div>
+        <div class="overflow-x-auto hidden md:block">
+          <table class="min-w-[860px] w-full">
             <thead>
               <tr class="border-b border-border">
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Nombre</th>
@@ -45,7 +46,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           </table>
         </div>
         <div id="careers-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No se encontraron carreras</div>
-        <div id="careers-pagination" class="hidden mt-4 items-center justify-between">
+        <div id="careers-pagination" class="hidden mt-4 flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
           <p id="careers-pagination-summary" class="text-sm text-muted-foreground"></p>
           <div class="flex items-center gap-2">
             <button id="careers-prev" class="rounded-md border border-border px-3 py-1 text-sm disabled:opacity-50">Anterior</button>
@@ -103,9 +104,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         </form>
       </div>
       <!-- Pie fijo -->
-      <div class="flex items-center justify-end gap-3 px-5 py-4 border-t border-border shrink-0">
+      <div class="flex flex-col gap-3 px-5 py-4 border-t border-border shrink-0 sm:flex-row sm:items-center sm:justify-end">
         <button id="modal-cancel" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancelar</button>
-        <button id="modal-save" type="submit" form="career-form" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">Guardar</button>
+        <button id="modal-save" type="submit" form="career-form" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">Guardar</button>
       </div>
     </div>
   </div>
@@ -225,14 +226,45 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   function renderTable() {
     const tbody = document.getElementById('careers-table-body');
+    const mobileList = document.getElementById('careers-mobile-list');
     const empty = document.getElementById('careers-empty');
     if (!tbody) return;
     if (careers.length === 0) {
       tbody.innerHTML = '';
+      if (mobileList) mobileList.innerHTML = '';
       empty?.classList.remove('hidden');
       return;
     }
     empty?.classList.add('hidden');
+    if (mobileList) {
+      mobileList.innerHTML = careers.map(c => {
+        const active = c.is_active !== false;
+        const subjects = c.subjects_count ?? c.subjects?.length ?? '-';
+        const subjectsCountLabel = Number.isFinite(Number(subjects))
+          ? `${subjects} ${Number(subjects) === 1 ? 'asignatura vinculada' : 'asignaturas vinculadas'}`
+          : 'Sin dato de asignaturas vinculadas';
+        const totalSpots = resolveCareerTotalSpots(c.total_spots);
+        return `<article class="careers-mobile-card rounded-xl border border-border bg-background p-4 space-y-3 md:hidden">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h3 class="text-sm font-semibold text-foreground">${escHtml(c.name)}</h3>
+              <p class="mt-1 text-xs font-mono text-muted-foreground">${escHtml(c.code)}</p>
+            </div>
+            <span class="inline-flex shrink-0 items-center rounded-full ${active ? 'bg-green-500/15 text-green-400' : 'bg-muted text-muted-foreground'} px-2 py-0.5 text-xs font-medium">${active ? 'Activa' : 'Inactiva'}</span>
+          </div>
+          <dl class="grid grid-cols-2 gap-3 text-xs text-muted-foreground">
+            <div><dt class="uppercase tracking-wide text-[10px]">Duración</dt><dd class="mt-1 text-sm text-foreground">${c.duration_years || c.duration || '-'} años</dd></div>
+            <div><dt class="uppercase tracking-wide text-[10px]">Cupos</dt><dd class="mt-1 text-sm text-foreground">${totalSpots}</dd></div>
+            <div class="col-span-2"><dt class="uppercase tracking-wide text-[10px]">Asignaturas vinculadas</dt><dd class="mt-1 text-sm text-foreground">${escHtml(subjectsCountLabel)}</dd></div>
+          </dl>
+          <div class="flex flex-wrap gap-2">
+            <button class="edit-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors" data-id="${c.id}">Editar</button>
+            <button class="toggle-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-muted transition-colors ${active ? 'text-red-400 hover:border-red-500/30' : 'text-green-400 hover:border-green-500/30'}" data-id="${c.id}" data-active="${active}">${active ? 'Desactivar' : 'Activar'}</button>
+            ${role === 'a' ? `<button class="delete-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-colors" data-id="${c.id}">Eliminar</button>` : ''}
+          </div>
+        </article>`;
+      }).join('');
+    }
     tbody.innerHTML = careers.map(c => {
       const active = c.is_active !== false;
       const subjects = c.subjects_count ?? c.subjects?.length ?? '-';
@@ -261,14 +293,16 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       </tr>`;
     }).join('');
 
-    tbody.querySelectorAll('.edit-btn').forEach(btn => {
+    const actionRoot = document.getElementById('careers-mobile-list')?.parentElement;
+    const actionScope = actionRoot || tbody.parentElement;
+    actionScope?.querySelectorAll('.edit-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const career = careers.find(c => c.id == (btn as HTMLElement).dataset.id);
         if (career) openPanel(career);
       });
     });
 
-    tbody.querySelectorAll('.toggle-btn').forEach(btn => {
+    actionScope?.querySelectorAll('.toggle-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const id = (btn as HTMLElement).dataset.id;
         const active = (btn as HTMLElement).dataset.active === 'true';
@@ -279,7 +313,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       });
     });
 
-    tbody.querySelectorAll('.delete-btn').forEach(btn => {
+    actionScope?.querySelectorAll('.delete-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = (btn as HTMLElement).dataset.id;
         (window as any).confirmAction?.({

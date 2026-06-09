@@ -16,4 +16,12 @@ describe('enrollment classes convocation UI', () => {
     expect(page).toContain("convocationEligibility === 'extraordinary-grace'");
     expect(page).toContain("convocationEligibility === 'blocked'");
   });
+
+  it('keeps the timetable responsive with a mobile card rail', () => {
+    const page = readProjectFile('src/pages/enrollment/classes/index.astro');
+
+    expect(page).toContain('hidden overflow-x-auto md:block');
+    expect(page).toContain('id="schedule-cards"');
+    expect(page).toContain('renderScheduleCards(enrolledClasses)');
+  });
 });

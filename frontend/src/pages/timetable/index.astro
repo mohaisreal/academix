@@ -2,7 +2,7 @@
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
 <DashboardLayout title="Horario semanal — Academix" currentPath="/timetable">
-  <div id="page-loading" class="p-6 space-y-4">
+  <div id="page-loading" class="space-y-4 p-4 sm:p-6">
     <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
     <div class="h-96 bg-card rounded-xl border border-border animate-pulse"></div>
     <div class="h-48 bg-card rounded-xl border border-border animate-pulse"></div>
@@ -11,24 +11,25 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   <div id="page-content" class="hidden">
     <!-- Sección de horario del estudiante -->
     <div id="timetable-student" class="hidden">
-      <div class="flex items-center justify-between border-b border-border px-6 py-4">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border px-4 py-4 sm:px-6">
         <div>
           <h1 class="text-xl font-semibold text-foreground">Horario semanal</h1>
           <p class="text-sm text-muted-foreground">Tu horario de clases para este periodo</p>
         </div>
-        <span id="student-period-badge" class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"></span>
+        <span id="student-period-badge" class="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs sm:px-3 sm:text-sm font-medium text-primary"></span>
       </div>
-      <div class="p-6 space-y-6">
+      <div class="p-4 space-y-6 sm:p-6">
         <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
           <h2 class="text-lg font-semibold text-foreground mb-4">Cuadrícula horaria</h2>
-          <div class="overflow-x-auto">
+          <div class="overflow-x-auto hidden md:block">
             <div id="student-grid" class="min-w-[700px]"></div>
           </div>
         </div>
         <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
           <h2 class="text-lg font-semibold text-foreground mb-4">Todas las clases</h2>
-          <div class="overflow-x-auto">
-            <table class="w-full">
+          <div id="student-mobile-cards" class="grid gap-3 md:hidden"></div>
+          <div class="overflow-x-auto hidden md:block">
+            <table class="min-w-[720px] w-full">
               <thead>
                 <tr class="border-b border-border">
                   <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Asignatura</th>
@@ -47,24 +48,25 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
     <!-- Sección de horario del profesor -->
     <div id="timetable-teacher" class="hidden">
-      <div class="flex items-center justify-between border-b border-border px-6 py-4">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border px-4 py-4 sm:px-6">
         <div>
           <h1 class="text-xl font-semibold text-foreground">Horario semanal</h1>
           <p class="text-sm text-muted-foreground">Tu horario de docencia para este periodo</p>
         </div>
-        <span id="teacher-period-badge" class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"></span>
+        <span id="teacher-period-badge" class="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs sm:px-3 sm:text-sm font-medium text-primary"></span>
       </div>
-      <div class="p-6 space-y-6">
+      <div class="p-4 space-y-6 sm:p-6">
         <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
           <h2 class="text-lg font-semibold text-foreground mb-4">Cuadrícula horaria</h2>
-          <div class="overflow-x-auto">
+          <div class="overflow-x-auto hidden md:block">
             <div id="teacher-grid" class="min-w-[700px]"></div>
           </div>
         </div>
         <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
           <h2 class="text-lg font-semibold text-foreground mb-4">Todas las clases</h2>
-          <div class="overflow-x-auto">
-            <table class="w-full">
+          <div id="teacher-mobile-cards" class="grid gap-3 md:hidden"></div>
+          <div class="overflow-x-auto hidden md:block">
+            <table class="min-w-[720px] w-full">
               <thead>
                 <tr class="border-b border-border">
                   <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Asignatura</th>
@@ -82,7 +84,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     </div>
 
     <!-- Sin permisos -->
-    <div id="timetable-denied" class="hidden p-6">
+    <div id="timetable-denied" class="hidden p-4 sm:p-6">
       <div class="flex flex-col items-center justify-center py-20 text-center">
         <p class="text-lg font-medium text-foreground">Acceso denegado</p>
         <p class="text-sm text-muted-foreground mt-1">Esta página es solo para estudiantes y docentes.</p>
@@ -141,7 +143,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
 <script>
   import API_BASE_URL from '@/config/api';
-  import { normalizeMyScheduleRows } from '@/utils/timetable-management-utils';
+  import { buildResponsiveScheduleCards, normalizeMyScheduleRows } from '@/utils/timetable-management-utils';
   import { fetchActivePeriodLabel } from '@/utils/period-display';
   const STORAGE_KEY = "user-storage";
   const TOKEN_KEY = "access_token";
@@ -301,6 +303,29 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     tbody.innerHTML = rows;
   }
 
+  function renderMobileCards(containerId, classes) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const cards = buildResponsiveScheduleCards(classes);
+    if (cards.length === 0) {
+      container.innerHTML = '<div class="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">No hay clases programadas para este periodo</div>';
+      return;
+    }
+
+    container.innerHTML = cards.map((card) => `
+      <article class="rounded-xl border border-border bg-muted/20 p-4">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-sm font-medium text-foreground">${escHtml(card.subject)}</p>
+            <p class="mt-1 text-xs text-muted-foreground">${escHtml(card.day)} · ${escHtml(card.time)}</p>
+          </div>
+          <span class="rounded-full bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary">${escHtml(card.classroom)}</span>
+        </div>
+      </article>
+    `).join('');
+  }
+
   function escHtml(str) {
     const d = document.createElement('div');
     d.textContent = String(str);
@@ -321,10 +346,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         document.getElementById('timetable-student')?.classList.remove('hidden');
         await setPeriodBadge('student-period-badge');
         buildGrid('student-grid', 'student-table-body', 'student-empty', classes);
+        renderMobileCards('student-mobile-cards', classes);
       } else if (role === 't') {
         document.getElementById('timetable-teacher')?.classList.remove('hidden');
         await setPeriodBadge('teacher-period-badge');
         buildGrid('teacher-grid', 'teacher-table-body', 'teacher-empty', classes);
+        renderMobileCards('teacher-mobile-cards', classes);
       }
     } catch {
       if (role === 's') document.getElementById('timetable-student')?.classList.remove('hidden');

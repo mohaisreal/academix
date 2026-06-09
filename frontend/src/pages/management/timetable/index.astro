@@ -40,7 +40,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
       <div class="grid gap-6 xl:grid-cols-[1.8fr,1fr]">
         <div>
-          <div class="overflow-x-auto"><table class="w-full"><thead><tr class="border-b border-border"><th class="text-left text-xs uppercase pb-3">Ejecución</th><th class="text-left text-xs uppercase pb-3">Estado</th><th class="text-left text-xs uppercase pb-3">Asignaciones</th><th class="text-left text-xs uppercase pb-3">Infracciones</th><th class="text-left text-xs uppercase pb-3">Acciones</th></tr></thead><tbody id="runs-table-body"></tbody></table></div>
+          <div class="overflow-x-auto hidden md:block"><table class="w-full"><thead><tr class="border-b border-border"><th class="text-left text-xs uppercase pb-3">Ejecución</th><th class="text-left text-xs uppercase pb-3">Estado</th><th class="text-left text-xs uppercase pb-3">Asignaciones</th><th class="text-left text-xs uppercase pb-3">Infracciones</th><th class="text-left text-xs uppercase pb-3">Acciones</th></tr></thead><tbody id="runs-table-body"></tbody></table></div>
+          <div id="runs-mobile-list" class="space-y-3 md:hidden"></div>
           <div id="runs-empty" class="hidden rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">No se encontraron ejecuciones.</div>
         </div>
         <form id="run-form" class="rounded-xl border border-border bg-background p-4 space-y-3">
@@ -54,9 +55,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
     <section class="bg-card border border-border rounded-xl p-5 space-y-4">
       <h2 class="text-lg font-semibold">Franjas horarias</h2>
-      <div class="flex items-center justify-between gap-3">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <label class="inline-flex items-center gap-2 text-sm text-muted-foreground"><input id="timeslots-select-all" type="checkbox" class="rounded border-border bg-input" /> Seleccionar todas</label>
-        <button id="delete-timeslots-btn" type="button" disabled class="rounded-lg border border-red-500/30 px-4 py-2 text-sm font-medium text-red-300 transition disabled:opacity-50 hover:bg-red-500/10">Eliminar</button>
+        <button id="delete-timeslots-btn" type="button" disabled class="rounded-lg border border-red-500/30 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-500/10 disabled:opacity-50">Eliminar</button>
       </div>
       <div class="grid gap-6 xl:grid-cols-[1.5fr,1fr]">
         <div>
@@ -329,9 +330,34 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   function syncSelectedRun() { if (!selectedRunId || !runs.some((r) => Number(r.id) === Number(selectedRunId))) selectedRunId = runs[0]?.id ?? null; }
 
   function renderRuns() {
-    const tbody = q('runs-table-body'); const empty = q('runs-empty'); if (!tbody) return;
+    const tbody = q('runs-table-body'); const mobileList = q('runs-mobile-list'); const empty = q('runs-empty'); if (!tbody) return;
     if (runs.length === 0) { tbody.innerHTML = ''; empty?.classList.remove('hidden'); renderRunBadge(); return; }
     empty?.classList.add('hidden');
+    if (mobileList) mobileList.innerHTML = runs.map((run) => {
+      const isSel = Number(run.id) === Number(selectedRunId); const canDelete = canDeleteTimetableRunStatus(run.status); const canGenerate = run.status !== 'published';
+      const deleteBlockedReason = 'No se puede eliminar una ejecución publicada';
+      const summary = getRunWarningSummary(run); const warningCount = summary?.total ?? run.violations_count ?? 0;
+      return `<article class="rounded-xl border border-border bg-background p-3 ${isSel ? 'ring-1 ring-primary/40 bg-primary/5' : ''}">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="font-medium">${esc(run.period_name || run.period?.name || `Ejecución #${run.id}`)}</div>
+            <div class="text-xs text-muted-foreground">#${run.id}</div>
+          </div>
+          <span class="inline-flex rounded-full ${RUN_BADGES[run.status] || 'bg-muted'} px-2.5 py-0.5 text-xs">${esc(RUN_STATUS_LABELS[run.status] || run.status)}</span>
+        </div>
+        <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
+          <div class="rounded-lg border border-border/70 bg-muted/20 p-2"><div class="text-xs uppercase text-muted-foreground">Asignaciones</div><div class="font-medium">${run.assignments_count ?? run.asignaciones_count ?? 0}</div></div>
+          <div class="rounded-lg border border-border/70 bg-muted/20 p-2"><div class="text-xs uppercase text-muted-foreground">Infracciones</div><div class="font-medium">${warningCount}</div></div>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button class="select-run-btn rounded border border-border px-2 py-1 text-xs" data-id="${run.id}">${isSel ? 'Seleccionada' : 'Seleccionar'}</button>
+          <button class="preview-run-btn rounded border border-indigo-500/30 text-indigo-300 px-2 py-1 text-xs" data-id="${run.id}">Preview</button>
+          <button class="generate-run-btn rounded border border-primary/40 text-primary px-2 py-1 text-xs ${canGenerate ? '' : 'opacity-60'}" data-id="${run.id}" ${canGenerate ? '' : 'disabled'}>Generar</button>
+          <button class="publish-run-btn rounded border border-green-500/30 text-green-300 px-2 py-1 text-xs ${run.status === 'published' ? 'opacity-60' : ''}" data-id="${run.id}" ${run.status === 'published' ? 'disabled' : ''}>Publicar</button>
+          <button class="delete-run-btn rounded border border-red-500/30 text-red-300 px-2 py-1 text-xs ${canDelete ? '' : 'opacity-60'}" data-id="${run.id}" aria-label="Eliminar ejecución" title="${canDelete ? 'Eliminar ejecución' : deleteBlockedReason}" ${canDelete ? '' : 'disabled'}>Eliminar</button>
+        </div>
+      </article>`;
+    }).join('');
     tbody.innerHTML = runs.map((run) => {
       const isSel = Number(run.id) === Number(selectedRunId); const canDelete = canDeleteTimetableRunStatus(run.status); const canGenerate = run.status !== 'published';
       const deleteBlockedReason = 'No se puede eliminar una ejecución publicada';
@@ -339,11 +365,15 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       return `<tr class="border-b border-border ${isSel ? 'bg-primary/5' : ''}"><td class="py-3 pr-2"><div class="font-medium">${esc(run.period_name || run.period?.name || `Ejecución #${run.id}`)}</div><div class="text-xs text-muted-foreground">#${run.id}</div></td><td class="py-3 pr-2"><span class="inline-flex rounded-full ${RUN_BADGES[run.status] || 'bg-muted'} px-2.5 py-0.5 text-xs">${esc(RUN_STATUS_LABELS[run.status] || run.status)}</span></td><td class="py-3 pr-2 text-sm">${run.assignments_count ?? run.asignaciones_count ?? 0}</td><td class="py-3 pr-2 text-sm"><span class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-foreground">${warningCount} infracciones</span></td><td class="py-3"><div class="flex flex-wrap gap-2"><button class="select-run-btn rounded border border-border px-2 py-1 text-xs" data-id="${run.id}">${isSel ? 'Seleccionada' : 'Seleccionar'}</button><button class="preview-run-btn rounded border border-indigo-500/30 text-indigo-300 px-2 py-1 text-xs" data-id="${run.id}">Preview</button><button class="generate-run-btn rounded border border-primary/40 text-primary px-2 py-1 text-xs ${canGenerate ? '' : 'opacity-60'}" data-id="${run.id}" ${canGenerate ? '' : 'disabled'}>Generar</button><button class="publish-run-btn rounded border border-green-500/30 text-green-300 px-2 py-1 text-xs ${run.status === 'published' ? 'opacity-60' : ''}" data-id="${run.id}" ${run.status === 'published' ? 'disabled' : ''}>Publicar</button><button class="delete-run-btn rounded border border-red-500/30 text-red-300 px-2 py-1 text-xs ${canDelete ? '' : 'opacity-60'}" data-id="${run.id}" aria-label="Eliminar ejecución" title="${canDelete ? 'Eliminar ejecución' : deleteBlockedReason}" ${canDelete ? '' : 'disabled'}>Eliminar</button></div></td></tr>`;
     }).join('');
 
-    tbody.querySelectorAll('.select-run-btn').forEach((b) => b.addEventListener('click', async () => { selectedRunId = Number(b.getAttribute('data-id')); renderRuns(); renderRunBadge(); await Promise.all([loadAssignments(), loadViolations()]); }));
-    tbody.querySelectorAll('.preview-run-btn').forEach((b) => b.addEventListener('click', async () => { selectedRunId = Number(b.getAttribute('data-id')); await Promise.all([loadAssignments(), loadViolations()]); renderRuns(); renderRunBadge(); openPreviewModal(); }));
-    tbody.querySelectorAll('.publish-run-btn').forEach((b) => b.addEventListener('click', async () => publishRun(Number(b.getAttribute('data-id')))));
-    tbody.querySelectorAll('.generate-run-btn').forEach((b) => b.addEventListener('click', async () => generateRun(Number(b.getAttribute('data-id')))));
-    tbody.querySelectorAll('.delete-run-btn').forEach((b) => b.addEventListener('click', async () => deleteRun(Number(b.getAttribute('data-id')))));
+    const bindRunActions = (root) => {
+      root?.querySelectorAll('.select-run-btn').forEach((b) => b.addEventListener('click', async () => { selectedRunId = Number(b.getAttribute('data-id')); renderRuns(); renderRunBadge(); await Promise.all([loadAssignments(), loadViolations()]); }));
+      root?.querySelectorAll('.preview-run-btn').forEach((b) => b.addEventListener('click', async () => { selectedRunId = Number(b.getAttribute('data-id')); await Promise.all([loadAssignments(), loadViolations()]); renderRuns(); renderRunBadge(); openPreviewModal(); }));
+      root?.querySelectorAll('.publish-run-btn').forEach((b) => b.addEventListener('click', async () => publishRun(Number(b.getAttribute('data-id')))));
+      root?.querySelectorAll('.generate-run-btn').forEach((b) => b.addEventListener('click', async () => generateRun(Number(b.getAttribute('data-id')))));
+      root?.querySelectorAll('.delete-run-btn').forEach((b) => b.addEventListener('click', async () => deleteRun(Number(b.getAttribute('data-id')))));
+    };
+    bindRunActions(tbody);
+    bindRunActions(mobileList);
     renderRunBadge();
   }
 

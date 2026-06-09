@@ -7,9 +7,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     <div class="h-96 bg-card rounded-xl border border-border animate-pulse"></div>
   </div>
 
-  <div id="page-content" class="hidden flex" style="height:calc(100vh - 64px)">
+  <div id="page-content" class="hidden flex flex-col lg:flex-row min-w-0" style="height:calc(100vh - 64px)">
     <!-- Barra lateral: lista de clases -->
-    <div class="w-64 shrink-0 border-r border-border overflow-y-auto p-4">
+    <div class="w-full lg:w-64 shrink-0 border-r border-border overflow-y-auto p-4 min-w-0">
       <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Clases</p>
       <div id="class-list" class="space-y-2"></div>
     </div>
@@ -26,7 +26,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       </div>
 
       <!-- Contenido del reporte -->
-      <div id="report-content" class="hidden p-6 space-y-6"></div>
+      <div id="report-content" class="hidden space-y-6 p-4 sm:p-6"></div>
     </div>
   </div>
 </DashboardLayout>
@@ -106,7 +106,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       const evalPerf = data.evaluations_performance || data.evaluation_stats || [];
 
       content.innerHTML = `
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 class="text-xl font-semibold text-foreground">${escHtml(className)}</h1>
             <p class="text-sm text-muted-foreground">${escHtml(periodName)}</p>
@@ -114,14 +114,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         </div>
 
         <!-- KPI row -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
           ${[
             { label: 'Total de estudiantes', value: totalStudents, color: 'text-primary' },
             { label: 'Puntaje promedio', value: mean + (mean !== '-' ? '%' : ''), color: 'text-blue-400' },
             { label: 'Tasa de aprobación', value: passRate + (passRate !== '-' ? '%' : ''), color: 'text-green-400' },
             { label: 'Cantidad de reprobados', value: failCount, color: 'text-red-400' },
           ].map(k => `
-            <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
+            <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-4 sm:p-5">
               <p class="text-sm text-muted-foreground mb-2">${k.label}</p>
               <p class="text-2xl font-bold ${k.color}">${k.value}</p>
             </div>
@@ -129,7 +129,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         </div>
 
         <!-- Distribución de puntajes -->
-        <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+        <div class="bg-card text-card-foreground rounded-xl border border-border p-4 sm:p-5">
           <h2 class="text-lg font-semibold text-foreground mb-4">Distribución de puntajes</h2>
           <div class="space-y-3">
             ${distCounts.map(d => `
@@ -147,10 +147,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         </div>
 
         <!-- Mejores/peores estudiantes -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div class="bg-card text-card-foreground rounded-xl border border-border p-4 sm:p-5">
             <h2 class="text-lg font-semibold text-foreground mb-4">Mejores 5 estudiantes</h2>
-            <table class="w-full">
+            <div class="overflow-x-auto">
+            <table class="min-w-[560px] w-full">
               <thead><tr class="border-b border-border">
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-2">Nombre</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-2">Prom.</th>
@@ -163,10 +164,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                 ${top5.length === 0 ? '<tr><td colspan="2" class="py-4 text-center text-xs text-muted-foreground">Sin datos</td></tr>' : ''}
               </tbody>
             </table>
+            </div>
           </div>
-          <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+          <div class="bg-card text-card-foreground rounded-xl border border-border p-4 sm:p-5">
             <h2 class="text-lg font-semibold text-foreground mb-4">Últimos 5 estudiantes</h2>
-            <table class="w-full">
+            <div class="overflow-x-auto">
+            <table class="min-w-[560px] w-full">
               <thead><tr class="border-b border-border">
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-2">Nombre</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-2">Prom.</th>
@@ -179,11 +182,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                 ${bottom5.length === 0 ? '<tr><td colspan="2" class="py-4 text-center text-xs text-muted-foreground">Sin datos</td></tr>' : ''}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
 
         <!-- Rendimiento de evaluaciones -->
-        <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+        <div class="bg-card text-card-foreground rounded-xl border border-border p-4 sm:p-5">
           <h2 class="text-lg font-semibold text-foreground mb-4">Rendimiento de evaluaciones</h2>
           <div class="overflow-x-auto">
             <table class="w-full">

@@ -34,7 +34,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         </div>
     </div>
 
-    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+    <div class="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div>
             <h1 class="text-xl font-semibold text-foreground">Selección de asignaturas</h1>
             <p id="page-subtitle" class="text-sm text-muted-foreground">Selecciona tus clases para este periodo.</p>
@@ -44,7 +44,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         </a>
     </div>
 
-    <div class="p-6 space-y-6">
+    <div class="space-y-6 p-4 sm:p-6">
         <!-- Cargando -->
         <div id="loading-state" class="space-y-3">
             <div class="h-24 bg-muted animate-pulse rounded-xl"></div>
@@ -61,18 +61,18 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         </div>
 
         <!-- Resumen de clases matriculadas + botón de finalizar -->
-        <div id="enrollment-summary" class="hidden flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-5 py-3">
+        <div id="enrollment-summary" class="hidden flex flex-col gap-4 rounded-lg border border-border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
             <div class="flex items-center gap-2 text-sm">
                 <span class="text-muted-foreground">Matriculado en</span>
                 <span id="enrolled-count" class="font-semibold text-foreground">0</span>
                 <span class="text-muted-foreground">clase(s)</span>
             </div>
-            <div class="flex items-center gap-2">
-                <button id="btn-finish-enrollment" class="hidden inline-flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50 transition-colors">
+            <div class="flex flex-col gap-2 sm:flex-row">
+                <button id="btn-finish-enrollment" class="hidden inline-flex w-full items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50 sm:w-auto">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                     Continuar al pago
                 </button>
-                <a id="link-view-receipt" href="#" class="hidden inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+                <a id="link-view-receipt" href="#" class="hidden inline-flex w-full items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted sm:w-auto">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                     Ver comprobante
                 </a>
@@ -81,11 +81,11 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
         <!-- Vista de horario semanal -->
         <div id="schedule-section" class="hidden">
-            <div class="flex items-center justify-between mb-3">
+            <div class="mb-3 flex items-center justify-between">
                 <h2 class="text-base font-semibold text-foreground">Horario semanal</h2>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full border border-border rounded-xl overflow-hidden text-xs">
+            <div class="hidden overflow-x-auto md:block">
+                <table class="min-w-[720px] w-full border border-border rounded-xl overflow-hidden text-xs">
                     <thead>
                         <tr class="bg-muted/50">
                             <th class="border-r border-border px-3 py-2 text-left text-muted-foreground font-medium w-16">Hora</th>
@@ -99,6 +99,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                     <tbody id="schedule-tbody"></tbody>
                 </table>
             </div>
+            <div id="schedule-cards" class="grid gap-3 md:hidden"></div>
         </div>
 
         <!-- Lista de clases -->
@@ -212,6 +213,37 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         }).join("");
     }
 
+    function renderScheduleCards(enrolledClasses: any[]) {
+        const cards = document.getElementById("schedule-cards");
+        if (!cards) return;
+
+        if (enrolledClasses.length === 0) {
+            cards.innerHTML = `<div class="rounded-xl border border-border bg-muted/20 px-4 py-5 text-center text-sm text-muted-foreground">No hay clases seleccionadas todavía</div>`;
+            return;
+        }
+
+        cards.innerHTML = enrolledClasses.map(cls => {
+            const subjectName = cls.subject?.name ?? cls.subject_name ?? "Clase";
+            const teacherName = cls.teacher?.full_name ?? (`${cls.teacher?.first_name ?? ""} ${cls.teacher?.last_name ?? ""}`.trim() || "—");
+            const classroom = cls.classroom ? `${cls.classroom.name} (${cls.classroom.building})` : "—";
+            const scheduleStr = getScheduleSummaryLabel(cls.schedules ?? []);
+            return `
+                <article class="rounded-xl border border-border bg-muted/20 p-4 space-y-2">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-foreground">${subjectName}</p>
+                            <p class="text-xs text-muted-foreground">${teacherName}</p>
+                        </div>
+                        <span class="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">Seleccionada</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 text-xs text-muted-foreground">
+                        <div><span class="block uppercase tracking-wide">Aula</span><span class="mt-1 block text-foreground">${classroom}</span></div>
+                        <div><span class="block uppercase tracking-wide">Horario</span><span class="mt-1 block text-foreground">${scheduleStr || "—"}</span></div>
+                    </div>
+                </article>`;
+        }).join("");
+    }
+
     function renderClasses(classes: any[]) {
         const loading = document.getElementById("loading-state")!;
         const content = document.getElementById("classes-content")!;
@@ -228,7 +260,9 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         document.getElementById("enrollment-summary")?.classList.remove("hidden");
         document.getElementById("schedule-section")?.classList.remove("hidden");
 
-        buildScheduleGrid(classes.filter(cls => draftEnrollIds.has(cls.id)));
+        const enrolledClasses = classes.filter(cls => draftEnrollIds.has(cls.id));
+        buildScheduleGrid(enrolledClasses);
+        renderScheduleCards(enrolledClasses);
 
         const bySubject = new Map<string, any[]>();
         classes.forEach(cls => {

@@ -976,16 +976,41 @@ class MyScheduleCompatibilityTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])
 
-    def test_my_schedule_ignores_inactive_period_classes(self):
-        inactive_period = make_period('P2026MS0', active=False)
+    def test_my_schedule_falls_back_to_latest_available_student_period(self):
+        inactive_period = AcademicPeriod.objects.create(
+            name='Period P2026MS0',
+            code='P2026MS0',
+            start_date='2026-01-01',
+            end_date='2026-06-30',
+            is_active=False,
+        )
+        newer_inactive_period = AcademicPeriod.objects.create(
+            name='Period P2026MS2',
+            code='P2026MS2',
+            start_date='2026-02-01',
+            end_date='2026-07-31',
+            is_active=False,
+        )
         inactive_class = make_class(inactive_period, 'MS0')
+        fallback_class = make_class(newer_inactive_period, 'MS2')
         ClassEnrollment.objects.create(student=self.student, cls=inactive_class, status='enrolled')
+        ClassEnrollment.objects.create(student=self.student, cls=fallback_class, status='enrolled')
+        ClassSchedule.objects.create(
+            cls=fallback_class,
+            day_of_week=1,
+            start_time=time(9, 0),
+            end_time=time(10, 0),
+        )
+        self.period.is_active = False
+        self.period.save(update_fields=['is_active'])
 
         self.client.force_authenticate(user=self.student)
         response = self.client.get('/api/academic/classes/my-schedule/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 0)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['class_id'], fallback_class.id)
+        self.assertEqual(response.data[0]['period_name'], newer_inactive_period.name)
 
     def test_my_schedule_falls_back_to_legacy_class_schedule(self):
         ClassSchedule.objects.create(
@@ -1033,7 +1058,24 @@ class MyScheduleCompatibilityTests(TestCase):
         self.assertEqual(assignment_ids, {assignment_a.id, assignment_b.id})
         self.assertTrue(all(row['source'] == 'generated' for row in response.data))
 
-    def test_my_schedule_teacher_branch_returns_empty_without_active_period(self):
+    def test_my_schedule_teacher_branch_falls_back_without_active_period(self):
+        fallback_period = AcademicPeriod.objects.create(
+            name='Period P2026MS3',
+            code='P2026MS3',
+            start_date='2026-02-01',
+            end_date='2026-07-31',
+            is_active=False,
+        )
+        fallback_class = make_class(fallback_period, 'MS3')
+        fallback_class.teacher = self.cls.teacher
+        fallback_class.save(update_fields=['teacher'])
+        ClassSchedule.objects.create(
+            cls=fallback_class,
+            day_of_week=2,
+            start_time=time(11, 0),
+            end_time=time(12, 0),
+        )
+
         self.period.is_active = False
         self.period.save(update_fields=['is_active'])
 
@@ -1041,7 +1083,9 @@ class MyScheduleCompatibilityTests(TestCase):
         response = self.client.get('/api/academic/classes/my-schedule/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, [])
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['class_id'], fallback_class.id)
+        self.assertEqual(response.data[0]['period_name'], fallback_period.name)
 
     def test_my_schedule_prefers_persisted_class_teacher_over_assignment_teacher(self):
         persisted_teacher = User.objects.create_user(

@@ -7,12 +7,12 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
 <DashboardLayout title="Cuestionarios — Academix" currentPath="/management/questionnaires">
     <!-- Cabecera -->
-    <div class="flex items-center justify-between border-b border-border px-6 py-4">
-        <div>
+    <div class="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div class="min-w-0">
             <h1 class="text-xl font-semibold text-foreground">Cuestionarios</h1>
             <p class="text-sm text-muted-foreground">Crea y gestiona cuestionarios de admisión y matrícula.</p>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <span id="total-count" class="text-sm text-muted-foreground bg-muted px-3 py-1.5 rounded-full hidden"></span>
             <button id="btn-from-template" type="button" class="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
@@ -34,7 +34,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         <div class="flex flex-wrap items-center gap-3">
             <div class="relative">
                 <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input id="search-input" type="text" placeholder="Buscar cuestionarios..." class="pl-8 pr-3 py-2 rounded-md border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30 w-64" />
+                <input id="search-input" type="text" placeholder="Buscar cuestionarios..." class="pl-8 pr-3 py-2 rounded-md border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30 w-full sm:w-64" />
             </div>
             <select id="filter-type" class="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30">
                 <option value="">Todos los tipos</option>
@@ -66,6 +66,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 <tbody id="table-body"></tbody>
             </table>
         </div>
+        <div id="mobile-cards-wrapper" class="hidden space-y-3 md:hidden"></div>
         <div id="pagination-wrapper" class="hidden items-center justify-between rounded-xl border border-border bg-card px-4 py-3 shadow-sm">
             <p id="pagination-summary" class="text-sm text-muted-foreground"></p>
             <div class="flex items-center gap-2">
@@ -211,6 +212,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
 <script>
     import API_BASE_URL from '@/config/api';
+    import { buildQuestionnaireMobileCards } from '@/utils/questionnaire-management-utils';
     const API_URL = API_BASE_URL;
 
     function getToken(): string | null { return localStorage.getItem("access_token"); }
@@ -247,6 +249,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     // ── Renderiza la tabla ──────────────────────────────────────────────────────────
     function renderTable(items: any[]) {
         const wrapper = el("table-wrapper");
+        const mobile = el("mobile-cards-wrapper");
         const empty = el("empty-state");
         const loading = el("loading-state");
         const countEl = el("total-count");
@@ -257,12 +260,54 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 
         if (items.length === 0) {
             wrapper.classList.add("hidden");
+            mobile.classList.add("hidden");
             empty.classList.remove("hidden");
             return;
         }
 
         empty.classList.add("hidden");
         wrapper.classList.remove("hidden");
+        const cards = buildQuestionnaireMobileCards(items, allCareers);
+        mobile.innerHTML = cards.map((q) => `
+            <article class="rounded-xl border border-border bg-card p-4 shadow-sm md:hidden">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h3 class="truncate font-medium text-foreground">${q.title}</h3>
+                            ${q.isWizard ? `<span class="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-400">Asistente</span>` : ''}
+                        </div>
+                        ${q.description ? `<p class="mt-1 line-clamp-2 text-sm text-muted-foreground">${q.description}</p>` : ''}
+                    </div>
+                    <span class="shrink-0 inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${q.typeTone}">${q.typeLabel}</span>
+                </div>
+                <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-muted-foreground">Carrera</dt>
+                        <dd class="mt-1 text-foreground">${q.careerLabel}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-muted-foreground">Pasos</dt>
+                        <dd class="mt-1 text-foreground">${q.stepCount}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-muted-foreground">Estado</dt>
+                        <dd class="mt-1 text-foreground">${q.isActive ? 'Activo' : 'Inactivo'}</dd>
+                    </div>
+                </dl>
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <button class="btn-toggle-active inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium ${q.isActive ? 'text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10' : 'text-muted-foreground border-border hover:bg-muted'}" data-id="${q.id}" data-active="${q.isActive}" type="button" title="${q.isActive ? 'Desactivar' : 'Activar'}">
+                        ${q.isActive ? 'Activo' : 'Inactivo'}
+                    </button>
+                    ${q.isWizard
+                        ? `<button class="btn-unset-wizard inline-flex items-center gap-1.5 rounded-md border border-amber-500/30 px-3 py-1.5 text-xs font-medium text-amber-400 hover:bg-amber-500/10 transition-colors" data-id="${q.id}" type="button">Quitar asistente</button>`
+                        : `<button class="btn-set-wizard inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" data-id="${q.id}" type="button">Marcar como asistente</button>`
+                    }
+                    <button class="btn-export inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" data-id="${q.id}" data-title="${q.title}" type="button">Exportar</button>
+                    <a href="/management/questionnaires/${q.id}" class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors">Editar</a>
+                    <button class="btn-delete inline-flex items-center gap-1.5 rounded-md border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors" data-id="${q.id}" data-title="${q.title}" type="button">Eliminar</button>
+                </div>
+            </article>
+        `).join('');
 
         const body = el("table-body");
         body.innerHTML = items.map(q => {
@@ -323,52 +368,56 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             </tr>`;
         }).join("");
 
-        // Establece manejadores del asistente
-        body.querySelectorAll(".btn-set-wizard").forEach(btn => {
-            btn.addEventListener("click", () => {
-                const id = parseInt((btn as HTMLElement).dataset.id ?? "0", 10);
-                setWizard(id, true);
-            });
-        });
-        body.querySelectorAll(".btn-unset-wizard").forEach(btn => {
-            btn.addEventListener("click", () => {
-                const id = parseInt((btn as HTMLElement).dataset.id ?? "0", 10);
-                setWizard(id, false);
-            });
-        });
-
-        // Manejadores de exportación
-        body.querySelectorAll(".btn-export").forEach(btn => {
-            btn.addEventListener("click", () => {
-                const id = parseInt((btn as HTMLElement).dataset.id ?? "0", 10);
-                const title = (btn as HTMLElement).dataset.title ?? "cuestionario";
-                exportQuestionnaire(id, title);
-            });
-        });
-
-        // Manejadores de borrado
-        body.querySelectorAll(".btn-delete").forEach(btn => {
-            btn.addEventListener("click", () => {
-                const id = parseInt((btn as HTMLElement).dataset.id ?? "0", 10);
-                const title = (btn as HTMLElement).dataset.title ?? "this questionnaire";
-                (window as any).confirmAction?.({
-                    title: "Eliminar cuestionario",
-                    description: `¿Seguro que querés eliminar "${title}"? Todos los pasos, preguntas y respuestas de estudiantes se eliminarán permanentemente.`,
-                    confirmLabel: "Eliminar",
-                    variant: "destructive",
-                    onConfirm: () => deleteQuestionnaire(id),
+        function wireActions(root: ParentNode) {
+            root.querySelectorAll(".btn-set-wizard").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const id = parseInt((btn as HTMLElement).dataset.id ?? "0", 10);
+                    setWizard(id, true);
                 });
             });
-        });
-
-        // Manejadores de activación/desactivación
-        body.querySelectorAll(".btn-toggle-active").forEach(btn => {
-            btn.addEventListener("click", () => {
-                const id = parseInt((btn as HTMLElement).dataset.id ?? "0", 10);
-                const active = (btn as HTMLElement).dataset.active === "true";
-                toggleActive(id, active);
+            root.querySelectorAll(".btn-unset-wizard").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const id = parseInt((btn as HTMLElement).dataset.id ?? "0", 10);
+                    setWizard(id, false);
+                });
             });
-        });
+
+            root.querySelectorAll(".btn-export").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const id = parseInt((btn as HTMLElement).dataset.id ?? "0", 10);
+                    const title = (btn as HTMLElement).dataset.title ?? "cuestionario";
+                    exportQuestionnaire(id, title);
+                });
+            });
+
+            root.querySelectorAll(".btn-delete").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const id = parseInt((btn as HTMLElement).dataset.id ?? "0", 10);
+                    const title = (btn as HTMLElement).dataset.title ?? "this questionnaire";
+                    (window as any).confirmAction?.({
+                        title: "Eliminar cuestionario",
+                        description: `¿Seguro que querés eliminar "${title}"? Todos los pasos, preguntas y respuestas de estudiantes se eliminarán permanentemente.`,
+                        confirmLabel: "Eliminar",
+                        variant: "destructive",
+                        onConfirm: () => deleteQuestionnaire(id),
+                    });
+                });
+            });
+
+            root.querySelectorAll(".btn-toggle-active").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const id = parseInt((btn as HTMLElement).dataset.id ?? "0", 10);
+                    const active = (btn as HTMLElement).dataset.active === "true";
+                    toggleActive(id, active);
+                });
+            });
+        }
+
+        wireActions(body);
+        wireActions(mobile);
+
+        // Manejadores ya aplicados a tabla y tarjetas móviles
+
     }
 
     function buildListPath() {

@@ -3,8 +3,8 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 ---
 
 <DashboardLayout title="Mis Preinscripciones — Academix" currentPath="/admissions/my-applications">
-    <div class="flex items-center justify-between border-b border-border px-6 py-4">
-        <div>
+    <div class="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div class="min-w-0">
             <h1 class="text-xl font-semibold text-foreground">Mis preinscripciones</h1>
             <p class="text-sm text-muted-foreground">Seguimiento de todas tus solicitudes de admisión.</p>
         </div>
@@ -16,7 +16,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     </div>
 
     <!-- Banner de solicitud activa — se muestra cuando el estudiante ya tiene una solicitud viva -->
-    <div id="active-app-banner" class="hidden mx-6 mt-5 rounded-xl border-2 border-amber-500/40 bg-amber-500/10 px-5 py-4 flex items-start gap-3">
+    <div id="active-app-banner" class="hidden mx-4 sm:mx-6 mt-5 rounded-xl border-2 border-amber-500/40 bg-amber-500/10 px-5 py-4 flex items-start gap-3">
         <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-500/20 mt-0.5">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber-500"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         </div>
@@ -27,7 +27,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     </div>
 
     <!-- Banner de envío exitoso -->
-    <div id="submitted-banner" class="hidden mx-6 mt-5 rounded-xl border-2 border-emerald-500/40 bg-emerald-500/10 px-5 py-4 flex items-start gap-3">
+    <div id="submitted-banner" class="hidden mx-4 sm:mx-6 mt-5 rounded-xl border-2 border-emerald-500/40 bg-emerald-500/10 px-5 py-4 flex items-start gap-3">
         <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 mt-0.5">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-emerald-500"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
@@ -37,7 +37,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         </div>
     </div>
 
-    <div class="p-6 space-y-4">
+    <div class="p-4 sm:p-6 space-y-4">
         <!-- Cargando -->
         <div id="loading-state" class="space-y-3">
             <div class="h-32 bg-muted animate-pulse rounded-xl"></div>
@@ -224,12 +224,12 @@ const score = app.admission_score ? `${app.admission_score}` : null;
             return `
             <div class="bg-card border border-border rounded-xl overflow-hidden shadow-sm" data-app-id="${app.id}">
                 <!-- Cabecera -->
-                <div class="flex items-center justify-between px-5 py-3.5 border-b border-border bg-muted/20">
+                <div class="flex flex-col gap-3 px-5 py-3.5 border-b border-border bg-muted/20 sm:flex-row sm:items-center sm:justify-between">
                     <div class="flex items-center gap-3 min-w-0">
                         <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${cfg.badge}">${cfg.label}</span>
                         <span class="text-sm text-muted-foreground truncate">${period}</span>
                     </div>
-                    ${submitted ? `<span class="text-xs text-muted-foreground shrink-0 hidden sm:block">Enviada ${submitted}</span>` : ""}
+                    ${submitted ? `<span class="text-xs text-muted-foreground shrink-0">Enviada ${submitted}</span>` : ""}
                 </div>
 
                 <!-- Cuerpo -->
@@ -238,14 +238,14 @@ const score = app.admission_score ? `${app.admission_score}` : null;
 
                     <!-- Titulación asignada (si la hay) -->
                     ${assigned ? `
-                    <div class="flex items-center gap-2 rounded-md bg-primary/5 border border-primary/20 px-3 py-2">
+                    <div class="flex items-center gap-2 rounded-md bg-primary/5 border border-primary/20 px-3 py-2 min-w-0">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-primary shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
-                        <p class="text-sm font-medium text-foreground">${assigned}</p>
+                        <p class="text-sm font-medium text-foreground min-w-0 truncate">${assigned}</p>
                         ${prefOrder ? `<span class="ml-auto text-xs text-muted-foreground">Opción ${prefOrder}</span>` : ""}
                     </div>` : ""}
 
                     <!-- Fila de metadatos -->
-                    <div class="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
+                    <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                         ${score ? `<span>Nota admisión: <span class="text-foreground font-semibold">${score}</span></span>` : ""}
                         <span>Titulaciones: <span class="text-foreground">${prefCount}</span></span>
                     </div>

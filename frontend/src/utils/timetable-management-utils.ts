@@ -226,6 +226,31 @@ export function formatActivityType(activityType: string) {
   return activityType || '—';
 }
 
+export type ResponsiveScheduleCard = { subject: string; day: string; time: string; classroom: string };
+
+export function buildResponsiveScheduleCards(classes: Array<{ subject_name?: string; subject?: { name?: string | null } | null; classroom_name?: string; classroom?: { name?: string | null } | null; schedules?: Array<{ day_of_week?: number | null; start_time?: string | null; end_time?: string | null }> | null; schedule?: Array<{ day_of_week?: number | null; start_time?: string | null; end_time?: string | null }> | null }>): ResponsiveScheduleCard[] {
+  const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  const cards: ResponsiveScheduleCard[] = [];
+
+  classes.forEach((c) => {
+    const subject = String(c.subject_name || c.subject?.name || 'Clase').trim();
+    const classroom = String(c.classroom_name || c.classroom?.name || '-').trim();
+    const schedules = c.schedules || c.schedule || [];
+
+    schedules.forEach((s) => {
+      const day = Number(s.day_of_week);
+      cards.push({
+        subject,
+        day: dayNames[day] ?? '-',
+        time: `${String(s.start_time || '--:--')} – ${String(s.end_time || '--:--')}`,
+        classroom,
+      });
+    });
+  });
+
+  return cards;
+}
+
 export type MyScheduleRow = { class_id: number; subject_name: string; day_of_week: number; start_time: string; end_time: string; source?: string | null; [key: string]: any };
 
 function normalizeScheduleEntries(row: MyScheduleRow) {

@@ -342,25 +342,28 @@ class ClassViewSet(viewsets.ModelViewSet):
         from enrollment.models import ClassEnrollment
         role = request.user.role
         if role == 's':
-            active_period = get_active_academic_period()
-            if not active_period:
-                return Response([])
-            enrolled_ids = ClassEnrollment.objects.filter(
-                student=request.user, status='enrolled'
-            ).filter(cls__period=active_period).values_list('cls_id', flat=True)
-            classes = Class.objects.filter(id__in=enrolled_ids, period=active_period).select_related(
-                'subject', 'teacher', 'classroom', 'period'
-            ).prefetch_related('schedules')
+            classes = Class.objects.filter(
+                id__in=ClassEnrollment.objects.filter(
+                    student=request.user, status='enrolled'
+                ).values_list('cls_id', flat=True)
+            ).select_related('subject', 'teacher', 'classroom', 'period').prefetch_related('schedules')
         elif role == 't':
-            active_period = get_active_academic_period()
-            if not active_period:
-                return Response([])
             classes = Class.objects.filter(teacher=request.user).select_related(
                 'subject', 'classroom', 'period'
             ).prefetch_related('schedules')
-            classes = classes.filter(period=active_period)
         else:
             return Response({'error': 'Only students and teachers have schedules'}, status=403)
+
+        active_period = get_active_academic_period()
+        if active_period:
+            classes = classes.filter(period=active_period)
+        else:
+            fallback_period_id = classes.order_by('-period__start_date', '-period_id').values_list(
+                'period_id', flat=True
+            ).first()
+            if not fallback_period_id:
+                return Response([])
+            classes = classes.filter(period_id=fallback_period_id)
 
         class_ids = [cls.id for cls in classes]
         assignments_by_period_and_class = {}

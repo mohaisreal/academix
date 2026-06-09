@@ -2,10 +2,10 @@
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
 <DashboardLayout title="Mis materiales — Academix" currentPath="/my-materials">
-  <div id="page-loading" class="p-6 space-y-4">
+  <div id="page-loading" class="space-y-4 p-4 sm:p-6">
     <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
     <div class="h-10 bg-card rounded-xl border border-border animate-pulse w-1/2"></div>
-    <div class="grid grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <div class="h-40 bg-card rounded-xl border border-border animate-pulse"></div>
       <div class="h-40 bg-card rounded-xl border border-border animate-pulse"></div>
       <div class="h-40 bg-card rounded-xl border border-border animate-pulse"></div>
@@ -13,17 +13,25 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   </div>
 
   <div id="page-content" class="hidden">
-    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+    <div class="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
       <div>
         <h1 class="text-xl font-semibold text-foreground">Mis materiales</h1>
         <p class="text-sm text-muted-foreground">Recursos subidos por tus docentes</p>
       </div>
     </div>
 
-    <div class="p-6 space-y-4">
+    <div class="space-y-4 p-4 sm:p-6">
       <!-- Pestañas de filtro de clases -->
-      <div id="class-tabs" class="flex gap-1 overflow-x-auto pb-1 border-b border-border">
-        <button class="class-tab active-class-tab px-4 py-2 text-sm font-medium text-foreground border-b-2 border-primary -mb-px whitespace-nowrap" data-class="">Todas las clases</button>
+      <div class="flex flex-col gap-3 border-b border-border pb-3 md:flex-row md:items-end md:justify-between md:pb-0">
+        <div class="md:hidden">
+          <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-muted-foreground" for="class-filter-mobile">Filtrar por clase</label>
+          <select id="class-filter-mobile" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+            <option value="">Todas las clases</option>
+          </select>
+        </div>
+        <div id="class-tabs" class="hidden gap-1 overflow-x-auto pb-1 border-b border-border md:flex">
+          <button class="class-tab active-class-tab px-4 py-2 text-sm font-medium text-foreground border-b-2 border-primary -mb-px whitespace-nowrap" data-class="">Todas las clases</button>
+        </div>
       </div>
 
       <!-- Cuadrícula de materiales -->
@@ -100,6 +108,19 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   let allMaterials = [];
   let activeClassFilter = '';
 
+  function syncClassFilter(filter) {
+    activeClassFilter = filter || '';
+    document.querySelectorAll('.class-tab').forEach(t => {
+      t.classList.remove('active-class-tab', 'text-foreground', 'border-b-2', 'border-primary');
+      t.classList.add('text-muted-foreground');
+    });
+    const activeTab = document.querySelector(`.class-tab[data-class="${CSS.escape(activeClassFilter)}"]`);
+    activeTab?.classList.add('active-class-tab', 'text-foreground', 'border-b-2', 'border-primary');
+    activeTab?.classList.remove('text-muted-foreground');
+    const mobileFilter = document.getElementById('class-filter-mobile') as HTMLSelectElement | null;
+    if (mobileFilter && mobileFilter.value !== activeClassFilter) mobileFilter.value = activeClassFilter;
+  }
+
   function renderMaterials(materials) {
     const grid = document.getElementById('materials-grid');
     const empty = document.getElementById('materials-empty');
@@ -153,18 +174,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   }
 
   function setActiveTab(tab) {
-    document.querySelectorAll('.class-tab').forEach(t => {
-      t.classList.remove('active-class-tab', 'text-foreground', 'border-b-2', 'border-primary');
-      t.classList.add('text-muted-foreground');
-    });
-    tab.classList.add('active-class-tab', 'text-foreground', 'border-b-2', 'border-primary');
-    tab.classList.remove('text-muted-foreground');
+    syncClassFilter(tab.dataset.class || '');
   }
 
   // Clic en la pestaña "Todas"
   document.querySelector('.class-tab[data-class=""]')?.addEventListener('click', (e) => {
     setActiveTab(e.currentTarget);
-    activeClassFilter = '';
     filterAndRender();
   });
 
@@ -184,10 +199,19 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         tab.textContent = name;
         tab.addEventListener('click', () => {
           setActiveTab(tab);
-          activeClassFilter = name;
           filterAndRender();
         });
         tabsEl?.appendChild(tab);
+
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        document.getElementById('class-filter-mobile')?.appendChild(option);
+      });
+
+      document.getElementById('class-filter-mobile')?.addEventListener('change', (event) => {
+        syncClassFilter((event.currentTarget as HTMLSelectElement).value);
+        filterAndRender();
       });
 
     } catch {

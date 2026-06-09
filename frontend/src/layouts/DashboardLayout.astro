@@ -37,6 +37,8 @@ const { title, currentPath, forceLightTheme = false } = Astro.props;
             @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
             @media (prefers-reduced-motion: reduce) { .kpi-card { opacity: 1; transform: none; animation: none; } }
             .nav-active { background-color: var(--color-muted) !important; color: var(--color-foreground) !important; }
+            body[data-mobile-restricted="1"] .app-shell { display: none !important; }
+            body[data-mobile-restricted="1"] .mobile-access-gate { display: flex !important; }
         </style>
         <!-- Arranque del tema: por defecto es oscuro, pero respeta la preferencia guardada en el perfil antes de pintar. -->
         <script define:vars={{ forceLightTheme }}>
@@ -76,6 +78,13 @@ const { title, currentPath, forceLightTheme = false } = Astro.props;
                     var stored = localStorage.getItem("user-storage");
                     var user = stored ? (JSON.parse(stored)?.state?.user ?? null) : null;
                     if (!user) { window.location.replace("/login"); return; }
+                    var role = user?.role ?? "";
+                    var isMobile = window.matchMedia && window.matchMedia("(max-width: 1023px)").matches;
+                    if (isMobile && (role === "m" || role === "a")) {
+                        document.body.setAttribute("data-mobile-restricted", "1");
+                        document.documentElement.setAttribute("data-auth-ok", "1");
+                        return;
+                    }
                     document.documentElement.setAttribute("data-auth-ok", "1");
                 } catch (e) {
                     window.location.replace("/login");
@@ -83,8 +92,19 @@ const { title, currentPath, forceLightTheme = false } = Astro.props;
             })();
         </script>
     </head>
-    <body class="bg-background text-foreground" style="display:none" data-current-path={currentPath}>
+    <body class="bg-background text-foreground overflow-x-hidden" style="display:none" data-current-path={currentPath}>
         <div class="min-h-svh">
+            <div class="mobile-access-gate hidden fixed inset-0 z-50 items-center justify-center bg-background p-6 text-center">
+                <div class="max-w-md space-y-4 rounded-2xl border border-border bg-card p-6 shadow-xl">
+                    <h1 class="text-2xl font-semibold text-foreground">No se puede acceder desde móvil con esta cuenta</h1>
+                    <p class="text-sm text-muted-foreground">Esta vista no está disponible para cuentas de gestión o administración en dispositivos móviles.</p>
+                    <button id="mobile-logout-btn" type="button" class="inline-flex w-full items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
+                        Cerrar sesión
+                    </button>
+                </div>
+            </div>
+
+            <div class="app-shell">
 
             <!-- ═══ TOP BAR ═══════════════════════════════════════════════════════ -->
             <header class="fixed top-0 inset-x-0 z-40 h-14 flex items-center border-b border-border bg-background/95 backdrop-blur-sm px-4">
@@ -330,9 +350,11 @@ const { title, currentPath, forceLightTheme = false } = Astro.props;
             </aside>
 
             <!-- ═══ MAIN CONTENT ══════════════════════════════════════════════════ -->
-            <main class="mt-14 lg:pl-60 flex-1 bg-muted/20 min-h-[calc(100svh-3.5rem)]">
+            <main class="mt-14 lg:pl-60 flex-1 min-w-0 max-w-full bg-muted/20 min-h-[calc(100svh-3.5rem)]">
                 <slot />
             </main>
+
+            </div>
 
         </div>
 
@@ -352,6 +374,20 @@ const { title, currentPath, forceLightTheme = false } = Astro.props;
         </div>
 
         <Toaster position="bottom-right" />
+
+        <script>
+            (function () {
+                function logout() {
+                    try {
+                        localStorage.removeItem("access_token");
+                        localStorage.removeItem("refresh_token");
+                        localStorage.removeItem("user-storage");
+                    } catch (_) {}
+                    window.location.replace("/login");
+                }
+                document.getElementById("mobile-logout-btn")?.addEventListener("click", logout);
+            })();
+        </script>
     </body>
 </html>
 

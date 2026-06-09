@@ -103,6 +103,16 @@ describe('management timetable page layout cleanup', () => {
     expect(source).toContain('getRunWarningSummary');
   });
 
+  it('reuses a mobile card pattern for runs without changing desktop table markup', () => {
+    const source = readPage();
+
+    expect(source).toContain('id="runs-mobile-list"');
+    expect(source).toContain('class="overflow-x-auto hidden md:block"');
+    expect(source).toContain('class="space-y-3 md:hidden"');
+    expect(source).toContain('<article class="rounded-xl border border-border bg-background p-3');
+    expect(source).toContain('bindRunActions(mobileList);');
+  });
+
   it('guards publish and generate with soft-warning confirmation', () => {
     const source = readPage();
 

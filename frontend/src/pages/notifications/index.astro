@@ -30,12 +30,24 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
     <div class="p-6 space-y-4">
       <!-- Pestañas -->
-      <div class="flex gap-1 border-b border-border">
-        <button class="notif-tab active-tab px-4 py-2 text-sm font-medium text-foreground border-b-2 border-primary -mb-px" data-filter="all">Todas</button>
-        <button class="notif-tab px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground -mb-px" data-filter="unread">No leídas <span id="unread-count" class="ml-1 text-xs bg-primary text-primary-foreground rounded-full px-1.5">0</span></button>
-        <button class="notif-tab px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground -mb-px" data-filter="info">Información</button>
-        <button class="notif-tab px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground -mb-px" data-filter="warning">Advertencia</button>
-        <button class="notif-tab px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground -mb-px" data-filter="error">Error</button>
+      <div class="flex flex-col gap-3 border-b border-border pb-3 md:flex-row md:items-end md:justify-between md:pb-0">
+        <div class="md:hidden">
+          <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-muted-foreground" for="notification-filter-mobile">Filtrar notificaciones</label>
+          <select id="notification-filter-mobile" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+            <option value="all">Todas</option>
+            <option value="unread">No leídas</option>
+            <option value="info">Información</option>
+            <option value="warning">Advertencia</option>
+            <option value="error">Error</option>
+          </select>
+        </div>
+        <div class="hidden gap-1 border-b border-border md:flex">
+          <button class="notif-tab active-tab px-4 py-2 text-sm font-medium text-foreground border-b-2 border-primary -mb-px" data-filter="all">Todas</button>
+          <button class="notif-tab px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground -mb-px" data-filter="unread">No leídas <span id="unread-count" class="ml-1 text-xs bg-primary text-primary-foreground rounded-full px-1.5">0</span></button>
+          <button class="notif-tab px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground -mb-px" data-filter="info">Información</button>
+          <button class="notif-tab px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground -mb-px" data-filter="warning">Advertencia</button>
+          <button class="notif-tab px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground -mb-px" data-filter="error">Error</button>
+        </div>
       </div>
 
       <!-- Lista de notificaciones -->
@@ -114,6 +126,19 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   let allNotifications = [];
   let currentFilter = 'all';
 
+  function syncNotificationFilter(filter) {
+    currentFilter = filter || 'all';
+    document.querySelectorAll('.notif-tab').forEach(b => {
+      b.classList.remove('active-tab', 'text-foreground', 'border-b-2', 'border-primary');
+      b.classList.add('text-muted-foreground');
+    });
+    const activeTab = document.querySelector(`.notif-tab[data-filter="${currentFilter}"]`);
+    activeTab?.classList.add('active-tab', 'text-foreground', 'border-b-2', 'border-primary');
+    activeTab?.classList.remove('text-muted-foreground');
+    const mobileFilter = document.getElementById('notification-filter-mobile') as HTMLSelectElement | null;
+    if (mobileFilter && mobileFilter.value !== currentFilter) mobileFilter.value = currentFilter;
+  }
+
   function renderNotifications() {
     const list = document.getElementById('notifications-list');
     const empty = document.getElementById('empty-state');
@@ -186,15 +211,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   // Clic en pestañas
   document.querySelectorAll('.notif-tab').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.notif-tab').forEach(b => {
-        b.classList.remove('active-tab', 'text-foreground', 'border-b-2', 'border-primary');
-        b.classList.add('text-muted-foreground');
-      });
-      btn.classList.add('active-tab', 'text-foreground', 'border-b-2', 'border-primary');
-      btn.classList.remove('text-muted-foreground');
-      currentFilter = (btn as HTMLElement).dataset.filter || 'all';
+      syncNotificationFilter((btn as HTMLElement).dataset.filter || 'all');
       renderNotifications();
     });
+  });
+
+  document.getElementById('notification-filter-mobile')?.addEventListener('change', (event) => {
+    syncNotificationFilter((event.currentTarget as HTMLSelectElement).value);
+    renderNotifications();
   });
 
   // Marcar todo como leído

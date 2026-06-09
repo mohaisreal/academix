@@ -2,23 +2,23 @@
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
 <DashboardLayout title="Mensajes — Academix" currentPath="/messages">
-  <div id="page-loading" class="p-6 space-y-4">
+  <div id="page-loading" class="space-y-4 p-4 sm:p-6">
     <div class="flex gap-4" style="height:calc(100vh - 80px)">
-      <div class="w-80 bg-card rounded-xl border border-border animate-pulse"></div>
+      <div class="w-full bg-card rounded-xl border border-border animate-pulse sm:w-80"></div>
       <div class="flex-1 bg-card rounded-xl border border-border animate-pulse"></div>
     </div>
   </div>
 
-  <div id="page-content" class="hidden flex" style="height:calc(100vh - 64px)">
+  <div id="page-content" class="hidden flex flex-col lg:flex-row min-w-0" style="height:calc(100vh - 64px)">
     <!-- Panel izquierdo: lista de mensajes -->
-    <div class="w-80 shrink-0 border-r border-border flex flex-col">
-      <div class="p-4 border-b border-border">
-        <div class="flex items-center justify-between mb-3">
-          <div class="flex gap-1">
+    <div class="w-full lg:w-80 shrink-0 border-r border-border flex flex-col min-w-0">
+      <div class="border-b border-border p-4">
+        <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex gap-1 flex-wrap">
             <button id="tab-inbox" class="msg-tab px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-primary-foreground">Recibidos</button>
             <button id="tab-sent" class="msg-tab px-3 py-1.5 text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">Enviados</button>
           </div>
-          <button id="compose-btn" class="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
+          <button id="compose-btn" class="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20 sm:w-auto">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Redactar
           </button>
@@ -28,7 +28,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     </div>
 
     <!-- Panel derecho: vista de conversación -->
-    <div class="flex-1 flex flex-col overflow-hidden">
+    <div class="flex-1 flex flex-col overflow-hidden min-w-0">
       <div id="thread-empty" class="flex flex-col items-center justify-center h-full text-center">
         <div class="flex size-16 items-center justify-center rounded-full bg-muted mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -53,7 +53,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   <!-- Panel de redacción -->
   <div id="compose-backdrop" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-start justify-end">
-    <div class="w-96 h-full bg-card border-l border-border p-6 overflow-y-auto shadow-xl">
+    <div class="h-full w-full overflow-y-auto border-l border-border bg-card p-4 shadow-xl sm:w-96 sm:p-6">
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-lg font-semibold text-foreground">Nuevo mensaje</h2>
         <button id="close-compose-btn" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted">
@@ -75,9 +75,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         </div>
         <div id="compose-error" class="hidden text-xs text-red-400"></div>
         <div id="compose-success" class="hidden text-xs text-green-400"></div>
-        <div class="flex gap-3 pt-2">
-          <button type="button" id="cancel-compose-btn" class="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancelar</button>
-          <button type="submit" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Enviar</button>
+        <div class="flex flex-col gap-3 pt-2 sm:flex-row">
+          <button type="button" id="cancel-compose-btn" class="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted">Cancelar</button>
+          <button type="submit" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">Enviar</button>
         </div>
       </form>
     </div>

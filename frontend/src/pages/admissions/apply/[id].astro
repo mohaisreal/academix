@@ -11,8 +11,8 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     <!-- Contenido de la página (oculto hasta cargar) -->
     <div id="page-content" class="hidden">
         <!-- Cabecera -->
-        <div class="flex items-center justify-between border-b border-border px-6 py-4">
-            <div>
+        <div class="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div class="min-w-0">
                 <div class="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                     <a href="/admissions" class="hover:text-foreground transition-colors">Admisiones</a>
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
@@ -21,10 +21,10 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                 <h1 class="text-xl font-semibold text-foreground" id="page-title">Solicitud de admisión</h1>
                 <p class="text-sm text-muted-foreground" id="period-info"></p>
             </div>
-            <a href="/admissions/my-applications" class="text-sm text-primary hover:underline">Mis solicitudes →</a>
+            <a href="/admissions/my-applications" class="text-sm text-primary hover:underline sm:text-right">Mis solicitudes →</a>
         </div>
 
-        <div class="p-6 space-y-6 max-w-3xl">
+        <div class="p-4 sm:p-6 space-y-6 max-w-3xl">
             <!-- Tarjeta de estado de solicitud -->
             <div id="application-card" class="bg-card border border-border rounded-xl p-6 shadow-sm">
                 <!-- Aún no hay solicitud -->
@@ -55,7 +55,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                         <span id="app-status-badge" class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"></span>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 text-sm">
                         <div>
                             <p class="text-muted-foreground">Enviada</p>
                             <p id="app-submitted-date" class="text-foreground font-medium">—</p>
@@ -93,7 +93,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
                             <p class="text-xs text-emerald-400/80 mt-1">Confirmá tu plaza o retirate de la solicitud.</p>
                             <p class="text-xs text-muted-foreground mt-1">Fecha límite: <span id="admission-deadline" class="font-medium text-foreground">—</span></p>
                         </div>
-                        <div class="flex gap-3">
+                        <div class="flex flex-col sm:flex-row gap-3">
                             <button id="btn-confirm" class="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors">
                                 Confirmar mi plaza
                             </button>
@@ -122,8 +122,8 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             </div>
 
             <!-- Sección de documentos -->
-            <div id="documents-section" class="hidden bg-card border border-border rounded-xl p-6 shadow-sm space-y-4">
-                <div class="flex items-center justify-between">
+                    <div id="documents-section" class="hidden bg-card border border-border rounded-xl p-6 shadow-sm space-y-4">
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <h2 class="text-base font-semibold text-foreground">Documentos obligatorios</h2>
                     <span class="text-xs text-muted-foreground">Subí todos los documentos obligatorios</span>
                 </div>

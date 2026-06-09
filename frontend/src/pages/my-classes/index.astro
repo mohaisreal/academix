@@ -2,8 +2,8 @@
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
 <DashboardLayout title="Mis clases — Academix" currentPath="/my-classes">
-  <div id="page-loading" class="p-6 space-y-4">
-    <div class="grid grid-cols-4 gap-4">
+  <div id="page-loading" class="space-y-4 p-4 sm:p-6">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <div class="h-28 bg-card rounded-xl border border-border animate-pulse"></div>
       <div class="h-28 bg-card rounded-xl border border-border animate-pulse"></div>
       <div class="h-28 bg-card rounded-xl border border-border animate-pulse"></div>
@@ -13,22 +13,22 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   </div>
 
   <div id="page-content" class="hidden">
-    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+    <div class="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
       <div>
         <h1 class="text-xl font-semibold text-foreground">Mis clases</h1>
         <p class="text-sm text-muted-foreground">Clases asignadas para este periodo</p>
       </div>
     </div>
 
-    <div class="p-6 space-y-6">
+    <div class="space-y-6 p-4 sm:p-6">
       <!-- Fila de KPI -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="kpi-row"></div>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" id="kpi-row"></div>
 
       <!-- Tabla de clases -->
-      <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+      <div class="bg-card text-card-foreground rounded-xl border border-border p-4 sm:p-5">
         <h2 class="text-lg font-semibold text-foreground mb-4">Lista de clases</h2>
-        <div class="overflow-x-auto">
-          <table class="w-full">
+        <div class="hidden overflow-x-auto md:block">
+          <table class="min-w-[920px] w-full">
             <thead>
               <tr class="border-b border-border">
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Asignatura</th>
@@ -43,6 +43,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <tbody id="classes-table-body"></tbody>
           </table>
         </div>
+        <div id="classes-cards" class="space-y-3 md:hidden"></div>
         <div id="classes-empty" class="hidden py-10 text-center text-sm text-muted-foreground">
           No hay clases asignadas para el periodo actual
         </div>
@@ -88,6 +89,38 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const d = document.createElement('div');
     d.textContent = String(str ?? '');
     return d.innerHTML;
+  }
+
+  function renderClassCards(classes) {
+    const cards = document.getElementById('classes-cards');
+    if (!cards) return;
+    cards.innerHTML = classes.map(c => {
+      const subject = c.subject_name || c.subject?.name || 'Asignatura';
+      const period = c.period_name || c.period?.name || '-';
+      const classroom = c.classroom_name || c.classroom?.name || '-';
+      const students = c.student_count || c.students_count || 0;
+      const pend = c.pending_grades || c.pending_count || 0;
+      const avg = c.average_score != null ? parseFloat(c.average_score).toFixed(1) + '%' : (c.avg_score != null ? parseFloat(c.avg_score).toFixed(1) + '%' : '-');
+      return `<article class="rounded-xl border border-border bg-muted/20 p-4 space-y-3">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-sm font-semibold text-foreground">${escHtml(subject)}</p>
+            <p class="text-xs text-muted-foreground">${escHtml(period)}</p>
+          </div>
+          ${pend > 0 ? `<span class="inline-flex items-center rounded-full bg-yellow-500/15 text-yellow-400 px-2 py-0.5 text-xs font-medium">${pend} pendientes</span>` : '<span class="inline-flex items-center rounded-full bg-green-500/15 text-green-400 px-2 py-0.5 text-xs font-medium">Sin pendientes</span>'}
+        </div>
+        <dl class="grid grid-cols-2 gap-3 text-sm">
+          <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Aula</dt><dd class="mt-1 text-foreground">${escHtml(classroom)}</dd></div>
+          <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Estudiantes</dt><dd class="mt-1 text-foreground">${students}</dd></div>
+          <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Promedio</dt><dd class="mt-1 text-foreground">${avg}</dd></div>
+        </dl>
+        <div class="flex flex-wrap gap-2">
+          <a href="/marking?class=${c.id}" class="inline-flex items-center rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20">Calificar</a>
+          <a href="/material?class=${c.id}" class="inline-flex items-center rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted">Materiales</a>
+          <a href="/reports?class=${c.id}" class="inline-flex items-center rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted">Reportes</a>
+        </div>
+      </article>`;
+    }).join('');
   }
 
   (async () => {
@@ -146,14 +179,15 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           </td>
           <td class="py-3 pr-4 text-sm font-medium text-foreground">${avg}</td>
           <td class="py-3">
-            <div class="flex items-center gap-2">
-              <a href="/marking?class=${c.id}" class="inline-flex items-center rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">Calificar</a>
-              <a href="/material?class=${c.id}" class="inline-flex items-center rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors">Materiales</a>
-              <a href="/reports?class=${c.id}" class="inline-flex items-center rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors">Reportes</a>
+            <div class="flex flex-wrap gap-2">
+              <a href="/marking?class=${c.id}" class="inline-flex items-center rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20">Calificar</a>
+              <a href="/material?class=${c.id}" class="inline-flex items-center rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted">Materiales</a>
+              <a href="/reports?class=${c.id}" class="inline-flex items-center rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted">Reportes</a>
             </div>
           </td>
         </tr>`;
       }).join('');
+      renderClassCards(classes);
     } catch {
       document.getElementById('classes-empty')?.classList.remove('hidden');
     }

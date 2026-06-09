@@ -3,7 +3,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
 ---
 
 <DashboardLayout title="Preinscripción — Academix" currentPath="/admissions">
-    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+    <div class="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div>
             <h1 class="text-xl font-semibold text-foreground">Preinscripción universitaria</h1>
             <p class="text-sm text-muted-foreground">Solicitá plaza para el próximo periodo académico.</p>
@@ -14,10 +14,10 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         </a>
     </div>
 
-    <div class="p-6 max-w-2xl mx-auto">
+    <div class="mx-auto max-w-2xl p-4 sm:p-6">
 
         <!-- Hero card -->
-        <div class="bg-card border border-border rounded-xl p-8 shadow-sm text-center mb-6">
+        <div class="mb-6 rounded-xl border border-border bg-card p-6 text-center shadow-sm sm:p-8">
             <div class="flex size-16 items-center justify-center rounded-full bg-primary/10 mx-auto mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-primary">
                     <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
@@ -30,7 +30,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             </p>
             <a href="/admissions/preinscripcion"
                 id="btn-start"
-                class="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                class="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto">
                 Iniciar preinscripción
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </a>
@@ -65,7 +65,7 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         </div>
 
         <!-- Already have application notice -->
-        <div id="existing-app-notice" class="hidden mt-4 rounded-xl border-2 border-amber-500/40 bg-amber-500/10 px-5 py-5 flex items-start gap-4">
+        <div id="existing-app-notice" class="hidden mt-4 flex items-start gap-4 rounded-xl border-2 border-amber-500/40 bg-amber-500/10 px-4 py-5 sm:px-5">
             <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-500/20 mt-0.5">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber-500"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </div>

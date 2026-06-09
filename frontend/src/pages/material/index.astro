@@ -2,10 +2,10 @@
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
 <DashboardLayout title="Materiales didácticos — Academix" currentPath="/material">
-  <div id="page-loading" class="p-6 space-y-4">
+  <div id="page-loading" class="space-y-4 p-4 sm:p-6">
     <div class="h-12 bg-card rounded-xl border border-border animate-pulse"></div>
     <div class="h-10 bg-card rounded-xl border border-border animate-pulse w-1/2"></div>
-    <div class="grid grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <div class="h-40 bg-card rounded-xl border border-border animate-pulse"></div>
       <div class="h-40 bg-card rounded-xl border border-border animate-pulse"></div>
       <div class="h-40 bg-card rounded-xl border border-border animate-pulse"></div>
@@ -13,25 +13,25 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   </div>
 
   <div id="page-content" class="hidden">
-    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+    <div class="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
       <div>
         <h1 class="text-xl font-semibold text-foreground">Materiales didácticos</h1>
         <p class="text-sm text-muted-foreground">Sube y gestiona recursos de clase</p>
       </div>
-      <button id="upload-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+      <button id="upload-btn" class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Subir material
       </button>
     </div>
 
-    <div class="p-6 space-y-4">
+    <div class="space-y-4 p-4 sm:p-6">
       <!-- Pestañas de filtro de clases -->
       <div id="class-tabs" class="flex gap-1 overflow-x-auto pb-1 border-b border-border">
         <button class="class-tab active-class-tab px-4 py-2 text-sm font-medium text-foreground border-b-2 border-primary -mb-px whitespace-nowrap" data-class="">Todas las clases</button>
       </div>
 
       <!-- Cuadrícula de materiales -->
-      <div id="materials-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      <div id="materials-grid" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
       <div id="materials-empty" class="hidden flex flex-col items-center justify-center py-16 text-center">
         <div class="flex size-16 items-center justify-center rounded-full bg-muted mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -44,7 +44,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   <!-- Panel de subida -->
   <div id="upload-backdrop" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-start justify-end">
-    <div class="w-96 h-full bg-card border-l border-border p-6 overflow-y-auto shadow-xl">
+    <div class="h-full w-full overflow-y-auto border-l border-border bg-card p-4 shadow-xl sm:w-96 sm:p-6">
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-lg font-semibold text-foreground">Subir material</h2>
         <button id="close-upload-btn" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted">
@@ -85,7 +85,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         </div>
         <div id="upload-error" class="hidden text-xs text-red-400"></div>
         <div id="upload-success" class="hidden text-xs text-green-400"></div>
-        <div class="flex gap-3 pt-2">
+        <div class="flex flex-col gap-3 pt-2 sm:flex-row">
           <button type="button" id="cancel-upload-btn" class="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancelar</button>
           <button type="submit" id="submit-upload-btn" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Subir</button>
         </div>

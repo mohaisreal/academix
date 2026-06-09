@@ -24,4 +24,13 @@ describe('careers page load failure handling', () => {
     expect(source).toContain('throw error;');
     expect(source).toContain('document.getElementById(\'page-content\')?.classList.add(\'hidden\')');
   });
+
+  it('keeps the desktop table while exposing a mobile card list', () => {
+    const source = readPage();
+
+    expect(source).toContain('id="careers-mobile-list"');
+    expect(source).toContain('md:hidden');
+    expect(source).toContain('hidden md:block');
+    expect(source).toContain('careers-mobile-card');
+  });
 });

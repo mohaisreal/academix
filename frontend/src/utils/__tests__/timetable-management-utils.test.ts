@@ -13,6 +13,7 @@ import {
   normalizeAssignmentsToWeekGrid,
   buildWeekGridRows,
   buildConstraintPayload,
+  buildResponsiveScheduleCards,
   formatConstraintDay,
   formatConstraintEntity,
   formatConstraintKind,
@@ -134,6 +135,22 @@ describe('buildBulkTimeSlots', () => {
     expect(result.skipped).toEqual([
       { day_of_week: 1, start_time: '11:00', end_time: '11:55', reason: 'break' },
       { day_of_week: 1, start_time: '14:15', end_time: '15:10', reason: 'break' },
+    ]);
+  });
+});
+
+describe('buildResponsiveScheduleCards', () => {
+  it('flatten schedule rows into mobile-friendly cards', () => {
+    const cards = buildResponsiveScheduleCards([
+      {
+        subject_name: 'Matemática',
+        classroom_name: 'A-101',
+        schedules: [{ day_of_week: 1, start_time: '08:00', end_time: '09:30' }],
+      },
+    ]);
+
+    expect(cards).toEqual([
+      { subject: 'Matemática', day: 'Lun', time: '08:00 – 09:30', classroom: 'A-101' },
     ]);
   });
 });

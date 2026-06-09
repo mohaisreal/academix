@@ -2,8 +2,8 @@
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
 <DashboardLayout title="Mis calificaciones — Academix" currentPath="/grades">
-  <div id="page-loading" class="p-6 space-y-4">
-    <div class="grid grid-cols-4 gap-4">
+  <div id="page-loading" class="space-y-4 p-4 sm:p-6">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <div class="h-28 bg-card rounded-xl border border-border animate-pulse"></div>
       <div class="h-28 bg-card rounded-xl border border-border animate-pulse"></div>
       <div class="h-28 bg-card rounded-xl border border-border animate-pulse"></div>
@@ -13,7 +13,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   </div>
 
   <div id="page-content" class="hidden">
-    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+    <div class="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
       <div>
         <h1 class="text-xl font-semibold text-foreground">Mis calificaciones</h1>
         <p class="text-sm text-muted-foreground">Sigue tu rendimiento académico</p>
@@ -21,14 +21,15 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       <span id="period-badge" data-active-period-label="true" class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"></span>
     </div>
 
-    <div class="p-6 space-y-6">
+    <div class="space-y-6 p-4 sm:p-6">
       <!-- KPI row -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="kpi-row"></div>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" id="kpi-row"></div>
 
       <!-- Pestañas de asignaturas -->
-      <div class="bg-card text-card-foreground rounded-xl border border-border p-5">
+      <div class="bg-card text-card-foreground rounded-xl border border-border p-4 sm:p-5">
         <h2 class="text-lg font-semibold text-foreground mb-4">Evaluaciones por asignatura</h2>
-        <div id="subject-tabs" class="flex gap-1 overflow-x-auto pb-2 mb-4 border-b border-border"></div>
+        <select id="subject-selector" class="mb-4 w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary md:hidden"></select>
+        <div id="subject-tabs" class="hidden gap-1 overflow-x-auto pb-2 mb-4 border-b border-border md:flex"></div>
         <div id="subject-panels"></div>
         <div id="grades-empty" class="hidden py-10 text-center text-sm text-muted-foreground">No hay datos de calificaciones disponibles</div>
       </div>
@@ -197,11 +198,33 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       // Construye pestañas
       const tabsEl = document.getElementById('subject-tabs');
       const panelsEl = document.getElementById('subject-panels');
-      const requestedClassId = new URLSearchParams(window.location.search).get('class');
-      const requestedIdx = requestedClassId
-        ? gradesData.findIndex(sub => getClassId(sub) === requestedClassId)
+      const selectorEl = document.getElementById('subject-selector') as HTMLSelectElement | null;
+      const classQueryParam = new URLSearchParams(window.location.search).get('class');
+      const requestedIdx = classQueryParam
+        ? gradesData.findIndex(sub => getClassId(sub) === classQueryParam)
         : -1;
       const selectedIdx = requestedIdx >= 0 ? requestedIdx : 0;
+      const selectedClassId = getClassId(gradesData[selectedIdx]);
+
+      if (selectorEl) {
+        selectorEl.innerHTML = gradesData.map((sub, idx) => {
+          const classId = getClassId(sub);
+          const subjectName = sub.subject_name || sub.class_name || sub.name || `Asignatura ${idx + 1}`;
+          return `<option value="${escHtml(classId)}" ${idx === selectedIdx ? 'selected' : ''}>${escHtml(subjectName)}</option>`;
+        }).join('');
+      }
+
+      function activateSubject(panelId, classId) {
+        rememberSubjectVisit(classId || '');
+        document.querySelectorAll('.subject-tab').forEach(t => {
+          t.className = 'subject-tab px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors text-muted-foreground hover:text-foreground hover:bg-muted';
+        });
+        document.querySelectorAll('.subject-panel').forEach(p => p.classList.add('hidden'));
+        document.getElementById(panelId)?.classList.remove('hidden');
+        const tab = document.querySelector(`.subject-tab[data-panel="${panelId}"]`) as HTMLElement | null;
+        if (tab) tab.className = 'subject-tab px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors bg-primary text-primary-foreground';
+        if (selectorEl && selectorEl.value !== classId) selectorEl.value = classId;
+      }
 
       gradesData.forEach((sub, idx) => {
         const classId = getClassId(sub);
@@ -216,13 +239,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         tab.className = `subject-tab px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors ${idx === selectedIdx ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`;
         tab.textContent = subjectName;
         tab.addEventListener('click', () => {
-          rememberSubjectVisit(tab.dataset.subjectClassId || '');
-          document.querySelectorAll('.subject-tab').forEach(t => {
-            t.className = 'subject-tab px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors text-muted-foreground hover:text-foreground hover:bg-muted';
-          });
-          tab.className = 'subject-tab px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors bg-primary text-primary-foreground';
-          document.querySelectorAll('.subject-panel').forEach(p => p.classList.add('hidden'));
-          document.getElementById(panelId)?.classList.remove('hidden');
+          activateSubject(panelId, tab.dataset.subjectClassId || '');
         });
         tabsEl?.appendChild(tab);
 
@@ -233,7 +250,41 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         panel.id = panelId;
         panel.className = `subject-panel ${idx !== selectedIdx ? 'hidden' : ''}`;
         panel.innerHTML = `
-          <div class="overflow-x-auto">
+          <div class="space-y-4 md:hidden">
+            ${evals.map(e => {
+              const pct = e.score != null && e.max_score ? ((parseFloat(e.score) / parseFloat(e.max_score)) * 100).toFixed(1) : '-';
+              const status = e.score != null ? 'graded' : (e.due_date && new Date(e.due_date) < new Date() ? 'late' : 'pending');
+              return `<article class="rounded-xl border border-border bg-card p-4 shadow-sm">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <h3 class="text-sm font-semibold text-foreground">${escHtml(e.name || e.evaluation_name || '-')}</h3>
+                    <p class="mt-1 text-xs text-muted-foreground">${formatDate(e.due_date)}</p>
+                  </div>
+                  ${statusBadge(status)}
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p class="text-xs uppercase tracking-wide text-muted-foreground">Tipo</p>
+                    <div class="mt-1">${typeBadge(e.evaluation_type || e.type)}</div>
+                  </div>
+                  <div>
+                    <p class="text-xs uppercase tracking-wide text-muted-foreground">Score</p>
+                    <p class="mt-1 font-medium text-foreground">${e.score ?? '-'}</p>
+                  </div>
+                  <div>
+                    <p class="text-xs uppercase tracking-wide text-muted-foreground">Max</p>
+                    <p class="mt-1 text-muted-foreground">${e.max_score ?? '-'}</p>
+                  </div>
+                  <div>
+                    <p class="text-xs uppercase tracking-wide text-muted-foreground">%</p>
+                    <p class="mt-1 text-muted-foreground">${pct}${pct !== '-' ? '%' : ''}</p>
+                  </div>
+                </div>
+              </article>`;
+            }).join('')}
+            ${evals.length === 0 ? `<div class="rounded-xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">Aún no hay evaluaciones</div>` : ''}
+          </div>
+          <div class="hidden overflow-x-auto md:block">
             <table class="w-full">
               <thead>
                 <tr class="border-b border-border">
@@ -273,7 +324,13 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         `;
         panelsEl?.appendChild(panel);
       });
-      rememberSubjectVisit(getClassId(gradesData[selectedIdx]));
+      selectorEl?.addEventListener('change', () => {
+        const nextClassId = selectorEl.value;
+        const nextIdx = gradesData.findIndex(sub => getClassId(sub) === nextClassId);
+        if (nextIdx >= 0) activateSubject(`panel-${nextIdx}`, nextClassId);
+      });
+
+      activateSubject(`panel-${selectedIdx}`, selectedClassId);
 
     } catch {
       document.getElementById('grades-empty')?.classList.remove('hidden');

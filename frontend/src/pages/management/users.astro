@@ -8,26 +8,26 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   </div>
 
   <div id="page-content" class="hidden">
-    <div class="border-b border-border px-6 py-4">
+      <div class="border-b border-border px-4 py-4 sm:px-6">
       <h1 class="text-xl font-semibold text-foreground">Gestión de usuarios</h1>
       <p class="text-sm text-muted-foreground">Creá, editá y administrá usuarios con búsqueda y paginación</p>
     </div>
 
-    <div class="p-6 space-y-6">
+    <div class="space-y-6 p-4 sm:p-6">
       <section class="bg-card text-card-foreground rounded-xl border border-border overflow-hidden">
-        <div class="flex items-center justify-between px-5 py-4 border-b border-border">
+        <div class="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <div>
             <h2 class="text-sm font-semibold text-foreground">Usuarios del sistema</h2>
             <p class="text-xs text-muted-foreground mt-0.5">Listado paginado conectado a la API</p>
           </div>
-          <button id="new-user-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+          <button id="new-user-btn" class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto">
             Nuevo usuario
           </button>
         </div>
 
-        <div class="px-5 py-3 border-b border-border flex flex-wrap gap-3">
-          <input id="user-search" type="text" placeholder="Buscar por nombre o correo..." class="flex-1 min-w-48 bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-          <select id="role-filter" class="bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+        <div class="flex flex-col gap-3 border-b border-border px-4 py-3 sm:flex-row sm:flex-wrap sm:px-5">
+          <input id="user-search" type="text" placeholder="Buscar por nombre o correo..." class="w-full min-w-0 flex-1 bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+          <select id="role-filter" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary sm:w-auto">
             <option value="">Todos los roles</option>
             <option value="s">Estudiante</option>
             <option value="t">Profesor</option>
@@ -51,7 +51,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           </table>
         </div>
 
-        <div class="px-5 py-3 border-t border-border flex items-center justify-between gap-3">
+        <div class="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <p id="pagination-summary" class="text-xs text-muted-foreground">Página 1 de 1</p>
           <div class="flex items-center gap-2">
             <button id="prev-page" type="button" class="rounded-lg border border-border px-3 py-1.5 text-xs text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
