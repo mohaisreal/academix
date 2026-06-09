@@ -21,7 +21,7 @@ describe('enrollment receipt light theme path', () => {
     const layout = readProjectFile('src/layouts/DashboardLayout.astro');
 
     expect(layout).toContain('forceLightTheme?: boolean;');
-    expect(layout).toContain('define:vars={{ forceLightTheme }}');
+    expect(layout).toContain('define:vars={{ apiBaseUrl: API_BASE_URL, forceLightTheme }}');
     expect(layout).toContain('applyTheme(forceLightTheme ? "light"');
     expect(layout).toContain('if (!forceLightTheme) {');
   });

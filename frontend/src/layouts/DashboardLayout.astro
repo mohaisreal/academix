@@ -3,6 +3,7 @@ import "@/styles/starwind.css";
 import Avatar from "@/components/starwind/avatar/Avatar.astro";
 import AvatarFallback from "@/components/starwind/avatar/AvatarFallback.astro";
 import { Toaster } from "@/components/starwind/toast";
+import API_BASE_URL from "@/config/api";
 
 interface Props {
     title: string;
@@ -354,337 +355,356 @@ const { title, currentPath, forceLightTheme = false } = Astro.props;
     </body>
 </html>
 
-<script define:vars={{ forceLightTheme }}>
-    import API_BASE_URL from '@/config/api';
-    
-    const STORAGE_KEY = "user-storage";
-    const TOKEN_KEY = "access_token";
-    const API_URL = API_BASE_URL;
+<script define:vars={{ apiBaseUrl: API_BASE_URL, forceLightTheme }}>
+    void (async function boot() {
+        const STORAGE_KEY = "user-storage";
+        const TOKEN_KEY = "access_token";
+        const THEME_STORAGE_KEY = "academix-theme";
+        const API_URL = apiBaseUrl;
 
-    function getUser(): Record<string, any> | null {
-        try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (!stored) return null;
-            return JSON.parse(stored)?.state?.user ?? null;
-        } catch { return null; }
-    }
-
-    function clearAuth() {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem("refresh_token");
-        localStorage.removeItem(STORAGE_KEY);
-    }
-
-    const THEME_STORAGE_KEY = "academix-theme";
-
-    function applyTheme(theme: string) {
-        const normalized = theme === "light" ? "light" : "dark";
-        document.documentElement.classList.toggle("dark", normalized !== "light");
-        document.documentElement.setAttribute("data-theme", normalized);
-        try { localStorage.setItem(THEME_STORAGE_KEY, normalized); } catch {}
-    }
-
-    function isJwtExpired(jwt: string): boolean {
-        try {
-            const payload = JSON.parse(atob(jwt.split('.')[1]));
-            return payload.exp ? Date.now() >= payload.exp * 1000 : true;
-        } catch { return true; }
-    }
-
-    async function tryRefreshToken(): Promise<string | null> {
-        const refresh = localStorage.getItem("refresh_token");
-        if (!refresh) return null;
-        try {
-            const res = await fetch(`${API_URL}/users/token/refresh/`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ refresh }),
-            });
-            if (!res.ok) return null;
-            const data = await res.json();
-            if (data.access) {
-                localStorage.setItem(TOKEN_KEY, data.access);
-                if (data.refresh) localStorage.setItem("refresh_token", data.refresh);
-                return data.access;
-            }
-            return null;
-        } catch { return null; }
-    }
-
-    let token = localStorage.getItem(TOKEN_KEY);
-    if (!token) { clearAuth(); window.location.replace("/login"); throw new Error("No token"); }
-
-    if (isJwtExpired(token)) {
-        const newToken = await tryRefreshToken();
-        if (!newToken) { clearAuth(); window.location.replace("/login"); throw new Error("Token expired"); }
-        token = newToken;
-    }
-
-    const user = getUser();
-    if (!user) { clearAuth(); window.location.replace("/login"); throw new Error("No user"); }
-
-    try {
-        applyTheme(forceLightTheme ? "light" : (localStorage.getItem(THEME_STORAGE_KEY) || "dark"));
-        if (!forceLightTheme) {
-            const prefRes = await fetch(`${API_URL}/notifications/preferences/`, {
-                headers: { "Authorization": `Bearer ${token}` },
-            });
-            if (prefRes.ok) {
-                const prefData = await prefRes.json();
-                applyTheme(prefData?.theme || "dark");
+        function getUser() {
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (!stored) return null;
+                return JSON.parse(stored)?.state?.user ?? null;
+            } catch {
+                return null;
             }
         }
-    } catch {
-        applyTheme(forceLightTheme ? "light" : (localStorage.getItem(THEME_STORAGE_KEY) || "dark"));
-    }
 
-    document.body.style.display = "";
+        function clearAuth() {
+            localStorage.removeItem(TOKEN_KEY);
+            localStorage.removeItem("refresh_token");
+            localStorage.removeItem(STORAGE_KEY);
+        }
 
-    const role: string = user?.role ?? "";
+        function applyTheme(theme) {
+            const normalized = theme === "light" ? "light" : "dark";
+            document.documentElement.classList.toggle("dark", normalized !== "light");
+            document.documentElement.setAttribute("data-theme", normalized);
+            try {
+                localStorage.setItem(THEME_STORAGE_KEY, normalized);
+            } catch {}
+        }
 
-    // Muestra el grupo de navegación según el rol
-    const navStudent = document.getElementById("nav-student") as HTMLElement;
-    const navTeacher = document.getElementById("nav-teacher") as HTMLElement;
-    const navAdmin = document.getElementById("nav-admin") as HTMLElement;
-    const navSystem = document.getElementById("nav-system") as HTMLElement;
-    const navEmailSettings = document.getElementById("nav-email-settings") as HTMLElement;
-    const navConfigLabel = document.getElementById("nav-config-label") as HTMLElement;
+        function isJwtExpired(jwt) {
+            try {
+                const payload = JSON.parse(atob(jwt.split(".")[1]));
+                return payload.exp ? Date.now() >= payload.exp * 1000 : true;
+            } catch {
+                return true;
+            }
+        }
 
-    const ACTIVE_ADMISSION_STATUSES = new Set([
-        "submitted", "under_review", "provisional_admitted",
-        "provisional_waitlisted", "admitted", "waitlisted", "confirmed", "completed",
-    ]);
+        async function tryRefreshToken() {
+            const refresh = localStorage.getItem("refresh_token");
+            if (!refresh) return null;
+            try {
+                const res = await fetch(`${API_URL}/users/token/refresh/`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ refresh }),
+                });
+                if (!res.ok) return null;
+                const data = await res.json();
+                if (data.access) {
+                    localStorage.setItem(TOKEN_KEY, data.access);
+                    if (data.refresh) localStorage.setItem("refresh_token", data.refresh);
+                    return data.access;
+                }
+            } catch {}
+            return null;
+        }
 
-    if (role === "s") {
-        navStudent?.classList.remove("hidden");
-        // Restauración inmediata desde caché para evitar parpadeos entre navegaciones
+        let token = localStorage.getItem(TOKEN_KEY);
+        if (!token) {
+            clearAuth();
+            window.location.replace("/login");
+            return;
+        }
+
+        if (isJwtExpired(token)) {
+            const newToken = await tryRefreshToken();
+            if (!newToken) {
+                clearAuth();
+                window.location.replace("/login");
+                return;
+            }
+            token = newToken;
+        }
+
+        const user = getUser();
+        if (!user) {
+            clearAuth();
+            window.location.replace("/login");
+            return;
+        }
+
         try {
-            if (localStorage.getItem("enrollment-academic-visible") === "1") {
-                document.getElementById("nav-student-academic")?.classList.remove("hidden");
+            applyTheme(forceLightTheme ? "light" : (localStorage.getItem(THEME_STORAGE_KEY) || "dark"));
+            if (!forceLightTheme) {
+                const prefRes = await fetch(`${API_URL}/notifications/preferences/`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (prefRes.ok) {
+                    const prefData = await prefRes.json();
+                    applyTheme(prefData?.theme || "dark");
+                }
             }
-            if (localStorage.getItem("student-enrolment-actions-hidden") === "1") {
-                document.getElementById("nav-student-enrolment-actions")?.classList.add("hidden");
+        } catch {
+            applyTheme(forceLightTheme ? "light" : (localStorage.getItem(THEME_STORAGE_KEY) || "dark"));
+        }
+
+        document.body.style.display = "";
+
+        const role = user?.role ?? "";
+        const navStudent = document.getElementById("nav-student");
+        const navTeacher = document.getElementById("nav-teacher");
+        const navAdmin = document.getElementById("nav-admin");
+        const navSystem = document.getElementById("nav-system");
+        const navEmailSettings = document.getElementById("nav-email-settings");
+        const navConfigLabel = document.getElementById("nav-config-label");
+
+        const ACTIVE_ADMISSION_STATUSES = new Set([
+            "submitted", "under_review", "provisional_admitted",
+            "provisional_waitlisted", "admitted", "waitlisted", "confirmed", "completed",
+        ]);
+
+        if (role === "s") {
+            navStudent?.classList.remove("hidden");
+            try {
+                if (localStorage.getItem("enrollment-academic-visible") === "1") {
+                    document.getElementById("nav-student-academic")?.classList.remove("hidden");
+                }
+                if (localStorage.getItem("student-enrolment-actions-hidden") === "1") {
+                    document.getElementById("nav-student-enrolment-actions")?.classList.add("hidden");
+                }
+            } catch {}
+
+            (async () => {
+                try {
+                    const [enrollRes, admissionsRes, periodsRes] = await Promise.allSettled([
+                        fetch(`${API_URL}/enrollment/career-enrollments/`, {
+                            headers: { Authorization: `Bearer ${token}` },
+                        }),
+                        fetch(`${API_URL}/admissions/applications/`, {
+                            headers: { Authorization: `Bearer ${token}` },
+                        }),
+                        fetch(`${API_URL}/academic/periods/?is_active=true`, {
+                            headers: { Authorization: `Bearer ${token}` },
+                        }),
+                    ]);
+
+                    let enrollments = [];
+                    if (enrollRes.status === "fulfilled" && enrollRes.value.ok) {
+                        const data = await enrollRes.value.json();
+                        enrollments = Array.isArray(data) ? data : (data.results ?? []);
+                    }
+
+                    let applications = [];
+                    if (admissionsRes.status === "fulfilled" && admissionsRes.value.ok) {
+                        const data = await admissionsRes.value.json();
+                        applications = Array.isArray(data) ? data : (data.results ?? []);
+                    }
+
+                    let periods = [];
+                    if (periodsRes.status === "fulfilled" && periodsRes.value.ok) {
+                        const data = await periodsRes.value.json();
+                        periods = Array.isArray(data) ? data : (data.results ?? []);
+                    }
+
+                    const activePeriod = periods.find((p) => p?.is_active) ?? null;
+                    const getPeriodId = (enrollment) => String(
+                        enrollment?.period_id_ro
+                        ?? enrollment?.period?.id
+                        ?? enrollment?.academic_period?.id
+                        ?? enrollment?.period_id
+                        ?? "",
+                    );
+                    const isCurrentPeriod = (enrollment) => !activePeriod || getPeriodId(enrollment) === String(activePeriod.id);
+                    const hasCompletedCurrentEnrollment = enrollments.some((e) => e.status === "completed" && isCurrentPeriod(e));
+
+                    if (enrollments.some((e) => ["active", "completed"].includes(e.status))) {
+                        document.getElementById("nav-student-academic")?.classList.remove("hidden");
+                        try { localStorage.setItem("enrollment-academic-visible", "1"); } catch {}
+                    } else {
+                        document.getElementById("nav-student-academic")?.classList.add("hidden");
+                        try { localStorage.removeItem("enrollment-academic-visible"); } catch {}
+                    }
+
+                    if (hasCompletedCurrentEnrollment) {
+                        document.getElementById("nav-student-enrolment-actions")?.classList.add("hidden");
+                        try { localStorage.setItem("student-enrolment-actions-hidden", "1"); } catch {}
+                    } else {
+                        document.getElementById("nav-student-enrolment-actions")?.classList.remove("hidden");
+                        try { localStorage.removeItem("student-enrolment-actions-hidden"); } catch {}
+                    }
+
+                    const hasActiveAdmission = applications.some((a) => ACTIVE_ADMISSION_STATUSES.has(a.status));
+                    const hasActiveEnrollment = enrollments.some((e) => ["active", "completed"].includes(e.status));
+                    if (hasActiveAdmission || hasActiveEnrollment) {
+                        const applyLink = document.querySelector("a[href='/admissions']");
+                        applyLink?.style?.setProperty("display", "none");
+                    }
+                } catch {
+                    // non-critical — sidebar remains fully visible
+                }
+            })();
+        } else if (role === "t") {
+            navTeacher?.classList.remove("hidden");
+        } else if (role === "a") {
+            navAdmin?.classList.remove("hidden");
+            navSystem?.classList.remove("hidden");
+            navEmailSettings?.classList.remove("hidden");
+            navConfigLabel?.classList.remove("hidden");
+        } else if (role === "m") {
+            navAdmin?.classList.remove("hidden");
+            navEmailSettings?.classList.remove("hidden");
+            navConfigLabel?.classList.remove("hidden");
+        }
+
+        const currentPath = document.body.dataset.currentPath ?? "";
+        document.querySelectorAll(".nav-link").forEach((link) => {
+            const href = link.getAttribute("href") ?? "";
+            if (href === currentPath || (currentPath.startsWith(href) && href !== "/" && href.length > 1)) {
+                link.classList.add("bg-muted", "text-foreground");
+                link.classList.remove("text-muted-foreground", "hover:text-foreground", "hover:bg-muted");
             }
-        } catch {}
+        });
+
+        if (user) {
+            const firstName = user.first_name ?? "";
+            const lastName = user.last_name ?? "";
+            const username = user.username ?? "User";
+            let initials = "";
+            if (firstName && lastName) initials = (firstName[0] + lastName[0]).toUpperCase();
+            else if (firstName) initials = firstName.substring(0, 2).toUpperCase();
+            else initials = username.substring(0, 2).toUpperCase();
+            const displayName = firstName && lastName ? `${firstName} ${lastName}` : username;
+            const roleLabels = { s: "Estudiante", t: "Profesor", m: "Gestión", a: "Administración" };
+            const avatarEl = document.getElementById("sidebar-avatar-initials");
+            const nameEl = document.getElementById("sidebar-user-name");
+            const roleEl = document.getElementById("sidebar-user-role");
+            if (avatarEl) avatarEl.textContent = initials;
+            if (nameEl) nameEl.textContent = displayName;
+            if (roleEl) roleEl.textContent = roleLabels[role] ?? role;
+        }
+
+        document.getElementById("logout-btn")?.addEventListener("click", () => {
+            clearAuth();
+            window.location.replace("/login");
+        });
+
         (async () => {
             try {
-                const [enrollRes, admissionsRes, periodsRes] = await Promise.allSettled([
-                    fetch(`${API_URL}/enrollment/career-enrollments/`, {
-                        headers: { "Authorization": `Bearer ${token}` },
-                    }),
-                    fetch(`${API_URL}/admissions/applications/`, {
-                        headers: { "Authorization": `Bearer ${token}` },
-                    }),
-                    fetch(`${API_URL}/academic/periods/?is_active=true`, {
-                        headers: { "Authorization": `Bearer ${token}` },
-                    }),
-                ]);
-
-                let enrollments: any[] = [];
-                if (enrollRes.status === "fulfilled" && enrollRes.value.ok) {
-                    const data = await enrollRes.value.json();
-                    enrollments = Array.isArray(data) ? data : (data.results ?? []);
+                const res = await fetch(`${API_URL}/notifications/unread-count/`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.count > 0) {
+                        const countStr = data.count > 99 ? "99+" : String(data.count);
+                        const badge = document.getElementById("notif-badge");
+                        const badgeSidebar = document.getElementById("notif-badge-sidebar");
+                        if (badge) {
+                            badge.textContent = countStr;
+                            badge.classList.remove("hidden");
+                        }
+                        if (badgeSidebar) {
+                            badgeSidebar.textContent = countStr;
+                            badgeSidebar.classList.remove("hidden");
+                        }
+                    }
                 }
-
-                let applications: any[] = [];
-                if (admissionsRes.status === "fulfilled" && admissionsRes.value.ok) {
-                    const data = await admissionsRes.value.json();
-                    applications = Array.isArray(data) ? data : (data.results ?? []);
-                }
-
-                let periods: any[] = [];
-                if (periodsRes.status === "fulfilled" && periodsRes.value.ok) {
-                    const data = await periodsRes.value.json();
-                    periods = Array.isArray(data) ? data : (data.results ?? []);
-                }
-                const activePeriod = periods.find((p: any) => p?.is_active) ?? null;
-                const getPeriodId = (enrollment: any) => String(
-                    enrollment?.period_id_ro
-                    ?? enrollment?.period?.id
-                    ?? enrollment?.academic_period?.id
-                    ?? enrollment?.period_id
-                    ?? "",
-                );
-                const isCurrentPeriod = (enrollment: any) => !activePeriod || getPeriodId(enrollment) === String(activePeriod.id);
-                const hasCompletedCurrentEnrollment = enrollments.some((e: any) => e.status === "completed" && isCurrentPeriod(e));
-
-                if (enrollments.some((e: any) => ["active", "completed"].includes(e.status))) {
-                    document.getElementById("nav-student-academic")?.classList.remove("hidden");
-                    try { localStorage.setItem("enrollment-academic-visible", "1"); } catch {}
-                } else {
-                    document.getElementById("nav-student-academic")?.classList.add("hidden");
-                    try { localStorage.removeItem("enrollment-academic-visible"); } catch {}
-                }
-
-                if (hasCompletedCurrentEnrollment) {
-                    document.getElementById("nav-student-enrolment-actions")?.classList.add("hidden");
-                    try { localStorage.setItem("student-enrolment-actions-hidden", "1"); } catch {}
-                } else {
-                    document.getElementById("nav-student-enrolment-actions")?.classList.remove("hidden");
-                    try { localStorage.removeItem("student-enrolment-actions-hidden"); } catch {}
-                }
-
-                const hasActiveAdmission = applications.some((a: any) => ACTIVE_ADMISSION_STATUSES.has(a.status));
-                const hasActiveEnrollment = enrollments.some((e: any) => ["active", "completed"].includes(e.status));
-                if (hasActiveAdmission || hasActiveEnrollment) {
-                    const applyLink = document.querySelector("a[href='/admissions']") as HTMLElement | null;
-                    applyLink?.style.setProperty("display", "none");
-                }
-            } catch { /* non-critical — sidebar remains fully visible */
- }
-        })();
-    } else if (role === "t") {
-        navTeacher?.classList.remove("hidden");
-    } else if (role === "a") {
-        navAdmin?.classList.remove("hidden");
-        navSystem?.classList.remove("hidden");
-        navEmailSettings?.classList.remove("hidden");
-        navConfigLabel?.classList.remove("hidden");
-    } else if (role === "m") {
-        navAdmin?.classList.remove("hidden");
-        navEmailSettings?.classList.remove("hidden");
-        navConfigLabel?.classList.remove("hidden");
-    }
-
-    // Resaltado de enlace activo
-    const currentPath = document.body.dataset.currentPath ?? "";
-    document.querySelectorAll(".nav-link").forEach((link) => {
-        const href = link.getAttribute("href") ?? "";
-        if (href === currentPath || (currentPath.startsWith(href) && href !== "/" && href.length > 1)) {
-            link.classList.add("bg-muted", "text-foreground");
-            link.classList.remove("text-muted-foreground", "hover:text-foreground", "hover:bg-muted");
-        }
-    });
-
-    // Rellena la sección de usuario
-    if (user) {
-        const firstName: string = user.first_name ?? "";
-        const lastName: string = user.last_name ?? "";
-        const username: string = user.username ?? "User";
-        let initials = "";
-        if (firstName && lastName) initials = (firstName[0] + lastName[0]).toUpperCase();
-        else if (firstName) initials = firstName.substring(0, 2).toUpperCase();
-        else initials = username.substring(0, 2).toUpperCase();
-        const displayName = firstName && lastName ? `${firstName} ${lastName}` : username;
-        const roleLabels: Record<string, string> = { s: "Estudiante", t: "Profesor", m: "Gestión", a: "Administración" };
-        const avatarEl = document.getElementById("sidebar-avatar-initials");
-        const nameEl = document.getElementById("sidebar-user-name");
-        const roleEl = document.getElementById("sidebar-user-role");
-        if (avatarEl) avatarEl.textContent = initials;
-        if (nameEl) nameEl.textContent = displayName;
-        if (roleEl) roleEl.textContent = roleLabels[role] ?? role;
-    }
-
-    // Cerrar sesión
-    document.getElementById("logout-btn")?.addEventListener("click", () => {
-        clearAuth();
-        window.location.replace("/login");
-    });
-
-    // Recuento de notificaciones
-    (async () => {
-        try {
-            const res = await fetch(`${API_URL}/notifications/unread-count/`, {
-                headers: { "Authorization": `Bearer ${token}` },
-            });
-            if (res.ok) {
-                const data = await res.json();
-                if (data.count > 0) {
-                    const countStr = data.count > 99 ? "99+" : String(data.count);
-                    const badge = document.getElementById("notif-badge");
-                    const badgeSidebar = document.getElementById("notif-badge-sidebar");
-                    if (badge) { badge.textContent = countStr; badge.classList.remove("hidden"); }
-                    if (badgeSidebar) { badgeSidebar.textContent = countStr; badgeSidebar.classList.remove("hidden"); }
-                }
+            } catch {
+                // non-critical
             }
-        } catch { /* non-critical */
- }
-    })();
+        })();
 
-    // ─── Conmutador de barra lateral (móvil) ──────────────────────────────────
-    const sidebar = document.getElementById("sidebar") as HTMLElement;
-    const sidebarBackdrop = document.getElementById("sidebar-backdrop") as HTMLElement;
-    const sidebarOpenBtn = document.getElementById("sidebar-open-btn") as HTMLElement;
+        const sidebar = document.getElementById("sidebar");
+        const sidebarBackdrop = document.getElementById("sidebar-backdrop");
+        const sidebarOpenBtn = document.getElementById("sidebar-open-btn");
 
-    function openSidebar() {
-        sidebar.classList.remove("-translate-x-full");
-        sidebar.classList.add("translate-x-0");
-        sidebarBackdrop.classList.remove("hidden");
-        document.body.classList.add("overflow-hidden", "lg:overflow-auto");
-    }
-
-    function closeSidebar() {
-        sidebar.classList.add("-translate-x-full");
-        sidebar.classList.remove("translate-x-0");
-        sidebarBackdrop.classList.add("hidden");
-        document.body.classList.remove("overflow-hidden", "lg:overflow-auto");
-    }
-
-    sidebarOpenBtn?.addEventListener("click", openSidebar);
-    sidebarBackdrop?.addEventListener("click", closeSidebar);
-
-    // Cierra la barra lateral al hacer clic en un enlace de navegación (móvil)
-    sidebar?.querySelectorAll(".nav-link").forEach((link) => {
-        link.addEventListener("click", () => {
-            if (window.innerWidth < 1024) closeSidebar();
-        });
-    });
-
-    // ─── Diálogo global de confirmación ───────────────────────────────────────
-    const confirmDialog = document.getElementById("confirm-dialog") as HTMLDialogElement;
-    const confirmBackdrop = document.getElementById("confirm-backdrop") as HTMLElement;
-    const confirmTitle = document.getElementById("confirm-dialog-title") as HTMLElement;
-    const confirmDesc = document.getElementById("confirm-dialog-description") as HTMLElement;
-    const confirmAction = document.getElementById("confirm-dialog-action") as HTMLButtonElement;
-    const confirmCancel = document.getElementById("confirm-dialog-cancel") as HTMLButtonElement;
-    const CONFIRM_ANIM = 200;
-
-    let _onConfirm: (() => void) | null = null;
-
-    function closeConfirmDialog() {
-        confirmDialog?.setAttribute("data-state", "closed");
-        confirmBackdrop?.setAttribute("data-state", "closed");
-        setTimeout(() => {
-            confirmDialog?.close();
-            confirmBackdrop?.classList.add("hidden");
-            document.body.classList.remove("overflow-hidden");
-        }, CONFIRM_ANIM);
-        _onConfirm = null;
-    }
-
-    confirmCancel?.addEventListener("click", closeConfirmDialog);
-    confirmBackdrop?.addEventListener("click", closeConfirmDialog);
-    confirmDialog?.addEventListener("keydown", (e: KeyboardEvent) => {
-        if (e.key === "Escape") { e.preventDefault(); closeConfirmDialog(); }
-    });
-    confirmAction?.addEventListener("click", () => { _onConfirm?.(); closeConfirmDialog(); });
-
-    // ─── Helper global de toast ───────────────────────────────────────────────
-    (window as any).showToast = function (variant: string, title: string, description?: string) {
-        const manager = (window as any).__starwind__?.toast;
-        if (!manager) return;
-        manager.add({ title, description: description ?? '', variant });
-    };
-
-    (window as any).confirmAction = function (opts: { title: string; description: string; onConfirm: () => void; confirmLabel?: string; cancelLabel?: string; variant?: string }) {
-        if (!confirmDialog || !confirmBackdrop) return;
-        confirmTitle.textContent = opts.title;
-        confirmDesc.textContent = opts.description;
-        confirmAction.textContent = opts.confirmLabel ?? "Confirmar";
-        confirmCancel.textContent = opts.cancelLabel ?? "Cancelar";
-        if (opts.variant === "destructive") {
-            confirmAction.className = "inline-flex items-center justify-center rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground shadow-sm hover:bg-destructive/90 transition-colors";
-        } else {
-            confirmAction.className = "inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors";
+        function openSidebar() {
+            sidebar.classList.remove("-translate-x-full");
+            sidebar.classList.add("translate-x-0");
+            sidebarBackdrop.classList.remove("hidden");
+            document.body.classList.add("overflow-hidden", "lg:overflow-auto");
         }
-        _onConfirm = opts.onConfirm;
-        confirmBackdrop.classList.remove("hidden");
-        confirmDialog.showModal();
-        document.body.classList.add("overflow-hidden");
-        requestAnimationFrame(() => {
-            confirmBackdrop.setAttribute("data-state", "open");
-            confirmDialog.setAttribute("data-state", "open");
+
+        function closeSidebar() {
+            sidebar.classList.add("-translate-x-full");
+            sidebar.classList.remove("translate-x-0");
+            sidebarBackdrop.classList.add("hidden");
+            document.body.classList.remove("overflow-hidden", "lg:overflow-auto");
+        }
+
+        sidebarOpenBtn?.addEventListener("click", openSidebar);
+        sidebarBackdrop?.addEventListener("click", closeSidebar);
+        sidebar?.querySelectorAll(".nav-link").forEach((link) => {
+            link.addEventListener("click", () => {
+                if (window.innerWidth < 1024) closeSidebar();
+            });
         });
-    };
+
+        const confirmDialog = document.getElementById("confirm-dialog");
+        const confirmBackdrop = document.getElementById("confirm-backdrop");
+        const confirmTitle = document.getElementById("confirm-dialog-title");
+        const confirmDesc = document.getElementById("confirm-dialog-description");
+        const confirmAction = document.getElementById("confirm-dialog-action");
+        const confirmCancel = document.getElementById("confirm-dialog-cancel");
+        const CONFIRM_ANIM = 200;
+
+        let onConfirm = null;
+
+        function closeConfirmDialog() {
+            confirmDialog?.setAttribute("data-state", "closed");
+            confirmBackdrop?.setAttribute("data-state", "closed");
+            setTimeout(() => {
+                confirmDialog?.close();
+                confirmBackdrop?.classList.add("hidden");
+                document.body.classList.remove("overflow-hidden");
+            }, CONFIRM_ANIM);
+            onConfirm = null;
+        }
+
+        confirmCancel?.addEventListener("click", closeConfirmDialog);
+        confirmBackdrop?.addEventListener("click", closeConfirmDialog);
+        confirmDialog?.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                e.preventDefault();
+                closeConfirmDialog();
+            }
+        });
+        confirmAction?.addEventListener("click", () => {
+            onConfirm?.();
+            closeConfirmDialog();
+        });
+
+        window.showToast = function (variant, title, description) {
+            const manager = window.__starwind__?.toast;
+            if (!manager) return;
+            manager.add({ title, description: description ?? "", variant });
+        };
+
+        window.confirmAction = function (opts) {
+            if (!confirmDialog || !confirmBackdrop) return;
+            confirmTitle.textContent = opts.title;
+            confirmDesc.textContent = opts.description;
+            confirmAction.textContent = opts.confirmLabel ?? "Confirmar";
+            confirmCancel.textContent = opts.cancelLabel ?? "Cancelar";
+            confirmAction.className = opts.variant === "destructive"
+                ? "inline-flex items-center justify-center rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground shadow-sm hover:bg-destructive/90 transition-colors"
+                : "inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors";
+            onConfirm = opts.onConfirm;
+            confirmBackdrop.classList.remove("hidden");
+            confirmDialog.showModal();
+            document.body.classList.add("overflow-hidden");
+            requestAnimationFrame(() => {
+                confirmBackdrop.setAttribute("data-state", "open");
+                confirmDialog.setAttribute("data-state", "open");
+            });
+        };
+    })();
 </script>
 
