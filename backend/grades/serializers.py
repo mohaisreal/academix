@@ -81,3 +81,7 @@ class GradeSerializer(serializers.ModelSerializer):
             'id', 'student', 'student_name', 'evaluation', 'evaluation_name',
             'score', 'percentage', 'evaluation_passed', 'feedback', 'graded_by', 'graded_at', 'updated_at',
         ]
+
+
+class FinalGradeSerializer(serializers.Serializer):
+    score = serializers.DecimalField(max_digits=4, decimal_places=2, min_value=0, max_value=10)

@@ -24,7 +24,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     <div class="p-4 sm:p-6">
       <div class="bg-card text-card-foreground rounded-xl border border-border p-4 sm:p-5">
         <div class="overflow-x-auto">
-          <table class="min-w-[720px] w-full">
+          <table class="min-w-[880px] w-full">
             <thead>
               <tr class="border-b border-border">
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Estudiante</th>
@@ -67,7 +67,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       ...options,
     });
     if (res.status === 401) window.location.replace('/login');
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) throw data;
+    return data;
   }
 
   function showContent() {
@@ -93,67 +95,176 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     return `<span class="inline-flex items-center rounded-full bg-yellow-500/15 text-yellow-400 px-2 py-0.5 text-xs font-medium">${v > 0 ? v.toFixed(1) : '-'}</span>`;
   }
 
-  let allStudents = [];
+  function finalGradeValue(student) {
+    return student.final_grade ?? student.average_grade ?? student.avg_grade ?? student.gpa ?? '';
+  }
+
+  function normalizeStudents(items) {
+    const groups = new Map();
+    items.forEach((item) => {
+      const studentId = item.student_id ?? item.id;
+      const key = String(studentId ?? item.username ?? item.student_name ?? Math.random());
+      if (!groups.has(key)) {
+        groups.set(key, {
+          student_id: studentId,
+          student_name: item.student_name || `${item.first_name || ''} ${item.last_name || ''}`.trim() || item.username || 'Desconocido',
+          email: item.email || '-',
+          career_name: item.career_name || item.career || '-',
+          final_grade: finalGradeValue(item),
+          classes: [],
+        });
+      }
+      const group = groups.get(key);
+      const classes = Array.isArray(item.classes) ? item.classes : (item.class ? [item.class] : []);
+      if (classes.length > 0) {
+        classes.forEach((cls) => {
+          const classId = cls.id ?? item.class_id ?? item.class;
+          if (!group.classes.some((c) => String(c.id) === String(classId))) {
+            group.classes.push({
+              id: classId,
+              subject_name: cls.subject_name || cls.subject?.name || item.subject_name || `Clase ${classId}`,
+              current_grade: cls.current_grade ?? cls.final_grade ?? item.current_grade ?? item.final_grade ?? null,
+              visible: cls.final_grade_visible ?? item.final_grade_visible ?? true,
+            });
+          }
+        });
+      } else if (item.class_id || item.class) {
+        const classId = item.class_id ?? item.class;
+        if (!group.classes.some((c) => String(c.id) === String(classId))) {
+          group.classes.push({
+            id: classId,
+            subject_name: item.subject_name || item.class_name || `Clase ${classId}`,
+            current_grade: item.current_grade ?? item.final_grade ?? null,
+            visible: item.final_grade_visible ?? true,
+          });
+        }
+      }
+    });
+    return Array.from(groups.values());
+  }
+
+  function renderStudentClassRow(studentId, cls) {
+    const value = cls.current_grade ?? '';
+    const scoreId = `final-grade-${studentId}-${cls.id}`;
+    return `<tr data-class-row data-student-id="${studentId}" class="border-b border-border bg-muted/20">
+      <td class="py-3 pl-12 pr-4 text-sm text-foreground">${escHtml(cls.subject_name)}</td>
+      <td class="py-3 pr-4 text-sm text-muted-foreground">${cls.id}</td>
+      <td class="py-3 pr-4 text-sm text-muted-foreground">${cls.visible ? 'Visible' : 'Oculta'}</td>
+      <td class="py-3 pr-4">
+        <input id="${scoreId}" data-testid="final-grade-input" data-class-id="${cls.id}" data-student-id="${studentId}" type="number" min="0" max="10" step="0.01" value="${value === '' || value == null ? '' : String(value)}" class="w-24 bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="-" />
+      </td>
+      <td class="py-3 pr-4">
+        <button type="button" data-testid="save-final-grade-btn" data-action="save" data-class-id="${cls.id}" data-student-id="${studentId}" class="rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90">Guardar</button>
+        <button type="button" data-testid="clear-final-grade-btn" data-action="clear" data-class-id="${cls.id}" data-student-id="${studentId}" class="ml-2 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted">Borrar</button>
+      </td>
+    </tr>`;
+  }
+
+  function updateStudentFinalGrade(studentId, classId, response, action, inputValue) {
+    const nextClassGrade = action === 'clear' ? (response.final_grade ?? null) : inputValue;
+    allStudents = allStudents.map((student) => {
+      if (String(student.student_id) !== String(studentId)) return student;
+      const nextClasses = (student.classes || []).map((cls) => {
+        if (String(cls.id) !== String(classId)) return cls;
+        return {
+          ...cls,
+          current_grade: nextClassGrade,
+        };
+      });
+      return {
+        ...student,
+        final_grade: response.final_grade ?? null,
+        classes: nextClasses,
+      };
+    });
+    applyFilters();
+  }
 
   function renderTable(students) {
     const tbody = document.getElementById('students-table-body');
     const empty = document.getElementById('students-empty');
     if (!tbody) return;
-    if (students.length === 0) {
-      tbody.innerHTML = '';
-      empty?.classList.remove('hidden');
-      return;
-    }
+    if (students.length === 0) { tbody.innerHTML = ''; empty?.classList.remove('hidden'); return; }
     empty?.classList.add('hidden');
-    tbody.innerHTML = students.map(s => {
-      const name = s.student_name || `${s.first_name || ''} ${s.last_name || ''}`.trim() || s.username || 'Desconocido';
-      const email = s.email || '-';
-      const career = s.career_name || s.career || '-';
-      const avg = s.gpa ?? s.average_grade ?? s.avg_grade;
-      const studentId = s.student_id || s.id;
-      return `<tr class="border-b border-border hover:bg-muted/40 transition-colors">
+    tbody.innerHTML = students.map((s) => {
+      const studentId = s.student_id;
+      const rows = (s.classes || []).map((cls) => renderStudentClassRow(studentId, cls)).join('');
+      return `<tr data-student-row class="border-b border-border hover:bg-muted/40 transition-colors" data-student-id="${studentId}">
         <td class="py-3 pr-4">
-          <div class="flex items-center gap-3">
-            <div class="flex size-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">${initials(name)}</div>
-            <div>
-              <p class="text-sm font-medium text-foreground">${escHtml(name)}</p>
-              <p class="text-xs text-muted-foreground">${escHtml(email)}</p>
+          <button type="button" class="flex w-full items-center gap-3 text-left student-expand-btn" data-student-id="${studentId}" aria-expanded="false">
+            <div class="flex size-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">${initials(s.student_name)}</div>
+            <div class="min-w-0">
+              <p class="truncate text-sm font-medium text-foreground">${escHtml(s.student_name)}</p>
+              <p class="truncate text-xs text-muted-foreground">${escHtml(s.email)}</p>
             </div>
-          </div>
+          </button>
         </td>
-        <td class="py-3 pr-4 text-sm text-muted-foreground">${escHtml(career)}</td>
-        <td class="py-3 pr-4">${gradeBadge(avg)}</td>
-        <td class="py-3">
-          <a href="/files?student=${studentId}" class="inline-flex items-center rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors">Ver expediente</a>
-        </td>
-      </tr>`;
+        <td class="py-3 pr-4 text-sm text-muted-foreground">${escHtml(s.career_name)}</td>
+        <td class="py-3 pr-4">${gradeBadge(s.final_grade)}</td>
+        <td class="py-3 pr-4 text-sm text-muted-foreground">${(s.classes || []).length} clases</td>
+      </tr>
+      <tr class="hidden" data-student-classes-for="${studentId}"><td colspan="4" class="p-0"><table class="w-full">${rows}</table></td></tr>`;
     }).join('');
+
+    tbody.querySelectorAll('.student-expand-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const studentId = (btn as HTMLElement).dataset.studentId;
+        const row = tbody.querySelector(`[data-student-classes-for="${studentId}"]`);
+        row?.classList.toggle('hidden');
+        btn.setAttribute('aria-expanded', String(!row?.classList.contains('hidden')));
+      });
+    });
+
+    tbody.querySelectorAll('button[data-action]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const classId = (btn as HTMLElement).dataset.classId;
+        const studentId = (btn as HTMLElement).dataset.studentId;
+        const action = (btn as HTMLElement).dataset.action;
+        const input = tbody.querySelector(`#final-grade-${studentId}-${classId}`) as HTMLInputElement | null;
+        if (!classId || !studentId) return;
+        if (action === 'clear' && !window.confirm('¿Borrar la nota final de este estudiante?')) return;
+        if (action === 'save') {
+          const rawValue = input?.value ?? '';
+          const score = rawValue === '' ? NaN : Number(rawValue);
+          if (!Number.isFinite(score) || score < 0 || score > 10) {
+            window.alert('La nota final debe estar entre 0 y 10.');
+            input?.focus();
+            return;
+          }
+        }
+        const method = action === 'clear' ? 'DELETE' : 'PUT';
+        const body = action === 'clear' ? undefined : JSON.stringify({ score: input?.value || '' });
+        try {
+          const response = await apiFetch(`/grades/classes/${classId}/students/${studentId}/final-grade/`, { method, body });
+          updateStudentFinalGrade(studentId, classId, response, action, input?.value ?? null);
+        } catch (error: unknown) {
+          const err = error as { error?: string; detail?: string; non_field_errors?: string[] };
+          const message = err?.error || err?.detail || err?.non_field_errors?.[0] || 'No se pudo guardar la nota final';
+          window.alert(message);
+        }
+      });
+    });
+  }
+  function matchesSearch(student, q) {
+    if (!q) return true;
+    return [student.student_name, student.email, student.career_name].some((value) => String(value || '').toLowerCase().includes(q));
   }
 
-  document.getElementById('search-input')?.addEventListener('input', (e) => {
-    const q = (e.target as HTMLInputElement).value.toLowerCase();
-    const classFilter = (document.getElementById('class-filter') as HTMLSelectElement)?.value;
-    let filtered = allStudents.filter(s => {
-      const name = (s.student_name || `${s.first_name || ''} ${s.last_name || ''}`).toLowerCase();
-      return name.includes(q);
-    });
-    if (classFilter) {
-      filtered = filtered.filter(s => (s.class_id || s.class) == classFilter || s.classes?.some(c => c.id == classFilter || c == classFilter));
-    }
-    renderTable(filtered);
-  });
+  function matchesClassFilter(student, classId) {
+    if (!classId) return true;
+    return (student.classes || []).some((cls) => String(cls.id) === String(classId));
+  }
 
-  document.getElementById('class-filter')?.addEventListener('change', (e) => {
-    const classId = (e.target as HTMLSelectElement).value;
+  function applyFilters() {
     const q = (document.getElementById('search-input') as HTMLInputElement)?.value?.toLowerCase() || '';
-    let filtered = allStudents;
-    if (q) filtered = filtered.filter(s => {
-      const name = (s.student_name || `${s.first_name || ''} ${s.last_name || ''}`).toLowerCase();
-      return name.includes(q);
-    });
-    if (classId) filtered = filtered.filter(s => (s.class_id || s.class) == classId || s.classes?.some(c => c.id == classId || c == classId));
-    renderTable(filtered);
-  });
+    const classId = (document.getElementById('class-filter') as HTMLSelectElement)?.value || '';
+    renderTable(allStudents.filter((student) => matchesSearch(student, q) && matchesClassFilter(student, classId)));
+  }
+  let allStudents = [];
+
+  document.getElementById('search-input')?.addEventListener('input', applyFilters);
+
+  document.getElementById('class-filter')?.addEventListener('change', applyFilters);
 
   (async () => {
     // Rellena el filtro de clases
@@ -171,8 +282,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
     try {
       const data = await apiFetch('/grades/files/');
-      allStudents = Array.isArray(data) ? data : (data.results || []);
-      renderTable(allStudents);
+      allStudents = normalizeStudents(Array.isArray(data) ? data : (data.results || []));
+      applyFilters();
     } catch {
       allStudents = [];
       document.getElementById('students-empty')?.classList.remove('hidden');

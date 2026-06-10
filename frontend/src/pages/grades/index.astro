@@ -3,8 +3,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
 <DashboardLayout title="Mis calificaciones — Academix" currentPath="/grades">
   <div id="page-loading" class="space-y-4 p-4 sm:p-6">
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <div class="h-28 bg-card rounded-xl border border-border animate-pulse"></div>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <div class="h-28 bg-card rounded-xl border border-border animate-pulse"></div>
       <div class="h-28 bg-card rounded-xl border border-border animate-pulse"></div>
       <div class="h-28 bg-card rounded-xl border border-border animate-pulse"></div>
@@ -23,7 +22,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
     <div class="space-y-6 p-4 sm:p-6">
       <!-- KPI row -->
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" id="kpi-row"></div>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3" id="kpi-row"></div>
 
       <!-- Pestañas de asignaturas -->
       <div class="bg-card text-card-foreground rounded-xl border border-border p-4 sm:p-5">
@@ -212,7 +211,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       if (kpiRow) {
         kpiRow.innerHTML = [
            { label: 'Asignaturas aprobadas', value: String(passedCount), color: 'text-green-400', icon: '<polyline points="20 6 9 17 4 12"/>' },
-           { label: 'Notas finales visibles', value: String(visibleFinals.length), color: 'text-primary', icon: '<path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/>' },
+            { label: 'Notas finales', value: String(visibleFinals.length), color: 'text-primary', icon: '<path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/>' },
            { label: 'Evaluaciones pendientes', value: String(pending), color: 'text-yellow-400', icon: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>' },
         ].map(k => `
           <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">

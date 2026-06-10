@@ -10,8 +10,8 @@ from django.contrib.auth import get_user_model
 from django.db.models import Avg, Count
 
 from .models import Evaluation, EvaluationSubmission, Grade
-from .services import resolve_class_final_grade
-from .serializers import EvaluationSerializer, EvaluationSubmissionSerializer, GradeSerializer
+from .services import resolve_class_final_grade, get_or_create_final_grade_evaluation
+from .serializers import EvaluationSerializer, EvaluationSubmissionSerializer, GradeSerializer, FinalGradeSerializer
 from academic.models import Class, AcademicPeriod
 from enrollment.models import ClassEnrollment, CareerEnrollment
 from notifications.utils import create_notification
@@ -191,10 +191,41 @@ class StudentFilesView(APIView):
 
     def get(self, request):
         if request.user.role == 't':
-            student_ids = ClassEnrollment.objects.filter(
-                cls__teacher=request.user, status='enrolled'
-            ).values_list('student_id', flat=True).distinct()
-            students = User.objects.filter(id__in=student_ids, role='s')
+            enrollments = (
+                ClassEnrollment.objects.filter(cls__teacher=request.user, status='enrolled')
+                .select_related('student', 'cls__subject', 'cls__teacher')
+                .order_by('student_id', 'cls_id')
+            )
+            students_by_id = {}
+            for enr in enrollments:
+                student = enr.student
+                resolved = resolve_class_final_grade(student, enr.cls)
+                student_data = students_by_id.setdefault(student.id, {
+                    'id': student.id,
+                    'student_id': student.id,
+                    'username': student.username,
+                    'student_name': f"{student.first_name} {student.last_name}".strip() or student.username,
+                    'full_name': f"{student.first_name} {student.last_name}".strip() or student.username,
+                    'email': student.email,
+                    'career_name': None,
+                    'career': None,
+                    'period': None,
+                    'final_grade': None,
+                    'classes': [],
+                })
+                student_data['classes'].append({
+                    'id': enr.cls.id,
+                    'subject_name': enr.cls.subject.name,
+                    'subject_code': enr.cls.subject.code,
+                    'current_grade': float(resolved['final_grade']) if resolved['final_grade'] is not None and resolved['final_grade_visible'] else None,
+                    'final_grade': float(resolved['final_grade']) if resolved['final_grade'] is not None and resolved['final_grade_visible'] else None,
+                    'final_grade_visible': resolved['final_grade_visible'],
+                })
+                if student_data['final_grade'] is None and resolved['final_grade'] is not None and resolved['final_grade_visible']:
+                    student_data['final_grade'] = float(resolved['final_grade'])
+            result = list(students_by_id.values())
+            return Response(result)
+
         else:
             students = User.objects.filter(role='s', is_active=True)
             career_id = self.request.query_params.get('career')
@@ -282,6 +313,75 @@ class StudentFileDetailView(APIView):
             },
             'overall_gpa': round(float(overall_avg), 1) if overall_avg is not None else None,
             'periods': periods_data,
+        })
+
+
+class StudentFinalGradeView(APIView):
+    permission_classes = [IsTeacher]
+
+    def _get_class_and_student(self, request, class_id, student_id):
+        try:
+            cls = Class.objects.select_related('teacher').get(pk=class_id, teacher=request.user)
+        except Class.DoesNotExist:
+            return None, None, Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            student = User.objects.get(pk=student_id, role='s')
+        except User.DoesNotExist:
+            return None, None, Response({'error': 'Estudiante no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not ClassEnrollment.objects.filter(student=student, cls=cls, status='enrolled').exists():
+            return None, None, Response({'error': 'Student is not enrolled in this class'}, status=status.HTTP_404_NOT_FOUND)
+
+        return cls, student, None
+
+    def put(self, request, class_id, student_id):
+        cls, student, error = self._get_class_and_student(request, class_id, student_id)
+        if error:
+            return error
+
+        serializer = FinalGradeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        score = serializer.validated_data['score']
+
+        evaluation, _ = get_or_create_final_grade_evaluation(cls)
+        previous_grade = Grade.objects.filter(student=student, evaluation=evaluation).first()
+        previous_score = previous_grade.score if previous_grade else None
+
+        grade, created = Grade.objects.update_or_create(
+            student=student,
+            evaluation=evaluation,
+            defaults={'score': score, 'graded_by': request.user},
+        )
+
+        response_data = {
+            'class_id': cls.id,
+            'student_id': student.id,
+            'score': f'{grade.score:.2f}',
+        }
+        resolved = resolve_class_final_grade(student, cls)
+        response_data.update({
+            'final_grade': f"{resolved['final_grade']:.2f}" if resolved['final_grade'] is not None else None,
+            'source': resolved['source'],
+            'passed': resolved['passed'],
+        })
+        return Response(response_data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+    def delete(self, request, class_id, student_id):
+        cls, student, error = self._get_class_and_student(request, class_id, student_id)
+        if error:
+            return error
+
+        Grade.objects.filter(student=student, evaluation__cls=cls, evaluation__is_final_grade=True).delete()
+
+        resolved = resolve_class_final_grade(student, cls)
+        return Response({
+            'class_id': cls.id,
+            'student_id': student.id,
+            'score': None,
+            'final_grade': f"{resolved['final_grade']:.2f}" if resolved['final_grade'] is not None else None,
+            'source': resolved['source'],
+            'passed': resolved['passed'],
         })
 
 

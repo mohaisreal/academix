@@ -135,13 +135,13 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         const teacher = s.teacher_name || 'Profesor desconocido';
         const credits = s.credits || 0;
         const grade = s.current_grade ?? s.grade;
-        const gradeDisplay = grade != null ? `${parseFloat(grade).toFixed(1)}%` : 'Sin calificar todavía';
-        const gradeProgress = grade != null ? Math.min(100, parseFloat(grade)) : 0;
+        const gradeDisplay = grade != null ? `${parseFloat(grade).toFixed(1)} / 10` : 'Sin calificar todavía';
+        const gradeProgress = grade != null ? Math.min(100, parseFloat(grade) * 10) : 0;
         const schedules = s.schedules || s.schedule || [];
         const firstSlot = schedules[0];
         const slotText = firstSlot ? `${['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'][(firstSlot.day_of_week === 0 ? 6 : firstSlot.day_of_week - 1)]} ${firstSlot.start_time || ''}` : '';
 
-        const progressColor = gradeProgress >= 75 ? 'bg-green-500' : gradeProgress >= 50 ? 'bg-blue-500' : gradeProgress > 0 ? 'bg-yellow-500' : 'bg-muted';
+        const progressColor = grade == null ? 'bg-muted' : parseFloat(grade) >= 7 ? 'bg-green-500' : parseFloat(grade) >= 5 ? 'bg-yellow-500' : 'bg-red-500';
 
         return `
           <div class="bg-card text-card-foreground rounded-xl border border-border p-5 flex flex-col gap-4 hover:border-primary/50 transition-colors">

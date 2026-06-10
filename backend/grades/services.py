@@ -12,6 +12,28 @@ def _to_decimal(value):
     return Decimal(str(value))
 
 
+def get_or_create_final_grade_evaluation(cls: Class):
+    evaluation = (
+        Evaluation.objects.filter(cls=cls, is_final_grade=True)
+        .order_by('id')
+        .first()
+    )
+    if evaluation:
+        return evaluation, False
+
+    return Evaluation.objects.get_or_create(
+        cls=cls,
+        is_final_grade=True,
+        defaults={
+            'name': 'Nota final',
+            'type': 'exam',
+            'max_score': Decimal('10'),
+            'weight': Decimal('0'),
+            'is_hidden': True,
+        },
+    )
+
+
 def resolve_class_final_grade(student, cls: Class):
     final_grade_qs = (
         Grade.objects.filter(student=student, evaluation__cls=cls, evaluation__is_final_grade=True)

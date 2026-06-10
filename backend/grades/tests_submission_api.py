@@ -7,6 +7,7 @@ from rest_framework.test import APIClient
 from academic.models import AcademicPeriod, Career, Class, Subject
 from enrollment.models import ClassEnrollment
 from grades.models import Evaluation, EvaluationSubmission
+from grades.services import get_or_create_final_grade_evaluation
 from users.models import User
 
 
@@ -14,6 +15,7 @@ class EvaluationSubmissionApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.student = User.objects.create_user(username='student_eval', password='pass12345', role='s')
+        self.other_student = User.objects.create_user(username='other_student_eval', password='pass12345', role='s')
         self.teacher = User.objects.create_user(username='teacher_eval', password='pass12345', role='t')
         self.career = Career.objects.create(name='Engineering', code='ENG-EVAL')
         self.period = AcademicPeriod.objects.create(
@@ -176,3 +178,20 @@ class EvaluationSubmissionApiTests(TestCase):
         self.assertEqual(grades_response.data[0]['evaluations'][0]['feedback'], 'Great work')
         self.assertEqual(grades_response.data[0]['evaluations'][0]['percentage'], 88.0)
         self.assertEqual(grades_response.data[0]['evaluations'][0]['graded_at'] is not None, True)
+
+    def test_teacher_files_endpoint_groups_students_by_class_for_final_grade_editing(self):
+        other_subject = Subject.objects.create(name='Networks', code='NET-EVAL', career=self.career)
+        other_cls = Class.objects.create(subject=other_subject, period=self.period, teacher=self.teacher)
+        ClassEnrollment.objects.create(student=self.student, cls=other_cls, status='enrolled')
+        ClassEnrollment.objects.create(student=self.other_student, cls=other_cls, status='enrolled')
+        get_or_create_final_grade_evaluation(self.cls)
+        get_or_create_final_grade_evaluation(other_cls)
+        self.client.force_authenticate(user=self.teacher)
+
+        response = self.client.get('/api/grades/files/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        student_row = next(row for row in response.data if row['id'] == self.student.id)
+        self.assertEqual(student_row['student_name'], 'student_eval')
+        self.assertEqual(len(student_row['classes']), 2)
+        self.assertEqual({row['id'] for row in student_row['classes']}, {self.cls.id, other_cls.id})
