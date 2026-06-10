@@ -229,7 +229,7 @@ export function formatActivityType(activityType: string) {
 export type ResponsiveScheduleCard = { subject: string; day: string; time: string; classroom: string };
 
 export function buildResponsiveScheduleCards(classes: Array<{ subject_name?: string; subject?: { name?: string | null } | null; classroom_name?: string; classroom?: { name?: string | null } | null; schedules?: Array<{ day_of_week?: number | null; start_time?: string | null; end_time?: string | null }> | null; schedule?: Array<{ day_of_week?: number | null; start_time?: string | null; end_time?: string | null }> | null }>): ResponsiveScheduleCard[] {
-  const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  const dayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
   const cards: ResponsiveScheduleCard[] = [];
 
   classes.forEach((c) => {

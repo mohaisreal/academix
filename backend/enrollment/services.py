@@ -115,9 +115,30 @@ def _final_failure_qs(student, subject, target_period):
     ).exclude(score__gte=F('evaluation__cls__passing_grade'))
 
 
+def _student_passed_class(student, cls):
+    from grades.services import resolve_class_final_grade
+
+    resolved = resolve_class_final_grade(student, cls)
+    return resolved['passed']
+
+
 def resolve_convocation_eligibility(student, subject, target_period):
     # Un permiso extraordinario solo anula el bloqueo para la tupla exacta estudiante/asignatura/periodo.
-    failed_convocations = _final_failure_qs(student, subject, target_period).count()
+    failed_convocations = 0
+    prior_classes = (
+        Grade.objects.filter(
+            student=student,
+            evaluation__cls__subject=subject,
+            evaluation__cls__period__start_date__lt=target_period.start_date,
+            evaluation__is_final_grade=True,
+        )
+        .values_list('evaluation__cls', flat=True)
+        .distinct()
+    )
+    from academic.models import Class
+    for cls in Class.objects.filter(id__in=prior_classes):
+        if _student_passed_class(student, cls) is False:
+            failed_convocations += 1
     max_convocations = subject.max_convocations or 6
     has_grace = ExceptionalConvocationGrace.objects.filter(
         student=student,
@@ -358,7 +379,8 @@ def calculate_student_progress(student, career):
             - percentage: float — porcentaje completado (0–100)
             - by_type: dict — desglose de créditos superados por subject_type
     """
-    from grades.models import Grade
+    from academic.models import Class
+    from grades.services import resolve_class_final_grade
 
     class_enrollments = ClassEnrollment.objects.filter(
         student=student,
@@ -372,35 +394,8 @@ def calculate_student_progress(student, career):
     for ce in class_enrollments:
         cls = ce.cls
         subject = cls.subject
-        evaluations = list(cls.evaluations.all())
-
-        if not evaluations:
-            continue
-
-        total_weight = Decimal('0')
-        weighted_score = Decimal('0')
-
-        for evaluation in evaluations:
-            grade = Grade.objects.filter(
-                student=student,
-                evaluation=evaluation,
-            ).first()
-
-            if grade is None:
-                continue
-
-            normalized = (
-                Decimal(str(grade.score)) / Decimal(str(evaluation.max_score))
-            ) * Decimal('10')
-            weighted_score += normalized * Decimal(str(evaluation.weight))
-            total_weight += Decimal(str(evaluation.weight))
-
-        if total_weight == Decimal('0'):
-            continue
-
-        final_grade = weighted_score / total_weight
-
-        if final_grade >= Decimal(str(cls.passing_grade)):
+        resolved = resolve_class_final_grade(student, cls)
+        if resolved['passed']:
             credits = subject.credits
             ects_completed += credits
             stype = subject.subject_type

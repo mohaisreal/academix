@@ -231,6 +231,7 @@ class ClassSerializer(serializers.ModelSerializer):
     failed_convocations = serializers.SerializerMethodField()
     max_convocations = serializers.SerializerMethodField()
     convocation_block_reason = serializers.SerializerMethodField()
+    show_final_grade_to_students = serializers.BooleanField(required=False)
 
     def get_enrolled_count(self, obj):
         return obj.enrollments.filter(status='enrolled').count() if hasattr(obj, 'enrollments') else 0
@@ -293,10 +294,21 @@ class ClassSerializer(serializers.ModelSerializer):
             'id', 'subject', 'subject_id', 'teacher', 'teacher_id',
             'period', 'period_id', 'classroom', 'classroom_id',
             'section_label', 'source_teacher_decision',
-            'max_students', 'passing_grade', 'schedules', 'schedule_source', 'schedule_available',
+            'max_students', 'passing_grade', 'show_final_grade_to_students', 'schedules', 'schedule_source', 'schedule_available',
             'schedule_unavailable_reason', 'enrolled_count', 'available_spots',
             'convocation_eligibility', 'failed_convocations', 'max_convocations', 'convocation_block_reason', 'created_at',
         ]
+
+
+class ClassGradingPolicySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Class
+        fields = ['passing_grade', 'show_final_grade_to_students']
+
+    def validate_passing_grade(self, value):
+        if value < 0 or value > 10:
+            raise serializers.ValidationError('passing_grade must be between 0 and 10.')
+        return value
 
 
 class SubjectOfferingSerializer(serializers.ModelSerializer):

@@ -17,10 +17,10 @@ router.register('constraint-violations', views.ConstraintViolationViewSet, basen
 router.register('scheduling-constraints', views.SchedulingConstraintViewSet, basename='scheduling-constraint')
 router.register('offerings', views.SubjectOfferingViewSet, basename='offering')
 
-urlpatterns = router.urls
-
-urlpatterns += [
+urlpatterns = [
     path('teacher-subject-selection/submit/', views.TeacherSubjectSelectionSubmitView.as_view(), name='teacher-subject-selection-submit'),
     path('teacher-subject-selection/decisions/', views.TeacherSubjectDecisionListView.as_view(), name='teacher-subject-decision-list'),
     path('teacher-subject-selection/decisions/<int:pk>/review/', views.TeacherSubjectDecisionReviewView.as_view(), name='teacher-subject-decision-review'),
 ]
+
+urlpatterns += router.urls

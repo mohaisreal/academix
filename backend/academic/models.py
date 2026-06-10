@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class Career(models.Model):
@@ -259,9 +259,11 @@ class Class(models.Model):
     passing_grade = models.DecimalField(
         max_digits=4,
         decimal_places=2,
+        validators=[MinValueValidator(0), MaxValueValidator(10)],
         default=5.00,
         help_text='Nota mínima para superar la asignatura (0.00–10.00)',
     )
+    show_final_grade_to_students = models.BooleanField(default=True)
     is_generated_by_timetable = models.BooleanField(default=False, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

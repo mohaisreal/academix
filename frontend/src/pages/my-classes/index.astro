@@ -36,8 +36,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Aula</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Estudiantes</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Pendientes</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Promedio</th>
-                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Acciones</th>
+          <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Nota mínima</th>
+          <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Final visible</th>
+          <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Acciones</th>
               </tr>
             </thead>
             <tbody id="classes-table-body"></tbody>
@@ -48,6 +49,33 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           No hay clases asignadas para el periodo actual
         </div>
       </div>
+    </div>
+  </div>
+
+  <div id="policy-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+    <div class="w-full max-w-lg rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-xl">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-semibold text-foreground">Editar política de clase</h2>
+          <p id="policy-modal-class" class="text-sm text-muted-foreground"></p>
+        </div>
+        <button type="button" id="policy-modal-close" class="rounded-lg border border-border px-3 py-1 text-sm hover:bg-muted">Cerrar</button>
+      </div>
+      <form id="policy-form" class="mt-5 space-y-4">
+        <input type="hidden" id="policy-class-id" />
+        <label class="block space-y-1 text-sm">
+          <span class="text-muted-foreground">Nota mínima para aprobar</span>
+          <input id="policy-passing-grade" type="number" step="0.1" min="0" max="10" class="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground" />
+        </label>
+        <label class="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">
+          <input id="policy-final-visible" type="checkbox" class="size-4 rounded border-border text-primary" />
+          <span>Mostrar nota final al alumno</span>
+        </label>
+        <div class="flex justify-end gap-2">
+          <button type="button" id="policy-modal-cancel" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">Cancelar</button>
+          <button type="submit" id="policy-modal-save" class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Guardar política</button>
+        </div>
+      </form>
     </div>
   </div>
 </DashboardLayout>
@@ -91,6 +119,35 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     return d.innerHTML;
   }
 
+  const modal = document.getElementById('policy-modal');
+  const modalClass = document.getElementById('policy-modal-class');
+  const modalClose = document.getElementById('policy-modal-close');
+  const modalCancel = document.getElementById('policy-modal-cancel');
+  const modalForm = document.getElementById('policy-form');
+  const modalClassId = document.getElementById('policy-class-id');
+  const modalPassing = document.getElementById('policy-passing-grade');
+  const modalVisible = document.getElementById('policy-final-visible');
+
+  function openPolicyModal(c) {
+    if (!modal || !modalClassId || !modalPassing || !modalVisible) return;
+    modalClassId.value = String(c.id);
+    modalPassing.value = c.passing_grade != null ? String(c.passing_grade) : '';
+    modalVisible.checked = c.show_final_grade_to_students ?? c.final_grade_visible ?? true;
+    if (modalClass) modalClass.textContent = `${c.subject_name || c.subject?.name || 'Asignatura'} · ${c.period_name || c.period?.name || '-'}`;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+
+  function closePolicyModal() {
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+
+  modalClose?.addEventListener('click', closePolicyModal);
+  modalCancel?.addEventListener('click', closePolicyModal);
+  modal?.addEventListener('click', (e) => { if (e.target === modal) closePolicyModal(); });
+
   function renderClassCards(classes) {
     const cards = document.getElementById('classes-cards');
     if (!cards) return;
@@ -100,7 +157,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       const classroom = c.classroom_name || c.classroom?.name || '-';
       const students = c.student_count || c.students_count || 0;
       const pend = c.pending_grades || c.pending_count || 0;
-      const avg = c.average_score != null ? parseFloat(c.average_score).toFixed(1) + '%' : (c.avg_score != null ? parseFloat(c.avg_score).toFixed(1) + '%' : '-');
+      const passing = c.passing_grade != null ? parseFloat(c.passing_grade).toFixed(1) : '-';
+      const finalVisible = c.show_final_grade_to_students ?? c.final_grade_visible ?? true;
       return `<article class="rounded-xl border border-border bg-muted/20 p-4 space-y-3">
         <div class="flex items-start justify-between gap-3">
           <div>
@@ -112,9 +170,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <dl class="grid grid-cols-2 gap-3 text-sm">
           <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Aula</dt><dd class="mt-1 text-foreground">${escHtml(classroom)}</dd></div>
           <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Estudiantes</dt><dd class="mt-1 text-foreground">${students}</dd></div>
-          <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Promedio</dt><dd class="mt-1 text-foreground">${avg}</dd></div>
+          <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Nota mínima</dt><dd class="mt-1 text-foreground">${passing}</dd></div>
+          <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Visible</dt><dd class="mt-1 text-foreground">${finalVisible ? 'Sí' : 'No'}</dd></div>
         </dl>
+        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div class="text-sm text-muted-foreground">Política actual: mínima ${passing}, final ${finalVisible ? 'visible' : 'oculta'}</div>
+        </div>
         <div class="flex flex-wrap gap-2">
+          <button type="button" class="class-policy-edit inline-flex items-center rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20" data-class-id="${c.id}">Editar política</button>
           <a href="/marking?class=${c.id}" class="inline-flex items-center rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20">Calificar</a>
           <a href="/material?class=${c.id}" class="inline-flex items-center rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted">Materiales</a>
           <a href="/reports?class=${c.id}" class="inline-flex items-center rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted">Reportes</a>
@@ -168,7 +231,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         const classroom = c.classroom_name || c.classroom?.name || '-';
         const students = c.student_count || c.students_count || 0;
         const pend = c.pending_grades || c.pending_count || 0;
-        const avg = c.average_score != null ? parseFloat(c.average_score).toFixed(1) + '%' : (c.avg_score != null ? parseFloat(c.avg_score).toFixed(1) + '%' : '-');
+        const passing = c.passing_grade != null ? parseFloat(c.passing_grade).toFixed(1) : '-';
+        const finalVisible = c.show_final_grade_to_students ?? c.final_grade_visible ?? true;
         return `<tr class="border-b border-border hover:bg-muted/40 transition-colors">
           <td class="py-3 pr-4 text-sm font-medium text-foreground">${escHtml(subject)}</td>
           <td class="py-3 pr-4 text-sm text-muted-foreground">${escHtml(period)}</td>
@@ -177,9 +241,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <td class="py-3 pr-4">
             ${pend > 0 ? `<span class="inline-flex items-center rounded-full bg-yellow-500/15 text-yellow-400 px-2 py-0.5 text-xs font-medium">${pend}</span>` : '<span class="text-sm text-muted-foreground">0</span>'}
           </td>
-          <td class="py-3 pr-4 text-sm font-medium text-foreground">${avg}</td>
-          <td class="py-3">
+          <td class="py-3 pr-4 text-sm font-medium text-foreground">${passing}</td>
+          <td class="py-3 pr-4 text-sm text-foreground">${finalVisible ? 'Sí' : 'No'}</td>
+            <td class="py-3">
             <div class="flex flex-wrap gap-2">
+              <button type="button" class="class-policy-edit inline-flex items-center rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20" data-class-id="${c.id}">Editar política</button>
               <a href="/marking?class=${c.id}" class="inline-flex items-center rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20">Calificar</a>
               <a href="/material?class=${c.id}" class="inline-flex items-center rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted">Materiales</a>
               <a href="/reports?class=${c.id}" class="inline-flex items-center rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted">Reportes</a>
@@ -188,6 +254,48 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         </tr>`;
       }).join('');
       renderClassCards(classes);
+
+      async function savePolicy(classId) {
+        const passingGrade = modalPassing?.value === '' ? null : parseFloat((modalPassing as HTMLInputElement)?.value || '');
+        const showFinalGradeToStudents = !!(modalVisible as HTMLInputElement | null)?.checked;
+        const res = await fetch(`${API_URL}/academic/classes/${classId}/grading-policy/`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ passing_grade: passingGrade, show_final_grade_to_students: showFinalGradeToStudents }),
+        });
+        if (res.status === 401) window.location.replace('/login');
+        return res.json();
+      }
+
+      document.querySelectorAll('.class-policy-edit').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const classId = (btn as HTMLElement).dataset.classId;
+          if (!classId) return;
+          const cls = classes.find(c => String(c.id) === String(classId));
+          if (cls) openPolicyModal(cls);
+        });
+      });
+
+      modalForm?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const classId = (modalClassId as HTMLInputElement | null)?.value;
+        if (!classId) return;
+        const saveBtn = document.getElementById('policy-modal-save') as HTMLButtonElement | null;
+        const prevText = saveBtn?.textContent;
+        if (saveBtn) {
+          saveBtn.disabled = true;
+          saveBtn.textContent = 'Guardando...';
+        }
+        try {
+          await savePolicy(classId);
+          closePolicyModal();
+        } finally {
+          if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = prevText || 'Guardar política';
+          }
+        }
+      });
     } catch {
       document.getElementById('classes-empty')?.classList.remove('hidden');
     }

@@ -47,11 +47,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     </div>
   </div>
 
-  <!-- Modal de nueva evaluación -->
+  <!-- Modal de nueva/editar evaluación -->
   <div id="new-eval-backdrop" class="hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
     <div class="bg-card border border-border rounded-xl p-4 sm:p-6 w-full max-w-[calc(100vw-2rem)] sm:w-96 shadow-xl">
       <div class="flex items-center justify-between mb-5">
-        <h3 class="text-lg font-semibold text-foreground">Nueva evaluación</h3>
+        <h3 id="eval-modal-title" class="text-lg font-semibold text-foreground">Nueva evaluación</h3>
         <button id="close-eval-modal" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -65,7 +65,6 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <label class="text-xs font-medium text-muted-foreground">Tipo *</label>
           <select id="eval-type" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
             <option value="exam">Examen</option>
-            <option value="quiz">Cuestionario</option>
             <option value="assignment">Trabajo</option>
             <option value="project">Proyecto</option>
             <option value="participation">Participación</option>
@@ -76,13 +75,38 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <input id="eval-max-score" type="number" required min="1" value="100" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
         </div>
         <div>
+          <label class="text-xs font-medium text-muted-foreground">Nota mínima orientativa</label>
+          <input id="eval-min-score" data-testid="evaluation-min-score" type="number" min="0" step="0.01" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Opcional" />
+          <p class="mt-1 text-xs text-muted-foreground">Solo informativa: marca el aprobado de esta evaluación, no afecta a la nota final ni a las convocatorias.</p>
+        </div>
+        <div>
           <label class="text-xs font-medium text-muted-foreground">Fecha de entrega</label>
-          <input id="eval-due-date" type="date" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+          <input id="eval-due-date" type="datetime-local" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+        </div>
+        <div class="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 px-3 py-2">
+          <div>
+            <p class="text-sm font-medium text-foreground">Permitir entrega de archivo</p>
+            <p class="text-xs text-muted-foreground">Disponible para todos los tipos excepto participación.</p>
+          </div>
+          <label class="inline-flex items-center gap-2 text-sm text-foreground">
+            <input id="eval-file-submission" data-testid="evaluation-file-toggle" type="checkbox" class="h-4 w-4 rounded border-border text-primary focus:ring-primary" />
+            <span>Activar</span>
+          </label>
+        </div>
+        <div class="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 px-3 py-2">
+          <div>
+            <p class="text-sm font-medium text-foreground">Ocultar a los estudiantes</p>
+            <p class="text-xs text-muted-foreground">La evaluación y su nota dejan de ser visibles para los estudiantes; el promedio se recalcula sin ella.</p>
+          </div>
+          <label class="inline-flex items-center gap-2 text-sm text-foreground">
+            <input id="eval-hidden-toggle" data-testid="evaluation-hidden-toggle" type="checkbox" class="h-4 w-4 rounded border-border text-primary focus:ring-primary" />
+            <span>Ocultar</span>
+          </label>
         </div>
         <div id="eval-form-error" class="hidden text-xs text-red-400"></div>
         <div class="flex gap-3 pt-2">
           <button type="button" id="cancel-eval-btn" class="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">Cancelar</button>
-          <button type="submit" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Crear</button>
+          <button type="submit" id="eval-submit-btn" class="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Crear</button>
         </div>
       </form>
     </div>
@@ -134,9 +158,50 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     return new Date(str).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
+  function formatDateTime(str) {
+    if (!str) return '-';
+    return new Date(str).toLocaleString('es-ES', {
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+      timeZone: 'Europe/Madrid',
+    });
+  }
+
+  // Formatea una fecha ISO almacenada al valor "YYYY-MM-DDTHH:mm" que espera
+  // un input datetime-local, usando la hora local de Europe/Madrid (sin
+  // desplazamiento horario), para precargar el formulario de edición.
+  function toDatetimeLocalValue(iso) {
+    if (!iso) return '';
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Madrid',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hour12: false,
+    }).formatToParts(new Date(iso));
+    const get = (type) => parts.find(p => p.type === type)?.value ?? '';
+    return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}`;
+  }
+
+  function fileSubmissionStatus(evaluation) {
+    if (evaluation?.submission_status) return evaluation.submission_status;
+    if (evaluation?.uploaded_file) return 'uploaded';
+    return evaluation?.allows_file_submission ? 'enabled' : 'disabled';
+  }
+
+  function syncFileSubmissionToggle() {
+    const typeEl = document.getElementById('eval-type') as HTMLSelectElement | null;
+    const fileToggle = document.getElementById('eval-file-submission') as HTMLInputElement | null;
+    if (!typeEl || !fileToggle) return;
+    const participation = typeEl.value === 'participation';
+    fileToggle.disabled = participation;
+    if (participation) fileToggle.checked = false;
+  }
+
   let selectedClassId = null;
   let selectedEvalId = null;
   let gradeMap = {};
+  let modalMode: 'create' | 'edit' = 'create';
+  let editingEvalId: number | null = null;
+  let evalsById: Record<string, any> = {};
 
   function renderClassList(classes) {
     const list = document.getElementById('class-list');
@@ -169,6 +234,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     try {
       const data = await apiFetch(`/grades/evaluations/?class=${classId}`);
       const evals = Array.isArray(data) ? data : (data.results || []);
+      evalsById = {};
+      evals.forEach(e => { evalsById[String(e.id)] = e; });
       renderEvalList(evals);
     } catch {
       if (list) list.innerHTML = '<div class="text-xs text-red-400">No se pudieron cargar las evaluaciones</div>';
@@ -183,24 +250,56 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       return;
     }
     list.innerHTML = evals.map(e => {
-      const typeBg = { exam: 'bg-purple-500/15 text-purple-400', quiz: 'bg-blue-500/15 text-blue-400', assignment: 'bg-orange-500/15 text-orange-400', project: 'bg-teal-500/15 text-teal-400' };
+      const typeBg = { exam: 'bg-purple-500/15 text-purple-400', assignment: 'bg-orange-500/15 text-orange-400', project: 'bg-teal-500/15 text-teal-400', participation: 'bg-pink-500/15 text-pink-400' };
       const type = e.evaluation_type || e.type || 'other';
       const bg = typeBg[type] || 'bg-muted text-muted-foreground';
+      const submissionStatus = fileSubmissionStatus(e);
+      const submissionLabel = {
+        enabled: 'Entrega de archivo habilitada',
+        disabled: 'Sin entrega de archivo',
+        uploaded: 'Archivo enviado',
+        pending: 'Pendiente de envío',
+      }[submissionStatus] ?? 'Estado de entrega';
       return `<div class="eval-item cursor-pointer rounded-lg border border-border p-3 hover:border-primary/50 hover:bg-muted/40 transition-colors" data-id="${e.id}" data-name="${escHtml(e.name)}" data-type="${type}" data-max="${e.max_score}" data-due="${e.due_date || ''}">
         <div class="flex items-center justify-between gap-2">
           <p class="text-sm font-medium text-foreground truncate">${escHtml(e.name)}</p>
-          <span class="inline-flex items-center rounded-full ${bg} px-1.5 py-0.5 text-xs capitalize shrink-0">${type}</span>
+          <div class="flex items-center gap-1.5 shrink-0">
+            ${e.is_hidden ? '<span class="inline-flex items-center rounded-full bg-muted text-muted-foreground px-1.5 py-0.5 text-xs">Oculta</span>' : ''}
+            <span class="inline-flex items-center rounded-full ${bg} px-1.5 py-0.5 text-xs capitalize">${type}</span>
+          </div>
         </div>
-        <p class="text-xs text-muted-foreground mt-0.5">Máx.: ${e.max_score} · Entrega: ${formatDate(e.due_date)}</p>
+        <p class="text-xs text-muted-foreground mt-0.5">Máx.: ${e.max_score} · Entrega: ${formatDateTime(e.due_date)}</p>
+        <p class="text-xs text-muted-foreground mt-1" data-testid="evaluation-submission-status">${submissionLabel}</p>
+        <div class="flex items-center gap-2 mt-2">
+          <button type="button" class="eval-edit-btn text-xs text-primary hover:underline" data-testid="evaluation-edit-btn" data-id="${e.id}">Editar</button>
+          <button type="button" class="eval-delete-btn text-xs text-red-400 hover:underline" data-testid="evaluation-delete-btn" data-id="${e.id}">Eliminar</button>
+        </div>
       </div>`;
     }).join('');
 
     list.querySelectorAll('.eval-item').forEach(el => {
-      el.addEventListener('click', () => {
+      el.addEventListener('click', (event) => {
+        if ((event.target as HTMLElement).closest('.eval-edit-btn, .eval-delete-btn')) return;
         list.querySelectorAll('.eval-item').forEach(i => i.classList.remove('border-primary', 'bg-primary/5'));
         el.classList.add('border-primary', 'bg-primary/5');
         selectedEvalId = (el as HTMLElement).dataset.id;
         loadGradingPanel(selectedEvalId, (el as HTMLElement).dataset);
+      });
+    });
+
+    list.querySelectorAll('.eval-edit-btn').forEach(btn => {
+      btn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const id = (btn as HTMLElement).dataset.id;
+        if (id) openEditEvalModal(id);
+      });
+    });
+
+    list.querySelectorAll('.eval-delete-btn').forEach(btn => {
+      btn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const id = (btn as HTMLElement).dataset.id;
+        if (id) deleteEvaluation(id);
       });
     });
   }
@@ -216,7 +315,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     try {
       const data = await apiFetch(`/grades/marking/${evalId}/`);
       const students = Array.isArray(data) ? data : (data.results || data.students || []);
-      const typeBg = { exam: 'bg-purple-500/15 text-purple-400', quiz: 'bg-blue-500/15 text-blue-400', assignment: 'bg-orange-500/15 text-orange-400', project: 'bg-teal-500/15 text-teal-400' };
+      const typeBg = { exam: 'bg-purple-500/15 text-purple-400', assignment: 'bg-orange-500/15 text-orange-400', project: 'bg-teal-500/15 text-teal-400', participation: 'bg-pink-500/15 text-pink-400' };
       const type = evalData.type || 'other';
       const bg = typeBg[type] || 'bg-muted text-muted-foreground';
 
@@ -226,8 +325,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <h2 class="text-lg font-semibold text-foreground">${escHtml(evalData.name)}</h2>
             <div class="flex items-center gap-3 mt-1">
               <span class="inline-flex items-center rounded-full ${bg} px-2 py-0.5 text-xs capitalize">${type}</span>
-              <span class="text-xs text-muted-foreground">Entrega: ${formatDate(evalData.due)}</span>
+              <span class="text-xs text-muted-foreground">Entrega: ${formatDateTime(evalData.due)}</span>
               <span class="text-xs text-muted-foreground">Puntaje máx.: ${evalData.max}</span>
+              <span class="text-xs text-muted-foreground" data-testid="evaluation-submission-status">${evalData.allows_file_submission ? 'Entrega de archivo habilitada' : 'Sin entrega de archivo'}</span>
             </div>
           </div>
           <button id="bulk-save-btn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
@@ -239,6 +339,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             <thead>
               <tr class="border-b border-border">
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Estudiante</th>
+                <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Entrega</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Puntaje actual</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Puntaje</th>
                 <th class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide pb-3">Comentarios</th>
@@ -260,6 +361,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                   </td>
                   <td class="py-3 pr-4 text-sm text-muted-foreground">${currentScore !== '' ? currentScore : '-'}</td>
                   <td class="py-3 pr-4">
+                    <div class="space-y-1">
+                      ${s.submission_file_url ? `<a href="${escHtml(s.submission_file_url)}" target="_blank" rel="noreferrer" class="inline-flex text-sm text-primary hover:underline">${escHtml(s.submission_file_name || 'Archivo entregado')}</a><p class="text-xs text-muted-foreground">${s.submitted_at ? formatDateTime(s.submitted_at) : 'Entregado'}</p>` : `<p class="text-sm text-muted-foreground">${s.submission_label || (s.upload_allowed ? 'Pending' : 'Sin entrega de archivo')}</p>`}
+                    </div>
+                  </td>
+                  <td class="py-3 pr-4">
                     <input type="number" min="0" max="${evalData.max}" class="score-input w-24 bg-input border border-border rounded-lg px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" data-student-id="${sId}" value="${currentScore}" placeholder="0–${evalData.max}" />
                   </td>
                   <td class="py-3 pr-4">
@@ -270,7 +376,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                   </td>
                 </tr>`;
               }).join('')}
-              ${students.length === 0 ? '<tr><td colspan="5" class="py-6 text-center text-sm text-muted-foreground">No se encontraron estudiantes para esta evaluación</td></tr>' : ''}
+                ${students.length === 0 ? '<tr><td colspan="6" class="py-6 text-center text-sm text-muted-foreground">No se encontraron estudiantes para esta evaluación</td></tr>' : ''}
             </tbody>
           </table>
         </div>
@@ -312,15 +418,78 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     }
   }
 
-  // Modal de nueva evaluación
-  document.getElementById('new-eval-btn')?.addEventListener('click', () => {
+  // Modal de nueva/editar evaluación
+  // apiFetch no expone el status code (siempre devuelve res.json()), así que
+  // el formulario de evaluación usa esta variante local que sí lo conserva,
+  // necesaria para distinguir 200 (con posibles `warnings`) de 400 (validación).
+  async function apiFetchWithStatus(path, options: RequestInit = {}) {
+    const res = await fetch(`${API_URL}${path}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      ...options,
+    });
+    if (res.status === 401) window.location.replace('/login');
+    const data = res.status === 204 ? {} : await res.json().catch(() => ({}));
+    return { ok: res.ok, status: res.status, data };
+  }
+
+  function setEvalModalMode(mode: 'create' | 'edit') {
+    modalMode = mode;
+    const title = document.getElementById('eval-modal-title');
+    const submitBtn = document.getElementById('eval-submit-btn');
+    if (title) title.textContent = mode === 'edit' ? 'Editar evaluación' : 'Nueva evaluación';
+    if (submitBtn) submitBtn.textContent = mode === 'edit' ? 'Guardar' : 'Crear';
+  }
+
+  function openCreateEvalModal() {
+    editingEvalId = null;
+    setEvalModalMode('create');
+    (document.getElementById('new-eval-form') as HTMLFormElement)?.reset();
+    syncFileSubmissionToggle();
     document.getElementById('new-eval-backdrop')?.classList.remove('hidden');
-  });
+  }
+
+  function openEditEvalModal(id: string) {
+    const evaluation = evalsById[id];
+    if (!evaluation) return;
+    editingEvalId = Number(id);
+    setEvalModalMode('edit');
+
+    (document.getElementById('eval-name') as HTMLInputElement).value = evaluation.name ?? '';
+    (document.getElementById('eval-type') as HTMLSelectElement).value = evaluation.type ?? evaluation.evaluation_type ?? 'assignment';
+    (document.getElementById('eval-max-score') as HTMLInputElement).value = String(evaluation.max_score ?? '');
+    (document.getElementById('eval-min-score') as HTMLInputElement).value = evaluation.min_score != null ? String(evaluation.min_score) : '';
+    (document.getElementById('eval-due-date') as HTMLInputElement).value = toDatetimeLocalValue(evaluation.due_date);
+    (document.getElementById('eval-file-submission') as HTMLInputElement).checked = !!evaluation.allows_file_submission;
+    (document.getElementById('eval-hidden-toggle') as HTMLInputElement).checked = !!evaluation.is_hidden;
+    syncFileSubmissionToggle();
+
+    document.getElementById('new-eval-backdrop')?.classList.remove('hidden');
+  }
+
+  async function deleteEvaluation(id: string) {
+    if (!window.confirm('¿Eliminar esta evaluación? Se borrarán también sus calificaciones y entregas asociadas.')) return;
+    try {
+      const { ok } = await apiFetchWithStatus(`/grades/evaluations/${id}/`, { method: 'DELETE' });
+      if (!ok) { toast.error('No se pudo eliminar la evaluación'); return; }
+      if (selectedEvalId === id) {
+        selectedEvalId = null;
+        document.getElementById('grading-panel')?.classList.add('hidden');
+        document.getElementById('empty-state')?.classList.remove('hidden');
+      }
+      loadEvaluations(selectedClassId);
+    } catch {
+      toast.error('No se pudo eliminar la evaluación');
+    }
+  }
+
+  document.getElementById('new-eval-btn')?.addEventListener('click', openCreateEvalModal);
 
   function closeEvalModal() {
     document.getElementById('new-eval-backdrop')?.classList.add('hidden');
     document.getElementById('eval-form-error')?.classList.add('hidden');
     (document.getElementById('new-eval-form') as HTMLFormElement)?.reset();
+    editingEvalId = null;
+    setEvalModalMode('create');
   }
 
   document.getElementById('close-eval-modal')?.addEventListener('click', closeEvalModal);
@@ -332,6 +501,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   document.getElementById('new-eval-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const errEl = document.getElementById('eval-form-error');
+    errEl?.classList.add('hidden');
     if (!selectedClassId) {
       errEl?.classList.remove('hidden');
       if (errEl) errEl.textContent = 'Selecciona una clase primero';
@@ -340,20 +510,46 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const name = (document.getElementById('eval-name') as HTMLInputElement).value;
     const type = (document.getElementById('eval-type') as HTMLSelectElement).value;
     const maxScore = (document.getElementById('eval-max-score') as HTMLInputElement).value;
+    const minScoreRaw = (document.getElementById('eval-min-score') as HTMLInputElement).value;
     const dueDate = (document.getElementById('eval-due-date') as HTMLInputElement).value;
+    const allowsFileSubmission = (document.getElementById('eval-file-submission') as HTMLInputElement).checked && type !== 'participation';
+    const isHidden = (document.getElementById('eval-hidden-toggle') as HTMLInputElement).checked;
+
+    const payload = {
+      name,
+      cls: selectedClassId,
+      type,
+      max_score: parseFloat(maxScore),
+      min_score: minScoreRaw === '' ? null : parseFloat(minScoreRaw),
+      due_date: dueDate || null,
+      allows_file_submission: allowsFileSubmission,
+      is_hidden: isHidden,
+    };
+
+    const isEdit = modalMode === 'edit' && editingEvalId != null;
+    const path = isEdit ? `/grades/evaluations/${editingEvalId}/` : '/grades/evaluations/';
+    const method = isEdit ? 'PATCH' : 'POST';
 
     try {
-      await apiFetch('/grades/evaluations/', {
-        method: 'POST',
-        body: JSON.stringify({ name, cls: selectedClassId, type, max_score: parseFloat(maxScore), due_date: dueDate || null }),
-      });
+      const { ok, data } = await apiFetchWithStatus(path, { method, body: JSON.stringify(payload) });
+      if (!ok) {
+        const message = data?.min_score?.[0] || data?.max_score?.[0] || data?.detail || (isEdit ? 'No se pudo guardar la evaluación' : 'No se pudo crear la evaluación');
+        errEl?.classList.remove('hidden');
+        if (errEl) errEl.textContent = message;
+        return;
+      }
+      const warnings: string[] = Array.isArray(data?.warnings) ? data.warnings : [];
+      warnings.forEach(w => toast.warning(w));
       closeEvalModal();
       loadEvaluations(selectedClassId);
     } catch {
       errEl?.classList.remove('hidden');
-      if (errEl) errEl.textContent = 'No se pudo crear la evaluación';
+      if (errEl) errEl.textContent = isEdit ? 'No se pudo guardar la evaluación' : 'No se pudo crear la evaluación';
     }
   });
+
+  document.getElementById('eval-type')?.addEventListener('change', syncFileSubmissionToggle);
+  syncFileSubmissionToggle();
 
   (async () => {
     // Verificar parámetro de URL

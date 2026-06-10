@@ -201,7 +201,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     badge.textContent = await fetchActivePeriodLabel(apiFetch);
   }
 
-  const DAY_MAP = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 0: 6 };
+  const DAY_MAP = { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6 };
   const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
   const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7..20
   const FALLBACK_COLORS = ['#6366f1','#0ea5e9','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4'];
@@ -216,9 +216,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       const schedules = c.schedules || c.schedule || [];
       schedules.forEach(s => daysPresent.add(Number(s.day_of_week)));
     });
-    let days = [1,2,3,4,5];
-    if (daysPresent.has(6)) days.push(6);
-    if (daysPresent.has(0)) days.push(0);
+     let days = [0,1,2,3,4];
+     if (daysPresent.has(5)) days.push(5);
+     if (daysPresent.has(6)) days.push(6);
 
     const numCols = days.length;
 
@@ -227,7 +227,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     // Fila de cabecera
     gridHtml += `<div style="background:var(--color-muted);padding:8px;font-size:11px;font-weight:600;color:var(--color-muted-foreground);text-align:center;border-right:1px solid var(--color-border);border-bottom:1px solid var(--color-border);">HORA</div>`;
     days.forEach(d => {
-      gridHtml += `<div style="background:var(--color-muted);padding:8px;font-size:11px;font-weight:600;color:var(--color-muted-foreground);text-align:center;border-right:1px solid var(--color-border);border-bottom:1px solid var(--color-border);">${DAY_NAMES[d === 0 ? 6 : d - 1]}</div>`;
+      gridHtml += `<div style="background:var(--color-muted);padding:8px;font-size:11px;font-weight:600;color:var(--color-muted-foreground);text-align:center;border-right:1px solid var(--color-border);border-bottom:1px solid var(--color-border);">${DAY_NAMES[d] ?? '-'}</div>`;
     });
 
     // Construye mapa de clases: día -> hora -> información de clase
@@ -291,7 +291,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       const classroom = c.classroom_name || c.classroom?.name || '-';
       const schedules = c.schedules || c.schedule || [];
       schedules.forEach(s => {
-        const day = DAY_NAMES[Number(s.day_of_week) === 0 ? 6 : Number(s.day_of_week) - 1];
+        const day = DAY_NAMES[Number(s.day_of_week)] ?? '-';
         rows += `<tr class="border-b border-border hover:bg-muted/40 transition-colors">
           <td class="py-3 pr-4 text-sm font-medium text-foreground">${escHtml(subject)}</td>
           <td class="py-3 pr-4 text-sm text-muted-foreground">${day}</td>

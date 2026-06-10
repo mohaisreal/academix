@@ -193,11 +193,13 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                     <tbody>
                       ${subjects.map(s => {
                         const passed = s.passed ?? (s.status === 'passed');
+                        const visible = s.final_grade_visible !== false && s.show_final_grade_to_students !== false;
+                        const finalGrade = s.final_grade ?? s.grade ?? '-';
                         return `<tr class="border-b border-border hover:bg-muted/40">
                           <td class="p-3 text-sm text-foreground">${escHtml(s.subject_name || s.subject || '-')}</td>
                           <td class="p-3 text-sm text-muted-foreground">${escHtml(s.code || '-')}</td>
                           <td class="p-3 text-sm text-muted-foreground">${s.credits || '-'}</td>
-                          <td class="p-3 text-sm font-medium text-foreground">${s.final_grade ?? s.grade ?? '-'}</td>
+                          <td class="p-3 text-sm font-medium text-foreground">${visible ? escHtml(String(finalGrade)) : 'Oculta'}</td>
                           <td class="p-3"><span class="inline-flex items-center rounded-full ${passed ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'} px-2 py-0.5 text-xs font-medium">${passed ? 'Aprobado' : 'Reprobado'}</span></td>
                         </tr>`;
                       }).join('')}

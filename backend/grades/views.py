@@ -1,12 +1,17 @@
+from django.db import transaction
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.views import APIView
-from rest_framework.generics import ListCreateAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import get_user_model
 from django.db.models import Avg, Count
 
-from .models import Evaluation, Grade
-from .serializers import EvaluationSerializer, GradeSerializer
+from .models import Evaluation, EvaluationSubmission, Grade
+from .services import resolve_class_final_grade
+from .serializers import EvaluationSerializer, EvaluationSubmissionSerializer, GradeSerializer
 from academic.models import Class, AcademicPeriod
 from enrollment.models import ClassEnrollment, CareerEnrollment
 from notifications.utils import create_notification
@@ -14,6 +19,55 @@ from shared.permissions import IsStudent, IsTeacher, IsTeacherOrAdmin, IsAdminOr
 from shared.periods import get_active_academic_period
 
 User = get_user_model()
+
+
+def get_submission_file_url(submission, request=None):
+    if not submission or not submission.file:
+        return None
+    file_url = submission.file.url
+    if request:
+        return request.build_absolute_uri(file_url)
+    return file_url
+
+
+def build_submission_state(evaluation, submission, now=None, request=None):
+    now = now or timezone.now()
+    deadline_passed = evaluation.due_date is not None and now > evaluation.due_date
+    if not evaluation.allows_file_submission:
+        return {
+            'submission_status': 'not_applicable',
+            'submission_label': '',
+            'upload_allowed': False,
+            'submitted_at': None,
+            'submission_file_url': None,
+            'submission_file_name': None,
+        }
+    if submission:
+        return {
+            'submission_status': 'submitted',
+            'submission_label': 'Entregado',
+            'upload_allowed': False,
+            'submitted_at': submission.submitted_at.isoformat(),
+            'submission_file_url': get_submission_file_url(submission, request=request),
+            'submission_file_name': submission.file.name.rsplit('/', 1)[-1] if submission.file else None,
+        }
+    if deadline_passed:
+        return {
+            'submission_status': 'late',
+            'submission_label': 'Fuera de plazo',
+            'upload_allowed': False,
+            'submitted_at': None,
+            'submission_file_url': None,
+            'submission_file_name': None,
+        }
+    return {
+        'submission_status': 'pending',
+        'submission_label': 'Pendiente',
+        'upload_allowed': True,
+        'submitted_at': None,
+        'submission_file_url': None,
+        'submission_file_name': None,
+    }
 
 
 class MyGradesView(APIView):
@@ -30,7 +84,7 @@ class MyGradesView(APIView):
 
         result = []
         for enr in enrollments:
-            evals = list(Evaluation.objects.filter(cls=enr.cls).order_by('due_date'))
+            evals = list(Evaluation.objects.filter(cls=enr.cls).visible().order_by('due_date'))
             grades_map = {
                 g.evaluation_id: g
                 for g in Grade.objects.filter(student=request.user, evaluation__in=evals)
@@ -38,6 +92,8 @@ class MyGradesView(APIView):
             eval_data = []
             for ev in evals:
                 g = grades_map.get(ev.id)
+                submission = EvaluationSubmission.objects.filter(student=request.user, evaluation=ev).first()
+                submission_state = build_submission_state(ev, submission, request=request)
                 pct = None
                 if g and ev.max_score and ev.max_score > 0:
                     pct = round(float(g.score) / float(ev.max_score) * 100, 1)
@@ -45,13 +101,16 @@ class MyGradesView(APIView):
                     'id': ev.id, 'name': ev.name, 'type': ev.type,
                     'type_display': ev.get_type_display(),
                     'max_score': float(ev.max_score),
+                    'min_score': float(ev.min_score) if ev.min_score is not None else None,
                     'due_date': str(ev.due_date) if ev.due_date else None,
                     'score': float(g.score) if g else None,
                     'percentage': pct,
+                    'evaluation_passed': None if g is None or ev.min_score is None else g.score >= ev.min_score,
                     'feedback': g.feedback if g else '',
                     'graded_at': g.graded_at.isoformat() if g else None,
+                    **submission_state,
                 })
-            scores = [e['score'] for e in eval_data if e['score'] is not None]
+            resolved = resolve_class_final_grade(request.user, enr.cls)
             result.append({
                 'class_id': enr.cls.id,
                 'subject_name': enr.cls.subject.name,
@@ -62,7 +121,11 @@ class MyGradesView(APIView):
                 ),
                 'period_name': enr.cls.period.name,
                 'evaluations': eval_data,
-                'average': round(sum(scores) / len(scores), 1) if scores else None,
+                'average': float(resolved['final_grade']) if resolved['final_grade'] is not None and resolved['final_grade_visible'] else None,
+                'final_grade': float(resolved['final_grade']) if resolved['final_grade'] is not None and resolved['final_grade_visible'] else None,
+                'final_grade_visible': resolved['final_grade_visible'],
+                'passed': resolved['passed'],
+                'final_grade_source': resolved['source'],
             })
         return Response(result)
 
@@ -78,6 +141,7 @@ class MyFileView(APIView):
             .order_by('-period__start_date')
         )
         periods_data = []
+        visible_resolved_grades = []
         for ce in enrollments:
             class_enrollments = ClassEnrollment.objects.filter(
                 student=request.user, cls__period=ce.period
@@ -85,18 +149,19 @@ class MyFileView(APIView):
             subjects_data = []
             period_scores = []
             for class_enr in class_enrollments:
-                evals = Evaluation.objects.filter(cls=class_enr.cls)
-                grades = Grade.objects.filter(student=request.user, evaluation__in=evals)
-                avg = grades.aggregate(a=Avg('score'))['a']
-                if avg is not None:
-                    period_scores.append(float(avg))
+                resolved = resolve_class_final_grade(request.user, class_enr.cls)
                 subjects_data.append({
                     'subject_name': class_enr.cls.subject.name,
                     'subject_code': class_enr.cls.subject.code,
                     'credits': class_enr.cls.subject.credits,
-                    'final_grade': round(float(avg), 1) if avg is not None else None,
-                    'passed': float(avg) >= 50 if avg is not None else None,
+                    'final_grade': float(resolved['final_grade']) if resolved['final_grade'] is not None and resolved['final_grade_visible'] else None,
+                    'final_grade_visible': resolved['final_grade_visible'],
+                    'passed': resolved['passed'],
                 })
+                if resolved['final_grade'] is not None:
+                    period_scores.append(float(resolved['final_grade']))
+                if resolved['final_grade'] is not None and resolved['final_grade_visible']:
+                    visible_resolved_grades.append(float(resolved['final_grade']))
             periods_data.append({
                 'period_name': ce.period.name,
                 'career_name': ce.career.name,
@@ -106,8 +171,6 @@ class MyFileView(APIView):
                 'period_gpa': round(sum(period_scores) / len(period_scores), 1) if period_scores else None,
             })
 
-        all_grades = Grade.objects.filter(student=request.user)
-        overall_avg = all_grades.aggregate(a=Avg('score'))['a']
         return Response({
             'student': {
                 'id': request.user.id,
@@ -118,7 +181,7 @@ class MyFileView(APIView):
                 'date_of_birth': str(request.user.date_of_birth) if request.user.date_of_birth else None,
                 'profile_image': request.user.profile_image.url if request.user.profile_image else None,
             },
-            'overall_gpa': round(float(overall_avg), 1) if overall_avg is not None else None,
+            'overall_gpa': round(sum(visible_resolved_grades) / len(visible_resolved_grades), 1) if visible_resolved_grades else None,
             'periods': periods_data,
         })
 
@@ -187,9 +250,7 @@ class StudentFileDetailView(APIView):
             ).select_related('cls__subject', 'cls__teacher')
             subjects_data = []
             for class_enr in class_enrollments:
-                evals = Evaluation.objects.filter(cls=class_enr.cls)
-                grades = Grade.objects.filter(student=student, evaluation__in=evals)
-                avg = grades.aggregate(a=Avg('score'))['a']
+                resolved = resolve_class_final_grade(student, class_enr.cls)
                 subjects_data.append({
                     'subject_name': class_enr.cls.subject.name,
                     'subject_code': class_enr.cls.subject.code,
@@ -198,8 +259,9 @@ class StudentFileDetailView(APIView):
                         f"{class_enr.cls.teacher.first_name} {class_enr.cls.teacher.last_name}".strip()
                         if class_enr.cls.teacher else ''
                     ),
-                    'final_grade': round(float(avg), 1) if avg is not None else None,
-                    'passed': float(avg) >= 50 if avg is not None else None,
+                    'final_grade': float(resolved['final_grade']) if resolved['final_grade'] is not None and resolved['final_grade_visible'] else None,
+                    'final_grade_visible': resolved['final_grade_visible'],
+                    'passed': resolved['passed'],
                 })
             periods_data.append({
                 'period_name': ce.period.name,
@@ -238,7 +300,65 @@ class EvaluationListCreateView(ListCreateAPIView):
             qs = qs.filter(cls_id=class_id)
         if self.request.user.role == 't':
             qs = qs.filter(cls__teacher=self.request.user)
+        else:
+            qs = qs.visible()
         return qs
+
+
+class EvaluationDetailView(RetrieveUpdateDestroyAPIView):
+    serializer_class = EvaluationSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [IsAuthenticated()]
+        return [IsTeacher()]
+
+    def get_queryset(self):
+        # Mirrors MarkingView's ownership pattern: only the teacher who owns
+        # the evaluation's class can retrieve/edit/hide/delete it. A
+        # non-owner gets 404 (not 403) so existence isn't leaked.
+        return Evaluation.objects.select_related('cls').filter(cls__teacher=self.request.user)
+
+
+class EvaluationSubmissionCreateView(APIView):
+    permission_classes = [IsStudent]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request, eval_id):
+        try:
+            evaluation = Evaluation.objects.select_related('cls').get(pk=eval_id)
+        except Evaluation.DoesNotExist:
+            return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not evaluation.allows_file_submission:
+            return Response({'error': 'File submissions are not allowed for this evaluation'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if evaluation.due_date and timezone.now() > evaluation.due_date:
+            return Response({'error': 'Submission deadline has passed'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if request.user.role != 's':
+            return Response({'error': 'Only students can submit files'}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            ClassEnrollment.objects.get(student=request.user, cls=evaluation.cls, status='enrolled')
+        except ClassEnrollment.DoesNotExist:
+            return Response({'error': 'Student is not enrolled in this class'}, status=status.HTTP_403_FORBIDDEN)
+
+        upload = request.FILES.get('file')
+        if not upload:
+            return Response({'error': 'file is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if EvaluationSubmission.objects.filter(student=request.user, evaluation=evaluation).exists():
+            return Response({'error': 'Submission already exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            submission = EvaluationSubmission.objects.create(
+                student=request.user,
+                evaluation=evaluation,
+                file=upload,
+            )
+
+        return Response(EvaluationSubmissionSerializer(submission).data, status=status.HTTP_201_CREATED)
 
 
 class MarkingView(APIView):
@@ -256,11 +376,17 @@ class MarkingView(APIView):
             cls=evaluation.cls, status='enrolled'
         ).select_related('student')
         grades_map = {g.student_id: g for g in Grade.objects.filter(evaluation=evaluation)}
+        submissions_map = {
+            sub.student_id: sub
+            for sub in EvaluationSubmission.objects.filter(evaluation=evaluation).select_related('student')
+        }
 
         students_data = []
         for enr in enrolled:
             s = enr.student
             g = grades_map.get(s.id)
+            submission = submissions_map.get(s.id)
+            submission_state = build_submission_state(evaluation, submission, request=request)
             students_data.append({
                 'student_id': s.id,
                 'full_name': f"{s.first_name} {s.last_name}".strip() or s.username,
@@ -269,6 +395,7 @@ class MarkingView(APIView):
                 'score': float(g.score) if g else None,
                 'feedback': g.feedback if g else '',
                 'graded_at': g.graded_at.isoformat() if g else None,
+                **submission_state,
             })
         return Response({
             'evaluation': EvaluationSerializer(evaluation).data,

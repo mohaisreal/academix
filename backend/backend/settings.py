@@ -25,6 +25,7 @@ env = environ.Env(
     JWT_ACCESS_TOKEN_LIFETIME=(int, 60),
     JWT_REFRESH_TOKEN_LIFETIME=(int, 1440),
     ADMISSION_WAITLIST_GRACE_DAYS=(int, 7),
+    TIME_ZONE=(str, 'Europe/Madrid'),
 )
 
 # Construye rutas dentro del proyecto así: BASE_DIR / 'subdir'.
@@ -155,7 +156,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = env('TIME_ZONE')
 
 USE_I18N = True
 

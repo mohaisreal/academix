@@ -34,6 +34,7 @@ from .serializers import (
     SubjectOfferingSerializer,
     TeacherSubjectSelectionSerializer,
     TeacherSubjectDecisionSerializer,
+    ClassGradingPolicySerializer,
 )
 from .timetabling import generate_for_run, build_warning_summary_for_run
 from .timetabling import delete_generated_classes_for_period
@@ -75,6 +76,8 @@ class CareerViewSet(viewsets.ModelViewSet):
     serializer_class = CareerSerializer
 
     def get_permissions(self):
+        if getattr(self, 'action', None) == 'grading_policy' or self.request.path.endswith('/grading-policy/'):
+            return [IsAuthenticated()]
         if self.request.method in SAFE_METHODS:
             return [IsAuthenticated()]
         return [IsAdminOrManagement()]
@@ -379,7 +382,6 @@ class ClassViewSet(viewsets.ModelViewSet):
             return Response([])
         qs = self.get_queryset().filter(teacher=request.user)
         qs = qs.filter(period=active_period)
-        # Registra el recuento de calificaciones pendientes.
         from grades.models import Evaluation, Grade
         from enrollment.models import ClassEnrollment
         from django.db.models import Avg
@@ -401,6 +403,17 @@ class ClassViewSet(viewsets.ModelViewSet):
             data['avg_score'] = round(float(avg), 1) if avg else None
             result.append(data)
         return Response(result)
+
+    @action(detail=True, methods=['patch'], url_path='grading-policy')
+    def grading_policy(self, request, pk=None):
+        cls = self.get_object()
+        if request.user.role != 't' or cls.teacher_id != request.user.id:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ClassGradingPolicySerializer(instance=cls, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(ClassGradingPolicySerializer(cls).data)
 
     @action(detail=False, methods=['get'], url_path='my-schedule')
     def my_schedule(self, request):
@@ -453,7 +466,7 @@ class ClassViewSet(viewsets.ModelViewSet):
                         'subject_name': cls.subject.name,
                         'subject_code': cls.subject.code,
                         'period_name': cls.period.name,
-                    'teacher_name': _teacher_display_name(teacher),
+                        'teacher_name': _teacher_display_name(teacher),
                         'classroom': str(classroom) if classroom else '',
                         'day_of_week': assignment.slot.day_of_week,
                         'day_name': assignment.slot.get_day_of_week_display(),

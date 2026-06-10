@@ -171,6 +171,7 @@ class MySubjectsView(APIView):
 
     def get(self, request):
         from grades.models import Grade, Evaluation
+        from grades.services import resolve_class_final_grade
         active_period = get_active_academic_period()
         if not active_period:
             return Response({'current_period': None, 'results': []})
@@ -188,17 +189,7 @@ class MySubjectsView(APIView):
             [enr.cls_id for enr in enrollments],
         )
         for enr in enrollments:
-            evals = Evaluation.objects.filter(cls=enr.cls)
-            grades = Grade.objects.filter(
-                student=request.user,
-                evaluation__in=evals,
-            ).select_related('evaluation')
-            percentages = [
-                float(g.score) / float(g.evaluation.max_score) * 100
-                for g in grades
-                if g.evaluation.max_score and g.evaluation.max_score > 0
-            ]
-            avg = sum(percentages) / len(percentages) if percentages else None
+            resolved = resolve_class_final_grade(request.user, enr.cls)
             t = resolve_assignment_teacher_for_class(enr.cls, assignment_map) if assignment_map is not None else enr.cls.teacher
             result.append({
                 'enrollment_id': enr.id,
@@ -209,7 +200,9 @@ class MySubjectsView(APIView):
                 'teacher_name': (f"{t.first_name} {t.last_name}".strip() or t.username) if t else None,
                 'period_name': enr.cls.period.name,
                 'classroom': str(enr.cls.classroom) if enr.cls.classroom else None,
-                'current_grade': round(float(avg), 1) if avg is not None else None,
+                'current_grade': float(resolved['final_grade']) if resolved['final_grade'] is not None and resolved['final_grade_visible'] else None,
+                'final_grade_visible': resolved['final_grade_visible'],
+                'passed': resolved['passed'],
                 'status': enr.status,
                 'enrolled_at': enr.enrolled_at.isoformat() if enr.enrolled_at else None,
                 'schedules': [
