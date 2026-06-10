@@ -1,14 +1,45 @@
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .models import Message
-from .serializers import MessageSerializer
+from .models import Message, MessageNotificationBatch
+from .serializers import MessageSerializer, ThreadSerializer
 from notifications.utils import create_notification
 from .realtime import broadcast_message_created
 
 User = get_user_model()
+
+
+def _notify_recipient_of_new_message(msg, *, sender, root):
+    """
+    Notify ``msg.recipient`` about a new message/reply, batching alerts so at
+    most one notification/email goes out per recipient/thread within the
+    five-minute window (message-notification-batching spec).
+    """
+    if msg.recipient_id == sender.pk:
+        return
+
+    _, should_notify = MessageNotificationBatch.objects.register_message(
+        recipient=msg.recipient, root=root,
+    )
+    if not should_notify:
+        return
+
+    sender_name = sender.get_full_name() or sender.username
+    create_notification(
+        user=msg.recipient,
+        title='Nuevo mensaje recibido',
+        message=f'Has recibido un mensaje de {sender_name}: {msg.subject}',
+        notif_type='info',
+        event_type='message_received',
+        context={
+            'sender_name': sender_name,
+            'message_subject': msg.subject,
+            'message_preview': msg.body[:240],
+        },
+    )
 
 
 class InboxView(APIView):
@@ -29,6 +60,54 @@ class SentView(APIView):
             sender=request.user, is_deleted_by_sender=False, parent=None
         ).select_related('sender', 'recipient')
         return Response(MessageSerializer(msgs, many=True).data)
+
+
+class ThreadListView(APIView):
+    """
+    Unified inbox: one entry per thread (root message) the user can see,
+    whether they are the sender or recipient of the root, ordered newest
+    first by latest activity across the root and its replies.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        roots = Message.objects.filter(
+            Q(sender=user, is_deleted_by_sender=False)
+            | Q(recipient=user, is_deleted_by_recipient=False),
+            parent=None,
+        ).select_related('sender', 'recipient')
+
+        threads = []
+        for root in roots:
+            thread_messages = list(
+                Message.objects.filter(Q(pk=root.pk) | Q(parent=root))
+                .select_related('sender', 'recipient')
+            )
+            last_message = max(thread_messages, key=lambda m: (m.created_at, m.pk))
+            unread_count = sum(
+                1 for m in thread_messages
+                if m.recipient_id == user.pk and not m.is_read and not m.is_deleted_by_recipient
+            )
+            other_participant = root.recipient if root.sender_id == user.pk else root.sender
+
+            threads.append({
+                'id': root.pk,
+                'root_id': root.pk,
+                'other_participant': other_participant,
+                'last_message': {
+                    'id': last_message.pk,
+                    'body': last_message.body,
+                    'sender_id': last_message.sender_id,
+                    'created_at': last_message.created_at,
+                },
+                'last_activity_at': last_message.created_at,
+                'unread_count': unread_count,
+            })
+
+        threads.sort(key=lambda t: (t['last_activity_at'], t['root_id']), reverse=True)
+        return Response(ThreadSerializer(threads, many=True).data)
 
 
 class ComposeView(APIView):
@@ -63,20 +142,7 @@ class ComposeView(APIView):
         if serializer.is_valid():
             msg = serializer.save(sender=request.user)
             transaction.on_commit(lambda: broadcast_message_created(msg))
-            if msg.recipient != request.user:
-                sender_name = request.user.get_full_name() or request.user.username
-                create_notification(
-                    user=msg.recipient,
-                    title='Nuevo mensaje recibido',
-                    message=f'Has recibido un mensaje de {sender_name}: {msg.subject}',
-                    notif_type='info',
-                    event_type='message_received',
-                    context={
-                        'sender_name': sender_name,
-                        'message_subject': msg.subject,
-                        'message_preview': msg.body[:240],
-                    },
-                )
+            _notify_recipient_of_new_message(msg, sender=request.user, root=msg)
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
@@ -91,10 +157,20 @@ class MessageThreadView(APIView):
             return Response({'error': 'Not found'}, status=404)
         if msg.sender != request.user and msg.recipient != request.user:
             return Response({'error': 'Forbidden'}, status=403)
-        if msg.recipient == request.user and not msg.is_read:
-            msg.is_read = True
-            msg.save()
-        replies = Message.objects.filter(parent=msg).select_related('sender', 'recipient')
+
+        # Opening a thread clears ALL of the requesting participant's unread
+        # messages in that thread (root + replies), not just the message
+        # fetched by `pk`. Without this, replies the recipient hasn't viewed
+        # individually keep counting toward the unread badge forever.
+        root_id = msg.parent_id or msg.pk
+        Message.objects.filter(
+            Q(pk=root_id) | Q(parent_id=root_id),
+            recipient=request.user,
+            is_read=False,
+        ).update(is_read=True)
+
+        msg.refresh_from_db()
+        replies = Message.objects.filter(parent_id=root_id).select_related('sender', 'recipient')
         return Response({
             'message': MessageSerializer(msg).data,
             'replies': MessageSerializer(replies, many=True).data,
@@ -140,20 +216,8 @@ class ReplyView(APIView):
             parent=parent,
         )
         transaction.on_commit(lambda: broadcast_message_created(msg))
-        if recipient != request.user:
-            sender_name = request.user.get_full_name() or request.user.username
-            create_notification(
-                user=recipient,
-                title='Nueva respuesta recibida',
-                message=f'Has recibido una respuesta de {sender_name}: {parent.subject}',
-                notif_type='info',
-                event_type='message_received',
-                context={
-                    'sender_name': sender_name,
-                    'message_subject': msg.subject,
-                    'message_preview': msg.body[:240],
-                },
-            )
+        root = parent.parent if parent.parent_id else parent
+        _notify_recipient_of_new_message(msg, sender=request.user, root=root)
         return Response(MessageSerializer(msg).data, status=201)
 
 

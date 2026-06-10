@@ -34,3 +34,26 @@ class MessageSerializer(serializers.ModelSerializer):
             'subject', 'body', 'is_read', 'parent', 'reply_count', 'created_at',
         ]
         read_only_fields = ['sender', 'is_read']
+
+
+class ThreadLastMessageSerializer(serializers.Serializer):
+    """Minimal preview of the most recent message (root or reply) in a thread."""
+
+    id = serializers.IntegerField()
+    body = serializers.CharField()
+    sender_id = serializers.IntegerField()
+    created_at = serializers.DateTimeField()
+
+
+class ThreadSerializer(serializers.Serializer):
+    """
+    Unified inbox row: one entry per thread root the requesting user can see,
+    ordered newest-first by latest activity (root or any reply).
+    """
+
+    id = serializers.IntegerField()
+    root_id = serializers.IntegerField()
+    other_participant = UserMiniSerializer()
+    last_message = ThreadLastMessageSerializer()
+    last_activity_at = serializers.DateTimeField()
+    unread_count = serializers.IntegerField()
