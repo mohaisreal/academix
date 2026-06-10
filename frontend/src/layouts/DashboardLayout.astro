@@ -657,6 +657,32 @@ const { title, currentPath, forceLightTheme = false } = Astro.props;
             }
         })();
 
+        (async () => {
+            try {
+                const res = await fetch(`${API_URL}/messaging/unread-count/`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    const count = Number(data.count ?? 0);
+                    const countStr = count > 99 ? "99+" : String(count);
+                    const badge = document.getElementById("messages-badge");
+                    const badgeSidebar = document.getElementById("messages-badge-sidebar");
+                    [badge, badgeSidebar].forEach((el) => {
+                        if (!el) return;
+                        if (count > 0) {
+                            el.textContent = countStr;
+                            el.classList.remove("hidden");
+                        } else {
+                            el.classList.add("hidden");
+                        }
+                    });
+                }
+            } catch {
+                // non-critical
+            }
+        })();
+
         const sidebar = document.getElementById("sidebar");
         const sidebarBackdrop = document.getElementById("sidebar-backdrop");
         const sidebarOpenBtn = document.getElementById("sidebar-open-btn");

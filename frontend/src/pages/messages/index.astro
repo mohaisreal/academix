@@ -14,9 +14,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     <div class="w-full lg:w-80 shrink-0 border-r border-border flex flex-col min-w-0">
       <div class="border-b border-border p-4">
         <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div class="flex gap-1 flex-wrap">
-            <button id="tab-inbox" class="msg-tab px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-primary-foreground">Recibidos</button>
-            <button id="tab-sent" class="msg-tab px-3 py-1.5 text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">Enviados</button>
+          <div>
+            <p class="text-sm font-semibold text-foreground">Bandeja unificada</p>
+            <p class="text-xs text-muted-foreground">Ordenada por actividad reciente</p>
           </div>
           <button id="compose-btn" class="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20 sm:w-auto">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -62,12 +62,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       </div>
       <form id="compose-form" class="space-y-4">
         <div>
-          <label class="text-xs font-medium text-muted-foreground">Para (ID de usuario o nombre de usuario) *</label>
-          <input id="compose-to" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Nombre de usuario o ID de usuario" />
-        </div>
-        <div>
-          <label class="text-xs font-medium text-muted-foreground">Asunto *</label>
-          <input id="compose-subject" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Asunto del mensaje" />
+          <label class="text-xs font-medium text-muted-foreground">ID de usuario *</label>
+          <input id="compose-to" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="ID de usuario" />
         </div>
         <div>
           <label class="text-xs font-medium text-muted-foreground">Mensaje *</label>
@@ -151,12 +147,13 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     return null;
   }
 
-  let activeTab = 'inbox';
   let selectedMessageId = null;
   let ws = null;
   let reconnectTimer = null;
   let reconnectAttempts = 0;
   let destroyed = false;
+  let messagesCache = [];
+  let threadCache = [];
 
   function buildMessagesSocketUrl() {
     const wsBase = resolveWebSocketBaseUrl(import.meta.env);
@@ -174,10 +171,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   function refreshAfterRealtimeEvent(payload) {
     if (!payload || payload.type !== 'message.created') return;
     if (payload.sender_id !== user?.id && payload.recipient_id !== user?.id) return;
-    loadMessages();
     refreshUnreadCount();
     if (selectedMessageId && String(payload.root_id ?? payload.message_id) === String(selectedMessageId)) {
-      loadThread(selectedMessageId);
+      void loadThread(selectedMessageId, { silent: true });
     }
   }
 
@@ -224,32 +220,32 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   function renderMessageList(messages) {
     const list = document.getElementById('message-list');
     if (!list) return;
+    messagesCache = messages;
+    const selectedId = String(selectedMessageId ?? '');
     if (messages.length === 0) {
       list.innerHTML = '<div class="p-4 text-sm text-muted-foreground text-center">No hay mensajes</div>';
       return;
     }
     list.innerHTML = messages.map(m => {
-      const fromName = m.sender_name || m.from_name || userDisplayName(m.sender);
-      const toName = m.recipient_name || m.to_name || userDisplayName(m.recipient);
-      const displayName = activeTab === 'inbox' ? fromName : toName;
-      const unread = !m.is_read && activeTab === 'inbox';
-      const preview = (m.body || m.message || '').substring(0, 60);
-      return `<div class="msg-item cursor-pointer p-4 hover:bg-muted/40 transition-colors ${unread ? 'bg-primary/5' : ''}" data-id="${m.id}">
+      const displayName = m.other_participant?.full_name || m.other_participant?.username || userDisplayName(m.other_participant || m.sender || m.recipient);
+      const unread = Number(m.unread_count ?? 0) > 0;
+      const preview = (m.last_message?.body || m.body || m.message || '').substring(0, 60);
+      const time = m.last_activity_at || m.created_at || m.sent_at;
+      const selected = String(m.id) === selectedId;
+      return `<div class="msg-item cursor-pointer p-4 hover:bg-muted/40 transition-colors ${selected ? 'bg-primary/10' : unread ? 'bg-primary/5' : ''}" data-id="${m.id}">
         <div class="flex items-start gap-3">
           <div class="flex size-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary shrink-0">${initials(displayName)}</div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between gap-1">
               <span class="text-sm ${unread ? 'font-semibold text-foreground' : 'font-medium text-foreground'} truncate">${escHtml(displayName)}</span>
               <div class="flex items-center gap-1.5 shrink-0">
-                <span class="text-xs text-muted-foreground">${formatTime(m.created_at || m.sent_at)}</span>
+                <span class="text-xs text-muted-foreground">${formatTime(time)}</span>
                 ${unread ? '<span class="size-2 rounded-full bg-primary"></span>' : ''}
               </div>
             </div>
-            <p class="text-xs font-medium text-foreground truncate mt-0.5">${escHtml(m.subject || '(sin asunto)')}</p>
             <p class="text-xs text-muted-foreground truncate mt-0.5">${escHtml(preview)}</p>
           </div>
-        </div>
-      </div>`;
+        </div>`;
     }).join('');
 
     list.querySelectorAll('.msg-item').forEach(el => {
@@ -262,43 +258,68 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     });
   }
 
-  async function loadMessages() {
+  async function loadMessages({ silent = false } = {}) {
     const list = document.getElementById('message-list');
-    if (list) list.innerHTML = '<div class="p-4 text-sm text-muted-foreground text-center">Cargando...</div>';
+    if (list && !silent && !list.dataset.loaded) list.innerHTML = '<div class="p-4 text-sm text-muted-foreground text-center">Cargando...</div>';
     try {
-      const endpoint = activeTab === 'inbox' ? '/messaging/inbox/' : '/messaging/sent/';
-      const data = await apiFetch(endpoint);
+      const data = await apiFetch('/messaging/threads/');
       const messages = Array.isArray(data) ? data : (data.results || data.messages || []);
       renderMessageList(messages);
+      if (list) list.dataset.loaded = '1';
     } catch {
-      if (list) list.innerHTML = '<div class="p-4 text-sm text-red-400 text-center">No se pudieron cargar los mensajes</div>';
+      if (list && !silent) list.innerHTML = '<div class="p-4 text-sm text-red-400 text-center">No se pudieron cargar los mensajes</div>';
     }
   }
 
-  async function loadThread(messageId) {
+  function appendThreadMessage(message) {
+    const msgs = document.getElementById('thread-messages');
+    if (!msgs || !message) return;
+    threadCache = [...threadCache, message].sort((a, b) => new Date(a.created_at || a.sent_at || 0).getTime() - new Date(b.created_at || b.sent_at || 0).getTime());
+    const senderName = message.sender_name || message.from_name || userDisplayName(message.sender);
+    const time = message.created_at || message.sent_at;
+    const body = message.body || message.message || '';
+    const senderId = message.sender_id || userId(message.sender);
+    const isOwn = senderId === user?.id || senderName === `${user?.first_name} ${user?.last_name}`.trim();
+    const html = `<div class="flex ${isOwn ? 'justify-end' : 'justify-start'} gap-3">
+      ${!isOwn ? `<div class="flex size-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary shrink-0 mt-1">${initials(senderName)}</div>` : ''}
+      <div class="max-w-xs lg:max-w-md">
+        <div class="flex items-center gap-2 mb-1 ${isOwn ? 'justify-end' : ''}">
+          <span class="text-xs font-medium text-foreground">${escHtml(senderName)}</span>
+          <span class="text-xs text-muted-foreground">${formatTime(time)}</span>
+        </div>
+        <div class="${isOwn ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'} rounded-xl px-4 py-3 text-sm">${escHtml(body)}</div>
+      </div>
+      ${isOwn ? `<div class="flex size-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary shrink-0 mt-1">${initials(senderName)}</div>` : ''}
+    </div>`;
+    msgs.insertAdjacentHTML('beforeend', html);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  async function loadThread(messageId, { silent = false } = {}) {
     selectedMessageId = messageId;
-    document.getElementById('thread-empty')?.classList.add('hidden');
+    if (!silent) document.getElementById('thread-empty')?.classList.add('hidden');
     const threadView = document.getElementById('thread-view');
-    threadView?.classList.remove('hidden');
+    if (!silent) threadView?.classList.remove('hidden');
 
     const header = document.getElementById('thread-header');
     const msgs = document.getElementById('thread-messages');
-    if (header) header.innerHTML = '<div class="text-sm text-muted-foreground">Cargando...</div>';
-    if (msgs) msgs.innerHTML = '';
+    if (!silent) {
+      if (header) header.innerHTML = '<div class="text-sm text-muted-foreground">Cargando...</div>';
+      if (msgs) msgs.innerHTML = '';
+    }
 
     try {
       const data = await apiFetch(`/messaging/${messageId}/`);
       const rootMessage = data.message || data;
       const thread = data.replies || data.thread || [];
-      const subject = rootMessage.subject || data.subject || '(sin asunto)';
-      const allMessages = [rootMessage, ...thread].filter(Boolean);
+      threadCache = [rootMessage, ...thread].filter(Boolean).sort((a, b) => new Date(a.created_at || a.sent_at || 0).getTime() - new Date(b.created_at || b.sent_at || 0).getTime());
+      const otherParticipant = rootMessage.sender_id === user?.id ? rootMessage.recipient : rootMessage.sender;
+      const subject = userDisplayName(otherParticipant);
 
-      if (header) {
-        header.innerHTML = `<p class="font-semibold text-foreground">${escHtml(subject)}</p>`;
-      }
+      if (header) header.innerHTML = `<p class="font-semibold text-foreground">${escHtml(subject)}</p>`;
 
       if (msgs) {
-        msgs.innerHTML = allMessages.map(m => {
+        msgs.innerHTML = threadCache.map(m => {
           const senderName = m.sender_name || m.from_name || userDisplayName(m.sender);
           const time = m.created_at || m.sent_at;
           const body = m.body || m.message || '';
@@ -326,25 +347,6 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     }
   }
 
-  // Cambio de pestañas
-  document.getElementById('tab-inbox')?.addEventListener('click', () => {
-    activeTab = 'inbox';
-    document.getElementById('tab-inbox')?.classList.replace('text-muted-foreground', 'bg-primary');
-    document.getElementById('tab-inbox')?.classList.add('text-primary-foreground');
-    document.getElementById('tab-sent')?.classList.remove('bg-primary', 'text-primary-foreground');
-    document.getElementById('tab-sent')?.classList.add('text-muted-foreground');
-    loadMessages();
-  });
-
-  document.getElementById('tab-sent')?.addEventListener('click', () => {
-    activeTab = 'sent';
-    document.getElementById('tab-sent')?.classList.add('bg-primary', 'text-primary-foreground');
-    document.getElementById('tab-sent')?.classList.remove('text-muted-foreground');
-    document.getElementById('tab-inbox')?.classList.remove('bg-primary', 'text-primary-foreground');
-    document.getElementById('tab-inbox')?.classList.add('text-muted-foreground');
-    loadMessages();
-  });
-
   // Enviar respuesta
   document.getElementById('send-reply-btn')?.addEventListener('click', async () => {
     const body = (document.getElementById('reply-body') as HTMLTextAreaElement).value.trim();
@@ -355,7 +357,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         body: JSON.stringify({ body }),
       });
       (document.getElementById('reply-body') as HTMLTextAreaElement).value = '';
-      loadThread(selectedMessageId);
+      appendThreadMessage({ sender_id: user?.id, sender: user, body, created_at: new Date().toISOString() });
       refreshUnreadCount();
     } catch { (window as any).showToast?.('error', 'No se pudo enviar la respuesta'); }
   });
@@ -376,21 +378,17 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   document.getElementById('compose-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const to = (document.getElementById('compose-to') as HTMLInputElement).value;
-    const subject = (document.getElementById('compose-subject') as HTMLInputElement).value;
     const body = (document.getElementById('compose-body') as HTMLTextAreaElement).value;
     const errEl = document.getElementById('compose-error');
     const successEl = document.getElementById('compose-success');
     try {
-      const recipientPayload = to.trim();
-      const bodyPayload: any = {
-        subject,
-        body,
-      };
-      if (/^\d+$/.test(recipientPayload)) {
-        bodyPayload.recipient_id = Number(recipientPayload);
-      } else {
-        bodyPayload.recipient = recipientPayload;
+      if (!/^\d+$/.test(to.trim())) {
+        throw new Error('recipient_id_invalid');
       }
+      const bodyPayload: any = {
+        body,
+        recipient_id: Number(to.trim()),
+      };
       await apiFetch('/messaging/compose/', {
         method: 'POST',
         body: JSON.stringify(bodyPayload),
@@ -399,10 +397,10 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       if (successEl) successEl.textContent = '¡Mensaje enviado!';
       errEl?.classList.add('hidden');
       setTimeout(closeCompose, 1200);
-      if (activeTab === 'sent') loadMessages();
+      refreshUnreadCount();
     } catch (err: any) {
       errEl?.classList.remove('hidden');
-      if (errEl) errEl.textContent = err?.recipient || err?.recipient_id || err?.detail || err?.error || 'No se pudo enviar el mensaje';
+      if (errEl) errEl.textContent = err?.message === 'recipient_id_invalid' ? 'El ID de usuario debe ser numérico' : err?.recipient || err?.recipient_id || err?.detail || err?.error || 'No se pudo enviar el mensaje';
     }
   });
 

@@ -214,7 +214,6 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
            { label: 'Asignaturas aprobadas', value: String(passedCount), color: 'text-green-400', icon: '<polyline points="20 6 9 17 4 12"/>' },
            { label: 'Notas finales visibles', value: String(visibleFinals.length), color: 'text-primary', icon: '<path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/>' },
            { label: 'Evaluaciones pendientes', value: String(pending), color: 'text-yellow-400', icon: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>' },
-           { label: 'Asignaturas ocultas', value: String(gradesData.length - visibleFinals.length), color: 'text-red-400', icon: '<path d="M2 2l20 20"/><path d="M9.5 9.5A3 3 0 0 0 12 15a3 3 0 0 0 2.5-1.5"/>' },
         ].map(k => `
           <div class="kpi-card bg-card text-card-foreground rounded-xl border border-border p-5">
             <div class="flex items-center justify-between mb-3">
@@ -372,7 +371,6 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                     <td class="py-3">
                       <div class="space-y-1">
                         ${statusBadge(status)}
-                        <p class="text-xs text-muted-foreground" data-testid="grade-submission-status">${submissionStatusLabel(e)}</p>
                         ${e.min_score != null ? `<p class="text-xs ${e.evaluation_passed ? 'text-green-400' : 'text-red-400'}">Nota mínima: ${escHtml(String(e.min_score))} · ${thresholdStatus}</p>` : ''}
                         ${e.submission_file_url ? `<a href="${escHtml(e.submission_file_url)}" target="_blank" rel="noreferrer" class="text-xs text-primary hover:underline">${escHtml(e.submission_file_name || 'Archivo entregado')}</a>` : ''}
                         ${canUpload ? `<div class="pt-2 flex flex-col gap-2"><input type="file" accept="*/*" class="eval-upload-input block w-full text-xs text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary hover:file:bg-primary/20" data-eval-id="${e.id}" /><button type="button" class="eval-upload-btn inline-flex items-center justify-center rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20" data-eval-id="${e.id}">Subir archivo</button></div>` : ''}

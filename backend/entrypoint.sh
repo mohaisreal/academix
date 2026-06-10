@@ -45,6 +45,6 @@ if [ "$DJANGO_ENV" = "production" ]; then
         --access-logfile - \
         --error-logfile -
 else
-    echo "Starting Django development server..."
-    exec python manage.py runserver 0.0.0.0:8000
+    echo "Starting ASGI dev server..."
+    exec daphne -b 0.0.0.0 -p 8000 backend.asgi:application
 fi

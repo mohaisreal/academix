@@ -12,6 +12,7 @@ django-cors-headers>=4.3.0
 
 # Realtime messaging
 channels>=4.1.0
+daphne>=4.1.0
 
 # Environment Variables
 django-environ>=0.11.0

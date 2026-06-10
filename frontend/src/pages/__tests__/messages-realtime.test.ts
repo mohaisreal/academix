@@ -16,15 +16,19 @@ describe('messages realtime wiring', () => {
     expect(page).toContain("/messaging/unread-count/");
   });
 
-  it('falls back by scheduling reconnects when the socket closes', () => {
+  it('uses a unified inbox and simplified compose payload', () => {
     const page = readProjectFile('src/pages/messages/index.astro');
-    expect(page).toContain('scheduleReconnect');
-    expect(page).toContain('window.WebSocket');
+    expect(page).toContain("/messaging/threads/");
+    expect(page).not.toContain('tab-inbox');
+    expect(page).not.toContain('tab-sent');
+    expect(page).not.toContain('compose-subject');
+    expect(page).not.toContain('subject:');
   });
 
   it('keeps student messages link visible in the dashboard sidebar', () => {
     const layout = readProjectFile('src/layouts/DashboardLayout.astro');
     expect(layout).toContain('href="/messages"');
     expect(layout).toContain('id="nav-student"');
+    expect(layout).toContain('/messaging/unread-count/');
   });
 });
