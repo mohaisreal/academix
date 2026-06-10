@@ -99,8 +99,8 @@ def _base_class_defaults(subject, classroom, section_label='A', source_teacher_d
 def prepare_classes_for_period(period):
     decisions = list(
         TeacherSubjectDecision.objects.filter(period=period)
-        .select_related('subject', 'subject__department', 'teacher')
-        .order_by('subject_id', 'teacher_id', 'id')
+        .select_related('offering__subject', 'offering__subject__department', 'offering', 'teacher')
+        .order_by('offering__subject_id', 'teacher_id', 'id')
     )
     active_subjects = list(Subject.objects.filter(is_active=True).select_related('department', 'department__teacher').order_by('id'))
     if not active_subjects and not decisions:
@@ -112,23 +112,20 @@ def prepare_classes_for_period(period):
 
     created = 0
     if decisions:
-        selected = []
+        approved = []
         for d in decisions:
-            if d.decision != 'selected':
+            # Filtro: solo las decisiones aprobadas cuya oferta está activa alimentan el generador.
+            if d.decision != 'approved' or not d.offering.is_active:
                 continue
-            eligibility = getattr(d, '_eligibility', None)
-            if eligibility is None:
-                eligibility = d.subject.teacher_eligibilities.filter(teacher=d.teacher, period=period).order_by('-updated_at').first()
-            if not eligibility or not eligibility.is_eligible:
-                continue
-            if eligibility.updated_at > d.updated_at:
-                continue
-            selected.append(d)
+            approved.append(d)
+
         by_subject = {}
-        for decision in selected:
-            by_subject.setdefault(decision.subject_id, []).append(decision)
+        for decision in approved:
+            subject_id = decision.offering.subject_id
+            by_subject.setdefault(subject_id, []).append(decision)
+
         for subject_id, subject_decisions in by_subject.items():
-            subject = subject_decisions[0].subject
+            subject = subject_decisions[0].offering.subject
             for index, decision in enumerate(subject_decisions):
                 classroom = classrooms[(subject_id + index) % len(classrooms)]
                 defaults = _base_class_defaults(subject, classroom, section_label=_section_label_for_index(index), source_teacher_decision=decision)
@@ -374,6 +371,17 @@ def delete_generated_classes_for_period(period, scope='period'):
 
     with transaction.atomic():
         classes_qs = Class.objects.filter(period=period, is_generated_by_timetable=True)
+        deleted_count = classes_qs.count()
+        classes_qs.delete()
+    return deleted_count
+
+
+def delete_generated_classes_for_decision(decision):
+    with transaction.atomic():
+        classes_qs = Class.objects.filter(
+            source_teacher_decision=decision,
+            is_generated_by_timetable=True,
+        )
         deleted_count = classes_qs.count()
         classes_qs.delete()
     return deleted_count

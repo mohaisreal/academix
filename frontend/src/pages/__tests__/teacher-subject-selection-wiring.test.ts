@@ -11,10 +11,12 @@ describe('teacher subject selection wiring', () => {
     const teacherPage = readProjectFile('src/pages/enrollment/teacher-subjects.astro');
     const reviewPage = readProjectFile('src/pages/management/subject-decisions.astro');
 
-    expect(teacherPage).toContain('teacher-subject-selection-form');
-    expect(teacherPage).toContain('teacher-subject-selection-submit-btn');
-    expect(reviewPage).toContain('subject-decisions-list');
-    expect(reviewPage).toContain('subject-eligibility-editor');
+    // Página del docente: selección por oferta (nuevo modelo — sin formulario masivo)
+    expect(teacherPage).toContain('offerings-list');
+    expect(teacherPage).toContain('select-offering-btn');
+    // Página de gestión: lista de ofertas + panel de decisiones
+    expect(reviewPage).toContain('offerings-list');
+    expect(reviewPage).toContain('decisions-panel');
   });
 
   it('adds sidebar links for the new teacher and review flows', () => {
@@ -35,13 +37,27 @@ describe('teacher subject selection wiring', () => {
     expect(departments).toContain('Decisiones');
   });
 
+  it('keeps neutral Spanish copy and no English error fallbacks in target flows', () => {
+    const teacherPage = readProjectFile('src/pages/enrollment/teacher-subjects.astro');
+    const reviewPage = readProjectFile('src/pages/management/subject-decisions.astro');
+
+    expect(teacherPage).toContain('Selecciona las ofertas que quieres dictar en este período.');
+    expect(reviewPage).toContain('Error de conexión.');
+    expect(teacherPage).not.toContain('querés');
+    expect(teacherPage).not.toContain('Unexpected error');
+    expect(teacherPage).not.toContain('Network error.');
+    expect(reviewPage).not.toContain('Unexpected error');
+    expect(reviewPage).not.toContain('Network error.');
+  });
+
   it('keeps grouped subject rendering and edit flow hooks visible', () => {
     const enrollmentClasses = readProjectFile('src/pages/enrollment/classes/index.astro');
     const reviewPage = readProjectFile('src/pages/management/subject-decisions.astro');
 
     expect(enrollmentClasses).toContain('bySubject');
     expect(enrollmentClasses).toContain('subjectClasses');
-    expect(reviewPage).toContain('subject-eligibility-editor');
-    expect(reviewPage).toContain('subject-decisions-list');
+    // Página de gestión: panel de lista de ofertas + panel de decisiones docentes (se eliminó el concepto de elegibilidad)
+    expect(reviewPage).toContain('offerings-list');
+    expect(reviewPage).toContain('decisions-panel');
   });
 });

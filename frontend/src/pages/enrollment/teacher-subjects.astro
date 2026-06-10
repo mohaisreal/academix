@@ -2,14 +2,309 @@
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
 
-<DashboardLayout title="Selección docente — Academix" currentPath="/enrollment/teacher-subjects">
-  <div class="p-6 space-y-4">
-    <h1 class="text-xl font-semibold">Selección docente</h1>
-    <p class="text-sm text-muted-foreground">Envía tus asignaturas seleccionadas o marca ninguna.</p>
-    <form id="teacher-subject-selection-form" class="space-y-3 rounded-xl border border-border bg-card p-4">
-      <input id="teacher-subject-selection-mode" value="selected" />
-      <div id="teacher-subject-selection-list" data-empty-state="true">Selecciona asignaturas elegibles.</div>
-      <button id="teacher-subject-selection-submit-btn" type="button">Enviar selección</button>
-    </form>
+<DashboardLayout title="Selección de materias — Academix" currentPath="/enrollment/teacher-subjects">
+  <!-- Encabezado de la página -->
+  <div class="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+    <div>
+      <h1 class="text-xl font-semibold text-foreground">Selección de materias</h1>
+      <p class="text-sm text-muted-foreground">Selecciona las ofertas que quieres dictar en este período.</p>
+    </div>
+    <a href="/enrollment" class="text-sm text-muted-foreground hover:text-foreground transition-colors">← Inscripción</a>
+  </div>
+
+  <!-- Filtro de período -->
+  <div class="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3 sm:px-6">
+    <div class="flex items-center gap-2">
+      <label for="filter-period" class="text-xs text-muted-foreground whitespace-nowrap">Período</label>
+      <select id="filter-period"
+        class="rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40">
+        <option value="">Período actual</option>
+      </select>
+    </div>
+    <button
+      id="apply-filter-btn"
+      type="button"
+      class="rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground transition hover:bg-primary/90"
+    >Aplicar</button>
+  </div>
+
+  <div class="space-y-6 p-4 sm:p-6">
+    <!-- Esqueleto de carga -->
+    <div id="loading-state" class="space-y-3">
+      <div class="h-20 bg-muted animate-pulse rounded-xl"></div>
+      <div class="h-20 bg-muted animate-pulse rounded-xl"></div>
+      <div class="h-20 bg-muted animate-pulse rounded-xl"></div>
+    </div>
+
+    <!-- Estado vacío -->
+    <div id="empty-state" class="hidden text-center py-16">
+      <div class="flex size-16 items-center justify-center rounded-full bg-muted mx-auto mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground" aria-hidden="true">
+          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+        </svg>
+      </div>
+       <h3 class="text-base font-medium text-foreground">No hay ofertas activas</h3>
+       <p class="text-sm text-muted-foreground mt-1">No hay ofertas disponibles para este período en tu departamento.</p>
+    </div>
+
+    <!-- Estado de error -->
+    <div id="error-state" class="hidden rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+      <p class="text-sm font-medium text-destructive">No se pudieron cargar las ofertas</p>
+      <p id="error-message" class="text-sm text-destructive/80 mt-1"></p>
+      <button id="retry-btn" type="button" class="mt-2 rounded border border-destructive/30 px-2 py-1 text-xs hover:bg-destructive/10 text-destructive">Reintentar</button>
+    </div>
+
+    <!-- Contenido: lista de ofertas -->
+    <div id="content-state" class="hidden space-y-3">
+      <p class="text-sm text-muted-foreground">Selecciona las ofertas que quieres dictar. Haz clic en Seleccionar para registrar tu interés.</p>
+
+      <!-- Tarjetas de ofertas pobladas por JS -->
+      <div id="offerings-list" class="space-y-3">
+        <!-- Aquí va la salida de renderOfferingCard() -->
+      </div>
+
+      <div id="my-decisions-summary" class="mt-4 rounded-xl border border-border bg-card/50 p-3 text-xs text-muted-foreground hidden">
+        <span id="decisions-count-label"></span>
+      </div>
+    </div>
+
+    <!-- Notificación emergente -->
+    <div id="action-feedback" class="hidden fixed bottom-6 right-6 rounded-lg border px-4 py-3 text-sm shadow-lg z-50"></div>
   </div>
 </DashboardLayout>
+
+<script>
+  import API_BASE_URL from '@/config/api';
+  import {
+    buildOfferingRows,
+    renderOfferingCard,
+    getDecisionForOffering,
+  } from '@/utils/teacher-subject-selection-utils';
+  import type { DecisionLike, OfferingLike } from '@/utils/teacher-subject-selection-utils';
+
+  const API_URL = API_BASE_URL;
+  const token = localStorage.getItem('access_token');
+
+  function getUser(): Record<string, unknown> | null {
+    try {
+      const stored = localStorage.getItem('user-storage');
+      if (!stored) return null;
+      return JSON.parse(stored)?.state?.user ?? null;
+    } catch { return null; }
+  }
+
+  if (!token) { window.location.replace('/login'); throw new Error(); }
+  const user = getUser();
+  if (!user) { window.location.replace('/login'); throw new Error(); }
+  if (user.role !== 't') { window.location.replace('/'); throw new Error(); }
+
+  async function apiFetch(path: string, opts: RequestInit = {}) {
+    const res = await fetch(`${API_URL}${path}`, {
+      ...opts,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        ...(opts.headers ?? {}),
+      },
+    });
+    if (res.status === 401) { window.location.replace('/login'); throw new Error('Unauthorized'); }
+    return res;
+  }
+
+  // ------------------------------------------------------------------ utilidades
+
+  function showFeedback(message: string, isError = false) {
+    const el = document.getElementById('action-feedback')!;
+    el.textContent = message;
+    el.className = `fixed bottom-6 right-6 rounded-lg border px-4 py-3 text-sm shadow-lg z-50 ${
+      isError
+        ? 'border-destructive/30 bg-destructive/15 text-destructive'
+        : 'border-emerald-500/30 bg-emerald-500/15 text-emerald-400'
+    }`;
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 3500);
+  }
+
+  function showPanel(id: string) {
+    ['loading-state', 'empty-state', 'error-state', 'content-state'].forEach((panel) => {
+      const el = document.getElementById(panel);
+      if (el) el.classList.toggle('hidden', panel !== id);
+    });
+  }
+
+  // ------------------------------------------------------------------ estado
+  let selectedPeriodId = '';
+  let teacherDepartmentId = '';
+  let existingDecisions: DecisionLike[] = [];
+  let currentOfferings: OfferingLike[] = [];
+
+  // ------------------------------------------------------------------ poblar filtro de período
+  async function populatePeriodFilter() {
+    try {
+      const res = await apiFetch('/academic/periods/');
+      if (!res.ok) return;
+      const data = await res.json();
+      const periods: { id: number; name: string; is_active?: boolean }[] = Array.isArray(data) ? data : (data?.results ?? []);
+      const select = document.getElementById('filter-period') as HTMLSelectElement;
+      periods.forEach((p) => {
+        const opt = document.createElement('option');
+        opt.value = String(p.id);
+        opt.textContent = p.name;
+        if (p.is_active) {
+          opt.selected = true;
+          selectedPeriodId = String(p.id);
+        }
+        select.appendChild(opt);
+      });
+    } catch {
+      // No es crítico
+    }
+  }
+
+  // Resolver el departamento del docente (mediante el endpoint de departamentos filtrado por docente)
+  async function resolveTeacherDepartment(): Promise<string> {
+    try {
+      const res = await apiFetch('/academic/departments/');
+      if (!res.ok) return '';
+      const data = await res.json();
+      const departments: { id: number; teacher?: number }[] = Array.isArray(data) ? data : (data?.results ?? []);
+      const myDept = departments.find((d) => d.teacher === (user?.id as number));
+      return myDept ? String(myDept.id) : '';
+    } catch {
+      return '';
+    }
+  }
+
+  // ------------------------------------------------------------------ cargar decisiones (del propio docente)
+  async function loadMyDecisions(): Promise<DecisionLike[]> {
+    try {
+      const params = new URLSearchParams();
+      if (selectedPeriodId) params.set('period', selectedPeriodId);
+      const query = params.toString() ? `?${params.toString()}` : '';
+      const res = await apiFetch(`/academic/teacher-subject-selection/decisions/${query}`);
+      if (!res.ok) return [];
+      const data: unknown[] = await res.json();
+      return data as DecisionLike[];
+    } catch {
+      return [];
+    }
+  }
+
+  // ------------------------------------------------------------------ cargar ofertas
+  async function loadOfferings() {
+    showPanel('loading-state');
+    try {
+      // Resolver el departamento si aún no se conoce
+      if (!teacherDepartmentId) {
+        teacherDepartmentId = await resolveTeacherDepartment();
+      }
+
+      // Cargar las decisiones en paralelo con las ofertas
+      const [decisionsData] = await Promise.all([loadMyDecisions()]);
+      existingDecisions = decisionsData;
+
+      const params = new URLSearchParams({ active: 'true' });
+      if (selectedPeriodId) params.set('period', selectedPeriodId);
+      if (teacherDepartmentId) params.set('department', teacherDepartmentId);
+
+      const res = await apiFetch(`/academic/offerings/?${params.toString()}`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        document.getElementById('error-message')!.textContent = (body as { detail?: string }).detail ?? `Error ${res.status}`;
+        showPanel('error-state');
+        return;
+      }
+      const data: unknown[] = await res.json();
+      currentOfferings = data as OfferingLike[];
+      const rows = buildOfferingRows(currentOfferings);
+
+      if (rows.length === 0) {
+        showPanel('empty-state');
+        return;
+      }
+
+      const listEl = document.getElementById('offerings-list')!;
+      listEl.innerHTML = rows.map((row) => {
+        const decision = getDecisionForOffering(existingDecisions, row.id);
+        return renderOfferingCard(row, decision);
+      }).join('');
+
+      wireSelectButtons();
+      updateDecisionsSummary();
+      showPanel('content-state');
+    } catch (err) {
+      document.getElementById('error-message')!.textContent = (err as Error).message ?? 'Error inesperado.';
+      showPanel('error-state');
+    }
+  }
+
+  // ------------------------------------------------------------------ enlazar botones de selección
+
+  function wireSelectButtons() {
+    document.querySelectorAll<HTMLButtonElement>('.select-offering-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const offeringId = Number(btn.getAttribute('data-offering-id'));
+        await selectOffering(offeringId, btn);
+      });
+    });
+  }
+
+  async function selectOffering(offeringId: number, btn: HTMLButtonElement) {
+    btn.disabled = true;
+    btn.textContent = 'Seleccionando…';
+    try {
+      const res = await apiFetch(`/academic/offerings/${offeringId}/select/`, { method: 'POST' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        showFeedback((body as { detail?: string }).detail ?? 'No se pudo seleccionar la oferta.', true);
+        btn.disabled = false;
+        btn.textContent = 'Seleccionar';
+        return;
+      }
+      showFeedback('Oferta seleccionada. Tu solicitud quedó pendiente de revisión.');
+      // Recargar para reflejar el estado actualizado de la decisión
+      await loadOfferings();
+    } catch (err) {
+      showFeedback((err as Error).message ?? 'Error de conexión.', true);
+      btn.disabled = false;
+      btn.textContent = 'Seleccionar';
+    }
+  }
+
+  function updateDecisionsSummary() {
+    const pending = existingDecisions.filter((d) => d.decision === 'pending').length;
+    const approved = existingDecisions.filter((d) => d.decision === 'approved').length;
+    const rejected = existingDecisions.filter((d) => d.decision === 'rejected').length;
+    const total = existingDecisions.length;
+
+    const summaryEl = document.getElementById('my-decisions-summary');
+    const labelEl = document.getElementById('decisions-count-label');
+    if (!summaryEl || !labelEl) return;
+
+    if (total === 0) {
+      summaryEl.classList.add('hidden');
+      return;
+    }
+
+    const parts: string[] = [];
+    if (pending > 0) parts.push(`${pending} pendientes`);
+    if (approved > 0) parts.push(`${approved} aprobadas`);
+    if (rejected > 0) parts.push(`${rejected} rechazadas`);
+    labelEl.textContent = `Tus selecciones: ${parts.join(', ')}`;
+    summaryEl.classList.remove('hidden');
+  }
+
+  // ------------------------------------------------------------------ eventos
+  document.getElementById('apply-filter-btn')?.addEventListener('click', () => {
+    selectedPeriodId = (document.getElementById('filter-period') as HTMLSelectElement)?.value ?? '';
+    loadOfferings();
+  });
+
+  document.getElementById('retry-btn')?.addEventListener('click', () => loadOfferings());
+
+  // ------------------------------------------------------------------ inicialización
+  (async () => {
+    await populatePeriodFilter();
+    await loadOfferings();
+  })();
+</script>

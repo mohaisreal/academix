@@ -97,40 +97,42 @@ class Subject(models.Model):
         return self.credit_price_fourth_or_more_enrollment
 
 
-class TeacherSubjectEligibility(models.Model):
-    teacher = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='subject_eligibilities',
-        limit_choices_to={'role': 't'},
-    )
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='teacher_eligibilities')
-    period = models.ForeignKey('AcademicPeriod', on_delete=models.CASCADE, related_name='teacher_eligibilities')
-    is_eligible = models.BooleanField(default=True)
-    reviewed_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='reviewed_subject_eligibilities',
-        limit_choices_to={'role__in': ['d', 'm']},
-    )
-    notes = models.TextField(blank=True)
+class SubjectOffering(models.Model):
+    """
+    Capa de planificación gestionada que se ubica entre Subject y el
+    generador de horarios. Cada instancia representa una oferta programada
+    de una asignatura para un periodo dado, con su propio aforo (capacidad)
+    y estado de activación.
+    """
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='offerings')
+    period = models.ForeignKey('AcademicPeriod', on_delete=models.CASCADE, related_name='offerings')
+    department = models.ForeignKey('Department', on_delete=models.CASCADE, related_name='offerings')
+    max_students = models.PositiveSmallIntegerField(default=30)
+    is_active = models.BooleanField(default=False)
+    label = models.CharField(max_length=100, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['teacher', 'subject', 'period'], name='unique_teacher_subject_eligibility'),
+            models.UniqueConstraint(
+                fields=['subject', 'period', 'label'],
+                name='unique_subject_period_label_offering',
+            ),
         ]
-        ordering = ['period', 'subject', 'teacher']
+        ordering = ['period', 'subject', 'label']
+
+    def __str__(self):
+        label_suffix = f' ({self.label})' if self.label else ''
+        return f"{self.subject.code} — {self.period.code}{label_suffix}"
 
 
 class TeacherSubjectDecision(models.Model):
     DECISION_CHOICES = [
-        ('approve', 'Approve'),
-        ('reject', 'Reject'),
-        ('none', 'None'),
+        ('pending', 'Pending'),
+        ('selected', 'Selected'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
     ]
 
     teacher = models.ForeignKey(
@@ -139,16 +141,20 @@ class TeacherSubjectDecision(models.Model):
         related_name='subject_decisions',
         limit_choices_to={'role': 't'},
     )
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='teacher_decisions')
+    offering = models.ForeignKey(
+        SubjectOffering,
+        on_delete=models.CASCADE,
+        related_name='teacher_decisions',
+    )
     period = models.ForeignKey('AcademicPeriod', on_delete=models.CASCADE, related_name='teacher_decisions')
-    decision = models.CharField(max_length=12, choices=DECISION_CHOICES, default='none')
+    decision = models.CharField(max_length=12, choices=DECISION_CHOICES, default='pending')
     decided_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='made_subject_decisions',
-        limit_choices_to={'role__in': ['d', 'm']},
+        limit_choices_to={'role': 'm'},
     )
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -156,9 +162,9 @@ class TeacherSubjectDecision(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['teacher', 'subject', 'period'], name='unique_teacher_subject_decision'),
+            models.UniqueConstraint(fields=['teacher', 'offering'], name='unique_teacher_offering_decision'),
         ]
-        ordering = ['period', 'subject', 'teacher']
+        ordering = ['period', 'offering', 'teacher']
 
 
 class AcademicPeriod(models.Model):

@@ -7,8 +7,8 @@ from .models import (
     AcademicPeriod,
     Classroom,
     Class,
+    SubjectOffering,
     TeacherSubjectDecision,
-    TeacherSubjectEligibility,
     ClassSchedule,
     TimeSlot,
     TimetableRun,
@@ -238,8 +238,8 @@ class ClassSerializer(serializers.ModelSerializer):
     def get_available_spots(self, obj):
         from enrollment.models import ClassEnrollment
         enrolled = ClassEnrollment.objects.filter(cls=obj, status='enrolled').count()
-        # Usa la capacidad más restrictiva: la capacidad del aula si está asignada,
-        # en caso contrario, usa max_students como respaldo (siempre tiene default=30).
+        # Usa la capacidad más restrictiva: la del aula si está asignada;
+        # si no, usa max_students como respaldo (siempre tiene default=30).
         if obj.classroom and obj.classroom.capacity:
             capacity = min(obj.classroom.capacity, obj.max_students)
         else:
@@ -299,6 +299,54 @@ class ClassSerializer(serializers.ModelSerializer):
         ]
 
 
+class SubjectOfferingSerializer(serializers.ModelSerializer):
+    subject_name = serializers.CharField(source='subject.name', read_only=True)
+    subject_code = serializers.CharField(source='subject.code', read_only=True)
+    period_name = serializers.CharField(source='period.name', read_only=True)
+    department_name = serializers.CharField(source='department.name', read_only=True)
+
+    subject_id = serializers.PrimaryKeyRelatedField(
+        queryset=Subject.objects.all(), source='subject', write_only=True
+    )
+    period_id = serializers.PrimaryKeyRelatedField(
+        queryset=AcademicPeriod.objects.all(), source='period', write_only=True
+    )
+    department_id = serializers.PrimaryKeyRelatedField(
+        queryset=Department.objects.all(), source='department', write_only=True
+    )
+
+    class Meta:
+        model = SubjectOffering
+        fields = [
+            'id',
+            'subject', 'subject_id', 'subject_name', 'subject_code',
+            'period', 'period_id', 'period_name',
+            'department', 'department_id', 'department_name',
+            'max_students', 'is_active', 'label',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'subject', 'period', 'department', 'is_active', 'created_at', 'updated_at']
+
+    def validate(self, attrs):
+        # Construye una instancia temporal y ejecuta full_clean a nivel de modelo para UniqueConstraint.
+        instance_kwargs = {
+            'subject': attrs.get('subject', getattr(self.instance, 'subject', None)),
+            'period': attrs.get('period', getattr(self.instance, 'period', None)),
+            'department': attrs.get('department', getattr(self.instance, 'department', None)),
+            'max_students': attrs.get('max_students', getattr(self.instance, 'max_students', 30)),
+            'label': attrs.get('label', getattr(self.instance, 'label', '')),
+            'is_active': getattr(self.instance, 'is_active', False),
+        }
+        temp = SubjectOffering(**instance_kwargs)
+        if self.instance:
+            temp.pk = self.instance.pk
+        try:
+            temp.validate_unique()
+        except Exception as exc:
+            raise serializers.ValidationError(str(exc))
+        return attrs
+
+
 class TeacherSubjectSelectionSerializer(serializers.Serializer):
     decision = serializers.ChoiceField(choices=['selected', 'none'])
     subject_ids = serializers.ListField(
@@ -318,18 +366,32 @@ class TeacherSubjectSelectionSerializer(serializers.Serializer):
 
 
 class TeacherSubjectDecisionSerializer(serializers.ModelSerializer):
-    subject_name = serializers.CharField(source='subject.name', read_only=True)
-    subject_code = serializers.CharField(source='subject.code', read_only=True)
-    department_name = serializers.CharField(source='subject.department.name', read_only=True)
+    offering_label = serializers.CharField(source='offering.label', read_only=True)
+    subject_name = serializers.CharField(source='offering.subject.name', read_only=True)
+    subject_code = serializers.CharField(source='offering.subject.code', read_only=True)
+    department_name = serializers.CharField(source='offering.department.name', read_only=True)
+    teacher_name = serializers.SerializerMethodField()
     reviewed_by_name = serializers.SerializerMethodField()
     stale = serializers.SerializerMethodField()
 
     class Meta:
         model = TeacherSubjectDecision
         fields = [
-            'id', 'teacher', 'subject', 'subject_name', 'subject_code', 'department_name', 'period',
-            'decision', 'decided_by', 'reviewed_by_name', 'notes', 'created_at', 'updated_at', 'stale',
+            'id', 'teacher', 'teacher_name', 'offering', 'offering_label',
+            'subject_name', 'subject_code', 'department_name', 'period',
+            'decision', 'decided_by', 'reviewed_by_name', 'notes',
+            'created_at', 'updated_at', 'stale',
         ]
+        # El único uso de escritura con `data=` es el PATCH de revisión, que envía solo
+        # `{'decision': action}`. Marca los campos de identidad/relación como solo lectura
+        # para que el endpoint de revisión no pueda reasignarlos por accidente.
+        read_only_fields = ['teacher', 'offering', 'period']
+
+    def get_teacher_name(self, obj):
+        teacher = obj.teacher
+        if not teacher:
+            return ''
+        return f"{teacher.first_name} {teacher.last_name}".strip() or teacher.username
 
     def get_reviewed_by_name(self, obj):
         reviewer = obj.decided_by
@@ -338,35 +400,11 @@ class TeacherSubjectDecisionSerializer(serializers.ModelSerializer):
         return f"{reviewer.first_name} {reviewer.last_name}".strip() or reviewer.username
 
     def get_stale(self, obj):
-        eligibility = TeacherSubjectEligibility.objects.filter(
-            teacher_id=obj.teacher_id,
-            subject_id=obj.subject_id,
-            period_id=obj.period_id,
-        ).first()
-        if not eligibility:
+        # Obsoleto = la oferta está inactiva. Usa la oferta precargada; no hay consulta por fila.
+        offering = obj.offering
+        if offering is None:
             return True
-        if not eligibility.is_eligible:
-            return True
-        return eligibility.updated_at > obj.updated_at
-
-
-class TeacherSubjectEligibilitySerializer(serializers.ModelSerializer):
-    subject_name = serializers.CharField(source='subject.name', read_only=True)
-    subject_code = serializers.CharField(source='subject.code', read_only=True)
-    reviewer_name = serializers.SerializerMethodField()
-
-    class Meta:
-        model = TeacherSubjectEligibility
-        fields = [
-            'id', 'teacher', 'subject', 'subject_name', 'subject_code', 'period',
-            'is_eligible', 'reviewed_by', 'reviewer_name', 'notes', 'created_at', 'updated_at',
-        ]
-
-    def get_reviewer_name(self, obj):
-        reviewer = obj.reviewed_by
-        if not reviewer:
-            return None
-        return f"{reviewer.first_name} {reviewer.last_name}".strip() or reviewer.username
+        return not offering.is_active
 
 
 class TimeSlotSerializer(serializers.ModelSerializer):

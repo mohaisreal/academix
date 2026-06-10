@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     Career,
     Subject,
-    TeacherSubjectEligibility,
+    SubjectOffering,
     TeacherSubjectDecision,
     Department,
     AcademicPeriod,
@@ -18,7 +18,7 @@ from .models import (
 
 admin.site.register(Career)
 admin.site.register(Subject)
-admin.site.register(TeacherSubjectEligibility)
+admin.site.register(SubjectOffering)
 admin.site.register(TeacherSubjectDecision)
 admin.site.register(Department)
 admin.site.register(AcademicPeriod)

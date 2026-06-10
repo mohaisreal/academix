@@ -47,7 +47,7 @@ class ClassEnrollment(models.Model):
         related_name='class_enrollments',
     )
     cls = models.ForeignKey(
-        'academic.Class', on_delete=models.CASCADE, related_name='enrollments'
+        'academic.Class', on_delete=models.SET_NULL, null=True, blank=True, related_name='enrollments'
     )
     status = models.CharField(max_length=12, choices=STATUS_CHOICES, default='enrolled')
     enrolled_at = models.DateTimeField(auto_now_add=True)
@@ -57,7 +57,7 @@ class ClassEnrollment(models.Model):
         ordering = ['-enrolled_at']
 
     def __str__(self):
-        return f"{self.student.username} in {self.cls}"
+        return f"{self.student.username} in {self.cls or 'desasignada'}"
 
 
 class ExceptionalConvocationGrace(models.Model):

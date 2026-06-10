@@ -16,13 +16,13 @@ from .models import (
     Classroom,
     Class,
     ClassSchedule,
+    SubjectOffering,
     TimeSlot,
     TimetableRun,
     ScheduleAssignment,
     ConstraintViolation,
     SchedulingConstraint,
     TeacherSubjectDecision,
-    TeacherSubjectEligibility,
 )
 from .serializers import (
     CareerSerializer, SubjectSerializer, AcademicPeriodSerializer,
@@ -31,12 +31,13 @@ from .serializers import (
     TimeSlotSerializer, TimetableRunSerializer, ScheduleAssignmentSerializer,
     ConstraintViolationSerializer,
     SchedulingConstraintSerializer,
+    SubjectOfferingSerializer,
     TeacherSubjectSelectionSerializer,
     TeacherSubjectDecisionSerializer,
-    TeacherSubjectEligibilitySerializer,
 )
 from .timetabling import generate_for_run, build_warning_summary_for_run
 from .timetabling import delete_generated_classes_for_period
+from .services import reconcile_teacher_decision_change
 from .schedule_source import serialize_assignment_schedule, published_assignments_map_for_period
 from shared.permissions import IsAdminOrManagement
 from shared.periods import get_active_academic_period
@@ -109,7 +110,90 @@ class CareerViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+class SubjectOfferingViewSet(viewsets.ModelViewSet):
+    """
+    CRUD de SubjectOffering más las acciones activate / deactivate / select.
+
+    Permisos:
+      - create / activate / deactivate: IsAdminOrManagement
+      - list / retrieve: IsAuthenticated
+      - select: solo docente (role='t')
+    """
+    serializer_class = SubjectOfferingSerializer
+    pagination_class = None
+    http_method_names = ['get', 'post', 'patch', 'head', 'options']
+
+    def get_permissions(self):
+        if self.action in ('activate', 'deactivate', 'create', 'partial_update'):
+            return [IsAdminOrManagement()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        qs = SubjectOffering.objects.select_related('subject', 'period', 'department').all()
+        department = self.request.query_params.get('department')
+        period = self.request.query_params.get('period')
+        active = self.request.query_params.get('active')
+        if department:
+            qs = qs.filter(department_id=department)
+        if period:
+            qs = qs.filter(period_id=period)
+        if active == 'true':
+            qs = qs.filter(is_active=True)
+        elif active == 'false':
+            qs = qs.filter(is_active=False)
+        return qs
+
+    @action(detail=True, methods=['patch'], url_path='activate')
+    def activate(self, request, pk=None):
+        """PATCH /offerings/<id>/activate/ — gestión activa la oferta."""
+        offering = self.get_object()
+        offering.is_active = True
+        offering.save(update_fields=['is_active', 'updated_at'])
+        return Response(SubjectOfferingSerializer(offering).data)
+
+    @action(detail=True, methods=['patch'], url_path='deactivate')
+    def deactivate(self, request, pk=None):
+        """PATCH /offerings/<id>/deactivate/ — gestión desactiva la oferta."""
+        offering = self.get_object()
+        offering.is_active = False
+        offering.save(update_fields=['is_active', 'updated_at'])
+        return Response(SubjectOfferingSerializer(offering).data)
+
+    @action(detail=True, methods=['post'], url_path='select', permission_classes=[IsAuthenticated])
+    def select(self, request, pk=None):
+        """POST /offerings/<id>/select/ — el docente selecciona una oferta."""
+        if request.user.role != 't':
+            return Response(
+                {'detail': 'Only teachers can select offerings.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        offering = self.get_object()
+        if not offering.is_active:
+            return Response(
+                {'detail': 'Cannot select an inactive offering.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        period = offering.period
+        if TeacherSubjectDecision.objects.filter(teacher=request.user, offering=offering).exists():
+            return Response(
+                {'detail': 'You have already selected this offering.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        decision = TeacherSubjectDecision.objects.create(
+            teacher=request.user,
+            offering=offering,
+            period=period,
+            decision='pending',
+        )
+        serializer = TeacherSubjectDecisionSerializer(decision, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
 class TeacherSubjectSelectionSubmitView(APIView):
+    """
+    Endpoint heredado para envío masivo. Se mantiene por compatibilidad hacia atrás.
+    El código nuevo debe usar SubjectOfferingViewSet.select por cada oferta.
+    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -120,104 +204,85 @@ class TeacherSubjectSelectionSubmitView(APIView):
         if not period:
             return Response({'detail': 'An active admission period is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = TeacherSubjectSelectionSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        decision = serializer.validated_data['decision']
-        subject_ids = serializer.validated_data.get('subject_ids', [])
-        teacher = request.user
-
-        teacher_department = _department_for_teacher(teacher)
-
-        subjects = list(Subject.objects.select_related('department').filter(id__in=subject_ids, is_active=True))
-        if decision == 'selected' and len(subjects) != len(subject_ids):
-            return Response({'detail': 'All selected subjects must be active and exist.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        for subject in subjects:
-            if not subject.department_id:
-                return Response({'detail': 'Selected subjects must belong to a department.'}, status=status.HTTP_400_BAD_REQUEST)
-
-            if teacher_department and subject.department_id != teacher_department.id:
-                return Response({'detail': 'Selected subjects must belong to the teacher department.'}, status=status.HTTP_400_BAD_REQUEST)
-
-            eligibility = TeacherSubjectEligibility.objects.filter(
-                teacher=teacher,
-                subject=subject,
-                period=period,
-            ).order_by('-updated_at').first()
-            if not eligibility or not eligibility.is_eligible:
-                return Response({'detail': 'Subject is not eligible for this teacher in the active period.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        if decision == 'none':
-            eligible_subject_ids = list(
-                TeacherSubjectEligibility.objects.filter(
-                    teacher=teacher,
-                    period=period,
-                    is_eligible=True,
-                    subject__is_active=True,
-                ).values_list('subject_id', flat=True)
-            )
-            if teacher_department:
-                eligible_subject_ids = [
-                    subject_id
-                    for subject_id in eligible_subject_ids
-                    if Subject.objects.filter(id=subject_id, department=teacher_department).exists()
-                ]
-            for subject_id in eligible_subject_ids:
-                TeacherSubjectDecision.objects.update_or_create(
-                    teacher=teacher,
-                    subject_id=subject_id,
-                    period=period,
-                    defaults={'decision': 'none', 'decided_by': teacher, 'notes': ''},
-                )
-            return Response({'current_period': _current_period_payload(), 'results': []}, status=status.HTTP_200_OK)
-
-        created = []
-        for subject in subjects:
-            obj, _ = TeacherSubjectDecision.objects.update_or_create(
-                teacher=teacher,
-                subject=subject,
-                period=period,
-                defaults={'decision': 'selected', 'decided_by': teacher, 'notes': ''},
-            )
-            created.append(obj)
-
-        payload = TeacherSubjectDecisionSerializer(created, many=True, context={'request': request}).data
-        return Response({'current_period': _current_period_payload(), 'results': payload}, status=status.HTTP_200_OK)
+        return Response(
+            {'detail': 'Legacy submit endpoint is deprecated. Use POST /offerings/<id>/select/ per offering.'},
+            status=status.HTTP_410_GONE,
+        )
 
 
 class TeacherSubjectDecisionReviewView(APIView):
-    permission_classes = [IsAuthenticated]
+    """
+    PATCH /api/academic/teacher-subject-selection/decisions/<pk>/review/
+
+    Cuerpo: {'action': 'approved' | 'rejected'}
+
+    El frontend envía `action`, que se traduce al campo `decision` del serializador.
+    Cualquier otro valor de `action` devuelve 400.
+    """
+    permission_classes = [IsAdminOrManagement]
+
+    VALID_ACTIONS = ('approved', 'rejected')
 
     def patch(self, request, pk):
-        decision = get_object_or_404(TeacherSubjectDecision.objects.select_related('subject__department', 'teacher'), pk=pk)
-        department = decision.subject.department
-        if request.user.role not in ('d', 'm'):
-            return Response({'detail': 'Only department heads or management can review decisions.'}, status=status.HTTP_403_FORBIDDEN)
-        if request.user.role == 'd' and department and department.teacher_id != request.user.id:
-            return Response({'detail': 'You can only review decisions for your department.'}, status=status.HTTP_403_FORBIDDEN)
+        decision = get_object_or_404(
+            TeacherSubjectDecision.objects.select_related('offering__department', 'teacher'),
+            pk=pk,
+        )
 
-        serializer = TeacherSubjectDecisionSerializer(decision, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(decided_by=request.user)
+        action = request.data.get('action')
+        if action not in self.VALID_ACTIONS:
+            return Response(
+                {'detail': "action must be 'approved' or 'rejected'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        previous_decision = decision.decision
+        with transaction.atomic():
+            serializer = TeacherSubjectDecisionSerializer(decision, data={'decision': action}, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(decided_by=request.user)
+            reconcile_teacher_decision_change(decision, previous_decision)
         updated = TeacherSubjectDecisionSerializer(decision, context={'request': request}).data
         return Response(updated)
 
 
-class TeacherSubjectEligibilityView(APIView):
+class TeacherSubjectDecisionListView(APIView):
+    """GET /api/academic/teacher-subject-selection/decisions/
+
+    Alcance por rol:
+      t → solo sus propios registros
+      m / a → todos los registros
+      cualquier otro rol autenticado → 403
+    Filtros: ?period=<id>  (por defecto, periodo activo)
+             ?teacher=<id> (opcional)
+    """
+
     permission_classes = [IsAuthenticated]
 
-    def patch(self, request, pk):
-        eligibility = get_object_or_404(TeacherSubjectEligibility.objects.select_related('subject__department', 'teacher'), pk=pk)
-        if request.user.role not in ('d', 'm'):
-            return Response({'detail': 'Only department heads or management can edit eligibility.'}, status=status.HTTP_403_FORBIDDEN)
-        if request.user.role == 'd' and eligibility.subject.department and eligibility.subject.department.teacher_id != request.user.id:
-            return Response({'detail': 'You can only edit eligibility for your department.'}, status=status.HTTP_403_FORBIDDEN)
+    def get(self, request):
+        qs = TeacherSubjectDecision.objects.select_related(
+            'offering__subject', 'offering__department', 'teacher', 'decided_by'
+        )
+        u = request.user
+        if u.role == 't':
+            qs = qs.filter(teacher=u)
+        elif u.role not in ('m', 'a'):
+            return Response({'detail': 'Forbidden.'}, status=status.HTTP_403_FORBIDDEN)
 
-        serializer = TeacherSubjectEligibilitySerializer(eligibility, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(reviewed_by=request.user)
-        return Response(TeacherSubjectEligibilitySerializer(eligibility, context={'request': request}).data)
+        period = request.query_params.get('period') or getattr(
+            get_active_academic_period(), 'id', None
+        )
+        if period:
+            qs = qs.filter(period_id=period)
+
+        teacher_id = request.query_params.get('teacher')
+        if teacher_id:
+            qs = qs.filter(teacher_id=teacher_id)
+
+        data = TeacherSubjectDecisionSerializer(
+            qs, many=True, context={'request': request}
+        ).data
+        return Response(data)
 
 
 class SubjectViewSet(viewsets.ModelViewSet):
@@ -264,14 +329,14 @@ class AcademicPeriodViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         instance = serializer.save()
-        # Solo puede haber un periodo activo a la vez, incluidos los periodos recién creados
+        # Solo puede haber un periodo activo a la vez, incluidos los periodos recién creados.
         # La interfaz avisa de esto; el backend también debe imponerlo.
         if instance.is_active:
             AcademicPeriod.objects.exclude(pk=instance.pk).update(is_active=False)
 
     def perform_update(self, serializer):
         instance = serializer.save()
-        # Solo puede haber un periodo activo a la vez
+        # Solo puede haber un periodo activo a la vez.
         if instance.is_active:
             AcademicPeriod.objects.exclude(pk=instance.pk).update(is_active=False)
 
@@ -314,7 +379,7 @@ class ClassViewSet(viewsets.ModelViewSet):
             return Response([])
         qs = self.get_queryset().filter(teacher=request.user)
         qs = qs.filter(period=active_period)
-        # Anota el recuento de notas pendientes
+        # Registra el recuento de calificaciones pendientes.
         from grades.models import Evaluation, Grade
         from enrollment.models import ClassEnrollment
         from django.db.models import Avg

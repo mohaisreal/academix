@@ -15,11 +15,12 @@ router.register('timetable-runs', views.TimetableRunViewSet, basename='timetable
 router.register('schedule-assignments', views.ScheduleAssignmentViewSet, basename='schedule-assignment')
 router.register('constraint-violations', views.ConstraintViolationViewSet, basename='constraint-violation')
 router.register('scheduling-constraints', views.SchedulingConstraintViewSet, basename='scheduling-constraint')
+router.register('offerings', views.SubjectOfferingViewSet, basename='offering')
 
 urlpatterns = router.urls
 
 urlpatterns += [
     path('teacher-subject-selection/submit/', views.TeacherSubjectSelectionSubmitView.as_view(), name='teacher-subject-selection-submit'),
+    path('teacher-subject-selection/decisions/', views.TeacherSubjectDecisionListView.as_view(), name='teacher-subject-decision-list'),
     path('teacher-subject-selection/decisions/<int:pk>/review/', views.TeacherSubjectDecisionReviewView.as_view(), name='teacher-subject-decision-review'),
-    path('teacher-subject-selection/eligibilities/<int:pk>/', views.TeacherSubjectEligibilityView.as_view(), name='teacher-subject-eligibility-edit'),
 ]

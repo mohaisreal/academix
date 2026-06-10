@@ -2,11 +2,550 @@
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
 ---
 
-<DashboardLayout title="Decisiones docentes — Academix" currentPath="/management/subject-decisions">
-  <div class="p-6 space-y-4">
-    <h1 class="text-xl font-semibold">Decisiones docentes</h1>
-    <p class="text-sm text-muted-foreground">Revisa eligibilidad, edita decisiones y marca estados obsoletos.</p>
-    <section id="subject-decisions-list" class="rounded-xl border border-border bg-card p-4">Sin decisiones cargadas.</section>
-    <section id="subject-eligibility-editor" class="rounded-xl border border-border bg-card p-4">Editor de elegibilidad.</section>
+<DashboardLayout title="Ofertas y decisiones de materias — Academix" currentPath="/management/subject-decisions">
+  <!-- Encabezado de la página -->
+  <div class="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+    <div>
+      <h1 class="text-xl font-semibold text-foreground">Ofertas y decisiones de materias</h1>
+      <p class="text-sm text-muted-foreground">Gestiona las ofertas, actívalas o desactívalas, y revisa las selecciones docentes.</p>
+    </div>
+    <button
+      id="reload-all-btn"
+      type="button"
+      class="shrink-0 rounded-lg border border-border px-3 py-1.5 text-xs transition hover:bg-muted"
+    >Recargar</button>
   </div>
+
+  <!-- Barra de filtros de período / departamento -->
+  <div class="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3 sm:px-6">
+    <div class="flex items-center gap-2">
+      <label for="filter-period" class="text-xs text-muted-foreground whitespace-nowrap">Período</label>
+      <select id="filter-period" class="rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40">
+        <option value="">Todos los períodos</option>
+      </select>
+    </div>
+    <div class="flex items-center gap-2">
+      <label for="filter-department" class="text-xs text-muted-foreground whitespace-nowrap">Departamento</label>
+      <select id="filter-department" class="rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40">
+        <option value="">Todos los departamentos</option>
+      </select>
+    </div>
+    <button
+      id="apply-filters-btn"
+      type="button"
+      class="rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground transition hover:bg-primary/90"
+    >Aplicar</button>
+  </div>
+
+  <!-- Diseño de dos columnas -->
+  <div class="grid gap-4 p-4 sm:p-6 xl:grid-cols-[1.4fr,1fr]">
+
+      <!-- PANEL IZQUIERDO — ofertas -->
+    <div class="min-w-0 space-y-4">
+
+      <!-- Formulario para crear oferta -->
+      <details id="create-offering-details" class="rounded-xl border border-border bg-card">
+        <summary class="flex cursor-pointer items-center justify-between px-4 py-3 text-sm font-semibold text-foreground select-none">
+          <span>Crear nueva oferta</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground transition-transform" aria-hidden="true">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </summary>
+        <form id="create-offering-form" class="border-t border-border px-4 pb-4 pt-3 space-y-3">
+          <div class="grid gap-3 sm:grid-cols-2">
+            <div class="space-y-1">
+               <label for="new-subject" class="text-xs font-medium text-muted-foreground">Materia *</label>
+              <select id="new-subject" name="subject" required
+                class="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40">
+                <option value="">Selecciona una materia…</option>
+              </select>
+            </div>
+            <div class="space-y-1">
+               <label for="new-period" class="text-xs font-medium text-muted-foreground">Período *</label>
+              <select id="new-period" name="period" required
+                class="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40">
+                <option value="">Selecciona un período…</option>
+              </select>
+            </div>
+            <div class="space-y-1">
+               <label for="new-department" class="text-xs font-medium text-muted-foreground">Departamento *</label>
+              <select id="new-department" name="department" required
+                class="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40">
+                <option value="">Selecciona un departamento…</option>
+              </select>
+            </div>
+            <div class="space-y-1">
+              <label for="new-max-students" class="text-xs font-medium text-muted-foreground">Cupo *</label>
+                <input id="new-max-students" name="max_students" type="number" min="1" max="999" required
+                placeholder="p. ej. 30"
+                class="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/40" />
+            </div>
+            <div class="space-y-1 sm:col-span-2">
+              <label for="new-label" class="text-xs font-medium text-muted-foreground">Etiqueta (opcional)</label>
+              <input id="new-label" name="label" type="text" maxlength="80"
+                placeholder="p. ej. Grupo A"
+                class="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/40" />
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <button type="submit" id="create-offering-submit-btn"
+              class="rounded-md bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50">
+              Crear oferta
+            </button>
+            <p id="create-offering-error" class="hidden text-xs text-destructive"></p>
+          </div>
+        </form>
+      </details>
+
+      <!-- Lista de ofertas -->
+      <div data-testid="offerings-list" id="offerings-list-container" class="space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-base font-semibold text-foreground">Ofertas</h2>
+        </div>
+
+        <!-- Esqueleto de carga -->
+        <div id="offerings-loading" class="space-y-2">
+          <div class="h-16 animate-pulse rounded-xl border border-border bg-muted"></div>
+          <div class="h-16 animate-pulse rounded-xl border border-border bg-muted"></div>
+          <div class="h-16 animate-pulse rounded-xl border border-border bg-muted"></div>
+        </div>
+
+        <!-- Estado vacío -->
+        <div id="offerings-empty" class="hidden rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
+          No se encontraron ofertas. Crea una arriba.
+        </div>
+
+        <!-- Estado de error -->
+        <div id="offerings-error" class="hidden rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+          <p id="offerings-error-message">No se pudieron cargar las ofertas.</p>
+          <button id="retry-offerings-btn" type="button" class="mt-2 rounded border border-red-500/30 px-2 py-1 text-xs hover:bg-red-500/10">Reintentar</button>
+        </div>
+
+        <!-- Contenido -->
+        <div id="offerings-content" class="hidden space-y-2">
+          <ul id="offerings-list" class="space-y-2"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL DERECHO — decisiones docentes -->
+    <div data-testid="decisions-panel" id="decisions-panel" class="min-w-0 space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="text-base font-semibold text-foreground">Decisiones docentes</h2>
+      </div>
+
+      <!-- Esqueleto de carga -->
+      <div id="decisions-loading" class="space-y-3">
+        <div class="h-16 animate-pulse rounded-xl border border-border bg-muted"></div>
+        <div class="h-16 animate-pulse rounded-xl border border-border bg-muted"></div>
+        <div class="h-16 animate-pulse rounded-xl border border-border bg-muted"></div>
+      </div>
+
+      <!-- Estado vacío -->
+      <div id="decisions-empty" class="hidden rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
+        No hay decisiones docentes para los filtros actuales.
+      </div>
+
+      <!-- Estado de error -->
+      <div id="decisions-error" class="hidden rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+        <p id="decisions-error-message">No se pudieron cargar las decisiones.</p>
+        <button id="retry-decisions-btn" type="button" class="mt-2 rounded border border-red-500/30 px-2 py-1 text-xs hover:bg-red-500/10">Reintentar</button>
+      </div>
+
+      <!-- Contenido -->
+      <div id="decisions-content" class="hidden space-y-2">
+        <ul id="decisions-list" class="space-y-2"></ul>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Notificación emergente -->
+  <div id="action-feedback" class="hidden fixed bottom-6 right-6 rounded-lg border px-4 py-3 text-sm shadow-lg z-50 max-w-xs"></div>
 </DashboardLayout>
+
+<script>
+  import API_BASE_URL from '@/config/api';
+  import { buildDecisionRows, buildOfferingRows, decisionBadge } from '@/utils/subject-decision-review-utils';
+
+  // ------------------------------------------------------------------ autenticación
+  const API_URL = API_BASE_URL;
+  const token = localStorage.getItem('access_token');
+
+  function getUser(): Record<string, unknown> | null {
+    try {
+      const stored = localStorage.getItem('user-storage');
+      if (!stored) return null;
+      return JSON.parse(stored)?.state?.user ?? null;
+    } catch { return null; }
+  }
+
+  if (!token) { window.location.replace('/login'); throw new Error(); }
+  const user = getUser();
+  if (!user) { window.location.replace('/login'); throw new Error(); }
+  if (!['m', 'a'].includes(user.role as string)) { window.location.replace('/'); throw new Error(); }
+
+  // ------------------------------------------------------------------ utilidades
+  const q = (id: string) => document.getElementById(id);
+  const esc = (v: unknown) => String(v ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+  let activePeriodId: string = '';
+  let activeDepartmentId: string = '';
+
+  function showFeedback(message: string, isError = false) {
+    const el = q('action-feedback')!;
+    el.textContent = message;
+    el.className = `fixed bottom-6 right-6 rounded-lg border px-4 py-3 text-sm shadow-lg z-50 max-w-xs ${
+      isError
+        ? 'border-destructive/30 bg-destructive/15 text-destructive'
+        : 'border-emerald-500/30 bg-emerald-500/15 text-emerald-400'
+    }`;
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 3500);
+  }
+
+  function showOfferingsPanel(id: 'loading' | 'empty' | 'error' | 'content') {
+    ['loading', 'empty', 'error', 'content'].forEach((panel) => {
+      const el = q(`offerings-${panel}`);
+      if (el) el.classList.toggle('hidden', panel !== id);
+    });
+  }
+
+  function showDecisionsPanel(id: 'loading' | 'empty' | 'error' | 'content') {
+    ['loading', 'empty', 'error', 'content'].forEach((panel) => {
+      const el = q(`decisions-${panel}`);
+      if (el) el.classList.toggle('hidden', panel !== id);
+    });
+  }
+
+  // ------------------------------------------------------------------ obtención
+  async function apiFetch(path: string, opts: RequestInit = {}) {
+    const res = await fetch(`${API_URL}${path}`, {
+      ...opts,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        ...(opts.headers ?? {}),
+      },
+    });
+    if (res.status === 401) { window.location.replace('/login'); throw new Error('Unauthorized'); }
+    return res;
+  }
+
+  // ------------------------------------------------------------------ poblar selectores de filtro
+  async function populateFilters() {
+    try {
+      const [periodsRes, depsRes, subjectsRes] = await Promise.all([
+        apiFetch('/academic/periods/'),
+        apiFetch('/academic/departments/'),
+        apiFetch('/academic/subjects/'),
+      ]);
+
+      if (periodsRes.ok) {
+        const data = await periodsRes.json();
+        const periods: { id: number; name: string; is_active?: boolean }[] = Array.isArray(data) ? data : (data?.results ?? []);
+        const periodSelects = [q('filter-period') as HTMLSelectElement, q('new-period') as HTMLSelectElement];
+        periods.forEach((p) => {
+          const opt = `<option value="${p.id}"${p.is_active ? ' selected' : ''}>${esc(p.name)}</option>`;
+          periodSelects.forEach((s) => { if (s) s.insertAdjacentHTML('beforeend', opt); });
+        });
+        // Completar previamente el período activo
+        const active = periods.find((p) => p.is_active);
+        if (active) {
+          activePeriodId = String(active.id);
+          (q('filter-period') as HTMLSelectElement).value = activePeriodId;
+        }
+      }
+
+      if (depsRes.ok) {
+        const data = await depsRes.json();
+        const departments: { id: number; name: string }[] = Array.isArray(data) ? data : (data?.results ?? []);
+        const depSelects = [q('filter-department') as HTMLSelectElement, q('new-department') as HTMLSelectElement];
+        departments.forEach((d) => {
+          const opt = `<option value="${d.id}">${esc(d.name)}</option>`;
+          depSelects.forEach((s) => { if (s) s.insertAdjacentHTML('beforeend', opt); });
+        });
+      }
+
+      if (subjectsRes.ok) {
+        const data = await subjectsRes.json();
+        const subjects: { id: number; name: string; code?: string }[] = Array.isArray(data) ? data : (data?.results ?? []);
+        const subjectSelect = q('new-subject') as HTMLSelectElement;
+        subjects.forEach((s) => {
+          const label = s.code ? `${esc(s.code)} — ${esc(s.name)}` : esc(s.name);
+          subjectSelect.insertAdjacentHTML('beforeend', `<option value="${s.id}">${label}</option>`);
+        });
+      }
+    } catch {
+      // No es crítico — los filtros pueden quedar vacíos, pero la página sigue funcionando
+    }
+  }
+
+  // ------------------------------------------------------------------ ofertas
+  async function loadOfferings() {
+    showOfferingsPanel('loading');
+    try {
+      const params = new URLSearchParams();
+      if (activePeriodId) params.set('period', activePeriodId);
+      if (activeDepartmentId) params.set('department', activeDepartmentId);
+      const query = params.toString() ? `?${params.toString()}` : '';
+      const res = await apiFetch(`/academic/offerings/${query}`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        const errEl = q('offerings-error-message');
+        if (errEl) errEl.textContent = (body as { detail?: string }).detail ?? `Error ${res.status}`;
+        showOfferingsPanel('error');
+        return;
+      }
+      const data: unknown[] = await res.json();
+      const rows = buildOfferingRows(data as Parameters<typeof buildOfferingRows>[0]);
+      if (rows.length === 0) { showOfferingsPanel('empty'); return; }
+      renderOfferings(rows);
+      showOfferingsPanel('content');
+    } catch (err) {
+      const errEl = q('offerings-error-message');
+      if (errEl) errEl.textContent = (err as Error).message ?? 'Error inesperado.';
+      showOfferingsPanel('error');
+    }
+  }
+
+  function renderOfferings(rows: ReturnType<typeof buildOfferingRows>) {
+    const list = q('offerings-list');
+    if (!list) return;
+    list.innerHTML = rows.map((row) => {
+      const statusClasses = row.isActive
+        ? 'bg-green-500/10 text-green-300 border-green-500/20'
+        : 'bg-muted text-muted-foreground border-border';
+        const statusLabel = row.isActive ? 'Activa' : 'Inactiva';
+      const displayName = row.label ? `${esc(row.label)} — ${esc(row.subjectName)}` : esc(row.subjectName);
+       const meta = [row.subjectCode, row.departmentName, `Cupo ${row.maxStudents}`].filter(Boolean).map(esc).join(' · ');
+
+      return `<li class="rounded-xl border border-border bg-card p-3 transition-colors">
+        <div class="flex flex-wrap items-start justify-between gap-2">
+          <div class="min-w-0">
+            <p class="text-sm font-medium text-foreground leading-snug">${displayName}</p>
+            <p class="mt-0.5 text-xs text-muted-foreground">${meta}</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+            <span class="inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusClasses}">${statusLabel}</span>
+          </div>
+        </div>
+        <div class="mt-2.5 flex flex-wrap gap-2">
+          ${row.isActive
+             ? `<button class="deactivate-btn rounded border border-amber-500/30 px-2.5 py-1 text-xs font-medium text-amber-300 transition hover:bg-amber-500/10" data-offering-id="${row.id}">Desactivar</button>`
+             : `<button class="activate-btn rounded border border-green-500/30 px-2.5 py-1 text-xs font-medium text-green-300 transition hover:bg-green-500/10" data-offering-id="${row.id}">Activar</button>`
+          }
+        </div>
+      </li>`;
+    }).join('');
+
+    // Enlazar botones de activación
+    list.querySelectorAll<HTMLButtonElement>('.activate-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = Number(btn.getAttribute('data-offering-id'));
+        await toggleOffering(id, 'activate');
+      });
+    });
+
+    // Enlazar botones de desactivación
+    list.querySelectorAll<HTMLButtonElement>('.deactivate-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = Number(btn.getAttribute('data-offering-id'));
+        await toggleOffering(id, 'deactivate');
+      });
+    });
+  }
+
+  async function toggleOffering(offeringId: number, action: 'activate' | 'deactivate') {
+    try {
+      const res = await apiFetch(`/academic/offerings/${offeringId}/${action}/`, { method: 'PATCH' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        showFeedback((body as { detail?: string }).detail ?? `No se pudo ${action === 'activate' ? 'activar' : 'desactivar'} la oferta.`, true);
+        return;
+      }
+       showFeedback(action === 'activate' ? 'Oferta activada.' : 'Oferta desactivada.');
+      await loadOfferings();
+    } catch (err) {
+      showFeedback((err as Error).message ?? 'Error de conexión.', true);
+    }
+  }
+
+  // ------------------------------------------------------------------ crear oferta
+  q('create-offering-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const submitBtn = q('create-offering-submit-btn') as HTMLButtonElement;
+    const errorEl = q('create-offering-error')!;
+
+    submitBtn.disabled = true;
+      submitBtn.textContent = 'Creando…';
+    errorEl.classList.add('hidden');
+    errorEl.textContent = '';
+
+    const subject = (form.elements.namedItem('subject') as HTMLSelectElement).value;
+    const period = (form.elements.namedItem('period') as HTMLSelectElement).value;
+    const department = (form.elements.namedItem('department') as HTMLSelectElement).value;
+    const max_students = (form.elements.namedItem('max_students') as HTMLInputElement).value;
+    const label = (form.elements.namedItem('label') as HTMLInputElement).value.trim();
+
+    try {
+      const res = await apiFetch('/academic/offerings/', {
+        method: 'POST',
+        body: JSON.stringify({
+          subject_id: Number(subject),
+          period_id: Number(period),
+          department_id: Number(department),
+          max_students: Number(max_students),
+          ...(label ? { label } : {}),
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        const detail = (body as Record<string, unknown>).detail
+          ?? Object.values(body as Record<string, string[]>).flat().join(' ')
+          ?? `Error ${res.status}`;
+        errorEl.textContent = String(detail);
+        errorEl.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Crear oferta';
+        return;
+      }
+      form.reset();
+       showFeedback('Oferta creada.');
+      const details = q('create-offering-details') as HTMLDetailsElement;
+      if (details) details.open = false;
+      await loadOfferings();
+    } catch (err) {
+        errorEl.textContent = (err as Error).message ?? 'Error de conexión.';
+      errorEl.classList.remove('hidden');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Crear oferta';
+    }
+  });
+
+  // ------------------------------------------------------------------ decisiones
+  async function loadDecisions() {
+    showDecisionsPanel('loading');
+    try {
+      const params = new URLSearchParams();
+      if (activePeriodId) params.set('period', activePeriodId);
+      const query = params.toString() ? `?${params.toString()}` : '';
+      const res = await apiFetch(`/academic/teacher-subject-selection/decisions/${query}`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        const errEl = q('decisions-error-message');
+        if (errEl) errEl.textContent = (body as { detail?: string }).detail ?? `Error ${res.status}`;
+        showDecisionsPanel('error');
+        return;
+      }
+      const data: unknown[] = await res.json();
+      const rows = buildDecisionRows(data as Parameters<typeof buildDecisionRows>[0]);
+      if (rows.length === 0) { showDecisionsPanel('empty'); return; }
+      renderDecisions(rows);
+      showDecisionsPanel('content');
+    } catch (err) {
+      const errEl = q('decisions-error-message');
+       if (errEl) errEl.textContent = (err as Error).message ?? 'Error inesperado.';
+      showDecisionsPanel('error');
+    }
+  }
+
+  function renderDecisions(rows: ReturnType<typeof buildDecisionRows>) {
+    const list = q('decisions-list');
+    if (!list) return;
+    list.innerHTML = rows.map((row) => {
+      const badge = decisionBadge(row.decision, row.stale);
+      const offeringInfo = row.offeringLabel
+        ? `${esc(row.offeringLabel)} — ${esc(row.subjectName)}`
+        : esc(row.subjectName);
+      return `<li class="rounded-xl border border-border bg-card p-3 transition-colors">
+        <div class="flex flex-wrap items-start justify-between gap-2">
+          <div class="min-w-0">
+            <p class="text-sm font-medium text-foreground leading-snug">${esc(row.teacherName)}</p>
+            <p class="mt-0.5 text-xs text-muted-foreground">${offeringInfo}${row.departmentName ? ` · ${esc(row.departmentName)}` : ''}</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+            ${badge}
+          </div>
+        </div>
+        <div class="mt-2.5 flex flex-wrap gap-2">
+          <button
+            class="approve-btn rounded border border-green-500/30 px-2.5 py-1 text-xs font-medium text-green-300 transition hover:bg-green-500/10 ${row.decision === 'approved' ? 'opacity-50 cursor-default' : ''}"
+            data-decision-id="${row.id}"
+            ${row.decision === 'approved' ? 'disabled' : ''}
+           >Aprobar</button>
+          <button
+            class="reject-btn rounded border border-red-500/30 px-2.5 py-1 text-xs font-medium text-red-300 transition hover:bg-red-500/10 ${row.decision === 'rejected' ? 'opacity-50 cursor-default' : ''}"
+            data-decision-id="${row.id}"
+            ${row.decision === 'rejected' ? 'disabled' : ''}
+          >Rechazar</button>
+        </div>
+      </li>`;
+    }).join('');
+
+    // Enlazar botones de aprobación
+    list.querySelectorAll<HTMLButtonElement>('.approve-btn').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const decisionId = Number(btn.getAttribute('data-decision-id'));
+        await reviewDecision(decisionId, 'approved');
+      });
+    });
+
+    // Enlazar botones de rechazo
+    list.querySelectorAll<HTMLButtonElement>('.reject-btn').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const decisionId = Number(btn.getAttribute('data-decision-id'));
+        await reviewDecision(decisionId, 'rejected');
+      });
+    });
+  }
+
+  async function reviewDecision(decisionId: number, action: 'approved' | 'rejected') {
+    try {
+      const res = await apiFetch(
+        `/academic/teacher-subject-selection/decisions/${decisionId}/review/`,
+        { method: 'PATCH', body: JSON.stringify({ action }) },
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        showFeedback((body as { detail?: string }).detail ?? `No se pudo ${action === 'approved' ? 'aprobar' : 'rechazar'} la decisión.`, true);
+        return;
+      }
+       showFeedback(action === 'approved' ? 'Decisión aprobada.' : 'Decisión rechazada.');
+      await loadDecisions();
+    } catch (err) {
+      showFeedback((err as Error).message ?? 'Error de conexión.', true);
+    }
+  }
+
+  // ------------------------------------------------------------------ eventos
+  q('apply-filters-btn')?.addEventListener('click', () => {
+    activePeriodId = (q('filter-period') as HTMLSelectElement)?.value ?? '';
+    activeDepartmentId = (q('filter-department') as HTMLSelectElement)?.value ?? '';
+    loadOfferings();
+    loadDecisions();
+  });
+
+  q('reload-all-btn')?.addEventListener('click', () => {
+    loadOfferings();
+    loadDecisions();
+  });
+
+  q('retry-offerings-btn')?.addEventListener('click', () => loadOfferings());
+  q('retry-decisions-btn')?.addEventListener('click', () => loadDecisions());
+
+  // ------------------------------------------------------------------ inicialización
+  (async () => {
+    await populateFilters();
+    await Promise.all([loadOfferings(), loadDecisions()]);
+  })();
+</script>
