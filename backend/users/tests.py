@@ -230,6 +230,8 @@ class SeedAcademicBaseCommandTests(TestCase):
         self.assertTrue(all(department.teacher_id is not None for department in departments))
         self.assertEqual(departments.values_list("teacher_id", flat=True).distinct().count(), departments.count())
         self.assertEqual(departments.exclude(teacher__role="t").count(), 0)
+        self.assertEqual(User.objects.filter(role="t", department__isnull=True).count(), 0)
+        self.assertEqual(User.objects.filter(role="t").exclude(department__in=departments).count(), 0)
         self.assertEqual(subjects.filter(department__isnull=True).count(), 0)
         self.assertEqual(subjects.exclude(department__in=departments).count(), 0)
         self.assertGreater(teachers.count(), departments.count())

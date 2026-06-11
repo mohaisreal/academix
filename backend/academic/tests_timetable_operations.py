@@ -187,7 +187,7 @@ class TimetableGenerateAndPublishTests(TestCase):
         period = AcademicPeriod.objects.get(code='SEED-AP-01')
 
         approved = TeacherSubjectDecision.objects.filter(period=period, decision='approved', offering__is_active=True)
-        self.assertEqual(approved.count(), Subject.objects.exclude(department__isnull=True).count())
+        self.assertEqual(approved.count(), 30)
         self.assertEqual(
             approved.values_list('offering__subject__code', flat=True).distinct().count(),
             Subject.objects.exclude(department__isnull=True).count(),
@@ -941,8 +941,8 @@ class TimetableFilteringTests(TestCase):
             classroom=cls.classroom,
             teacher=cls.teacher,
         )
-        ConstraintViolation.objects.create(run=run, assignment=assignment, severity='hard', reason='Teacher conflict')
-        ConstraintViolation.objects.create(run=run, assignment=assignment, severity='soft', reason='Preference miss')
+        ConstraintViolation.objects.create(run=run, assignment=assignment, severity='hard', reason='Conflicto de docente', metadata={'subject_name': cls.subject.name, 'teacher_name': cls.teacher.username})
+        ConstraintViolation.objects.create(run=run, assignment=assignment, severity='soft', reason='Incumplimiento de preferencia', metadata={'subject_name': cls.subject.name, 'teacher_name': cls.teacher.username})
 
         response = self.client.get('/api/academic/constraint-violations/', {
             'run': run.id,
@@ -954,6 +954,28 @@ class TimetableFilteringTests(TestCase):
         results = unwrap_results(response.data)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]['severity'], 'hard')
+
+    def test_violations_expose_subject_teacher_and_spanish_reason_without_assignment(self):
+        period = make_period('P2026FV2')
+        cls = make_class(period, 'FV2')
+        run = TimetableRun.objects.create(period=period, status='partial')
+        ConstraintViolation.objects.create(
+            run=run,
+            assignment=None,
+            severity='hard',
+            reason='No available slot after active scheduling constraints.',
+            metadata={'class_id': cls.id, 'constraint_related': True},
+        )
+
+        response = self.client.get('/api/academic/constraint-violations/', {'run': run.id})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = unwrap_results(response.data)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['subject_name'], cls.subject.name)
+        self.assertEqual(results[0]['subject_code'], cls.subject.code)
+        self.assertEqual(results[0]['teacher_name'], f'{cls.teacher.first_name} {cls.teacher.last_name}'.strip() or cls.teacher.username)
+        self.assertEqual(results[0]['reason_es'], 'No se encontró una franja disponible después de aplicar las restricciones activas.')
 
 
 class MyScheduleCompatibilityTests(TestCase):

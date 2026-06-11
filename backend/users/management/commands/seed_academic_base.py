@@ -181,13 +181,21 @@ class Command(BaseCommand):
     def _seed_departments(self, teachers):
         departments = []
         for index, (code, name) in enumerate(DEPARTMENTS):
+            teacher = teachers[index % len(teachers)]
             departments.append(Department.objects.create(
                 code=code,
                 name=name,
                 description=f"Área académica de {name}.",
-                teacher=teachers[index] if index < len(teachers) else None,
+                teacher=teacher,
                 is_active=True,
             ))
+            teacher.department = departments[-1]
+            teacher.save(update_fields=["department"])
+
+        for index, teacher in enumerate(teachers[len(DEPARTMENTS):], start=len(DEPARTMENTS)):
+            department = departments[index % len(departments)]
+            teacher.department = department
+            teacher.save(update_fields=["department"])
         return departments
 
     def _seed_subjects(self, careers, departments):
@@ -352,7 +360,8 @@ class Command(BaseCommand):
         refresh_enrollment_fee(current_enrollment)
 
     def _seed_teacher_selection_demo(self, active_period):
-        subjects = Subject.objects.select_related("department", "department__teacher").exclude(department__isnull=True)
+        subjects = list(Subject.objects.select_related("department", "department__teacher").exclude(department__isnull=True).order_by("id"))
+        teachers = list(User.objects.filter(role="t").order_by("id"))
         for subject in subjects:
             department = subject.department
             offering, _ = SubjectOffering.objects.get_or_create(
@@ -369,8 +378,11 @@ class Command(BaseCommand):
                 offering.is_active = True
                 offering.department = department
                 offering.save(update_fields=["is_active", "department"])
+        offerings = list(SubjectOffering.objects.filter(period=active_period, is_active=True).order_by("id"))
+        for index, offering in enumerate(offerings):
+            teacher = teachers[index % len(teachers)]
             TeacherSubjectDecision.objects.update_or_create(
-                teacher=department.teacher,
+                teacher=teacher,
                 offering=offering,
                 defaults={
                     "period": active_period,

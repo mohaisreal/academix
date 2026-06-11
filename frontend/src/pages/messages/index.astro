@@ -34,7 +34,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         </div>
         <p class="text-lg font-medium text-foreground">Selecciona un mensaje</p>
-        <p class="text-sm text-muted-foreground mt-1">Elegí un mensaje del panel izquierdo</p>
+        <p class="text-sm text-muted-foreground mt-1">Elije un mensaje del panel izquierdo</p>
       </div>
       <div id="thread-view" class="hidden flex flex-col h-full">
         <div id="thread-header" class="p-4 border-b border-border shrink-0"></div>
@@ -62,8 +62,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       </div>
       <form id="compose-form" class="space-y-4">
         <div>
-          <label class="text-xs font-medium text-muted-foreground">ID de usuario *</label>
-          <input id="compose-to" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="ID de usuario" />
+          <label class="text-xs font-medium text-muted-foreground">Destinatario *</label>
+          <input id="compose-to" type="text" required class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Nombre de usuario o ID" />
         </div>
         <div>
           <label class="text-xs font-medium text-muted-foreground">Mensaje *</label>
@@ -154,6 +154,24 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   let destroyed = false;
   let messagesCache = [];
   let threadCache = [];
+  const THREAD_PARAM = 'thread';
+
+  function getThreadIdFromUrl() {
+    return new URLSearchParams(window.location.search).get(THREAD_PARAM);
+  }
+
+  function setThreadInUrl(messageId) {
+    const url = new URL(window.location.href);
+    if (messageId) url.searchParams.set(THREAD_PARAM, String(messageId));
+    else url.searchParams.delete(THREAD_PARAM);
+    window.history.pushState({}, '', url);
+  }
+
+  async function openConversation(messageId, { silent = false } = {}) {
+    if (!messageId) return;
+    setThreadInUrl(messageId);
+    await loadThread(messageId, { silent });
+  }
 
   function buildMessagesSocketUrl() {
     const wsBase = resolveWebSocketBaseUrl(import.meta.env);
@@ -377,35 +395,36 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   document.getElementById('compose-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const to = (document.getElementById('compose-to') as HTMLInputElement).value;
-    const body = (document.getElementById('compose-body') as HTMLTextAreaElement).value;
+    const to = (document.getElementById('compose-to') as HTMLInputElement).value.trim();
+    const body = (document.getElementById('compose-body') as HTMLTextAreaElement).value.trim();
     const errEl = document.getElementById('compose-error');
     const successEl = document.getElementById('compose-success');
     try {
-      if (!/^\d+$/.test(to.trim())) {
-        throw new Error('recipient_id_invalid');
-      }
+      if (!to || !body) throw new Error('compose_required');
       const bodyPayload: any = {
         body,
-        recipient_id: Number(to.trim()),
+        recipient: to,
       };
-      await apiFetch('/messaging/compose/', {
+      const createdConversation = await apiFetch('/messaging/compose/', {
         method: 'POST',
         body: JSON.stringify(bodyPayload),
       });
       successEl?.classList.remove('hidden');
       if (successEl) successEl.textContent = '¡Mensaje enviado!';
       errEl?.classList.add('hidden');
-      setTimeout(closeCompose, 1200);
-      refreshUnreadCount();
+      closeCompose();
+      await loadMessages({ silent: true });
+      await openConversation(createdConversation?.id ?? createdConversation?.root_id ?? createdConversation?.message?.id);
     } catch (err: any) {
       errEl?.classList.remove('hidden');
-      if (errEl) errEl.textContent = err?.message === 'recipient_id_invalid' ? 'El ID de usuario debe ser numérico' : err?.recipient || err?.recipient_id || err?.detail || err?.error || 'No se pudo enviar el mensaje';
+      if (errEl) errEl.textContent = err?.message === 'compose_required' ? 'Completá destinatario y mensaje' : err?.recipient || err?.recipient_id || err?.detail || err?.error || 'No se pudo enviar el mensaje';
     }
   });
 
   (async () => {
     await loadMessages();
+    const threadId = getThreadIdFromUrl();
+    if (threadId) await openConversation(threadId, { silent: true });
     refreshUnreadCount();
     showContent();
     connectSocket();

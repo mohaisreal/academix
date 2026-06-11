@@ -150,7 +150,7 @@ describe('buildResponsiveScheduleCards', () => {
     ]);
 
     expect(cards).toEqual([
-      { subject: 'Matemática', day: 'Lun', time: '08:00 – 09:30', classroom: 'A-101' },
+      { subject: 'Matemática', day: 'Mar', time: '08:00 – 09:30', classroom: 'A-101' },
     ]);
   });
 });

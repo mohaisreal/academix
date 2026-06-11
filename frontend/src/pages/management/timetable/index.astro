@@ -450,7 +450,15 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const total = q('violations-total'); const hard = q('violations-hard'); const soft = q('violations-soft');
     if (total) total.textContent = `${sum.total} total`; if (hard) hard.textContent = `${sum.hard} duras`; if (soft) soft.textContent = `${sum.soft} blandas`;
     if (!selectedRunId || violations.length === 0) { list.innerHTML = '<li class="text-sm text-muted-foreground">No hay infracciones para esta ejecución.</li>'; return; }
-    list.innerHTML = violations.map((v) => `<li class="rounded-lg border border-border p-2"><strong>${esc(v.severity === 'hard' ? 'Dura' : 'Blanda')}</strong> · ${esc(v.rule_kind || 'regla')} · ${esc(v.assignment_asignatura_code || '—')} · penalización ${Number(v.penalty ?? 0)}<div class="text-muted-foreground">${esc(v.mensaje || v.message || '')}</div></li>`).join('');
+    const findAssignment = (id) => assignments.find((a) => Number(a.id) === Number(id)) || null;
+    const describeViolationTarget = (v) => {
+      const assignment = v.assignment ? findAssignment(v.assignment) : null;
+      const subject = v.metadata?.subject_code || v.metadata?.subject_name || assignment?.subject_code || assignment?.subject_name || 'Asignatura desconocida';
+      const teacher = v.metadata?.teacher_name || assignment?.teacher_name || assignment?.teacher?.full_name || assignment?.teacher?.username || 'Docente no resuelto';
+      return `${subject} · ${teacher}`;
+    };
+    const reasonEs = (v) => String(v.reason || v.mensaje || v.message || 'Motivo no disponible').trim();
+    list.innerHTML = violations.map((v) => `<li class="rounded-lg border border-border p-2 space-y-1"><div><strong>${esc(v.severity === 'hard' ? 'Dura' : 'Blanda')}</strong> · ${esc(describeViolationTarget(v))} · penalización ${Number(v.penalty ?? 0)}</div><div class="text-muted-foreground">${esc(reasonEs(v))}</div></li>`).join('');
   }
 
   function renderPreviewWarningSummary() {

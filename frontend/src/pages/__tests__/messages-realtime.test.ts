@@ -23,6 +23,12 @@ describe('messages realtime wiring', () => {
     expect(page).not.toContain('tab-sent');
     expect(page).not.toContain('compose-subject');
     expect(page).not.toContain('subject:');
+    expect(page).not.toContain('/^\\d+$/');
+    expect(page).not.toContain('recipient_id_invalid');
+    expect(page).toContain('recipient: to');
+    expect(page).toContain("const THREAD_PARAM = 'thread'");
+    expect(page).toContain('window.history.pushState({}, \'\', url);');
+    expect(page).toContain('await openConversation(createdConversation?.id ?? createdConversation?.root_id ?? createdConversation?.message?.id);');
   });
 
   it('keeps student messages link visible in the dashboard sidebar', () => {

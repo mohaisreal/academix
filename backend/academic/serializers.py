@@ -488,9 +488,66 @@ class ScheduleAssignmentSerializer(serializers.ModelSerializer):
 
 
 class ConstraintViolationSerializer(serializers.ModelSerializer):
+    subject_name = serializers.SerializerMethodField()
+    subject_code = serializers.SerializerMethodField()
+    teacher_name = serializers.SerializerMethodField()
+    reason_es = serializers.SerializerMethodField()
+
     class Meta:
         model = ConstraintViolation
-        fields = ['id', 'run', 'assignment', 'severity', 'reason', 'metadata', 'created_at']
+        fields = ['id', 'run', 'assignment', 'severity', 'reason', 'reason_es', 'subject_name', 'subject_code', 'teacher_name', 'metadata', 'created_at']
+
+    def _resolve_class(self, obj):
+        assignment = getattr(obj, 'assignment', None)
+        if assignment and getattr(assignment, 'cls', None):
+            return assignment.cls
+
+        metadata = obj.metadata or {}
+        class_id = metadata.get('class_id')
+        if not class_id:
+            return None
+
+        cache = self.context.setdefault('_violation_class_cache', {})
+        if class_id not in cache:
+            cache[class_id] = Class.objects.select_related('subject', 'teacher').filter(pk=class_id).first()
+        return cache[class_id]
+
+    def get_subject_name(self, obj):
+        cls = self._resolve_class(obj)
+        if not cls or not cls.subject:
+            return None
+        return cls.subject.name
+
+    def get_subject_code(self, obj):
+        cls = self._resolve_class(obj)
+        if not cls or not cls.subject:
+            return None
+        return cls.subject.code
+
+    def get_teacher_name(self, obj):
+        cls = self._resolve_class(obj)
+        teacher = None
+        if cls:
+            teacher = cls.teacher or getattr(cls.subject.department, 'teacher', None)
+        if not teacher:
+            return None
+        return f"{teacher.first_name} {teacher.last_name}".strip() or teacher.username
+
+    def get_reason_es(self, obj):
+        reason = (obj.reason or '').strip()
+        metadata = obj.metadata or {}
+        if metadata.get('unresolved_teacher'):
+            return 'No se pudo resolver el docente de la clase.'
+        if metadata.get('constraint_related'):
+            return 'No se encontró una franja disponible después de aplicar las restricciones activas.'
+        translations = {
+            'Teacher conflict': 'Conflicto de docente.',
+            'Preference miss': 'No coincide con la preferencia.',
+            'Hard infringement': 'Infracción dura.',
+            'Soft infringement': 'Infracción blanda.',
+            'cleanup': 'Limpieza de datos generados.',
+        }
+        return translations.get(reason, reason)
 
 
 class SchedulingConstraintSerializer(serializers.ModelSerializer):

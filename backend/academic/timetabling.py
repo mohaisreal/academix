@@ -283,8 +283,15 @@ def generate_for_run(run):
                 run=run,
                 assignment=None,
                 severity='hard',
-                reason='No teacher resolved for class (missing class teacher and department teacher).',
-                metadata={'class_id': cls.id, 'unresolved_teacher': True, 'requested_sessions': class_demand},
+                reason='No se pudo resolver el docente de la clase.',
+                metadata={
+                    'class_id': cls.id,
+                    'subject_name': cls.subject.name,
+                    'subject_code': cls.subject.code,
+                    'teacher_name': cls.teacher and (f"{cls.teacher.first_name} {cls.teacher.last_name}".strip() or cls.teacher.username) or None,
+                    'unresolved_teacher': True,
+                    'requested_sessions': class_demand,
+                },
             )
             continue
 
@@ -334,8 +341,14 @@ def generate_for_run(run):
                     run=run,
                     assignment=None,
                     severity='hard',
-                    reason='No available slot after active scheduling constraints.',
-                    metadata={'class_id': cls.id, 'constraint_related': True},
+                    reason='No hay franja disponible tras aplicar las restricciones activas.',
+                    metadata={
+                        'class_id': cls.id,
+                        'subject_name': cls.subject.name,
+                        'subject_code': cls.subject.code,
+                        'teacher_name': cls.teacher and (f"{cls.teacher.first_name} {cls.teacher.last_name}".strip() or cls.teacher.username) or None,
+                        'constraint_related': True,
+                    },
                 )
 
     hard_violations = unscheduled

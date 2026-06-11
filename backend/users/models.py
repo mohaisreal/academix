@@ -55,6 +55,13 @@ class User(AbstractUser):
     )
     address = models.TextField(blank=True, null=True)
     date_of_birth = models.DateField(blank=True, null=True)
+    department = models.ForeignKey(
+        'academic.Department',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='members',
+    )
     profile_image = models.ImageField(upload_to='profiles/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
