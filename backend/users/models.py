@@ -30,6 +30,13 @@ class User(AbstractUser):
     )
 
     role = models.CharField(max_length=1, choices=ROLE_CHOICES, default='s')
+    department = models.ForeignKey(
+        'academic.Department',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='members',
+    )
     dni = models.CharField(max_length=20, unique=True, blank=True, null=True)
     email_verified = models.BooleanField(default=True)
     identity_verification_status = models.CharField(

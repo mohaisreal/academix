@@ -24,6 +24,7 @@ from academic.models import (
     Department,
 )
 from academic.timetabling import backfill_generated_class_teachers, generate_for_run
+from academic.models import TeacherSubjectDecision
 from enrollment.models import ClassEnrollment
 from users.models import User
 
@@ -180,6 +181,22 @@ class TimetableGenerateAndPublishTests(TestCase):
         assignment = ScheduleAssignment.objects.get(run=run, cls=cls)
         self.assertEqual(cls.teacher_id, teacher.id)
         self.assertEqual(assignment.teacher_id, teacher.id)
+
+    def test_seeded_teacher_decisions_generate_classes_with_teacher_assignments(self):
+        call_command('seed_academic_base', stdout=StringIO())
+        period = AcademicPeriod.objects.get(code='SEED-AP-01')
+
+        approved = TeacherSubjectDecision.objects.filter(period=period, decision='approved', offering__is_active=True)
+        self.assertEqual(approved.count(), 12)
+        self.assertGreaterEqual(approved.values_list('offering__subject__code', flat=True).distinct().count(), 10)
+
+        run = TimetableRun.objects.create(period=period)
+        generate_for_run(run)
+
+        generated = Class.objects.filter(period=period, is_generated_by_timetable=True)
+        self.assertGreaterEqual(generated.count(), approved.count())
+        self.assertEqual(generated.filter(teacher__isnull=True).count(), 0)
+        self.assertEqual(generated.filter(source_teacher_decision__isnull=True).count(), 0)
 
     def test_generate_does_not_overwrite_manual_class_teacher(self):
         period = make_period('P2026GEN1M')

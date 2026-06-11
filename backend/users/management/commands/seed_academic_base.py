@@ -1,9 +1,12 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from datetime import date
 from django.utils import timezone
 
-from academic.models import AcademicPeriod, Career, Classroom, Department, Subject
+from academic.models import AcademicPeriod, Career, Classroom, Department, Subject, Class, SubjectOffering, TeacherSubjectDecision
 from admissions.models import AdmissionApplication, AdmissionPreference
+from enrollment.models import CareerEnrollment, ClassEnrollment, EnrollmentFee
+from grades.models import Evaluation, Grade
 from users.models import User
 
 ACADEMIC_CATALOG = [
@@ -76,8 +79,8 @@ TEACHER_CATALOG = [
 ]
 
 CLASSROOMS = 10
-STUDENTS = 60
-ADMISSION_APPLICANTS = 12
+STUDENTS = 100
+ADMISSION_APPLICANTS = 100
 SEED_TIME_SLOTS = [
     (day, start, end)
     for day in range(5)
@@ -106,12 +109,23 @@ class Command(BaseCommand):
             self._seed_classrooms()
             period = self._seed_submitted_admission_applications()
             self._seed_time_slots(period)
+            self._seed_second_matriculation_demo(period)
+            self._seed_teacher_selection_demo(period)
             self._validate_distribution()
             self._validate_timetable_readiness(period)
 
         self.stdout.write(self.style.SUCCESS("Seed académico base completado."))
 
     def _clean_target_scope(self):
+        Grade.objects.filter(evaluation__cls__period__code__in=["SEED-AP-00", "SEED-AP-01"]).delete()
+        Evaluation.objects.filter(cls__period__code__in=["SEED-AP-00", "SEED-AP-01"]).delete()
+        ClassEnrollment.objects.filter(cls__period__code__in=["SEED-AP-00", "SEED-AP-01"]).delete()
+        EnrollmentFee.objects.filter(career_enrollment__period__code__in=["SEED-AP-00", "SEED-AP-01"]).delete()
+        CareerEnrollment.objects.filter(period__code__in=["SEED-AP-00", "SEED-AP-01"]).delete()
+        TeacherSubjectDecision.objects.filter(period__code__in=["SEED-AP-00", "SEED-AP-01"]).delete()
+        SubjectOffering.objects.filter(period__code__in=["SEED-AP-00", "SEED-AP-01"]).delete()
+        Class.objects.filter(period__code__in=["SEED-AP-00", "SEED-AP-01"]).delete()
+        AcademicPeriod.objects.filter(code__in=["SEED-AP-00", "SEED-AP-01"]).delete()
         User.objects.filter(role__in=["s", "t"]).delete()
         Subject.objects.all().delete()
         Department.objects.all().delete()
@@ -127,7 +141,7 @@ class Command(BaseCommand):
                 name=row["career"]["name"],
                 description=f"Plan académico base de {row['career']['name']}.",
                 duration_years=4,
-                total_spots=120,
+                total_spots=10,
                 is_active=True,
             ))
         return careers
@@ -174,6 +188,9 @@ class Command(BaseCommand):
                 teacher=teachers[index] if index < len(teachers) else None,
                 is_active=True,
             ))
+        for index, teacher in enumerate(teachers):
+            teacher.department = departments[index % len(departments)]
+            teacher.save(update_fields=["department"])
         return departments
 
     def _seed_subjects(self, careers, departments):
@@ -203,8 +220,8 @@ class Command(BaseCommand):
             active_period = AcademicPeriod.objects.create(
                 name="Periodo Académico Seed",
                 code="SEED-AP-01",
-                start_date="2026-01-10",
-                end_date="2026-06-20",
+                start_date=date(2026, 1, 10),
+                end_date=date(2026, 6, 20),
                 is_active=True,
             )
         submitted_students = User.objects.filter(role="s").order_by("id")[:ADMISSION_APPLICANTS]
@@ -259,3 +276,115 @@ class Command(BaseCommand):
             raise CommandError("Readiness inválido: capacidad docente insuficiente para clases base.")
         if slot_count * classroom_count < subject_count:
             raise CommandError("Readiness inválido: capacidad de aulas insuficiente para clases base.")
+
+    def _seed_second_matriculation_demo(self, active_period):
+        prior_period, _ = AcademicPeriod.objects.get_or_create(
+            code="SEED-AP-00",
+            defaults={
+                "name": "Periodo Académico Seed Anterior",
+                "start_date": date(2025, 7, 10),
+                "end_date": date(2025, 12, 20),
+                "is_active": False,
+            },
+        )
+        if prior_period.start_date >= active_period.start_date:
+            prior_period.start_date = date(active_period.start_date.year - 1, active_period.start_date.month, active_period.start_date.day)
+            prior_period.end_date = date(active_period.start_date.year - 1, 6, 30)
+            prior_period.save(update_fields=["start_date", "end_date"])
+
+        student = User.objects.get(username="estudiante1")
+        career = Career.objects.get(code="ING-SIS")
+        subject = Subject.objects.get(code="IS-ALG")
+        teacher = Department.objects.get(code="DEP-MAT").teacher
+        classroom = Classroom.objects.order_by("id").first()
+
+        prior_class, _ = Class.objects.get_or_create(
+            period=prior_period,
+            subject=subject,
+            section_label="A",
+            defaults={
+                "teacher": teacher,
+                "classroom": classroom,
+                "max_students": classroom.capacity,
+                "passing_grade": 5.00,
+                "show_final_grade_to_students": True,
+                "is_generated_by_timetable": False,
+            },
+        )
+        prior_enrollment, _ = CareerEnrollment.objects.get_or_create(
+            student=student,
+            career=career,
+            period=prior_period,
+            defaults={"status": "completed"},
+        )
+        ClassEnrollment.objects.get_or_create(student=student, cls=prior_class, defaults={"status": "enrolled"})
+        final_eval, _ = Evaluation.objects.get_or_create(
+            cls=prior_class,
+            name="Final",
+            defaults={"type": "exam", "is_final_grade": True, "max_score": 100, "weight": 100},
+        )
+        Grade.objects.update_or_create(
+            student=student,
+            evaluation=final_eval,
+            defaults={"score": 4.00},
+        )
+
+        current_enrollment, _ = CareerEnrollment.objects.get_or_create(
+            student=student,
+            career=career,
+            period=active_period,
+            defaults={"status": "active"},
+        )
+        current_class, _ = Class.objects.get_or_create(
+            period=active_period,
+            subject=subject,
+            section_label="A",
+            defaults={
+                "teacher": teacher,
+                "classroom": classroom,
+                "max_students": classroom.capacity,
+                "passing_grade": 5.00,
+                "show_final_grade_to_students": True,
+                "is_generated_by_timetable": False,
+            },
+        )
+        ClassEnrollment.objects.get_or_create(student=student, cls=current_class, defaults={"status": "enrolled"})
+
+        from enrollment.services import refresh_enrollment_fee
+
+        refresh_enrollment_fee(current_enrollment)
+
+    def _seed_teacher_selection_demo(self, active_period):
+        departments = list(Department.objects.filter(is_active=True).order_by("code"))
+        if not departments:
+            raise CommandError("Readiness inválido: no hay departamentos activos para ofertas base.")
+
+        for department in departments:
+            subjects = list(Subject.objects.filter(is_active=True, department=department).order_by("code"))
+            teachers = list(User.objects.filter(role="t", department=department).order_by("id"))
+            if not subjects:
+                raise CommandError(f"Readiness inválido: el departamento {department.code} no tiene asignaturas activas.")
+            for member_rank, teacher in enumerate(teachers):
+                subject = subjects[member_rank % len(subjects)]
+                offering, _ = SubjectOffering.objects.get_or_create(
+                    subject=subject,
+                    period=active_period,
+                    label="",
+                    defaults={
+                        "department": department,
+                        "max_students": 30,
+                        "is_active": True,
+                    },
+                )
+                if not offering.is_active:
+                    offering.is_active = True
+                    offering.department = department
+                    offering.save(update_fields=["is_active", "department"])
+                TeacherSubjectDecision.objects.update_or_create(
+                    teacher=teacher,
+                    offering=offering,
+                    defaults={
+                        "period": active_period,
+                        "decision": "approved",
+                    },
+                )

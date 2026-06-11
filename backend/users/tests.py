@@ -5,12 +5,15 @@ from unittest.mock import patch
 from django.core.management import call_command
 from django.core.management import get_commands
 from django.core.management.base import CommandError
+from django.db import models
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from academic.models import AcademicPeriod, Career, Classroom, Department, Subject
+from academic.models import AcademicPeriod, Career, Classroom, Department, Subject, Class, SubjectOffering, TeacherSubjectDecision
 from admissions.models import AdmissionApplication, AdmissionPreference
+from enrollment.models import CareerEnrollment, ClassEnrollment, EnrollmentFee
+from grades.models import Grade
 from users.models import User
 
 
@@ -48,14 +51,14 @@ class SeedAcademicBaseCommandTests(TestCase):
         old_career = Career.objects.create(name="Carrera Vieja", code="CV")
         Subject.objects.create(name="Asignatura Vieja", code="ASG000", career=old_career)
         Classroom.objects.create(name="Aula Vieja", building="Edificio Viejo", capacity=20, type="lecture")
-        User.objects.create_user(username="estudiante99", password="pass", role="s")
+        User.objects.create_user(username="estudiante150", password="pass", role="s")
         User.objects.create_user(username="profesor99", password="pass", role="t")
 
         self._run_command()
 
         self.assertTrue(User.objects.filter(id=untouched_user.id).exists())
         self.assertTrue(AcademicPeriod.objects.filter(id=untouched_period.id).exists())
-        self.assertFalse(User.objects.filter(username="estudiante99").exists())
+        self.assertFalse(User.objects.filter(username="estudiante150").exists())
         self.assertFalse(User.objects.filter(username="profesor99").exists())
         self.assertGreater(User.objects.filter(role="s").count(), 0)
         self.assertGreater(User.objects.filter(role="t").count(), 0)
@@ -88,11 +91,24 @@ class SeedAcademicBaseCommandTests(TestCase):
         students = list(User.objects.filter(role="s").order_by("id"))
         teachers = User.objects.filter(role="t")
 
-        self.assertEqual(len(students), 60)
-        self.assertEqual([student.dni for student in students], [f"NUMIDIF{i}" for i in range(1, 61)])
+        self.assertEqual(len(students), 100)
+        self.assertEqual([student.dni for student in students], [f"NUMIDIF{i}" for i in range(1, 101)])
         self.assertTrue(all(re.fullmatch(r"NUMIDIF\d+", student.dni or "") for student in students))
         self.assertTrue(all(user.dni is None for user in teachers))
         self.assertEqual(User.objects.exclude(role="s").filter(dni__regex=r"^NUMIDIF\d+$").count(), 0)
+
+    def test_seed_sets_all_careers_to_ten_spots_and_keeps_that_shape_on_rerun(self):
+        self._run_command()
+
+        first_snapshot = list(Career.objects.order_by("code").values_list("code", "total_spots"))
+
+        self.assertEqual(len(first_snapshot), 5)
+        self.assertTrue(all(total_spots == 10 for _, total_spots in first_snapshot))
+
+        self._run_command()
+
+        second_snapshot = list(Career.objects.order_by("code").values_list("code", "total_spots"))
+        self.assertEqual(second_snapshot, first_snapshot)
 
     def test_seed_populates_shared_career_subject_relations(self):
         self._run_command()
@@ -111,9 +127,33 @@ class SeedAcademicBaseCommandTests(TestCase):
         self._run_command()
 
         second_snapshot = list(User.objects.filter(role="s").order_by("id").values_list("dni", flat=True))
-        self.assertEqual(first_snapshot, [f"NUMIDIF{i}" for i in range(1, 61)])
+        self.assertEqual(first_snapshot, [f"NUMIDIF{i}" for i in range(1, 101)])
         self.assertEqual(second_snapshot, first_snapshot)
-        self.assertEqual(User.objects.filter(dni__regex=r"^NUMIDIF\d+$").count(), 60)
+        self.assertEqual(User.objects.filter(dni__regex=r"^NUMIDIF\d+$").count(), 100)
+
+    def test_seed_creates_second_matriculation_demo_with_attempt_two_pricing(self):
+        self._run_command()
+
+        active_period = AcademicPeriod.objects.get(code="SEED-AP-01")
+        prior_period = AcademicPeriod.objects.get(code="SEED-AP-00")
+        student = User.objects.get(username="estudiante1")
+        subject = Subject.objects.get(code="IS-ALG")
+        current_class = Class.objects.get(period=active_period, subject=subject)
+        current_enrollment = CareerEnrollment.objects.get(student=student, period=active_period, career=subject.career)
+        fee = EnrollmentFee.objects.get(career_enrollment=current_enrollment)
+
+        prior_enrollment = CareerEnrollment.objects.get(student=student, period=prior_period, career=subject.career)
+        prior_class_enrollment = ClassEnrollment.objects.get(student=student, cls__period=prior_period, cls__subject=subject)
+        prior_grade = Grade.objects.get(student=student, evaluation__cls=prior_class_enrollment.cls, evaluation__is_final_grade=True)
+
+        self.assertEqual(prior_enrollment.status, "completed")
+        self.assertEqual(prior_class_enrollment.status, "enrolled")
+        self.assertLess(prior_grade.score, current_class.passing_grade)
+        self.assertEqual(fee.line_items[0]["subject_code"], "IS-ALG")
+        self.assertEqual(fee.line_items[0]["attempt_number"], 2)
+        self.assertEqual(fee.line_items[0]["price_per_credit"], "28.00")
+        self.assertEqual(fee.line_items[0]["subtotal"], "168.00")
+        self.assertEqual(EnrollmentFee.objects.filter(career_enrollment__student=student, career_enrollment__career=subject.career, career_enrollment__period=active_period).count(), 1)
 
     def test_seed_creates_submitted_pending_admission_applications(self):
         active_period = AcademicPeriod.objects.create(
@@ -129,14 +169,21 @@ class SeedAcademicBaseCommandTests(TestCase):
         seeded_students = User.objects.filter(role="s")
         applications = AdmissionApplication.objects.all()
 
-        self.assertGreater(applications.count(), 0)
-        self.assertLess(applications.count(), seeded_students.count())
+        self.assertEqual(applications.count(), 100)
         self.assertEqual(applications.filter(status="submitted").count(), applications.count())
         self.assertEqual(applications.exclude(submission_date__isnull=False).count(), 0)
         self.assertEqual(applications.exclude(student__role="s").count(), 0)
         self.assertEqual(applications.filter(academic_period__isnull=True).count(), 0)
         self.assertEqual(applications.exclude(academic_period=active_period).count(), 0)
         self.assertEqual(applications.exclude(status="submitted").count(), 0)
+
+        self.assertEqual(
+            {
+                career_code: AdmissionApplication.objects.filter(assigned_career__code=career_code).count()
+                for career_code in Career.objects.order_by("code").values_list("code", flat=True)
+            },
+            {career_code: 20 for career_code in Career.objects.order_by("code").values_list("code", flat=True)},
+        )
 
     def test_seed_submitted_applications_include_target_career_and_payload(self):
         self._run_command()
@@ -165,6 +212,13 @@ class SeedAcademicBaseCommandTests(TestCase):
             AdmissionPreference.objects.filter(application__in=applications, status="pending").count(),
             applications.count(),
         )
+        self.assertEqual(
+            {
+                career_code: AdmissionPreference.objects.filter(application__assigned_career__code=career_code).count()
+                for career_code in Career.objects.order_by("code").values_list("code", flat=True)
+            },
+            {career_code: 20 for career_code in Career.objects.order_by("code").values_list("code", flat=True)},
+        )
 
     def test_seed_creates_departments_and_links_subjects_and_teachers(self):
         self._run_command()
@@ -177,9 +231,30 @@ class SeedAcademicBaseCommandTests(TestCase):
         self.assertTrue(all(department.teacher_id is not None for department in departments))
         self.assertEqual(departments.values_list("teacher_id", flat=True).distinct().count(), departments.count())
         self.assertEqual(departments.exclude(teacher__role="t").count(), 0)
+        self.assertEqual(User.objects.filter(role="t", department__isnull=False).count(), teachers.count())
         self.assertEqual(subjects.filter(department__isnull=True).count(), 0)
         self.assertEqual(subjects.exclude(department__in=departments).count(), 0)
         self.assertGreater(teachers.count(), departments.count())
+        self.assertGreaterEqual(SubjectOffering.objects.filter(period__code="SEED-AP-01", is_active=True).count(), 10)
+        self.assertLessEqual(SubjectOffering.objects.filter(period__code="SEED-AP-01", is_active=True).count(), 12)
+        self.assertEqual(
+            TeacherSubjectDecision.objects.filter(period__code="SEED-AP-01", decision="approved").count(),
+            12,
+        )
+        self.assertEqual(
+            TeacherSubjectDecision.objects.filter(
+                period__code="SEED-AP-01",
+                decision="approved",
+            ).exclude(offering__department_id=models.F("teacher__department_id")).count(),
+            0,
+        )
+
+    def test_user_department_membership_field_exists(self):
+        self._run_command()
+
+        field = User._meta.get_field("department")
+        self.assertEqual(field.null, True)
+        self.assertEqual(field.related_model, Department)
 
     def test_seed_is_deterministic_for_catalog_names(self):
         self._run_command()

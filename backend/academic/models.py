@@ -208,7 +208,7 @@ class Department(models.Model):
         null=True,
         blank=True,
         limit_choices_to={'role': 't'},
-        related_name='department',
+        related_name='headed_department',
     )
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
