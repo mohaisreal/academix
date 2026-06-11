@@ -187,8 +187,11 @@ class TimetableGenerateAndPublishTests(TestCase):
         period = AcademicPeriod.objects.get(code='SEED-AP-01')
 
         approved = TeacherSubjectDecision.objects.filter(period=period, decision='approved', offering__is_active=True)
-        self.assertEqual(approved.count(), 12)
-        self.assertGreaterEqual(approved.values_list('offering__subject__code', flat=True).distinct().count(), 10)
+        self.assertEqual(approved.count(), Subject.objects.exclude(department__isnull=True).count())
+        self.assertEqual(
+            approved.values_list('offering__subject__code', flat=True).distinct().count(),
+            Subject.objects.exclude(department__isnull=True).count(),
+        )
 
         run = TimetableRun.objects.create(period=period)
         generate_for_run(run)
@@ -1296,8 +1299,7 @@ class SchedulingConstraintsTests(TestCase):
         self.assertEqual(row['period_name'], self.period.name)
         self.assertTrue(row['teacher_name'])
         self.assertIsNone(row['classroom_name'])
-        self.assertIsNone(row['subject_name'])
-        self.assertIsNone(row['run'])
+        self.assertIsNone(row['career_name'])
 
     def test_constraints_labels_use_neutral_placeholders_for_unknown_or_missing(self):
         constraint = SchedulingConstraint.objects.create(
@@ -1361,11 +1363,13 @@ class SchedulingConstraintsTests(TestCase):
         self.assertEqual(run.assignments.count(), 0)
         self.assertGreaterEqual(run.violations.count(), 1)
 
-    def test_generate_blocks_subject_unavailable_constraints(self):
+    def test_generate_blocks_shared_career_constraints(self):
+        shared_career = Career.objects.create(name='Shared Career G', code='CAR-SHARED-G')
+        self.cls.subject.careers.add(shared_career)
         run = TimetableRun.objects.create(period=self.period, status='draft')
         SchedulingConstraint.objects.create(
-            kind='subject_unavailable', scope='period', period=self.period,
-            subject=self.cls.subject, day_of_week=0, start_time=time(7, 0), end_time=time(11, 0), is_active=True,
+            kind='career_unavailable', scope='period', period=self.period,
+            career=shared_career, day_of_week=0, start_time=time(7, 0), end_time=time(11, 0), is_active=True,
         )
 
         response = self.client.post(f'/api/academic/timetable-runs/{run.id}/generate/')
@@ -1373,40 +1377,6 @@ class SchedulingConstraintsTests(TestCase):
         self.assertEqual(response.status_code, 400)
         run.refresh_from_db()
         self.assertGreaterEqual(run.violations.count(), 1)
-
-    def test_constraints_require_subject_for_subject_unavailable(self):
-        constraint = SchedulingConstraint(
-            kind='subject_unavailable',
-            scope='period',
-            period=self.period,
-            day_of_week=0,
-            start_time=time(7, 0),
-            end_time=time(11, 0),
-            is_active=True,
-        )
-
-        with self.assertRaises(ValidationError) as ctx:
-            constraint.clean()
-
-        self.assertIn('subject', ctx.exception.message_dict)
-
-    def test_constraints_filter_by_run(self):
-        run_a = TimetableRun.objects.create(period=self.period, status='draft')
-        run_b = TimetableRun.objects.create(period=self.period, status='draft')
-        constraint_a = SchedulingConstraint.objects.create(
-            kind='teacher_unavailable', scope='period', period=self.period,
-            teacher=self.cls.teacher, run=run_a, day_of_week=0, start_time=time(7, 0), end_time=time(11, 0), is_active=True,
-        )
-        SchedulingConstraint.objects.create(
-            kind='teacher_unavailable', scope='period', period=self.period,
-            teacher=self.cls.teacher, run=run_b, day_of_week=1, start_time=time(7, 0), end_time=time(11, 0), is_active=True,
-        )
-
-        response = self.client.get('/api/academic/scheduling-constraints/', {'run': run_a.id})
-
-        self.assertEqual(response.status_code, 200)
-        rows = unwrap_results(response.data)
-        self.assertEqual([row['id'] for row in rows], [constraint_a.id])
 
     def test_seeded_dataset_generates_without_unresolved_teachers(self):
         call_command('seed_academic_base')

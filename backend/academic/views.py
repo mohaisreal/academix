@@ -657,14 +657,11 @@ class SchedulingConstraintViewSet(viewsets.ModelViewSet):
     serializer_class = SchedulingConstraintSerializer
 
     def get_queryset(self):
-        qs = SchedulingConstraint.objects.select_related('period', 'teacher', 'classroom', 'subject', 'run').all()
+        qs = SchedulingConstraint.objects.select_related('period', 'teacher', 'classroom', 'career').all()
         period = self.request.query_params.get('period')
-        run = self.request.query_params.get('run')
         is_active = self.request.query_params.get('is_active')
         if period:
             qs = qs.filter(period_id=period)
-        if run:
-            qs = qs.filter(run_id=run)
         if is_active in {'true', 'false'}:
             qs = qs.filter(is_active=(is_active == 'true'))
         return qs

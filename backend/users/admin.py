@@ -81,12 +81,11 @@ class UserAdmin(BaseUserAdmin):
         ('Rol y permisos', {
             'fields': (
                 'role',
-                'department',
                 'is_active',
                 'is_staff',
                 'is_superuser',
                 'groups',
-                'user_permissions',
+                'user_permissions'
             )
         }),
         ('Fechas importantes', {

@@ -188,9 +188,6 @@ class Command(BaseCommand):
                 teacher=teachers[index] if index < len(teachers) else None,
                 is_active=True,
             ))
-        for index, teacher in enumerate(teachers):
-            teacher.department = departments[index % len(departments)]
-            teacher.save(update_fields=["department"])
         return departments
 
     def _seed_subjects(self, careers, departments):
@@ -355,36 +352,28 @@ class Command(BaseCommand):
         refresh_enrollment_fee(current_enrollment)
 
     def _seed_teacher_selection_demo(self, active_period):
-        departments = list(Department.objects.filter(is_active=True).order_by("code"))
-        if not departments:
-            raise CommandError("Readiness inválido: no hay departamentos activos para ofertas base.")
-
-        for department in departments:
-            subjects = list(Subject.objects.filter(is_active=True, department=department).order_by("code"))
-            teachers = list(User.objects.filter(role="t", department=department).order_by("id"))
-            if not subjects:
-                raise CommandError(f"Readiness inválido: el departamento {department.code} no tiene asignaturas activas.")
-            for member_rank, teacher in enumerate(teachers):
-                subject = subjects[member_rank % len(subjects)]
-                offering, _ = SubjectOffering.objects.get_or_create(
-                    subject=subject,
-                    period=active_period,
-                    label="",
-                    defaults={
-                        "department": department,
-                        "max_students": 30,
-                        "is_active": True,
-                    },
-                )
-                if not offering.is_active:
-                    offering.is_active = True
-                    offering.department = department
-                    offering.save(update_fields=["is_active", "department"])
-                TeacherSubjectDecision.objects.update_or_create(
-                    teacher=teacher,
-                    offering=offering,
-                    defaults={
-                        "period": active_period,
-                        "decision": "approved",
-                    },
-                )
+        subjects = Subject.objects.select_related("department", "department__teacher").exclude(department__isnull=True)
+        for subject in subjects:
+            department = subject.department
+            offering, _ = SubjectOffering.objects.get_or_create(
+                subject=subject,
+                period=active_period,
+                label="",
+                defaults={
+                    "department": department,
+                    "max_students": 30,
+                    "is_active": True,
+                },
+            )
+            if not offering.is_active:
+                offering.is_active = True
+                offering.department = department
+                offering.save(update_fields=["is_active", "department"])
+            TeacherSubjectDecision.objects.update_or_create(
+                teacher=department.teacher,
+                offering=offering,
+                defaults={
+                    "period": active_period,
+                    "decision": "approved",
+                },
+            )

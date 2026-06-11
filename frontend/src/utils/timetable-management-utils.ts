@@ -11,7 +11,7 @@ export type TimetableViolationSummary = { total: number; hard: number; soft: num
 export type AssignmentGridRow = { id: number; cls?: number; subject_name?: string; subject_code?: string; classroom_name?: string; teacher_name?: string; career_id?: number; career_name?: string; timeslot_day_name?: string; timeslot_start_time?: string; timeslot_end_time?: string };
 export type TimetableGridBlock = { id: number; day: number; hour: string; label: string; careerId: number | null; careerName: string | null };
 export type TimetableGridRow = { hour: string; cells: Array<{ day: number; blocks: TimetableGridBlock[] }> };
-export type ConstraintFormValues = { kind: string; scope: string; period: string; teacher: string; classroom: string; subject: string; run?: string; dayOfWeek: string; startTime: string; endTime: string; isActive: boolean };
+export type ConstraintFormValues = { kind: string; scope: string; period: string; teacher: string; classroom: string; career: string; dayOfWeek: string; startTime: string; endTime: string; isActive: boolean };
 export type SchedulingConstraintLike = {
   kind?: string | null;
   kind_label?: string | null;
@@ -23,8 +23,7 @@ export type SchedulingConstraintLike = {
   end_time?: string | null;
   teacher_name?: string | null;
   classroom_name?: string | null;
-  subject_name?: string | null;
-  run?: number | null;
+  career_name?: string | null;
 };
 
 export type BulkBreakRange = { start: string; end: string };
@@ -361,7 +360,7 @@ export function buildWeekGridRows(blocks: TimetableGridBlock[]): TimetableGridRo
 const CONSTRAINT_KIND_LABELS: Record<string, string> = {
   teacher_unavailable: 'Docente no disponible',
   classroom_unavailable: 'Aula no disponible',
-  subject_unavailable: 'Asignatura no disponible',
+  career_unavailable: 'Carrera no disponible',
 };
 
 const CONSTRAINT_SCOPE_LABELS: Record<string, string> = {
@@ -399,7 +398,7 @@ export function formatConstraintDay(constraint: SchedulingConstraintLike) {
 }
 
 export function formatConstraintEntity(constraint: SchedulingConstraintLike) {
-  return String(constraint.teacher_name || constraint.classroom_name || constraint.subject_name || '').trim() || 'Entidad no especificada';
+  return String(constraint.teacher_name || constraint.classroom_name || constraint.career_name || '').trim() || 'Entidad no especificada';
 }
 
 export function formatConstraintTimeRange(constraint: SchedulingConstraintLike) {
@@ -415,8 +414,7 @@ export function buildConstraintPayload(values: ConstraintFormValues) {
     period: values.scope === 'period' ? toOptionalNumber(values.period) : null,
     teacher: values.kind === 'teacher_unavailable' ? toOptionalNumber(values.teacher) : null,
     classroom: values.kind === 'classroom_unavailable' ? toOptionalNumber(values.classroom) : null,
-    subject: values.kind === 'subject_unavailable' ? toOptionalNumber(values.subject) : null,
-    run: toOptionalNumber(String(values.run ?? '')),
+    career: values.kind === 'career_unavailable' ? toOptionalNumber(values.career) : null,
     day_of_week: Number(values.dayOfWeek),
     start_time: values.startTime,
     end_time: values.endTime,

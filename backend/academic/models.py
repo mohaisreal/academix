@@ -208,7 +208,7 @@ class Department(models.Model):
         null=True,
         blank=True,
         limit_choices_to={'role': 't'},
-        related_name='headed_department',
+        related_name='department',
     )
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -417,7 +417,7 @@ class SchedulingConstraint(models.Model):
     KIND_CHOICES = [
         ('teacher_unavailable', 'Teacher unavailable'),
         ('classroom_unavailable', 'Classroom unavailable'),
-        ('subject_unavailable', 'Subject unavailable'),
+        ('career_unavailable', 'Career unavailable'),
     ]
     SCOPE_CHOICES = [
         ('global', 'Global'),
@@ -429,8 +429,7 @@ class SchedulingConstraint(models.Model):
     period = models.ForeignKey(AcademicPeriod, null=True, blank=True, on_delete=models.CASCADE, related_name='constraints')
     teacher = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE, related_name='scheduling_constraints')
     classroom = models.ForeignKey(Classroom, null=True, blank=True, on_delete=models.CASCADE, related_name='scheduling_constraints')
-    subject = models.ForeignKey(Subject, null=True, blank=True, on_delete=models.CASCADE, related_name='scheduling_constraints')
-    run = models.ForeignKey('TimetableRun', null=True, blank=True, on_delete=models.CASCADE, related_name='scheduling_constraints')
+    career = models.ForeignKey(Career, null=True, blank=True, on_delete=models.CASCADE, related_name='scheduling_constraints')
     day_of_week = models.PositiveSmallIntegerField(choices=ClassSchedule.DAY_CHOICES)
     start_time = models.TimeField()
     end_time = models.TimeField()
@@ -455,5 +454,5 @@ class SchedulingConstraint(models.Model):
             raise ValidationError({'teacher': 'Teacher is required for teacher_unavailable.'})
         if self.kind == 'classroom_unavailable' and not self.classroom_id:
             raise ValidationError({'classroom': 'Classroom is required for classroom_unavailable.'})
-        if self.kind == 'subject_unavailable' and not self.subject_id:
-            raise ValidationError({'subject': 'Subject is required for subject_unavailable.'})
+        if self.kind == 'career_unavailable' and not self.career_id:
+            raise ValidationError({'career': 'Career is required for career_unavailable.'})

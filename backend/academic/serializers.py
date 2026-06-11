@@ -500,12 +500,12 @@ class SchedulingConstraintSerializer(serializers.ModelSerializer):
     period_name = serializers.CharField(source='period.name', read_only=True)
     teacher_name = serializers.SerializerMethodField()
     classroom_name = serializers.SerializerMethodField()
-    subject_name = serializers.SerializerMethodField()
+    career_name = serializers.SerializerMethodField()
 
     KIND_LABELS = {
         'teacher_unavailable': 'Docente no disponible',
         'classroom_unavailable': 'Aula no disponible',
-        'subject_unavailable': 'Asignatura no disponible',
+        'career_unavailable': 'Carrera no disponible',
     }
     SCOPE_LABELS = {
         'period': 'Periodo',
@@ -542,14 +542,14 @@ class SchedulingConstraintSerializer(serializers.ModelSerializer):
     def get_classroom_name(self, obj):
         return obj.classroom.name if obj.classroom else None
 
-    def get_subject_name(self, obj):
-        return obj.subject.name if obj.subject else None
+    def get_career_name(self, obj):
+        return obj.career.name if obj.career else None
 
     class Meta:
         model = SchedulingConstraint
         fields = [
             'id', 'kind', 'kind_label', 'scope', 'scope_label',
-            'period', 'period_name', 'teacher', 'teacher_name', 'classroom', 'classroom_name', 'subject', 'subject_name', 'run',
+            'period', 'period_name', 'teacher', 'teacher_name', 'classroom', 'classroom_name', 'career', 'career_name',
             'day_of_week', 'day_label', 'start_time', 'end_time',
             'is_active', 'metadata', 'created_at', 'updated_at',
         ]
@@ -561,8 +561,7 @@ class SchedulingConstraintSerializer(serializers.ModelSerializer):
             'period': getattr(self.instance, 'period', None),
             'teacher': getattr(self.instance, 'teacher', None),
             'classroom': getattr(self.instance, 'classroom', None),
-            'subject': getattr(self.instance, 'subject', None),
-            'run': getattr(self.instance, 'run', None),
+            'career': getattr(self.instance, 'career', None),
             'day_of_week': getattr(self.instance, 'day_of_week', None),
             'start_time': getattr(self.instance, 'start_time', None),
             'end_time': getattr(self.instance, 'end_time', None),

@@ -5,12 +5,11 @@ from unittest.mock import patch
 from django.core.management import call_command
 from django.core.management import get_commands
 from django.core.management.base import CommandError
-from django.db import models
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from academic.models import AcademicPeriod, Career, Classroom, Department, Subject, Class, SubjectOffering, TeacherSubjectDecision
+from academic.models import AcademicPeriod, Career, Classroom, Department, Subject, Class
 from admissions.models import AdmissionApplication, AdmissionPreference
 from enrollment.models import CareerEnrollment, ClassEnrollment, EnrollmentFee
 from grades.models import Grade
@@ -231,30 +230,9 @@ class SeedAcademicBaseCommandTests(TestCase):
         self.assertTrue(all(department.teacher_id is not None for department in departments))
         self.assertEqual(departments.values_list("teacher_id", flat=True).distinct().count(), departments.count())
         self.assertEqual(departments.exclude(teacher__role="t").count(), 0)
-        self.assertEqual(User.objects.filter(role="t", department__isnull=False).count(), teachers.count())
         self.assertEqual(subjects.filter(department__isnull=True).count(), 0)
         self.assertEqual(subjects.exclude(department__in=departments).count(), 0)
         self.assertGreater(teachers.count(), departments.count())
-        self.assertGreaterEqual(SubjectOffering.objects.filter(period__code="SEED-AP-01", is_active=True).count(), 10)
-        self.assertLessEqual(SubjectOffering.objects.filter(period__code="SEED-AP-01", is_active=True).count(), 12)
-        self.assertEqual(
-            TeacherSubjectDecision.objects.filter(period__code="SEED-AP-01", decision="approved").count(),
-            12,
-        )
-        self.assertEqual(
-            TeacherSubjectDecision.objects.filter(
-                period__code="SEED-AP-01",
-                decision="approved",
-            ).exclude(offering__department_id=models.F("teacher__department_id")).count(),
-            0,
-        )
-
-    def test_user_department_membership_field_exists(self):
-        self._run_command()
-
-        field = User._meta.get_field("department")
-        self.assertEqual(field.null, True)
-        self.assertEqual(field.related_model, Department)
 
     def test_seed_is_deterministic_for_catalog_names(self):
         self._run_command()

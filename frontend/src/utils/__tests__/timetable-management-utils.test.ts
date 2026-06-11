@@ -510,15 +510,6 @@ describe('preview grid + constraints helpers', () => {
     expect(payload.classroom).toBeNull();
   });
 
-  it('emite subject y run para subject_unavailable', () => {
-    const payload = buildConstraintPayload({
-      kind: 'subject_unavailable', scope: 'period', period: '5', teacher: '', classroom: '', career: '', dayOfWeek: '2', startTime: '10:00:00', endTime: '11:00:00', isActive: true, subject: '7', run: '3',
-    } as any);
-
-    expect(payload.subject).toBe(7);
-    expect(payload.run).toBe(3);
-  });
-
   it('mapea errores por campo desde payload DRF', () => {
     expect(mapConstraintFieldErrors({ period: ['Requerido'], teacher: ['Inválido'] })).toEqual({ period: 'Requerido', teacher: 'Inválido' });
   });
@@ -546,22 +537,10 @@ describe('preview grid + constraints helpers', () => {
   it('formatea entidad y rango horario en formato amigable', () => {
     expect(formatConstraintEntity({ teacher_name: 'Ada Lovelace' } as any)).toBe('Ada Lovelace');
     expect(formatConstraintEntity({ classroom_name: 'Aula 101' } as any)).toBe('Aula 101');
-    expect(formatConstraintEntity({ subject_name: 'Ingeniería' } as any)).toBe('Ingeniería');
+    expect(formatConstraintEntity({ career_name: 'Ingeniería' } as any)).toBe('Ingeniería');
     expect(formatConstraintEntity({} as any)).toBe('Entidad no especificada');
 
     expect(formatConstraintTimeRange({ start_time: '08:00:00', end_time: '09:30:00' } as any)).toBe('08:00–09:30');
     expect(formatConstraintTimeRange({ start_time: '', end_time: '' } as any)).toBe('Horario no especificado');
-  });
-
-  it('labels subject unavailable constraints', () => {
-    expect(formatConstraintKind({ kind: 'subject_unavailable' } as any)).toBe('Asignatura no disponible');
-  });
-
-  it('nulls subject when kind is different', () => {
-    const payload = buildConstraintPayload({
-      kind: 'teacher_unavailable', scope: 'period', period: '5', teacher: '8', classroom: '', career: '', dayOfWeek: '2', startTime: '10:00:00', endTime: '11:00:00', isActive: true, subject: '7', run: '',
-    } as any);
-
-    expect(payload.subject).toBeNull();
   });
 });
