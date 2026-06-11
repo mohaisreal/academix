@@ -99,14 +99,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       </div>
       <form id="constraint-form" class="rounded-xl border border-border bg-background p-4 space-y-3">
         <div class="grid gap-2 sm:grid-cols-2">
-          <select id="constraint-kind" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="teacher_unavailable">Docente no disponible</option><option value="classroom_unavailable">Aula no disponible</option><option value="career_unavailable">Carrera no disponible</option></select>
+          <select id="constraint-kind" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="teacher_unavailable">Docente no disponible</option><option value="classroom_unavailable">Aula no disponible</option><option value="subject_unavailable">Asignatura no disponible</option></select>
           <select id="constraint-scope" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="period">Periodo</option><option value="global">Global</option></select>
         </div>
         <div class="grid gap-2 sm:grid-cols-2">
           <select id="constraint-period" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="">Selecciona periodo</option></select>
           <select id="constraint-teacher" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm" disabled><option value="">Selecciona docente</option></select>
           <select id="constraint-classroom" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm" disabled><option value="">Selecciona aula</option></select>
-          <select id="constraint-career" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm" disabled><option value="">Selecciona carrera</option></select>
+          <select id="constraint-subject" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm" disabled><option value="">Selecciona asignatura</option></select>
         </div>
         <div class="grid gap-2 sm:grid-cols-3">
           <select id="constraint-day" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="0">Lunes</option><option value="1">Martes</option><option value="2">Miércoles</option><option value="3">Jueves</option><option value="4">Viernes</option></select>
@@ -199,7 +199,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   const esc = (v) => { const e = document.createElement('div'); e.textContent = String(v ?? ''); return e.innerHTML; };
   const err = (e, fb) => (e instanceof Error && e.message ? e.message : fb);
 
-  let periods = []; let teachers = []; let classrooms = []; let careers = []; let runs = []; let timeslots = []; let assignments = []; let violations = []; let constraints = []; let selectedRunId = null;
+  let periods = []; let teachers = []; let classrooms = []; let careers = []; let subjects = []; let runs = []; let timeslots = []; let assignments = []; let violations = []; let constraints = []; let selectedRunId = null;
   let selectedCareerId = null;
   let selectedTimeslotIds = new Set();
   let timeslotsPage = 1; let timeslotsPages = 1; let timeslotsCount = 0;
@@ -291,31 +291,31 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   }
 
   function renderConstraintCatalogSelects() {
-    const period = q('constraint-period'); const teacher = q('constraint-teacher'); const classroom = q('constraint-classroom'); const career = q('constraint-career');
-    if (!(period instanceof HTMLSelectElement) || !(teacher instanceof HTMLSelectElement) || !(classroom instanceof HTMLSelectElement) || !(career instanceof HTMLSelectElement)) return;
-    const periodValue = period.value; const teacherValue = teacher.value; const classroomValue = classroom.value; const careerValue = career.value;
+    const period = q('constraint-period'); const teacher = q('constraint-teacher'); const classroom = q('constraint-classroom'); const subject = q('constraint-subject');
+    if (!(period instanceof HTMLSelectElement) || !(teacher instanceof HTMLSelectElement) || !(classroom instanceof HTMLSelectElement) || !(subject instanceof HTMLSelectElement)) return;
+    const periodValue = period.value; const teacherValue = teacher.value; const classroomValue = classroom.value; const subjectValue = subject.value;
     period.innerHTML = `<option value="">Selecciona periodo</option>${periods.map((x) => `<option value="${x.id}">${esc(x.name || `periodo #${x.id}`)}</option>`).join('')}`;
     teacher.innerHTML = `<option value="">Selecciona docente</option>${teachers.map((x) => `<option value="${x.id}">${esc(x.full_name || x.username || `Docente #${x.id}`)}</option>`).join('')}`;
     classroom.innerHTML = `<option value="">Selecciona aula</option>${classrooms.map((x) => `<option value="${x.id}">${esc(x.name || x.code || `Aula #${x.id}`)}</option>`).join('')}`;
-    career.innerHTML = `<option value="">Selecciona carrera</option>${careers.map((x) => `<option value="${x.id}">${esc(x.name || `Carrera #${x.id}`)}</option>`).join('')}`;
-    period.value = periodValue; teacher.value = teacherValue; classroom.value = classroomValue; career.value = careerValue;
+    subject.innerHTML = `<option value="">Selecciona asignatura</option>${subjects.map((x) => `<option value="${x.id}">${esc(x.name || `Asignatura #${x.id}`)}</option>`).join('')}`;
+    period.value = periodValue; teacher.value = teacherValue; classroom.value = classroomValue; subject.value = subjectValue;
   }
 
   function syncConstraintSelectors() {
-    const kind = q('constraint-kind'); const scope = q('constraint-scope'); const period = q('constraint-period'); const teacher = q('constraint-teacher'); const classroom = q('constraint-classroom'); const career = q('constraint-career');
-    if (!(kind instanceof HTMLSelectElement) || !(scope instanceof HTMLSelectElement) || !(period instanceof HTMLSelectElement) || !(teacher instanceof HTMLSelectElement) || !(classroom instanceof HTMLSelectElement) || !(career instanceof HTMLSelectElement)) return;
+    const kind = q('constraint-kind'); const scope = q('constraint-scope'); const period = q('constraint-period'); const teacher = q('constraint-teacher'); const classroom = q('constraint-classroom'); const subject = q('constraint-subject');
+    if (!(kind instanceof HTMLSelectElement) || !(scope instanceof HTMLSelectElement) || !(period instanceof HTMLSelectElement) || !(teacher instanceof HTMLSelectElement) || !(classroom instanceof HTMLSelectElement) || !(subject instanceof HTMLSelectElement)) return;
     const globalScope = scope.value === 'global';
     period.disabled = globalScope;
     if (globalScope) period.value = '';
     const teacherEnabled = kind.value === 'teacher_unavailable';
     const classroomEnabled = kind.value === 'classroom_unavailable';
-    const careerEnabled = kind.value === 'career_unavailable';
+    const subjectEnabled = kind.value === 'subject_unavailable';
     teacher.disabled = !teacherEnabled;
     classroom.disabled = !classroomEnabled;
-    career.disabled = !careerEnabled;
+    subject.disabled = !subjectEnabled;
     if (!teacherEnabled) teacher.value = '';
     if (!classroomEnabled) classroom.value = '';
-    if (!careerEnabled) career.value = '';
+    if (!subjectEnabled) subject.value = '';
   }
 
   function renderRunBadge() {
@@ -541,16 +541,18 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   }
 
   async function loadCatalogs() {
-    const [periodRows, teacherRows, classroomRows, careerRows] = await Promise.all([
+    const [periodRows, teacherRows, classroomRows, careerRows, subjectRows] = await Promise.all([
       loadAllPages('/academic/periods/'),
       loadAllPages('/users/teachers/'),
       loadAllPages('/academic/classrooms/'),
       loadAllPages('/academic/careers/'),
+      loadAllPages('/academic/subjects/'),
     ]);
     periods = periodRows;
     teachers = teacherRows;
     classrooms = classroomRows;
     careers = careerRows;
+    subjects = subjectRows;
     renderPeriodSelects();
     renderConstraintCatalogSelects();
     syncConstraintSelectors();
@@ -703,9 +705,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const error = q('constraint-form-error');
     error?.classList.add('hidden');
     const kindEl = q('constraint-kind'); const scopeEl = q('constraint-scope'); const periodEl = q('constraint-period');
-    const teacherEl = q('constraint-teacher'); const classroomEl = q('constraint-classroom'); const careerEl = q('constraint-career');
+    const teacherEl = q('constraint-teacher'); const classroomEl = q('constraint-classroom'); const subjectEl = q('constraint-subject');
     const dayEl = q('constraint-day'); const startEl = q('constraint-start'); const endEl = q('constraint-end');
-    if (!(kindEl instanceof HTMLSelectElement) || !(scopeEl instanceof HTMLSelectElement) || !(periodEl instanceof HTMLSelectElement) || !(teacherEl instanceof HTMLSelectElement) || !(classroomEl instanceof HTMLSelectElement) || !(careerEl instanceof HTMLSelectElement) || !(dayEl instanceof HTMLSelectElement) || !(startEl instanceof HTMLInputElement) || !(endEl instanceof HTMLInputElement)) return;
+    if (!(kindEl instanceof HTMLSelectElement) || !(scopeEl instanceof HTMLSelectElement) || !(periodEl instanceof HTMLSelectElement) || !(teacherEl instanceof HTMLSelectElement) || !(classroomEl instanceof HTMLSelectElement) || !(subjectEl instanceof HTMLSelectElement) || !(dayEl instanceof HTMLSelectElement) || !(startEl instanceof HTMLInputElement) || !(endEl instanceof HTMLInputElement)) return;
     try {
       const payload = buildConstraintPayload({
         kind: kindEl.value,
@@ -713,12 +715,13 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         period: periodEl.value,
         teacher: teacherEl.value,
         classroom: classroomEl.value,
-        career: careerEl.value,
+        subject: subjectEl.value,
         dayOfWeek: dayEl.value,
         startTime: `${startEl.value}:00`,
         endTime: `${endEl.value}:00`,
         isActive: true,
       });
+      (payload as any).run = selectedRunId;
       await apiFetch('/academic/scheduling-constraints/', { method: 'POST', body: JSON.stringify(payload) });
       await loadConstraints();
       renderConstraints();
