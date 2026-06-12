@@ -74,8 +74,21 @@ class CreateNotificationEmailTests(TestCase):
         mock_send.assert_not_called()
 
     @patch('notifications.utils.send_mail')
+    def test_no_email_address_skips_sending_without_failing(self, mock_send):
+        """Sin email asignado → se crea la notificación y se omite el correo."""
+        SystemSettings.objects.get_or_create(pk=1, defaults={'email_notifications_enabled': True})
+        UserEmailPreference.objects.create(user=self.user, email_enabled=True)
+        self.user.email = ''
+        self.user.save()
+
+        notif = create_notification(self.user, 'Test', 'Hello')
+
+        self.assertIsNotNone(notif)
+        mock_send.assert_not_called()
+
+    @patch('notifications.utils.send_mail')
     def test_send_mail_called_with_fail_silently(self, mock_send):
-        """send_mail se llama con fail_silently=True para que errores SMTP no rompan el flujo."""
+        """send_mail se llama con fail_silently=False y el error se gestiona con logging."""
         SystemSettings.objects.get_or_create(pk=1, defaults={'email_notifications_enabled': True})
         UserEmailPreference.objects.create(user=self.user, email_enabled=True)
 
@@ -84,7 +97,7 @@ class CreateNotificationEmailTests(TestCase):
         self.assertIsNotNone(notif)
         self.assertTrue(Notification.objects.filter(pk=notif.pk).exists())
         mock_send.assert_called_once()
-        self.assertTrue(mock_send.call_args.kwargs['fail_silently'])
+        self.assertFalse(mock_send.call_args.kwargs['fail_silently'])
 
     def test_backward_compat_no_event_type(self):
         """Llamar sin event_type sigue funcionando (compatibilidad hacia atrás)."""
@@ -255,6 +268,14 @@ class EmailTemplatePreviewSendTests(TestCase):
             self.assertIn('https://portal.example.edu/verify-email', mock_send.call_args.kwargs['html_message'])
         finally:
             django_settings.FRONTEND_URL = original
+
+    def test_send_test_skips_when_user_has_no_email(self):
+        self.admin.email = ''
+        self.admin.save()
+
+        res = self.client.post(f'/api/notifications/email-templates/{self.template.pk}/send-test/', {}, format='json')
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('skipped', res.data['detail'].lower())
 
 
 class EmailPreferenceAPITests(TestCase):

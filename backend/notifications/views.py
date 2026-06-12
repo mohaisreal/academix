@@ -1,5 +1,6 @@
 from django.conf import settings as django_settings
 from django.core.mail import send_mail
+import logging
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -13,6 +14,8 @@ from .serializers import (
     EmailTemplateSerializer,
 )
 from .utils import build_frontend_url, render_template, wrap_in_email_layout
+
+logger = logging.getLogger(__name__)
 
 
 class NotificationListView(APIView):
@@ -273,7 +276,8 @@ class EmailTemplateSendTestView(APIView):
 
         recipient = request.user.email
         if not recipient:
-            return Response({'error': 'Your account has no email address configured'}, status=400)
+            logger.info('Email test skipped: user %s has no email address', request.user.pk)
+            return Response({'detail': 'Email skipped: no email address configured for the target user.'}, status=200)
 
         extra_context = request.data.get('context', {})
         if not isinstance(extra_context, dict):
@@ -291,13 +295,29 @@ class EmailTemplateSendTestView(APIView):
         import re as _re
         plain_text = _re.sub(r'<[^>]+>', '', rendered_body).strip()
 
-        send_mail(
-            subject=f'[Test] {rendered_subject}',
-            message=plain_text,
-            from_email=django_settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[recipient],
-            html_message=html,
-            fail_silently=False,
-        )
+        try:
+            result = send_mail(
+                subject=f'[Test] {rendered_subject}',
+                message=plain_text,
+                from_email=django_settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[recipient],
+                html_message=html,
+                fail_silently=False,
+            )
+            logger.info(
+                'SMTP delivery diagnostics: %s',
+                {
+                    'event': 'email_template_send_test',
+                    'recipient': recipient,
+                    'status': 'sent' if result else 'not_sent',
+                    'backend': django_settings.EMAIL_BACKEND,
+                    'host': django_settings.EMAIL_HOST,
+                    'port': django_settings.EMAIL_PORT,
+                    'use_tls': django_settings.EMAIL_USE_TLS,
+                },
+            )
+        except Exception:
+            logger.exception('No se pudo enviar el email de prueba a %s', recipient)
+            return Response({'detail': 'SMTP delivery failed. Check server logs for diagnostics.'}, status=502)
 
         return Response({'sent_to': recipient})

@@ -21,6 +21,30 @@ from .models import (
 logger = logging.getLogger(__name__)
 
 
+def _smtp_target_summary():
+    host = getattr(settings, 'EMAIL_HOST', '') or 'localhost'
+    port = getattr(settings, 'EMAIL_PORT', '') or '25'
+    backend = getattr(settings, 'EMAIL_BACKEND', '') or 'unknown'
+    use_tls = bool(getattr(settings, 'EMAIL_USE_TLS', False))
+    return {'backend': backend, 'host': host, 'port': port, 'use_tls': use_tls}
+
+
+def _log_email_delivery(event, *, recipient, status, extra=None):
+    target = _smtp_target_summary()
+    payload = {
+        'recipient': recipient or '',
+        'status': status,
+        'backend': target['backend'],
+        'host': target['host'],
+        'port': target['port'],
+        'use_tls': target['use_tls'],
+    }
+    if extra:
+        payload.update(extra)
+    payload['event'] = event
+    logger.info('SMTP delivery diagnostics: %s', payload)
+
+
 def build_frontend_url(path=''):
     base = (getattr(settings, 'FRONTEND_URL', '') or '').rstrip('/')
     if not path:
@@ -222,6 +246,8 @@ def create_notification(
         )
 
     if not send_email or not wants_email or not user.email:
+        if send_email and wants_email and not user.email:
+            logger.info('Email skipped: user %s has no email address', getattr(user, 'pk', 'unknown'))
         return notif
 
     system_settings, _ = SystemSettings.objects.get_or_create(pk=1)
@@ -258,15 +284,18 @@ def create_notification(
     plain_text = strip_tags(rendered_body).strip() or message
 
     try:
-        send_mail(
+        result = send_mail(
             subject=email_subject,
             message=plain_text,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
             html_message=html_message,
-            fail_silently=True,
+            fail_silently=False,
         )
+        status = 'sent' if result else 'not_sent'
+        _log_email_delivery(event_type or template_name or 'notification', recipient=user.email, status=status)
     except Exception:
+        _log_email_delivery(event_type or template_name or 'notification', recipient=user.email, status='failed')
         logger.exception('No se pudo enviar el correo a %s', user.email)
 
     return notif
