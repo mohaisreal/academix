@@ -3,6 +3,8 @@ Pruebas TDD para los campos de ventana de admisión en AcademicPeriod.
 Fase RED: escritas antes de cambios en modelo/serializador.
 """
 from django.test import TestCase
+from django.utils import timezone
+from datetime import timedelta
 from rest_framework.test import APIClient
 from rest_framework import status
 
@@ -165,3 +167,23 @@ class AcademicPeriodAPIAdmissionWindowTests(TestCase):
         data = res.json()
         periods = data.get('results', data) if isinstance(data, dict) else data
         self.assertEqual([item['id'] for item in periods], [active_period.id])
+
+    def test_api_preinscription_list_is_inclusive_and_excludes_outside_window(self):
+        now = timezone.now()
+        open_period = make_period(
+            code='OPEN-AP',
+            admission_open_date=now - timedelta(seconds=1),
+            admission_close_date=now + timedelta(seconds=1),
+        )
+        make_period(
+            code='OUT-AP',
+            admission_open_date=now - timedelta(days=2),
+            admission_close_date=now - timedelta(days=1),
+        )
+
+        res = self.client.get('/api/academic/periods/preinscription/')
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        data = res.json()
+        periods = data.get('results', data) if isinstance(data, dict) else data
+        self.assertEqual([item['id'] for item in periods], [open_period.id])

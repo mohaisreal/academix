@@ -2,6 +2,7 @@ from django.db import transaction
 from django.db.models import Prefetch, Q
 from django.conf import settings
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from rest_framework.decorators import action
@@ -330,6 +331,20 @@ class AcademicPeriodViewSet(viewsets.ModelViewSet):
             qs = qs.filter(is_active=(is_active == 'true'))
         return qs
 
+    @action(detail=False, methods=['get'], url_path='preinscription')
+    def preinscription(self, request):
+        now = timezone.now()
+        qs = (
+            AcademicPeriod.objects.filter(
+                admission_open_date__isnull=False,
+                admission_close_date__isnull=False,
+                admission_open_date__lte=now,
+                admission_close_date__gte=now,
+            )
+            .order_by('-admission_open_date', '-id')
+        )
+        return Response(self.get_serializer(qs, many=True).data)
+
     def perform_create(self, serializer):
         instance = serializer.save()
         # Solo puede haber un periodo activo a la vez, incluidos los periodos recién creados.
@@ -657,13 +672,16 @@ class SchedulingConstraintViewSet(viewsets.ModelViewSet):
     serializer_class = SchedulingConstraintSerializer
 
     def get_queryset(self):
-        qs = SchedulingConstraint.objects.select_related('period', 'teacher', 'classroom', 'career').all()
+        qs = SchedulingConstraint.objects.select_related('period', 'teacher', 'classroom', 'subject', 'run').all()
         period = self.request.query_params.get('period')
         is_active = self.request.query_params.get('is_active')
+        run = self.request.query_params.get('run')
         if period:
             qs = qs.filter(period_id=period)
         if is_active in {'true', 'false'}:
             qs = qs.filter(is_active=(is_active == 'true'))
+        if run:
+            qs = qs.filter(run_id=run)
         return qs
 
     def get_permissions(self):
