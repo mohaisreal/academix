@@ -208,9 +208,6 @@ def backfill_generated_class_teachers():
 
 
 def _is_blocked_by_constraints(cls, slot, constraints, teacher_id):
-    subject_career_ids = set(cls.subject.careers.values_list('id', flat=True))
-    if cls.subject.career_id:
-        subject_career_ids.add(cls.subject.career_id)
     for c in constraints:
         if not _slot_overlaps_constraint(slot, c):
             continue
@@ -218,7 +215,7 @@ def _is_blocked_by_constraints(cls, slot, constraints, teacher_id):
             return True
         if c.kind == 'classroom_unavailable' and c.classroom_id == cls.classroom_id:
             return True
-        if c.kind == 'career_unavailable' and c.career_id in subject_career_ids:
+        if c.kind == 'subject_unavailable' and c.subject_id == cls.subject_id:
             return True
     return False
 

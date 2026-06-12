@@ -64,11 +64,11 @@ describe('management timetable page layout cleanup', () => {
     expect(source).toContain('<select id="constraint-period"');
     expect(source).toContain('<select id="constraint-teacher"');
     expect(source).toContain('<select id="constraint-classroom"');
-    expect(source).toContain('<select id="constraint-career"');
+    expect(source).toContain('<select id="constraint-subject"');
     expect(source).not.toContain('placeholder="Period ID"');
     expect(source).not.toContain('placeholder="Teacher ID"');
     expect(source).not.toContain('placeholder="Classroom ID"');
-    expect(source).not.toContain('placeholder="Career ID"');
+    expect(source).not.toContain('placeholder="Subject ID"');
   });
 
   it('restores the infringements panel markup with the expected DOM targets', () => {
@@ -193,5 +193,49 @@ describe('management timetable page layout cleanup', () => {
     expect(source).toContain('await loadTimeslots(currentPage);');
     expect(source).toContain('if (currentPage > 1 && timeslots.length === 0) await loadTimeslots(currentPage - 1);');
     expect(source).toContain('toast.success(\'Franjas horarias eliminadas\')');
+  });
+
+  it('no referencia block.section_label ni la fracción "· Sección" muerta', () => {
+    const source = readPage();
+
+    expect(source).not.toContain('block.section_label');
+    expect(source).not.toContain('· Sección ${');
+  });
+
+  it('carga las TimeSlots del periodo de la ejecución y las usa para armar filas de preview', () => {
+    const source = readPage();
+
+    expect(source).toContain('let previewTimeslots = [];');
+    expect(source).toContain('async function loadPreviewTimeslots(periodId)');
+    expect(source).toContain("loadAllPages(`/academic/time-slots/?period=${periodId}`)");
+    expect(source).toContain('await loadPreviewTimeslots(selectedRunPeriodId());');
+    expect(source).toContain('buildWeekGridRows(blocks, previewTimeslots)');
+  });
+
+  it('emite rowspan en las celdas de preview para clases de múltiples franjas', () => {
+    const source = readPage();
+
+    expect(source).toContain('rowspan="${');
+    expect(source).toContain('occupiedCells');
+  });
+
+  it('arma las filas del preview a partir de las TimeSlots del periodo aunque no haya asignaciones (franja vacía)', () => {
+    const source = readPage();
+
+    const renderPreviewGridIndex = source.indexOf('function renderPreviewGrid()');
+    const buildRowsIndex = source.indexOf('buildWeekGridRows(blocks, previewTimeslots)', renderPreviewGridIndex);
+    const emptyCheckIndex = source.indexOf("rows.length === 0", renderPreviewGridIndex);
+
+    expect(renderPreviewGridIndex).toBeGreaterThan(-1);
+    expect(buildRowsIndex).toBeGreaterThan(renderPreviewGridIndex);
+    expect(emptyCheckIndex).toBeGreaterThan(buildRowsIndex);
+  });
+
+  it('el atributo rowspan emitido toma el span calculado por bloque, no un valor fijo', () => {
+    const source = readPage();
+
+    expect(source).toContain('Number(block.span) || 1');
+    expect(source).toContain('rowspan="${span}"');
+    expect(source).not.toContain('rowspan="1"');
   });
 });

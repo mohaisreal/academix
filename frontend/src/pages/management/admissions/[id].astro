@@ -504,7 +504,15 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             }
 
             // Datos académicos
-            if (app.access_route) {
+            const hasAcademicData = Boolean(
+                app.access_route ||
+                app.bachillerato_grade != null ||
+                app.evau_obligatory_grade != null ||
+                (app.evau_voluntary_subjects?.length ?? 0) > 0 ||
+                app.admission_score != null
+            );
+
+            if (hasAcademicData) {
                 document.getElementById("academic-data-section")?.classList.remove("hidden");
                 document.getElementById("app-access-route")!.textContent = app.access_route_display ?? app.access_route;
                 document.getElementById("app-bachillerato-grade")!.textContent = app.bachillerato_grade != null ? String(app.bachillerato_grade) : "—";

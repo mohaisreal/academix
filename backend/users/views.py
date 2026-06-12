@@ -8,11 +8,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.http import FileResponse
 from django.utils import timezone
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.conf import settings as django_settings
+from django.utils.text import get_valid_filename
 from django.db.models import Avg, Count, OuterRef, Q, Subquery
+import mimetypes
 from admissions.permissions import IsManagement
 from enrollment.models import CareerEnrollment
 from .models import IdentityVerificationDocument, User
@@ -625,3 +628,33 @@ class IdentityVerificationReviewView(APIView):
             )
 
         return Response(IdentityVerificationUserSerializer(user).data, status=status.HTTP_200_OK)
+
+
+class IdentityVerificationDocumentDownloadView(APIView):
+    permission_classes = [IsManagement]
+
+    def get(self, request, document_id):
+        try:
+            document = IdentityVerificationDocument.objects.get(pk=document_id)
+        except IdentityVerificationDocument.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not document.file:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            file_handle = document.file.open('rb')
+        except FileNotFoundError:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        content_type, encoding = mimetypes.guess_type(document.file.name)
+        filename = get_valid_filename(document.original_filename or document.file.name.rsplit('/', 1)[-1])
+        response = FileResponse(
+            file_handle,
+            as_attachment=True,
+            filename=filename,
+            content_type=content_type or 'application/octet-stream',
+        )
+        if encoding:
+            response.headers['Content-Encoding'] = encoding
+        return response

@@ -5,6 +5,7 @@ from unittest.mock import patch
 from django.core.management import call_command
 from django.core.management import get_commands
 from django.core.management.base import CommandError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -323,6 +324,9 @@ class UserListViewFilteringTests(APITestCase):
             role=role,
         )
 
+    def _create_department(self, *, code="DEP-1", name="Departamento 1", teacher=None):
+        return Department.objects.create(code=code, name=name, description="", teacher=teacher)
+
     def test_search_filters_across_full_dataset_before_pagination(self):
         for i in range(24):
             self._create_user(i, first_name=f"Alumno{i}", last_name="General", role="s")
@@ -385,3 +389,155 @@ class UserListViewFilteringTests(APITestCase):
         self.assertEqual(response.data["results"], [])
         self.assertIsNone(response.data["next"])
         self.assertIsNone(response.data["previous"])
+
+    def test_list_payload_exposes_department_for_management_prefill(self):
+        department = self._create_department()
+        user = self._create_user(1, first_name="Tea", last_name="Cher", role="t")
+        user.department = department
+        user.save(update_fields=["department"])
+
+        response = self.client.get("/api/users/", {"role": "t"})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["results"][0]["department"], department.id)
+        self.assertEqual(response.data["results"][0]["department_name"], department.name)
+
+    def test_teacher_save_persists_department_and_non_teacher_save_clears_it(self):
+        department = self._create_department()
+
+        create_response = self.client.post(
+            "/api/users/",
+            {
+                "username": "teacher.department",
+                "email": "teacher.department@test.com",
+                "first_name": "Teacher",
+                "last_name": "Dept",
+                "role": "t",
+                "department": department.id,
+                "password": "testpass123",
+            },
+            format="json",
+        )
+
+        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(create_response.data["department"], department.id)
+        self.assertEqual(create_response.data["department_name"], department.name)
+        created = User.objects.get(username="teacher.department")
+        self.assertEqual(created.department_id, department.id)
+
+        patch_response = self.client.patch(
+            f"/api/users/{created.id}/",
+            {"role": "m", "department": department.id},
+            format="json",
+        )
+
+        self.assertEqual(patch_response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(patch_response.data["department"])
+        self.assertIsNone(patch_response.data["department_name"])
+        created.refresh_from_db()
+        self.assertIsNone(created.department_id)
+
+    def test_non_teacher_payload_department_is_ignored_and_saved_as_null(self):
+        department = self._create_department()
+
+        response = self.client.post(
+            "/api/users/",
+            {
+                "username": "student.department",
+                "email": "student.department@test.com",
+                "first_name": "Student",
+                "last_name": "Dept",
+                "role": "s",
+                "department": department.id,
+                "password": "testpass123",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIsNone(response.data["department"])
+        self.assertIsNone(response.data["department_name"])
+        self.assertIsNone(User.objects.get(username="student.department").department_id)
+
+
+class IdentityVerificationDocumentAccessTests(APITestCase):
+    def setUp(self):
+        self.management_user = User.objects.create_user(
+            username="manager-docs",
+            email="manager-docs@test.com",
+            password="testpass123",
+            role="m",
+            first_name="Manager",
+            last_name="Docs",
+        )
+        self.student_user = User.objects.create_user(
+            username="student-docs",
+            email="student-docs@test.com",
+            password="testpass123",
+            role="s",
+            first_name="Student",
+            last_name="Docs",
+            email_verified=True,
+            identity_verification_status="pending",
+        )
+
+    def _create_document(self, *, name="dni.pdf", content=b"pdf-bytes"):
+        return self.student_user.identity_documents.create(
+            file=SimpleUploadedFile(name, content, content_type="application/pdf"),
+            document_type="identity",
+            original_filename=name,
+        )
+
+    def test_management_list_exposes_download_url_instead_of_raw_file_url(self):
+        document = self._create_document()
+        self.client.force_authenticate(user=self.management_user)
+
+        response = self.client.get("/api/users/identity-verifications/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(len(response.data["results"]), 1)
+        payload = response.data["results"][0]["identity_documents"][0]
+        self.assertNotIn("file", payload)
+        self.assertEqual(payload["file_name"], "dni.pdf")
+        self.assertEqual(
+            payload["download_url"],
+            f"/users/identity-verification-documents/{document.id}/download/",
+        )
+
+    def test_management_download_streams_document_and_rejects_non_management(self):
+        document = self._create_document()
+
+        self.client.force_authenticate(user=self.management_user)
+        response = self.client.get(f"/api/users/identity-verification-documents/{document.id}/download/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+        self.assertIn("attachment; filename=\"dni.pdf\"", response["Content-Disposition"])
+        self.assertEqual(response.getvalue(), b"pdf-bytes")
+
+        self.client.force_authenticate(user=self.student_user)
+        denied = self.client.get(f"/api/users/identity-verification-documents/{document.id}/download/")
+
+        self.assertEqual(denied.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.client.force_authenticate(user=None)
+        anonymous = self.client.get(f"/api/users/identity-verification-documents/{document.id}/download/")
+
+        self.assertEqual(anonymous.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_download_missing_document_returns_not_found(self):
+        self.client.force_authenticate(user=self.management_user)
+
+        response = self.client.get("/api/users/identity-verification-documents/999999/download/")
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_download_missing_file_returns_not_found(self):
+        document = self._create_document()
+        document.file.delete(save=False)
+
+        self.client.force_authenticate(user=self.management_user)
+        response = self.client.get(f"/api/users/identity-verification-documents/{document.id}/download/")
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

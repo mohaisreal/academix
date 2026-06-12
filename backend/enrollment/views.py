@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework import generics, status
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.http import HttpResponse
@@ -15,6 +15,7 @@ from .models import CareerEnrollment, ClassEnrollment, EnrollmentFee
 from .models import ExceptionalConvocationGrace
 from .serializers import CareerEnrollmentSerializer, ClassEnrollmentSerializer, EnrollmentFeeSerializer
 from .services import refresh_enrollment_fee, resolve_convocation_eligibility
+from backend.settings import _stripe_credentials_prefix_mismatch
 from academic.models import AcademicPeriod
 from academic.schedule_source import (
     canonical_assignment_map_for_period,
@@ -36,10 +37,24 @@ def _resolve_assignment_teacher_name(cls):
 
 
 def _is_production_stripe_enabled():
-    return (
-        not settings.DEBUG
-        and getattr(settings, 'STRIPE_LIVE_PAYMENTS_ENABLED', False)
-    )
+    return getattr(settings, 'STRIPE_PAYMENT_MODE', 'demo') == 'stripe_live' and not settings.DEBUG and getattr(settings, 'STRIPE_LIVE_PAYMENTS_ENABLED', False)
+
+
+def _stripe_payment_mode():
+    mode = getattr(settings, 'STRIPE_PAYMENT_MODE', 'demo')
+    if mode in ('demo', 'stripe_test', 'stripe_live'):
+        return mode
+    return 'demo'
+
+
+def _stripe_payment_config_is_valid(mode: str, stripe_key: str, publishable_key: str, webhook_secret: str):
+    if mode == 'stripe_test' and (not stripe_key or not publishable_key or not webhook_secret):
+        return False
+    if mode == 'stripe_live' and not stripe_key:
+        return False
+    if mode in ('stripe_test', 'stripe_live') and _stripe_credentials_prefix_mismatch(mode, stripe_key, publishable_key):
+        return False
+    return True
 
 
 def _amount_to_minor_units(amount):
@@ -53,6 +68,22 @@ def _get_stripe_module():
         return None
     stripe_lib.api_key = getattr(settings, 'STRIPE_SECRET_KEY', '')
     return stripe_lib
+
+
+def _create_stripe_payment_intent(stripe_lib, fee, enrollment):
+    return stripe_lib.PaymentIntent.create(
+        amount=_amount_to_minor_units(fee.final_amount),
+        currency='eur',
+        automatic_payment_methods={'enabled': True},
+        metadata={
+            'enrollment_fee_id': str(fee.pk),
+            'career_enrollment_id': str(enrollment.pk),
+            'student_id': str(enrollment.student_id),
+            'source': 'enrollment',
+            'payment_mode': _stripe_payment_mode(),
+        },
+        description=f'Matrícula {enrollment.career.name} - {enrollment.period.name}',
+    )
 
 
 def _mark_enrollment_paid(enrollment, fee):
@@ -112,16 +143,45 @@ def _mark_enrollment_exempted(enrollment, fee):
         pass
 
 
+def _apply_stripe_payment_result(enrollment, fee, stripe_status, intent_id=None):
+    if intent_id:
+        fee.stripe_payment_intent_id = intent_id
+
+    if stripe_status == 'succeeded':
+        fee.stripe_payment_status = 'paid'
+        fee.status = 'paid'
+        fee.save(update_fields=['stripe_payment_intent_id', 'stripe_payment_status', 'status'])
+        _mark_enrollment_paid(enrollment, fee)
+    elif stripe_status in ('requires_payment_method', 'canceled'):
+        fee.status = 'failed'
+        fee.stripe_payment_status = 'failed'
+        fee.save(update_fields=['stripe_payment_intent_id', 'status', 'stripe_payment_status'])
+    else:
+        fee.stripe_payment_status = 'pending'
+        fee.save(update_fields=['stripe_payment_intent_id', 'stripe_payment_status'])
+
+
 class MyEnrollmentView(APIView):
     permission_classes = [IsStudent]
 
     def get(self, request):
+        active_period = get_active_academic_period()
         career_enrollment = (
             CareerEnrollment.objects
             .filter(student=request.user, status__in=['active', 'completed'])
+            .order_by('-period__is_active', '-period__start_date', '-period_id', '-id')
             .select_related('career', 'period')
             .first()
         )
+        if active_period:
+            current_enrollment = (
+                CareerEnrollment.objects
+                .filter(student=request.user, status__in=['active', 'completed'], period_id=active_period.id)
+                .select_related('career', 'period')
+                .first()
+            )
+            if current_enrollment:
+                career_enrollment = current_enrollment
         if not career_enrollment:
             return Response({'id': None, 'classes': [], 'current_period': None})
 
@@ -174,7 +234,7 @@ class MySubjectsView(APIView):
         from grades.services import resolve_class_final_grade
         active_period = get_active_academic_period()
         if not active_period:
-            return Response({'current_period': None, 'results': []})
+            return Response([])
         enrollments = (
             ClassEnrollment.objects
             .filter(student=request.user, status='enrolled')
@@ -210,7 +270,7 @@ class MySubjectsView(APIView):
                     for s in enr.cls.schedules.all()
                 ],
             })
-        return Response({'current_period': _current_period_payload(active_period), 'results': result})
+        return Response(result)
 
 
 class MyTeachersView(APIView):
@@ -460,7 +520,8 @@ class EnrollmentPayView(generics.GenericAPIView):
                 'fee': EnrollmentFeeSerializer(fee).data,
             })
 
-        if not _is_production_stripe_enabled():
+        mode = _stripe_payment_mode()
+        if mode == 'demo':
             fee.stripe_payment_intent_id = f'pi_demo_enrollment_{fee.pk}'
             fee.stripe_payment_status = 'paid'
             fee.save(update_fields=['stripe_payment_intent_id', 'stripe_payment_status'])
@@ -472,9 +533,11 @@ class EnrollmentPayView(generics.GenericAPIView):
             })
 
         stripe_key = getattr(settings, 'STRIPE_SECRET_KEY', '')
-        if not stripe_key:
+        publishable_key = getattr(settings, 'STRIPE_PUBLIC_KEY', '')
+        webhook_secret = getattr(settings, 'STRIPE_WEBHOOK_SECRET', '')
+        if not _stripe_payment_config_is_valid(mode, stripe_key, publishable_key, webhook_secret):
             return Response(
-                {'detail': 'Stripe no está configurado para pagos de producción.'},
+                {'detail': 'Stripe no está configurado para el modo de pruebas.' if mode == 'stripe_test' else 'Stripe no está configurado para pagos de producción.'},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
@@ -486,17 +549,7 @@ class EnrollmentPayView(generics.GenericAPIView):
             )
 
         try:
-            intent = stripe_lib.PaymentIntent.create(
-                amount=_amount_to_minor_units(fee.final_amount),
-                currency='eur',
-                automatic_payment_methods={'enabled': True},
-                metadata={
-                    'enrollment_fee_id': str(fee.pk),
-                    'career_enrollment_id': str(enrollment.pk),
-                    'student_id': str(enrollment.student_id),
-                },
-                description=f'Matrícula {enrollment.career.name} - {enrollment.period.name}',
-            )
+            intent = _create_stripe_payment_intent(stripe_lib, fee, enrollment)
         except Exception as exc:
             return Response(
                 {'detail': f'Error de Stripe: {exc}'},
@@ -508,7 +561,7 @@ class EnrollmentPayView(generics.GenericAPIView):
         fee.save(update_fields=['stripe_payment_intent_id', 'stripe_payment_status'])
 
         return Response({
-            'mode': 'stripe',
+            'mode': mode,
             'client_secret': intent.get('client_secret'),
             'amount': str(fee.final_amount),
             'currency': 'eur',
@@ -519,6 +572,9 @@ class EnrollmentPayView(generics.GenericAPIView):
 class EnrollmentConfirmPaymentView(generics.GenericAPIView):
     """POST /api/enrollment/career-enrollments/<pk>/confirm-payment/"""
     permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        return self.post(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         enrollment = get_object_or_404(CareerEnrollment, pk=self.kwargs['pk'])
@@ -534,7 +590,8 @@ class EnrollmentConfirmPaymentView(generics.GenericAPIView):
                 'fee': EnrollmentFeeSerializer(fee).data,
             })
 
-        if not _is_production_stripe_enabled():
+        mode = _stripe_payment_mode()
+        if mode == 'demo':
             if not fee.stripe_payment_intent_id.startswith('pi_demo_'):
                 return Response(
                     {'detail': 'La confirmación simulada solo acepta intentos demo.'},
@@ -571,17 +628,7 @@ class EnrollmentConfirmPaymentView(generics.GenericAPIView):
             )
 
         stripe_status = intent['status']
-        if stripe_status == 'succeeded':
-            fee.stripe_payment_status = 'paid'
-            fee.save(update_fields=['stripe_payment_status'])
-            _mark_enrollment_paid(enrollment, fee)
-        elif stripe_status in ('requires_payment_method', 'canceled'):
-            fee.status = 'failed'
-            fee.stripe_payment_status = 'failed'
-            fee.save(update_fields=['status', 'stripe_payment_status'])
-        else:
-            fee.stripe_payment_status = 'pending'
-            fee.save(update_fields=['stripe_payment_status'])
+        _apply_stripe_payment_result(enrollment, fee, stripe_status)
 
         return Response({
             'status': fee.status,
@@ -591,15 +638,71 @@ class EnrollmentConfirmPaymentView(generics.GenericAPIView):
         })
 
 
+class EnrollmentStripeWebhookView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        mode = _stripe_payment_mode()
+        if mode not in ('stripe_test', 'stripe_live'):
+            return HttpResponse(status=204)
+
+        stripe_lib = _get_stripe_module()
+        webhook_secret = getattr(settings, 'STRIPE_WEBHOOK_SECRET', '')
+        if stripe_lib is None or not webhook_secret:
+            return Response({'detail': 'Stripe webhook is not configured.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        payload = request.body
+        sig_header = request.META.get('HTTP_STRIPE_SIGNATURE', '')
+        try:
+            event = stripe_lib.Webhook.construct_event(payload, sig_header, webhook_secret)
+        except Exception:
+            return HttpResponse(status=400)
+
+        event_type = event.get('type')
+        intent = event.get('data', {}).get('object', {})
+        if event_type not in ('payment_intent.succeeded', 'payment_intent.payment_failed'):
+            return HttpResponse(status=200)
+
+        fee_id = (intent.get('metadata') or {}).get('enrollment_fee_id')
+        enrollment_id = (intent.get('metadata') or {}).get('career_enrollment_id')
+        metadata = intent.get('metadata') or {}
+        if not all(metadata.get(field) for field in ('source', 'payment_mode', 'student_id')):
+            return HttpResponse(status=200)
+        try:
+            fee = EnrollmentFee.objects.select_related('career_enrollment').get(pk=fee_id) if fee_id else None
+            enrollment = fee.career_enrollment if fee else CareerEnrollment.objects.get(pk=enrollment_id)
+        except (EnrollmentFee.DoesNotExist, CareerEnrollment.DoesNotExist, TypeError, ValueError):
+            return HttpResponse(status=200)
+
+        if fee is None:
+            fee = EnrollmentFee.objects.get(career_enrollment=enrollment)
+
+        if intent.get('id') != fee.stripe_payment_intent_id:
+            return HttpResponse(status=200)
+
+        if metadata.get('source') != 'enrollment' or metadata.get('payment_mode') != mode or metadata.get('student_id') != str(enrollment.student_id):
+            return HttpResponse(status=200)
+
+        _apply_stripe_payment_result(
+            enrollment,
+            fee,
+            'succeeded' if event_type == 'payment_intent.succeeded' else 'requires_payment_method',
+            intent.get('id'),
+        )
+        return HttpResponse(status=200)
+
+
 class EnrollmentStripeConfigView(APIView):
     """GET /api/enrollment/stripe/config/"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        live_mode = _is_production_stripe_enabled()
+        mode = _stripe_payment_mode()
         return Response({
-            'live_mode': live_mode,
-            'publishable_key': getattr(settings, 'STRIPE_PUBLIC_KEY', '') if live_mode else '',
+            'mode': mode,
+            'live_mode': mode == 'stripe_live',
+            'publishable_key': getattr(settings, 'STRIPE_PUBLIC_KEY', '') if mode != 'demo' else '',
         })
 
 
@@ -610,15 +713,15 @@ def _get_enrollment_for_receipt(request, pk):
         ),
         pk=pk,
     )
+    if request.user.role not in ('m', 'a') and enrollment.student != request.user:
+        return None, Response({"detail": "No tienes permiso."}, status=status.HTTP_403_FORBIDDEN)
+    return enrollment, None
 
 
 def _current_period_payload(period):
     if not period:
         return None
     return {'id': period.id, 'name': period.name, 'code': period.code}
-    if request.user.role not in ('m', 'a') and enrollment.student != request.user:
-        return None, Response({"detail": "No tienes permiso."}, status=status.HTTP_403_FORBIDDEN)
-    return enrollment, None
 
 
 def _build_enrollment_receipt_data(enrollment):
@@ -1278,11 +1381,42 @@ class EnrollmentCompleteView(generics.GenericAPIView):
 
         fee = refresh_enrollment_fee(enrollment)
 
+        mode = _stripe_payment_mode()
+
         if fee.final_amount <= Decimal('0.00'):
             _mark_enrollment_exempted(enrollment, fee)
 
-        return Response({
+        payload = {
             'enrollment': CareerEnrollmentSerializer(enrollment).data,
             'fee': EnrollmentFeeSerializer(fee).data,
             'next_step': 'payment' if fee.status == 'pending' else 'receipt',
-        })
+        }
+        if mode == 'stripe_test' and fee.status == 'pending':
+            stripe_key = getattr(settings, 'STRIPE_SECRET_KEY', '')
+            publishable_key = getattr(settings, 'STRIPE_PUBLIC_KEY', '')
+            webhook_secret = getattr(settings, 'STRIPE_WEBHOOK_SECRET', '')
+            if not _stripe_payment_config_is_valid(mode, stripe_key, publishable_key, webhook_secret):
+                return Response(
+                    {'detail': 'Stripe no está configurado para el modo de pruebas.'},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
+            stripe_lib = _get_stripe_module()
+            if stripe_lib is None:
+                return Response(
+                    {'detail': 'Stripe SDK no está instalado.'},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
+            try:
+                intent = _create_stripe_payment_intent(stripe_lib, fee, enrollment)
+            except Exception as exc:
+                return Response(
+                    {'detail': f'Error de Stripe: {exc}'},
+                    status=status.HTTP_502_BAD_GATEWAY,
+                )
+            fee.stripe_payment_intent_id = intent['id']
+            fee.stripe_payment_status = 'pending'
+            fee.save(update_fields=['stripe_payment_intent_id', 'stripe_payment_status'])
+            payload['mode'] = mode
+            payload['client_secret'] = intent.get('client_secret')
+            payload['currency'] = 'eur'
+        return Response(payload)

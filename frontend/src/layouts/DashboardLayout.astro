@@ -616,7 +616,7 @@ const { title, currentPath, forceLightTheme = false } = Astro.props;
             if (firstName && lastName) initials = (firstName[0] + lastName[0]).toUpperCase();
             else if (firstName) initials = firstName.substring(0, 2).toUpperCase();
             else initials = username.substring(0, 2).toUpperCase();
-            const displayName = firstName && lastName ? `${firstName} ${lastName}` : username;
+            const displayName = username;
             const roleLabels = { s: "Estudiante", t: "Profesor", m: "Gestión", a: "Administración" };
             const avatarEl = document.getElementById("sidebar-avatar-initials");
             const nameEl = document.getElementById("sidebar-user-name");

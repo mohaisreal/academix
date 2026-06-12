@@ -23,7 +23,9 @@ import {
   resolveAssignmentTeacherDisplay,
   resolveTimetableRunPeriodId,
   filterClassesForRunPeriod,
+  resolvePaginationNextPath,
 } from '../timetable-management-utils';
+import type { TimetableGridBlock } from '../timetable-management-utils';
 
 describe('buildBulkTimeSlots', () => {
   it('crea slots por intervalos y omite descansos', () => {
@@ -445,12 +447,34 @@ describe('preview grid + constraints helpers', () => {
 
   it('normaliza asignaciones a grilla L-V y filtra por carrera', () => {
     const grid = normalizeAssignmentsToWeekGrid([
-      { id: 10, career_id: 2, career_name: 'Ingeniería', subject_code: 'ALG', classroom_name: 'A1', timeslot_day_name: 'Monday', timeslot_start_time: '08:00:00' },
-      { id: 11, career_id: 3, career_name: 'Derecho', subject_code: 'DER', classroom_name: 'B1', timeslot_day_name: 'Tuesday', timeslot_start_time: '09:00:00' },
+      { id: 10, career_id: 2, career_name: 'Ingeniería', subject_name: 'Álgebra I', subject_code: 'ALG', teacher_name: 'Juan Pérez', classroom_name: 'A1', timeslot_day_name: 'Monday', timeslot_start_time: '08:00:00' },
+      { id: 11, career_id: 3, career_name: 'Derecho', subject_name: 'Derecho Civil', subject_code: 'DER', teacher_name: 'Ana Gómez', classroom_name: 'B1', timeslot_day_name: 'Tuesday', timeslot_start_time: '09:00:00' },
     ], 2);
     expect(grid).toHaveLength(1);
     expect(grid[0].day).toBe(0);
     expect(grid[0].hour).toBe('08:00');
+    expect(grid[0].label).toBe('Álgebra I — Prof. Juan Pérez (A1)');
+  });
+
+  it('arma el label de celda con fallback de subject sin teacher', () => {
+    const grid = normalizeAssignmentsToWeekGrid([
+      { id: 50, subject_name: 'Álgebra I', subject_code: 'ALG', teacher_name: undefined, classroom_name: 'A1', timeslot_day_name: 'Monday', timeslot_start_time: '08:00:00' },
+    ]);
+    expect(grid[0].label).toBe('Álgebra I (A1)');
+  });
+
+  it('arma el label de celda con fallback "Sin aula" cuando no hay classroom_name', () => {
+    const grid = normalizeAssignmentsToWeekGrid([
+      { id: 51, subject_name: 'Álgebra I', subject_code: 'ALG', teacher_name: 'Juan Pérez', classroom_name: undefined, timeslot_day_name: 'Monday', timeslot_start_time: '08:00:00' },
+    ]);
+    expect(grid[0].label).toBe('Álgebra I — Prof. Juan Pérez (Sin aula)');
+  });
+
+  it('arma el label de celda con fallback "Clase" cuando no hay subject_name ni subject_code', () => {
+    const grid = normalizeAssignmentsToWeekGrid([
+      { id: 52, subject_name: undefined, subject_code: undefined, teacher_name: 'Juan Pérez', classroom_name: 'A1', timeslot_day_name: 'Monday', timeslot_start_time: '08:00:00' },
+    ]);
+    expect(grid[0].label).toBe('Clase — Prof. Juan Pérez (A1)');
   });
 
   it('mapea días en español (Lunes..Viernes) a índices válidos de preview', () => {
@@ -501,13 +525,61 @@ describe('preview grid + constraints helpers', () => {
     expect(rows[0].cells[1].blocks.map((b) => b.id)).toEqual([12]);
   });
 
+  it('genera filas a partir de las TimeSlots del periodo, incluyendo una franja sin asignaciones', () => {
+    const blocks: TimetableGridBlock[] = [
+      { id: 10, day: 0, hour: '08:00', label: 'ALG — Prof. Juan Pérez (A1)', careerId: 2, careerName: 'Ingeniería' },
+      { id: 11, day: 1, hour: '09:00', label: 'FIS — Prof. Ana Gómez (A2)', careerId: 2, careerName: 'Ingeniería' },
+      { id: 12, day: 2, hour: '10:00', label: 'DER — Prof. Mario Díaz (B1)', careerId: 3, careerName: 'Derecho' },
+    ];
+    const timeslots = [
+      { day_of_week: 0, start_time: '08:00:00', end_time: '09:00:00' },
+      { day_of_week: 1, start_time: '09:00:00', end_time: '10:00:00' },
+      { day_of_week: 2, start_time: '10:00:00', end_time: '11:00:00' },
+      { day_of_week: 3, start_time: '11:00:00', end_time: '12:00:00' },
+    ];
+
+    const rows = buildWeekGridRows(blocks, timeslots);
+
+    expect(rows).toHaveLength(4);
+    expect(rows.map((r) => r.hour)).toEqual(['08:00', '09:00', '10:00', '11:00']);
+    expect(rows[3].hour).toBe('11:00');
+    expect(rows[3].cells.every((c) => c.blocks.length === 0)).toBe(true);
+  });
+
+  it('mantiene compatibilidad: sin TimeSlots, deriva filas de los blocks como antes', () => {
+    const blocks: TimetableGridBlock[] = [
+      { id: 20, day: 0, hour: '08:00', label: 'ALG — Prof. Juan Pérez (A1)', careerId: 2, careerName: 'Ingeniería' },
+      { id: 21, day: 1, hour: '09:00', label: 'FIS — Prof. Ana Gómez (A2)', careerId: 2, careerName: 'Ingeniería' },
+    ];
+
+    const rows = buildWeekGridRows(blocks);
+
+    expect(rows).toHaveLength(2);
+    expect(rows.map((r) => r.hour)).toEqual(['08:00', '09:00']);
+  });
+
   it('arma payload de restricción por tipo/scope', () => {
     const payload = buildConstraintPayload({
-      kind: 'teacher_unavailable', scope: 'period', period: '5', teacher: '8', classroom: '', career: '', dayOfWeek: '2', startTime: '10:00:00', endTime: '11:00:00', isActive: true,
+      kind: 'teacher_unavailable', scope: 'period', period: '5', teacher: '8', classroom: '', subject: '', dayOfWeek: '2', startTime: '10:00:00', endTime: '11:00:00', isActive: true,
     });
     expect(payload.period).toBe(5);
     expect(payload.teacher).toBe(8);
     expect(payload.classroom).toBeNull();
+  });
+
+  it('emite subject y null para subject_unavailable', () => {
+    const payload = buildConstraintPayload({
+      kind: 'subject_unavailable', scope: 'period', period: '5', teacher: '', classroom: '', subject: '7', dayOfWeek: '2', startTime: '10:00:00', endTime: '11:00:00', isActive: true,
+    });
+    expect(payload.subject).toBe(7);
+    expect((payload as any).career).toBeUndefined();
+  });
+
+  it('nulea subject cuando kind no es subject_unavailable', () => {
+    const payload = buildConstraintPayload({
+      kind: 'teacher_unavailable', scope: 'period', period: '5', teacher: '8', classroom: '', subject: '7', dayOfWeek: '2', startTime: '10:00:00', endTime: '11:00:00', isActive: true,
+    });
+    expect(payload.subject).toBeNull();
   });
 
   it('mapea errores por campo desde payload DRF', () => {
@@ -534,13 +606,39 @@ describe('preview grid + constraints helpers', () => {
     expect(formatConstraintDay({ day_of_week: 99 } as any)).toBe('Día no especificado');
   });
 
+  it('etiqueta restricciones de subject_unavailable', () => {
+    expect(formatConstraintKind({ kind: 'subject_unavailable' } as any)).toBe('Asignatura no disponible');
+  });
+
   it('formatea entidad y rango horario en formato amigable', () => {
     expect(formatConstraintEntity({ teacher_name: 'Ada Lovelace' } as any)).toBe('Ada Lovelace');
     expect(formatConstraintEntity({ classroom_name: 'Aula 101' } as any)).toBe('Aula 101');
-    expect(formatConstraintEntity({ career_name: 'Ingeniería' } as any)).toBe('Ingeniería');
+    expect(formatConstraintEntity({ subject_name: 'Álgebra' } as any)).toBe('Álgebra');
     expect(formatConstraintEntity({} as any)).toBe('Entidad no especificada');
 
     expect(formatConstraintTimeRange({ start_time: '08:00:00', end_time: '09:30:00' } as any)).toBe('08:00–09:30');
     expect(formatConstraintTimeRange({ start_time: '', end_time: '' } as any)).toBe('Horario no especificado');
+  });
+});
+
+describe('resolvePaginationNextPath', () => {
+  it('convierte un next absoluto con host interno de Docker (backend:8000) a un path relativo', () => {
+    expect(resolvePaginationNextPath('http://backend:8000/api/academic/subjects/?page=2')).toBe('/academic/subjects/?page=2');
+  });
+
+  it('convierte un next absoluto con el mismo host que la API base (dev) a un path relativo', () => {
+    expect(resolvePaginationNextPath('http://localhost:8000/api/academic/subjects/?page=2')).toBe('/academic/subjects/?page=2');
+  });
+
+  it('soporta https', () => {
+    expect(resolvePaginationNextPath('https://api.example.com/api/academic/subjects/?page=3')).toBe('/academic/subjects/?page=3');
+  });
+
+  it('deja sin cambios un path ya relativo sin prefijo /api', () => {
+    expect(resolvePaginationNextPath('/academic/subjects/?page=2')).toBe('/academic/subjects/?page=2');
+  });
+
+  it('no recorta /api de un segmento distinto que solo empieza igual', () => {
+    expect(resolvePaginationNextPath('http://backend:8000/apicultura/?page=2')).toBe('/apicultura/?page=2');
   });
 });

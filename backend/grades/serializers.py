@@ -47,13 +47,23 @@ class EvaluationSerializer(serializers.ModelSerializer):
 class EvaluationSubmissionSerializer(serializers.ModelSerializer):
     student_name = serializers.SerializerMethodField()
     evaluation_name = serializers.CharField(source='evaluation.name', read_only=True)
+    original_filename = serializers.SerializerMethodField()
+    download_url = serializers.SerializerMethodField()
 
     def get_student_name(self, obj):
         return f"{obj.student.first_name} {obj.student.last_name}".strip() or obj.student.username
 
+    def get_original_filename(self, obj):
+        return obj.original_filename or obj.file.name.rsplit('/', 1)[-1]
+
+    def get_download_url(self, obj):
+        request = self.context.get('request')
+        path = f"/api/grades/submissions/{obj.id}/download/"
+        return request.build_absolute_uri(path) if request else path
+
     class Meta:
         model = EvaluationSubmission
-        fields = ['id', 'student', 'student_name', 'evaluation', 'evaluation_name', 'file', 'submitted_at']
+        fields = ['id', 'student', 'student_name', 'evaluation', 'evaluation_name', 'original_filename', 'download_url', 'submitted_at']
 
 
 class GradeSerializer(serializers.ModelSerializer):

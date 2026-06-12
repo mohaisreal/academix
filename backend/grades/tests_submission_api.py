@@ -90,8 +90,22 @@ class EvaluationSubmissionApiTests(TestCase):
         self.assertEqual(evaluation_data['submission_label'], 'Entregado')
         self.assertIsNotNone(evaluation_data['submitted_at'])
         self.assertIsNotNone(evaluation_data['submission_file_url'])
-        self.assertTrue(evaluation_data['submission_file_url'].startswith('http://testserver'))
+        self.assertEqual(
+            evaluation_data['submission_file_url'],
+            f"/api/grades/submissions/{EvaluationSubmission.objects.get(student=self.student, evaluation=self.evaluation).id}/download/",
+        )
         self.assertTrue(evaluation_data['submission_file_name'].endswith('.txt'))
+
+    def test_download_endpoint_returns_file_for_student_owner(self):
+        upload_response = self._upload()
+        submission_id = upload_response.data['id']
+        self.client.force_authenticate(user=self.student)
+
+        response = self.client.get(f'/api/grades/submissions/{submission_id}/download/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('attachment', response['Content-Disposition'])
+        self.assertIn('submission.txt', response['Content-Disposition'])
 
     def test_duplicate_submission_is_rejected(self):
         EvaluationSubmission.objects.create(
@@ -143,8 +157,29 @@ class EvaluationSubmissionApiTests(TestCase):
         self.assertEqual(student_row['submission_status'], 'submitted')
         self.assertEqual(student_row['submitted_at'], submission.submitted_at.isoformat())
         self.assertIsNotNone(student_row['submission_file_url'])
-        self.assertTrue(student_row['submission_file_url'].startswith('http://testserver'))
+        self.assertEqual(
+            student_row['submission_file_url'],
+            f"/api/grades/submissions/{submission.id}/download/",
+        )
         self.assertTrue(student_row['submission_file_name'].endswith('.txt'))
+
+    def test_download_endpoint_returns_file_for_owning_teacher(self):
+        upload_response = self._upload()
+        submission_id = upload_response.data['id']
+        self.client.force_authenticate(user=self.teacher)
+
+        response = self.client.get(f'/api/grades/submissions/{submission_id}/download/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_download_endpoint_blocks_non_owner_teacher(self):
+        upload_response = self._upload()
+        other_teacher = User.objects.create_user(username='other_teacher', password='pass12345', role='t')
+        self.client.force_authenticate(user=other_teacher)
+
+        response = self.client.get(f"/api/grades/submissions/{upload_response.data['id']}/download/")
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_non_owner_cannot_view_marking_submission_details(self):
         other_teacher = User.objects.create_user(username='other_teacher', password='pass12345', role='t')

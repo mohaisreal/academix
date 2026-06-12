@@ -71,14 +71,6 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         rejected: "bg-red-500/15 text-red-400 border-red-500/20",
     };
 
-    function resolveMediaUrl(value: string | null | undefined): string {
-        if (!value) return "#";
-        if (/^https?:\/\//i.test(value)) return value;
-        if (API_URL.startsWith("/")) return value.startsWith("/") ? value : `/${value}`;
-        const apiOrigin = API_URL.replace(/\/api\/?$/, "");
-        return value.startsWith("/") ? `${apiOrigin}${value}` : `${apiOrigin}/${value}`;
-    }
-
     function escapeHtml(value: unknown): string {
         return String(value ?? "")
             .replace(/&/g, "&amp;")
@@ -136,10 +128,10 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             const fallbackName = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim();
             const displayName = user.full_name || fallbackName || user.email || "Estudiante";
             const docs = (user.identity_documents ?? []).map((doc: any) => `
-                <a href="${resolveMediaUrl(doc.file)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-primary hover:bg-muted">
+                <button type="button" data-download-url="${escapeHtml(doc.download_url ?? "")}" data-filename="${escapeHtml(doc.file_name ?? doc.original_filename ?? "documento")}" class="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-primary hover:bg-muted">
                     ${escapeHtml(doc.file_name ?? doc.original_filename ?? "Documento")}
                     <span aria-hidden="true">↗</span>
-                </a>
+                </button>
             `).join("");
 
             return `
@@ -176,6 +168,30 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         list.querySelectorAll<HTMLButtonElement>("button[data-action]").forEach(button => {
             button.addEventListener("click", () => reviewUser(button));
         });
+
+        list.querySelectorAll<HTMLButtonElement>("button[data-download-url]").forEach(button => {
+            button.addEventListener("click", () => openDocument(button));
+        });
+    }
+
+    async function openDocument(button: HTMLButtonElement) {
+        const downloadUrl = button.dataset.downloadUrl;
+        if (!downloadUrl) return;
+
+        const res = await apiFetch(downloadUrl);
+        if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            showFeedback(data.detail || data.error || `No se pudo abrir el documento (${res.status}).`, "error");
+            return;
+        }
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = button.dataset.filename || "documento";
+        a.click();
+        window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
     }
 
     async function loadUsers() {

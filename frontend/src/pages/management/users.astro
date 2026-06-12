@@ -102,6 +102,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
               <option value="a">Administración</option>
             </select>
           </div>
+          <div id="user-department-wrapper" class="hidden">
+            <label class="text-xs font-medium text-muted-foreground">Departamento</label>
+            <select id="user-department" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+              <option value="">Selecciona un departamento</option>
+            </select>
+          </div>
           <div>
             <label class="text-xs font-medium text-muted-foreground">Teléfono</label>
             <input id="user-phone" type="tel" placeholder="+34 600 000 000" class="mt-1 w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
@@ -153,7 +159,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 </DashboardLayout>
 
 <script>
-  import { buildUsersListEndpoint, getTotalPages, resetPageOnFilterChange, shouldRecoverToLastPage } from '@/utils/users-page-utils';
+  import { buildUsersListEndpoint, buildUserWritePayload, canOpenExceptionalCases, getTotalPages, resetPageOnFilterChange, shouldRecoverToLastPage, shouldShowDepartmentField } from '@/utils/users-page-utils';
   import API_BASE_URL from '@/config/api';
 
   const STORAGE_KEY = 'user-storage';
@@ -161,6 +167,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   const API_URL = API_BASE_URL;
   const PAGE_SIZE = 20;
   const ROLE_LABELS: Record<string, string> = { s: 'Estudiante', t: 'Profesor', m: 'Gestión', a: 'Administración' };
+  let departments: { id: number; name: string }[] = [];
 
   function getUser() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.state?.user ?? null; } catch { return null; }
@@ -195,6 +202,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   let currentPage = 1;
   let totalCount = 0;
   let exceptionalStudent: any = null;
+  let exceptionalStudentId: number | null = null;
 
   function renderPagination() {
     const totalPages = getTotalPages(totalCount, PAGE_SIZE);
@@ -230,7 +238,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         <td class="px-5 py-3">
           <div class="flex items-center gap-2">
             <button class="edit-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors" data-id="${u.id}">Editar</button>
-            ${!isSelf ? `<button class="exceptional-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/30 transition-colors" data-id="${u.id}" data-name="${escHtml(u.first_name ?? '')} ${escHtml(u.last_name ?? '')}">Casos excepcionales</button>` : ''}
+            ${canOpenExceptionalCases(u.role, isSelf) ? `<button class="exceptional-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/30 transition-colors" data-id="${u.id}" data-name="${escHtml(u.first_name ?? '')} ${escHtml(u.last_name ?? '')}">Casos excepcionales</button>` : ''}
             ${!isSelf ? `<button class="delete-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-colors" data-id="${u.id}">Eliminar</button>` : ''}
             ${!isSelf ? `<button class="toggle-btn rounded-lg border border-border px-2.5 py-1 text-xs font-medium transition-colors ${active ? 'text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/30' : 'text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/30'}" data-id="${u.id}" data-active="${active}">${active ? 'Desactivar' : 'Activar'}</button>` : ''}
           </div>
@@ -321,6 +329,33 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     }
   }
 
+  async function loadAllDepartments() {
+    const collected: { id: number; name: string }[] = [];
+    let nextPath: string | null = '/academic/departments/?page=1';
+    while (nextPath) {
+      const data = await apiFetch(nextPath);
+      const pageItems = Array.isArray(data?.results) ? data.results : [];
+      collected.push(...pageItems.map((department: any) => ({ id: Number(department.id), name: String(department.name ?? '') })));
+      nextPath = typeof data?.next === 'string' && data.next ? new URL(data.next, window.location.origin).pathname + new URL(data.next, window.location.origin).search : null;
+    }
+    departments = collected;
+  }
+
+  function renderDepartmentOptions(selectedId: number | null = null) {
+    const select = document.getElementById('user-department') as HTMLSelectElement | null;
+    if (!select) return;
+    select.innerHTML = ['<option value="">Selecciona un departamento</option>', ...departments.map((department) => `<option value="${department.id}" ${selectedId === department.id ? 'selected' : ''}>${escHtml(department.name)}</option>`)].join('');
+  }
+
+  function syncDepartmentVisibility() {
+    const role = (document.getElementById('user-role') as HTMLSelectElement)?.value ?? '';
+    const wrapper = document.getElementById('user-department-wrapper');
+    const select = document.getElementById('user-department') as HTMLSelectElement | null;
+    const visible = shouldShowDepartmentField(role);
+    wrapper?.classList.toggle('hidden', !visible);
+    if (!visible && select) select.value = '';
+  }
+
   function openPanel(u: any = null) {
     document.getElementById('form-error')?.classList.add('hidden');
     const pwInput = document.getElementById('user-password') as HTMLInputElement;
@@ -331,6 +366,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       (document.getElementById('user-email') as HTMLInputElement).value = u.email ?? '';
       (document.getElementById('user-username') as HTMLInputElement).value = u.username ?? '';
       (document.getElementById('user-role') as HTMLSelectElement).value = u.role ?? 's';
+      renderDepartmentOptions(u.department ?? null);
+      (document.getElementById('user-department') as HTMLSelectElement).value = u.department ? String(u.department) : '';
       (document.getElementById('user-phone') as HTMLInputElement).value = u.phone ?? '';
       (document.getElementById('user-active') as HTMLInputElement).checked = u.is_active !== false;
       pwInput.value = '';
@@ -340,14 +377,18 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       (document.getElementById('user-form') as HTMLFormElement).reset();
       (document.getElementById('user-active') as HTMLInputElement).checked = true;
       pwInput.setAttribute('required', '');
+      renderDepartmentOptions(null);
     }
+    syncDepartmentVisibility();
     document.getElementById('modal-backdrop')?.classList.remove('hidden');
   }
 
   function closePanel() { document.getElementById('modal-backdrop')?.classList.add('hidden'); }
 
   function openExceptionalCases(u: any) {
+    if (!u || u.role !== 's') return;
     exceptionalStudent = u;
+    exceptionalStudentId = u.id;
     (document.getElementById('exceptional-student') as HTMLElement).textContent = `Alumno: ${u.first_name ?? ''} ${u.last_name ?? ''} (${u.email ?? u.username})`;
     (document.getElementById('exceptional-error') as HTMLElement).classList.add('hidden');
     (document.getElementById('exceptional-subject-id') as HTMLInputElement).value = '';
@@ -395,6 +436,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     loadUsers(currentPage);
   });
 
+  document.getElementById('user-role')?.addEventListener('change', syncDepartmentVisibility);
+
   document.getElementById('user-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const errEl = document.getElementById('form-error');
@@ -408,6 +451,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       phone: (document.getElementById('user-phone') as HTMLInputElement).value.trim(),
       is_active: (document.getElementById('user-active') as HTMLInputElement).checked,
     };
+    const departmentValue = (document.getElementById('user-department') as HTMLSelectElement).value;
+    Object.assign(body, buildUserWritePayload({ role: body.role, department: departmentValue ? Number(departmentValue) : null }));
     const pw = (document.getElementById('user-password') as HTMLInputElement).value;
     if (pw) body.password = pw;
     try {
@@ -424,7 +469,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   document.getElementById('exceptional-save')?.addEventListener('click', async () => {
     const errEl = document.getElementById('exceptional-error');
-    if (!exceptionalStudent) return;
+    if (!exceptionalStudent || exceptionalStudent.role !== 's') return;
     const subjectId = Number((document.getElementById('exceptional-subject-id') as HTMLInputElement).value);
     const periodId = Number((document.getElementById('exceptional-period-id') as HTMLInputElement).value);
     const reason = (document.getElementById('exceptional-reason') as HTMLTextAreaElement).value.trim();
@@ -434,7 +479,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       return;
     }
     try {
-      await apiFetch(`/enrollment/students/${exceptionalStudent.id}/convocation-graces/`, {
+      await apiFetch(`/enrollment/students/${exceptionalStudentId}/convocation-graces/`, {
         method: 'POST',
         body: JSON.stringify({ subject_id: subjectId, period_id: periodId, reason }),
       });
@@ -448,6 +493,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
   
 
+  await loadAllDepartments();
   loadUsers(1);
 </script>
     

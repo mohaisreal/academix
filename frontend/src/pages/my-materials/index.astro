@@ -91,6 +91,20 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     return new Date(str).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
+  async function downloadBlob(path, filename) {
+    const res = await fetch(`${API_URL}${path}`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(objectUrl);
+  }
+
   const TYPE_ICONS = {
     document: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
     video: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
@@ -138,7 +152,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       const className = m.class_name || '';
       const uploader = m.uploader_name || m.uploaded_by || '';
       const isLink = type === 'link';
-      const actionUrl = isLink ? (m.url || '') : (m.file_url || m.file || '');
+       const actionUrl = isLink ? (m.url || '') : (m.download_url || '');
       const actionLabel = isLink ? 'Abrir enlace' : 'Descargar';
       const actionIcon = isLink
         ? `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`
@@ -158,12 +172,21 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         </div>
         ${uploader ? `<div class="flex items-center gap-1.5"><div class="flex size-5 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">${escHtml(uploader.split(' ').map(p => p[0]).join('').toUpperCase().substring(0, 2))}</div><span class="text-xs text-muted-foreground">${escHtml(uploader)}</span></div>` : ''}
         <p class="text-xs text-muted-foreground">Subido ${formatDate(m.created_at)}</p>
-        ${actionUrl ? `<a href="${escHtml(actionUrl)}" target="_blank" rel="noopener" class="mt-auto inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
-          ${actionIcon}
-          ${actionLabel}
-        </a>` : ''}
-      </div>`;
+          ${actionUrl ? `<button type="button" class="download-material-btn mt-auto inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors" data-download-url="${escHtml(actionUrl)}" data-download-name="${escHtml(m.file_name || m.title || 'material')}">
+           ${actionIcon}
+           ${actionLabel}
+         </button>` : ''}
+       </div>`;
     }).join('');
+
+    grid.querySelectorAll('.download-material-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const el = btn as HTMLButtonElement;
+        const downloadUrl = el.dataset.downloadUrl;
+        const downloadName = el.dataset.downloadName || 'material';
+        if (downloadUrl) void downloadBlob(downloadUrl, downloadName);
+      });
+    });
   }
 
   function filterAndRender() {

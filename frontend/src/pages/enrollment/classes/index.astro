@@ -125,6 +125,25 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         <!-- Mensaje de acción -->
         <div id="action-feedback" class="hidden fixed bottom-6 right-6 rounded-lg border px-4 py-3 text-sm shadow-lg z-50"></div>
     </div>
+
+    <div id="stripe-backdrop" class="hidden fixed inset-0 z-[60] bg-black/50 p-4">
+        <div class="mx-auto flex min-h-full max-w-md items-center justify-center">
+            <div class="w-full rounded-2xl border border-border bg-background p-5 shadow-2xl">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h2 class="text-base font-semibold text-foreground">Completar pago</h2>
+                        <p class="text-sm text-muted-foreground">Confirmá el pago de Stripe para finalizar la matrícula.</p>
+                    </div>
+                    <button id="stripe-modal-close" type="button" class="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">×</button>
+                </div>
+                <div id="stripe-payment-element" class="mt-4"></div>
+                <p id="stripe-error" class="mt-3 hidden text-sm text-destructive"></p>
+                <button id="stripe-pay-btn" type="button" class="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                    Confirmar pago
+                </button>
+            </div>
+        </div>
+    </div>
 </DashboardLayout>
 
 <script>
@@ -169,6 +188,8 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
     let enrollmentCareerName = "";
     let enrollmentPeriodName = "";
     let isCompleted = false;
+    let stripeInstance: any = null;
+    let stripeElements: any = null;
 
     function showFeedback(message: string, isError = false) {
         const el = document.getElementById("action-feedback")!;
@@ -176,6 +197,45 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
         el.className = `fixed bottom-6 right-6 rounded-lg border px-4 py-3 text-sm shadow-lg z-50 ${isError ? "border-destructive/30 bg-destructive/15 text-destructive" : "border-emerald-500/30 bg-emerald-500/15 text-emerald-400"}`;
         el.classList.remove("hidden");
         setTimeout(() => el.classList.add("hidden"), 3000);
+    }
+
+    async function loadStripeJs(): Promise<boolean> {
+        return new Promise(resolve => {
+            if ((window as any).Stripe) { resolve(true); return; }
+            const script = document.createElement("script");
+            script.src = "https://js.stripe.com/v3/";
+            script.onload = () => resolve(true);
+            script.onerror = () => resolve(false);
+            document.head.appendChild(script);
+        });
+    }
+
+    async function confirmEnrollmentPayment(enrollmentId: number): Promise<boolean> {
+        const res = await apiFetch(`/enrollment/career-enrollments/${enrollmentId}/confirm-payment/`, { method: "POST" });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(data.detail || `Falló la confirmación de pago (${res.status})`);
+        }
+        return data.status === "paid";
+    }
+
+    async function showStripePayment(clientSecret: string, amountLabel: string) {
+        if (!careerEnrollmentId) return;
+        const loaded = await loadStripeJs();
+        if (!loaded || !(window as any).Stripe) throw new Error("No se pudo cargar Stripe.");
+
+        const stripe = (window as any).Stripe;
+        const config = { publishable_key: (window as any).__stripePublishableKey ?? "" };
+        if (!config.publishable_key) throw new Error("La clave publicable de Stripe no está configurada.");
+
+        stripeInstance = stripe(config.publishable_key);
+        stripeElements = stripeInstance.elements({ clientSecret });
+        const paymentEl = stripeElements.create("payment");
+        document.getElementById("stripe-payment-element")!.innerHTML = "";
+        paymentEl.mount("#stripe-payment-element");
+
+        document.getElementById("stripe-pay-btn")!.textContent = `Confirmar ${amountLabel}`;
+        document.getElementById("stripe-backdrop")?.classList.remove("hidden");
     }
 
     // Mapeo day_name desde backend (español) a índice de cuadrícula (0=lun…4=vie)
@@ -498,6 +558,11 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             }
 
             const json = await res.json().catch(() => ({}));
+            if (json.mode === "stripe_test") {
+                await showStripePayment(json.client_secret, `€${parseFloat(String(json.amount ?? 0)).toFixed(2)}`);
+                return;
+            }
+
             if (json.next_step === "receipt") {
                 window.location.href = `/enrollment/receipt/${careerEnrollmentId}`;
             } else {
@@ -581,6 +646,12 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             const classes = Array.isArray(classesData) ? classesData : (classesData.results ?? []);
             renderClasses(classes);
 
+            const stripeConfigRes = await apiFetch("/enrollment/stripe/config/");
+            if (stripeConfigRes.ok) {
+                const stripeConfig = await stripeConfigRes.json().catch(() => ({}));
+                (window as any).__stripePublishableKey = stripeConfig.publishable_key ?? "";
+            }
+
             if (!isCompleted) {
                 document.getElementById("btn-finish-enrollment")?.addEventListener("click", () => {
                     finishEnrollment(classes);
@@ -593,6 +664,45 @@ import DashboardLayout from "@/layouts/DashboardLayout.astro";
             document.getElementById("error-state")?.classList.remove("hidden");
         }
     }
+
+    document.getElementById("stripe-pay-btn")?.addEventListener("click", async () => {
+        if (!careerEnrollmentId || !stripeInstance || !stripeElements) return;
+        const btn = document.getElementById("stripe-pay-btn") as HTMLButtonElement;
+        const errEl = document.getElementById("stripe-error")!;
+        btn.disabled = true;
+        errEl.classList.add("hidden");
+        try {
+            const { error } = await stripeInstance.confirmPayment({
+                elements: stripeElements,
+                redirect: "if_required",
+            });
+            if (error) {
+                errEl.textContent = error.message ?? "El pago falló.";
+                errEl.classList.remove("hidden");
+                btn.disabled = false;
+                return;
+            }
+            const paid = await confirmEnrollmentPayment(careerEnrollmentId);
+            if (!paid) {
+                errEl.textContent = "Stripe todavía no confirmó el pago. Intentá nuevamente en breve.";
+                errEl.classList.remove("hidden");
+                btn.disabled = false;
+                return;
+            }
+            window.location.href = `/enrollment/receipt/${careerEnrollmentId}`;
+        } catch (err: any) {
+            errEl.textContent = err?.message ?? "La confirmación del pago falló.";
+            errEl.classList.remove("hidden");
+            btn.disabled = false;
+        }
+    });
+
+    document.getElementById("stripe-modal-close")?.addEventListener("click", () => {
+        document.getElementById("stripe-backdrop")?.classList.add("hidden");
+        document.getElementById("stripe-payment-element")!.innerHTML = "";
+        stripeInstance = null;
+        stripeElements = null;
+    });
 
     init();
 </script>

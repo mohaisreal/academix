@@ -233,6 +233,53 @@ def _missing_production_stripe_settings(
     return missing
 
 
+def _missing_stripe_settings_for_mode(
+    mode: str,
+    secret_key: str,
+    public_key: str,
+    webhook_secret: str,
+    live_payments_enabled: bool,
+    live_payments_raw: str,
+) -> list[str]:
+    if mode == 'stripe_test':
+        missing = []
+        if not public_key:
+            missing.append('STRIPE_PUBLIC_KEY')
+        if not secret_key:
+            missing.append('STRIPE_SECRET_KEY')
+        if not webhook_secret:
+            missing.append('STRIPE_WEBHOOK_SECRET')
+        return missing
+    if mode == 'stripe_live':
+        return _missing_production_stripe_settings(secret_key, public_key, webhook_secret, live_payments_enabled, live_payments_raw)
+    return []
+
+
+def _stripe_credentials_prefix_mismatch(mode: str, secret_key: str, public_key: str) -> list[str]:
+    if mode == 'stripe_test':
+        mismatched = []
+        if secret_key.startswith('sk_live_'):
+            mismatched.append('STRIPE_SECRET_KEY')
+        if public_key.startswith('pk_live_'):
+            mismatched.append('STRIPE_PUBLIC_KEY')
+        return mismatched
+    if mode == 'stripe_live':
+        mismatched = []
+        if secret_key.startswith('sk_test_'):
+            mismatched.append('STRIPE_SECRET_KEY')
+        if public_key.startswith('pk_test_'):
+            mismatched.append('STRIPE_PUBLIC_KEY')
+        return mismatched
+    return []
+
+
+def _stripe_payment_mode() -> str:
+    mode = env('STRIPE_PAYMENT_MODE', default='demo').strip().lower()
+    if mode in ('demo', 'stripe_test', 'stripe_live'):
+        return mode
+    return 'demo'
+
+
 # ============================================================================
 # CONFIGURACIÓN DE CORREO ELECTRÓNICO
 # ============================================================================
@@ -252,6 +299,7 @@ STRIPE_WEBHOOK_SECRET = env('STRIPE_WEBHOOK_SECRET', default='')
 # STRIPE_LIVE_PAYMENTS_ENABLED must be explicitly declared in production.
 STRIPE_LIVE_PAYMENTS_ENABLED_RAW = env('STRIPE_LIVE_PAYMENTS_ENABLED', default='')
 STRIPE_LIVE_PAYMENTS_ENABLED = env.bool('STRIPE_LIVE_PAYMENTS_ENABLED', default=not DEBUG)
+STRIPE_PAYMENT_MODE = _stripe_payment_mode()
 
 if not DEBUG:
     missing_aws = _missing_production_media_settings(

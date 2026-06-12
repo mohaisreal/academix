@@ -62,6 +62,24 @@ describe("users exceptional cases entry point", () => {
     expect(usersPage).toContain("Casos excepcionales");
     expect(usersPage).toContain('id="exceptional-backdrop"');
     expect(usersPage).toContain('id="exceptional-save"');
-    expect(usersPage).toContain("/enrollment/students/${exceptionalStudent.id}/convocation-graces/");
+    expect(usersPage).toContain("/enrollment/students/${exceptionalStudentId}/convocation-graces/");
+  });
+
+  it("limits the action to non-self students and guards stale openings", () => {
+    const usersPage = readProjectFile("src/pages/management/users.astro");
+
+    expect(usersPage).toContain("canOpenExceptionalCases(u.role, isSelf)");
+    expect(usersPage).toContain("if (!u || u.role !== 's') return;");
+  });
+});
+
+describe("users department selector wiring", () => {
+  it("contains a department field that is toggled by teacher role and loaded from all pages", () => {
+    const usersPage = readProjectFile("src/pages/management/users.astro");
+
+    expect(usersPage).toContain('id="user-department"');
+    expect(usersPage).toContain("loadAllDepartments");
+    expect(usersPage).toContain("shouldShowDepartmentField");
+    expect(usersPage).toContain("buildUserWritePayload");
   });
 });

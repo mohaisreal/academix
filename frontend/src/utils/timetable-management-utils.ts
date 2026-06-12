@@ -9,9 +9,9 @@ export type TimeslotPayload = { period: number; day_of_week: number; start_time:
 export type TimetableApiError = Error & { status?: number; payload?: any };
 export type TimetableViolationSummary = { total: number; hard: number; soft: number; penalty: number };
 export type AssignmentGridRow = { id: number; cls?: number; subject_name?: string; subject_code?: string; classroom_name?: string; teacher_name?: string; career_id?: number; career_name?: string; timeslot_day_name?: string; timeslot_start_time?: string; timeslot_end_time?: string };
-export type TimetableGridBlock = { id: number; day: number; hour: string; label: string; careerId: number | null; careerName: string | null };
+export type TimetableGridBlock = { id: number; day: number; hour: string; label: string; careerId: number | null; careerName: string | null; span?: number };
 export type TimetableGridRow = { hour: string; cells: Array<{ day: number; blocks: TimetableGridBlock[] }> };
-export type ConstraintFormValues = { kind: string; scope: string; period: string; teacher: string; classroom: string; career: string; dayOfWeek: string; startTime: string; endTime: string; isActive: boolean };
+export type ConstraintFormValues = { kind: string; scope: string; period: string; teacher: string; classroom: string; subject: string; dayOfWeek: string; startTime: string; endTime: string; isActive: boolean };
 export type SchedulingConstraintLike = {
   kind?: string | null;
   kind_label?: string | null;
@@ -23,7 +23,7 @@ export type SchedulingConstraintLike = {
   end_time?: string | null;
   teacher_name?: string | null;
   classroom_name?: string | null;
-  career_name?: string | null;
+  subject_name?: string | null;
 };
 
 export type BulkBreakRange = { start: string; end: string };
@@ -36,6 +36,15 @@ function timeToMinutes(value: string) { assertTime(value); const [h, m] = value.
 function minutesToTime(value: number) { const h = Math.floor(value / 60); const m = value % 60; return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`; }
 function rangesOverlap(start: number, end: number, breakStart: number, breakEnd: number) { return start < breakEnd && end > breakStart; }
 function findOverlappingBreak(cursor: number, next: number, breaks: Array<{ start: number; end: number }>) { return breaks.find((r) => rangesOverlap(cursor, next, r.start, r.end)) || null; }
+
+// DRF's pagination `next` is an absolute URL and may use a different host (e.g. the Docker-internal
+// backend hostname) than the client-side API base; strip the origin and a leading /api so the result
+// is a valid apiFetch path again regardless of which host issued the link.
+export function resolvePaginationNextPath(nextUrl: string): string {
+  return String(nextUrl)
+    .replace(/^https?:\/\/[^/]+/, '')
+    .replace(/^\/api(?=\/|$)/, '');
+}
 
 export function parseTimeslotBreakRanges(value: string): TimeslotBreakRange[] {
   const normalized = value.trim(); if (!normalized) return [];
@@ -332,20 +341,39 @@ export function extractCareerOptions(assignments: AssignmentGridRow[]) {
   return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
 }
 
+export function buildAssignmentCellLabel(a: AssignmentGridRow): string {
+  const subject = a.subject_name || a.subject_code || 'Clase';
+  const classroom = a.classroom_name || 'Sin aula';
+  const parts = [subject];
+  if (a.teacher_name) parts.push(`— Prof. ${a.teacher_name}`);
+  parts.push(`(${classroom})`);
+  return parts.join(' ');
+}
+
+function computeAssignmentSpan(a: AssignmentGridRow): number {
+  const startH = parseInt(String(a.timeslot_start_time || ''), 10);
+  const endH = parseInt(String(a.timeslot_end_time || ''), 10);
+  if (!Number.isFinite(startH) || !Number.isFinite(endH)) return 1;
+  return Math.max(1, endH - startH);
+}
+
 export function normalizeAssignmentsToWeekGrid(assignments: AssignmentGridRow[], selectedCareerId: number | null = null) {
   return assignments
     .filter((a) => (selectedCareerId ? Number(a.career_id) === Number(selectedCareerId) : true))
     .map<TimetableGridBlock>((a) => {
       const day = resolveWeekdayIndex(a.timeslot_day_name) ?? -1;
       const hour = String(a.timeslot_start_time || '00:00:00').slice(0, 5);
-      const label = `${a.subject_code || a.subject_name || 'Clase'} · ${a.classroom_name || 'Sin aula'}`;
-      return { id: Number(a.id), day, hour, label, careerId: a.career_id ? Number(a.career_id) : null, careerName: a.career_name || null };
+      const label = buildAssignmentCellLabel(a);
+      const span = computeAssignmentSpan(a);
+      return { id: Number(a.id), day, hour, label, careerId: a.career_id ? Number(a.career_id) : null, careerName: a.career_name || null, span };
     })
     .filter((b) => b.day >= 0 && b.day <= 4);
 }
 
-export function buildWeekGridRows(blocks: TimetableGridBlock[]): TimetableGridRow[] {
-  const hours = Array.from(new Set(blocks.map((b) => b.hour))).sort();
+export function buildWeekGridRows(blocks: TimetableGridBlock[], timeslots?: Array<{ day_of_week: number; start_time: string; end_time: string }>): TimetableGridRow[] {
+  const hours = timeslots && timeslots.length > 0
+    ? Array.from(new Set(timeslots.map((t) => String(t.start_time || '').slice(0, 5)))).sort()
+    : Array.from(new Set(blocks.map((b) => b.hour))).sort();
   return hours.map((hour) => ({
     hour,
     cells: [0, 1, 2, 3, 4].map((day) => ({
@@ -360,7 +388,7 @@ export function buildWeekGridRows(blocks: TimetableGridBlock[]): TimetableGridRo
 const CONSTRAINT_KIND_LABELS: Record<string, string> = {
   teacher_unavailable: 'Docente no disponible',
   classroom_unavailable: 'Aula no disponible',
-  career_unavailable: 'Carrera no disponible',
+  subject_unavailable: 'Asignatura no disponible',
 };
 
 const CONSTRAINT_SCOPE_LABELS: Record<string, string> = {
@@ -398,7 +426,7 @@ export function formatConstraintDay(constraint: SchedulingConstraintLike) {
 }
 
 export function formatConstraintEntity(constraint: SchedulingConstraintLike) {
-  return String(constraint.teacher_name || constraint.classroom_name || constraint.career_name || '').trim() || 'Entidad no especificada';
+  return String(constraint.teacher_name || constraint.classroom_name || constraint.subject_name || '').trim() || 'Entidad no especificada';
 }
 
 export function formatConstraintTimeRange(constraint: SchedulingConstraintLike) {
@@ -414,7 +442,7 @@ export function buildConstraintPayload(values: ConstraintFormValues) {
     period: values.scope === 'period' ? toOptionalNumber(values.period) : null,
     teacher: values.kind === 'teacher_unavailable' ? toOptionalNumber(values.teacher) : null,
     classroom: values.kind === 'classroom_unavailable' ? toOptionalNumber(values.classroom) : null,
-    career: values.kind === 'career_unavailable' ? toOptionalNumber(values.career) : null,
+    subject: values.kind === 'subject_unavailable' ? toOptionalNumber(values.subject) : null,
     day_of_week: Number(values.dayOfWeek),
     start_time: values.startTime,
     end_time: values.endTime,

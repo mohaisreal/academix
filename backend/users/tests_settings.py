@@ -12,6 +12,8 @@ from backend.settings import (
     _missing_production_email_settings,
     _missing_production_media_settings,
     _missing_production_stripe_settings,
+    _missing_stripe_settings_for_mode,
+    _stripe_credentials_prefix_mismatch,
 )
 
 
@@ -49,6 +51,18 @@ class ProductionStripeConfigTests(SimpleTestCase):
         self.assertEqual(
             _missing_production_stripe_settings('', 'pk_test', '', True, 'True'),
             ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'],
+        )
+
+    def test_stripe_test_mode_requires_test_credentials(self):
+        self.assertEqual(
+            _missing_stripe_settings_for_mode('stripe_test', '', 'pk_test', '', False, ''),
+            ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'],
+        )
+
+    def test_stripe_test_mode_rejects_live_prefixed_keys(self):
+        self.assertEqual(
+            _stripe_credentials_prefix_mismatch('stripe_test', 'sk_live_abc', 'pk_test_abc'),
+            ['STRIPE_SECRET_KEY'],
         )
 
 

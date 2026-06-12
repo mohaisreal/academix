@@ -522,8 +522,14 @@ class ClassScheduleViewSet(viewsets.ModelViewSet):
 
 
 class TimeSlotViewSet(viewsets.ModelViewSet):
-    queryset = TimeSlot.objects.select_related('period').all()
     serializer_class = TimeSlotSerializer
+
+    def get_queryset(self):
+        qs = TimeSlot.objects.select_related('period').all()
+        period = self.request.query_params.get('period')
+        if period:
+            qs = qs.filter(period_id=period)
+        return qs
 
     def get_permissions(self):
         if self.request.method in SAFE_METHODS:

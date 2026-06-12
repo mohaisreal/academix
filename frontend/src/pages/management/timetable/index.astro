@@ -99,14 +99,14 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       </div>
       <form id="constraint-form" class="rounded-xl border border-border bg-background p-4 space-y-3">
         <div class="grid gap-2 sm:grid-cols-2">
-          <select id="constraint-kind" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="teacher_unavailable">Docente no disponible</option><option value="classroom_unavailable">Aula no disponible</option><option value="career_unavailable">Carrera no disponible</option></select>
+          <select id="constraint-kind" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="teacher_unavailable">Docente no disponible</option><option value="classroom_unavailable">Aula no disponible</option><option value="subject_unavailable">Asignatura no disponible</option></select>
           <select id="constraint-scope" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="period">Periodo</option><option value="global">Global</option></select>
         </div>
         <div class="grid gap-2 sm:grid-cols-2">
           <select id="constraint-period" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="">Selecciona periodo</option></select>
           <select id="constraint-teacher" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm" disabled><option value="">Selecciona docente</option></select>
           <select id="constraint-classroom" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm" disabled><option value="">Selecciona aula</option></select>
-          <select id="constraint-career" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm" disabled><option value="">Selecciona carrera</option></select>
+          <select id="constraint-subject" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm" disabled><option value="">Selecciona asignatura</option></select>
         </div>
         <div class="grid gap-2 sm:grid-cols-3">
           <select id="constraint-day" class="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm"><option value="0">Lunes</option><option value="1">Martes</option><option value="2">Miércoles</option><option value="3">Jueves</option><option value="4">Viernes</option></select>
@@ -157,7 +157,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     </div>
   </div>
   <div id="preview-modal" class="hidden fixed inset-0 z-50 bg-black/60 p-4">
-    <div class="mx-auto mt-6 max-w-6xl rounded-xl border border-border bg-card p-4">
+    <div class="mx-auto mt-6 flex max-h-[90vh] max-w-6xl flex-col rounded-xl border border-border bg-card p-4">
       <div class="mb-3 flex items-center justify-between">
         <h3 class="text-lg font-semibold">Preview semanal (L-V)</h3>
         <button id="preview-modal-close" class="rounded border border-border px-3 py-1 text-sm">Cerrar</button>
@@ -168,7 +168,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       </div>
       <div id="preview-modal-error" class="hidden mb-2 rounded border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300"></div>
       <div id="preview-modal-empty" class="hidden mb-2 text-sm text-muted-foreground">Sin bloques para el filtro seleccionado.</div>
-      <div class="overflow-auto">
+      <div class="min-h-0 flex-1 overflow-auto">
         <table class="w-full text-xs">
           <thead><tr><th class="p-2 text-left">Hora</th><th class="p-2">Lunes</th><th class="p-2">Martes</th><th class="p-2">Miércoles</th><th class="p-2">Jueves</th><th class="p-2">Viernes</th></tr></thead>
           <tbody id="preview-grid-body"></tbody>
@@ -181,7 +181,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 <script>
   import API_BASE_URL from '@/config/api';
   import { toast } from '@/components/starwind/toast';
-  import { buildTimeslotBatch, parseTimeslotBreakRanges, summarizeViolations, getRunDisplayName, classifyTimetableActionError, buildDraftRunPayload, buildManualTimeslotPayload, extractCareerOptions, normalizeAssignmentsToWeekGrid, buildWeekGridRows, buildConstraintPayload, mapConstraintFieldErrors, formatConstraintKind, formatConstraintScope, formatConstraintDay, formatConstraintEntity, formatConstraintTimeRange, canDeleteTimetableRunStatus, resolveTimetableRunPeriodId, filterClassesForRunPeriod } from '@/utils/timetable-management-utils';
+  import { buildTimeslotBatch, parseTimeslotBreakRanges, summarizeViolations, getRunDisplayName, classifyTimetableActionError, buildDraftRunPayload, buildManualTimeslotPayload, extractCareerOptions, normalizeAssignmentsToWeekGrid, buildWeekGridRows, buildConstraintPayload, mapConstraintFieldErrors, formatConstraintKind, formatConstraintScope, formatConstraintDay, formatConstraintEntity, formatConstraintTimeRange, canDeleteTimetableRunStatus, resolveTimetableRunPeriodId, filterClassesForRunPeriod, resolvePaginationNextPath } from '@/utils/timetable-management-utils';
 
   const API_URL = API_BASE_URL;
   const token = localStorage.getItem('access_token');
@@ -199,10 +199,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   const esc = (v) => { const e = document.createElement('div'); e.textContent = String(v ?? ''); return e.innerHTML; };
   const err = (e, fb) => (e instanceof Error && e.message ? e.message : fb);
 
-  let periods = []; let teachers = []; let classrooms = []; let careers = []; let runs = []; let timeslots = []; let assignments = []; let violations = []; let constraints = []; let selectedRunId = null;
+  let periods = []; let teachers = []; let classrooms = []; let careers = []; let subjects = []; let runs = []; let timeslots = []; let assignments = []; let violations = []; let constraints = []; let selectedRunId = null;
   let selectedCareerId = null;
   let selectedTimeslotIds = new Set();
   let timeslotsPage = 1; let timeslotsPages = 1; let timeslotsCount = 0;
+  let previewTimeslots = [];
 
   async function apiFetch(path, options: RequestInit = {}) {
     const res = await fetch(`${API_URL}${path}`, { ...options, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...(options.headers || {}) } });
@@ -225,9 +226,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const merged = [...firstPage.results];
     let nextUrl = firstPage.next;
     while (nextUrl) {
-      const normalizedNext = String(nextUrl);
-      const relativeNext = normalizedNext.startsWith(API_URL) ? normalizedNext.slice(API_URL.length) : normalizedNext;
-      const page = await apiFetch(relativeNext);
+      const page = await apiFetch(resolvePaginationNextPath(nextUrl));
       const rows = Array.isArray(page?.results) ? page.results : unwrap(page);
       merged.push(...rows);
       nextUrl = page?.next;
@@ -291,31 +290,31 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   }
 
   function renderConstraintCatalogSelects() {
-    const period = q('constraint-period'); const teacher = q('constraint-teacher'); const classroom = q('constraint-classroom'); const career = q('constraint-career');
-    if (!(period instanceof HTMLSelectElement) || !(teacher instanceof HTMLSelectElement) || !(classroom instanceof HTMLSelectElement) || !(career instanceof HTMLSelectElement)) return;
-    const periodValue = period.value; const teacherValue = teacher.value; const classroomValue = classroom.value; const careerValue = career.value;
+    const period = q('constraint-period'); const teacher = q('constraint-teacher'); const classroom = q('constraint-classroom'); const subject = q('constraint-subject');
+    if (!(period instanceof HTMLSelectElement) || !(teacher instanceof HTMLSelectElement) || !(classroom instanceof HTMLSelectElement) || !(subject instanceof HTMLSelectElement)) return;
+    const periodValue = period.value; const teacherValue = teacher.value; const classroomValue = classroom.value; const subjectValue = subject.value;
     period.innerHTML = `<option value="">Selecciona periodo</option>${periods.map((x) => `<option value="${x.id}">${esc(x.name || `periodo #${x.id}`)}</option>`).join('')}`;
     teacher.innerHTML = `<option value="">Selecciona docente</option>${teachers.map((x) => `<option value="${x.id}">${esc(x.full_name || x.username || `Docente #${x.id}`)}</option>`).join('')}`;
     classroom.innerHTML = `<option value="">Selecciona aula</option>${classrooms.map((x) => `<option value="${x.id}">${esc(x.name || x.code || `Aula #${x.id}`)}</option>`).join('')}`;
-    career.innerHTML = `<option value="">Selecciona carrera</option>${careers.map((x) => `<option value="${x.id}">${esc(x.name || `Carrera #${x.id}`)}</option>`).join('')}`;
-    period.value = periodValue; teacher.value = teacherValue; classroom.value = classroomValue; career.value = careerValue;
+    subject.innerHTML = `<option value="">Selecciona asignatura</option>${subjects.map((x) => `<option value="${x.id}">${esc(x.name || x.code || `Asignatura #${x.id}`)}</option>`).join('')}`;
+    period.value = periodValue; teacher.value = teacherValue; classroom.value = classroomValue; subject.value = subjectValue;
   }
 
   function syncConstraintSelectors() {
-    const kind = q('constraint-kind'); const scope = q('constraint-scope'); const period = q('constraint-period'); const teacher = q('constraint-teacher'); const classroom = q('constraint-classroom'); const career = q('constraint-career');
-    if (!(kind instanceof HTMLSelectElement) || !(scope instanceof HTMLSelectElement) || !(period instanceof HTMLSelectElement) || !(teacher instanceof HTMLSelectElement) || !(classroom instanceof HTMLSelectElement) || !(career instanceof HTMLSelectElement)) return;
+    const kind = q('constraint-kind'); const scope = q('constraint-scope'); const period = q('constraint-period'); const teacher = q('constraint-teacher'); const classroom = q('constraint-classroom'); const subject = q('constraint-subject');
+    if (!(kind instanceof HTMLSelectElement) || !(scope instanceof HTMLSelectElement) || !(period instanceof HTMLSelectElement) || !(teacher instanceof HTMLSelectElement) || !(classroom instanceof HTMLSelectElement) || !(subject instanceof HTMLSelectElement)) return;
     const globalScope = scope.value === 'global';
     period.disabled = globalScope;
     if (globalScope) period.value = '';
     const teacherEnabled = kind.value === 'teacher_unavailable';
     const classroomEnabled = kind.value === 'classroom_unavailable';
-    const careerEnabled = kind.value === 'career_unavailable';
+    const subjectEnabled = kind.value === 'subject_unavailable';
     teacher.disabled = !teacherEnabled;
     classroom.disabled = !classroomEnabled;
-    career.disabled = !careerEnabled;
+    subject.disabled = !subjectEnabled;
     if (!teacherEnabled) teacher.value = '';
     if (!classroomEnabled) classroom.value = '';
-    if (!careerEnabled) career.value = '';
+    if (!subjectEnabled) subject.value = '';
   }
 
   function renderRunBadge() {
@@ -367,7 +366,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
 
     const bindRunActions = (root) => {
       root?.querySelectorAll('.select-run-btn').forEach((b) => b.addEventListener('click', async () => { selectedRunId = Number(b.getAttribute('data-id')); renderRuns(); renderRunBadge(); await Promise.all([loadAssignments(), loadViolations()]); }));
-      root?.querySelectorAll('.preview-run-btn').forEach((b) => b.addEventListener('click', async () => { selectedRunId = Number(b.getAttribute('data-id')); await Promise.all([loadAssignments(), loadViolations()]); renderRuns(); renderRunBadge(); openPreviewModal(); }));
+      root?.querySelectorAll('.preview-run-btn').forEach((b) => b.addEventListener('click', async () => { selectedRunId = Number(b.getAttribute('data-id')); await Promise.all([loadAssignments(), loadViolations()]); renderRuns(); renderRunBadge(); await openPreviewModal(); }));
       root?.querySelectorAll('.publish-run-btn').forEach((b) => b.addEventListener('click', async () => publishRun(Number(b.getAttribute('data-id')))));
       root?.querySelectorAll('.generate-run-btn').forEach((b) => b.addEventListener('click', async () => generateRun(Number(b.getAttribute('data-id')))));
       root?.querySelectorAll('.delete-run-btn').forEach((b) => b.addEventListener('click', async () => deleteRun(Number(b.getAttribute('data-id')))));
@@ -471,7 +470,13 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     box.textContent = `Infracciones detectadas: ${text}`;
   }
 
-  function openPreviewModal() { q('preview-modal')?.classList.remove('hidden'); renderPreviewWarningSummary(); renderPreviewGrid(); renderCareerFilter(); }
+  async function openPreviewModal() {
+    await loadPreviewTimeslots(selectedRunPeriodId());
+    q('preview-modal')?.classList.remove('hidden');
+    renderPreviewWarningSummary();
+    renderPreviewGrid();
+    renderCareerFilter();
+  }
   function closePreviewModal() { q('preview-modal')?.classList.add('hidden'); }
 
   function renderCareerFilter() {
@@ -486,7 +491,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const body = q('preview-grid-body');
     if (!body) return;
     const blocks = normalizeAssignmentsToWeekGrid(assignments, selectedCareerId);
-    const rows = buildWeekGridRows(blocks);
+    const rows = buildWeekGridRows(blocks, previewTimeslots);
     const empty = q('preview-modal-empty');
     if (rows.length === 0) {
       body.innerHTML = '';
@@ -494,10 +499,17 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       return;
     }
     empty?.classList.add('hidden');
-    body.innerHTML = rows.map((row) => {
+    const occupiedCells = new Set<string>();
+    body.innerHTML = rows.map((row, rowIndex) => {
       const cells = row.cells.map((cell) => {
-        const labels = cell.blocks.map((block) => `<div class="rounded border border-border/60 bg-muted/40 px-1 py-0.5 mb-1 last:mb-0">${esc(block.label)}${block.section_label ? ` · Sección ${esc(block.section_label)}` : ''}</div>`).join('');
-        return `<td class="border border-border p-2 align-top">${labels}</td>`;
+        const cellKey = `${cell.day}-${rowIndex}`;
+        if (occupiedCells.has(cellKey)) return '';
+        const span = cell.blocks.reduce((max, block) => Math.max(max, Number(block.span) || 1), 1);
+        if (span > 1) {
+          for (let offset = 1; offset < span; offset++) occupiedCells.add(`${cell.day}-${rowIndex + offset}`);
+        }
+        const labels = cell.blocks.map((block) => `<div class="rounded border border-border/60 bg-muted/40 px-1 py-0.5 mb-1 last:mb-0">${esc(block.label)}</div>`).join('');
+        return `<td class="border border-border p-2 align-top" rowspan="${span}">${labels}</td>`;
       }).join('');
       return `<tr><td class="border border-border p-2 font-medium">${row.hour}</td>${cells}</tr>`;
     }).join('');
@@ -538,9 +550,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const rows = Array.isArray(first?.results) ? [...first.results] : [];
     let nextUrl = first?.next;
     while (nextUrl) {
-      const normalizedNext = String(nextUrl);
-      const relativeNext = normalizedNext.startsWith(API_URL) ? normalizedNext.slice(API_URL.length) : normalizedNext;
-      const page = await apiFetch(relativeNext);
+      const page = await apiFetch(resolvePaginationNextPath(nextUrl));
       const nextRows = Array.isArray(page?.results) ? page.results : unwrap(page);
       rows.push(...nextRows);
       nextUrl = page?.next;
@@ -549,16 +559,18 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
   }
 
   async function loadCatalogs() {
-    const [periodRows, teacherRows, classroomRows, careerRows] = await Promise.all([
+    const [periodRows, teacherRows, classroomRows, careerRows, subjectRows] = await Promise.all([
       loadAllPages('/academic/periods/'),
       loadAllPages('/users/teachers/'),
       loadAllPages('/academic/classrooms/'),
       loadAllPages('/academic/careers/'),
+      loadAllPages('/academic/subjects/'),
     ]);
     periods = periodRows;
     teachers = teacherRows;
     classrooms = classroomRows;
     careers = careerRows;
+    subjects = subjectRows;
     renderPeriodSelects();
     renderConstraintCatalogSelects();
     syncConstraintSelectors();
@@ -582,6 +594,10 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       ? Math.max(1, Math.ceil(timeslotsCount / TIMESLOTS_PAGE_SIZE))
       : 1;
     renderTimeslots();
+  }
+  async function loadPreviewTimeslots(periodId) {
+    if (!periodId) { previewTimeslots = []; return; }
+    previewTimeslots = await loadAllPages(`/academic/time-slots/?period=${periodId}`);
   }
   async function loadAssignments() { if (!selectedRunId) { assignments = []; return; } assignments = await loadScheduleAssignmentsByRun(selectedRunId); }
   async function loadViolations() {
@@ -711,9 +727,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     const error = q('constraint-form-error');
     error?.classList.add('hidden');
     const kindEl = q('constraint-kind'); const scopeEl = q('constraint-scope'); const periodEl = q('constraint-period');
-    const teacherEl = q('constraint-teacher'); const classroomEl = q('constraint-classroom'); const careerEl = q('constraint-career');
+    const teacherEl = q('constraint-teacher'); const classroomEl = q('constraint-classroom'); const subjectEl = q('constraint-subject');
     const dayEl = q('constraint-day'); const startEl = q('constraint-start'); const endEl = q('constraint-end');
-    if (!(kindEl instanceof HTMLSelectElement) || !(scopeEl instanceof HTMLSelectElement) || !(periodEl instanceof HTMLSelectElement) || !(teacherEl instanceof HTMLSelectElement) || !(classroomEl instanceof HTMLSelectElement) || !(careerEl instanceof HTMLSelectElement) || !(dayEl instanceof HTMLSelectElement) || !(startEl instanceof HTMLInputElement) || !(endEl instanceof HTMLInputElement)) return;
+    if (!(kindEl instanceof HTMLSelectElement) || !(scopeEl instanceof HTMLSelectElement) || !(periodEl instanceof HTMLSelectElement) || !(teacherEl instanceof HTMLSelectElement) || !(classroomEl instanceof HTMLSelectElement) || !(subjectEl instanceof HTMLSelectElement) || !(dayEl instanceof HTMLSelectElement) || !(startEl instanceof HTMLInputElement) || !(endEl instanceof HTMLInputElement)) return;
     try {
       const payload = buildConstraintPayload({
         kind: kindEl.value,
@@ -721,12 +737,13 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         period: periodEl.value,
         teacher: teacherEl.value,
         classroom: classroomEl.value,
-        career: careerEl.value,
+        subject: subjectEl.value,
         dayOfWeek: dayEl.value,
         startTime: `${startEl.value}:00`,
         endTime: `${endEl.value}:00`,
         isActive: true,
       });
+      (payload as any).run = selectedRunId;
       await apiFetch('/academic/scheduling-constraints/', { method: 'POST', body: JSON.stringify(payload) });
       await loadConstraints();
       renderConstraints();

@@ -153,6 +153,21 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     return d.innerHTML;
   }
 
+  async function downloadSubmission(url, filename) {
+    const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (res.status === 401) window.location.replace('/login');
+    if (!res.ok) throw new Error('download_failed');
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename || 'submission';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(objectUrl);
+  }
+
   function formatDate(str) {
     if (!str) return '-';
     return new Date(str).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -362,7 +377,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                   <td class="py-3 pr-4 text-sm text-muted-foreground">${currentScore !== '' ? currentScore : '-'}</td>
                   <td class="py-3 pr-4">
                     <div class="space-y-1">
-                      ${s.submission_file_url ? `<a href="${escHtml(s.submission_file_url)}" target="_blank" rel="noreferrer" class="inline-flex text-sm text-primary hover:underline">${escHtml(s.submission_file_name || 'Archivo entregado')}</a><p class="text-xs text-muted-foreground">${s.submitted_at ? formatDateTime(s.submitted_at) : 'Entregado'}</p>` : `<p class="text-sm text-muted-foreground">${s.submission_label || (s.upload_allowed ? 'Pending' : 'Sin entrega de archivo')}</p>`}
+                      ${s.submission_file_url ? `<button type="button" class="inline-flex text-sm text-primary hover:underline download-submission-btn" data-download-url="${escHtml(s.submission_file_url)}" data-filename="${escHtml(s.submission_file_name || 'submission')}">${escHtml(s.submission_file_name || 'Archivo entregado')}</button><p class="text-xs text-muted-foreground">${s.submitted_at ? formatDateTime(s.submitted_at) : 'Entregado'}</p>` : `<p class="text-sm text-muted-foreground">${s.submission_label || (s.upload_allowed ? 'Pending' : 'Sin entrega de archivo')}</p>`}
                     </div>
                   </td>
                   <td class="py-3 pr-4">
@@ -411,6 +426,15 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           return saveGrade(sId);
         });
         await Promise.all(promises);
+      });
+
+      panel.querySelectorAll('.download-submission-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const url = (btn as HTMLElement).dataset.downloadUrl;
+          const filename = (btn as HTMLElement).dataset.filename;
+          if (!url) return;
+          try { await downloadSubmission(url, filename); } catch {}
+        });
       });
 
     } catch {

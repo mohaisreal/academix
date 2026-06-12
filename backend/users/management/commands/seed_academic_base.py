@@ -389,3 +389,14 @@ class Command(BaseCommand):
                     "decision": "approved",
                 },
             )
+
+        # Keep the seeded second-matriculation class aligned with the generated timetable dataset.
+        current_class = Class.objects.filter(period=active_period, subject__code="IS-ALG", section_label="A").first()
+        if current_class and current_class.source_teacher_decision_id is None:
+            current_class.source_teacher_decision = TeacherSubjectDecision.objects.filter(
+                period=active_period,
+                decision="approved",
+                offering__subject__code="IS-ALG",
+            ).order_by("id").first()
+            current_class.is_generated_by_timetable = True
+            current_class.save(update_fields=["source_teacher_decision", "is_generated_by_timetable"])

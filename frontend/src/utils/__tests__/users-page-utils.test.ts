@@ -47,3 +47,22 @@ describe('resetPageOnFilterChange', () => {
     expect(resetPageOnFilterChange({ currentPage: 3, prevSearch: 'ana', nextSearch: 'ana', prevRole: 't', nextRole: 't' })).toBe(3);
   });
 });
+
+describe('department helpers', () => {
+  it('muestra department solo para teachers y lo envía solo en ese caso', async () => {
+    const utils = await import('../users-page-utils');
+
+    expect(utils.shouldShowDepartmentField('t')).toBe(true);
+    expect(utils.shouldShowDepartmentField('s')).toBe(false);
+    expect(utils.buildUserWritePayload({ role: 't', department: 7 })).toEqual({ role: 't', department: 7 });
+    expect(utils.buildUserWritePayload({ role: 'm', department: 7 })).toEqual({ role: 'm', department: null });
+  });
+
+  it('habilita casos excepcionales solo para estudiantes no propios', async () => {
+    const utils = await import('../users-page-utils');
+
+    expect(utils.canOpenExceptionalCases('s', false)).toBe(true);
+    expect(utils.canOpenExceptionalCases('t', false)).toBe(false);
+    expect(utils.canOpenExceptionalCases('s', true)).toBe(false);
+  });
+});

@@ -1,5 +1,7 @@
 from django.db import transaction
+from django.http import FileResponse
 from django.utils import timezone
+from urllib.parse import quote
 from rest_framework import status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.views import APIView
@@ -24,10 +26,13 @@ User = get_user_model()
 def get_submission_file_url(submission, request=None):
     if not submission or not submission.file:
         return None
-    file_url = submission.file.url
-    if request:
-        return request.build_absolute_uri(file_url)
-    return file_url
+    return f"/api/grades/submissions/{submission.id}/download/"
+
+
+def get_submission_filename(submission):
+    if not submission or not submission.file:
+        return None
+    return submission.original_filename or submission.file.name.rsplit('/', 1)[-1]
 
 
 def build_submission_state(evaluation, submission, now=None, request=None):
@@ -49,7 +54,7 @@ def build_submission_state(evaluation, submission, now=None, request=None):
             'upload_allowed': False,
             'submitted_at': submission.submitted_at.isoformat(),
             'submission_file_url': get_submission_file_url(submission, request=request),
-            'submission_file_name': submission.file.name.rsplit('/', 1)[-1] if submission.file else None,
+            'submission_file_name': get_submission_filename(submission),
         }
     if deadline_passed:
         return {
@@ -461,9 +466,30 @@ class EvaluationSubmissionCreateView(APIView):
                 student=request.user,
                 evaluation=evaluation,
                 file=upload,
+                original_filename=getattr(upload, 'name', '') or '',
             )
 
         return Response(EvaluationSubmissionSerializer(submission).data, status=status.HTTP_201_CREATED)
+
+
+class SubmissionDownloadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, submission_id):
+        try:
+            submission = EvaluationSubmission.objects.select_related('student', 'evaluation__cls__teacher').get(pk=submission_id)
+        except EvaluationSubmission.DoesNotExist:
+            return Response({'error': 'Submission not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        is_owner = request.user.id == submission.student_id
+        is_teacher_owner = request.user.role == 't' and submission.evaluation.cls.teacher_id == request.user.id
+        if not (is_owner or is_teacher_owner):
+            return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        filename = get_submission_filename(submission) or 'submission'
+        response = FileResponse(submission.file.open('rb'), as_attachment=True, filename=filename)
+        response['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote(filename)}"
+        return response
 
 
 class MarkingView(APIView):

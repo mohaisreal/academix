@@ -24,4 +24,14 @@ describe('enrollment classes convocation UI', () => {
     expect(page).toContain('id="schedule-cards"');
     expect(page).toContain('renderScheduleCards(enrolledClasses)');
   });
+
+  it('wires the Stripe test completion path to client_secret confirmation', () => {
+    const page = readProjectFile('src/pages/enrollment/classes/index.astro');
+
+    expect(page).toContain('client_secret');
+    expect(page).toContain('showStripePayment');
+    expect(page).toContain('loadStripeJs');
+    expect(page).toContain('stripeInstance.confirmPayment');
+    expect(page).toContain('stripe-payment-element');
+  });
 });

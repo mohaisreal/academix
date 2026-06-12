@@ -4,6 +4,7 @@ import re
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from academic.models import Department
 from .models import IdentityVerificationDocument, User
 
 
@@ -52,6 +53,7 @@ class UserSerializer(serializers.ModelSerializer):
     """
     full_name = serializers.CharField(source='get_full_name', read_only=True)
     role_display = serializers.CharField(source='get_role_display', read_only=True)
+    department_name = serializers.CharField(source='department.name', read_only=True, allow_null=True)
     identity_verification_status_display = serializers.CharField(
         source='get_identity_verification_status_display',
         read_only=True,
@@ -68,6 +70,8 @@ class UserSerializer(serializers.ModelSerializer):
             'full_name',
             'role',
             'role_display',
+            'department',
+            'department_name',
             'dni',
             'email_verified',
             'identity_verification_status',
@@ -94,23 +98,27 @@ class UserSerializer(serializers.ModelSerializer):
 
 class IdentityVerificationDocumentSerializer(serializers.ModelSerializer):
     file_name = serializers.SerializerMethodField()
+    download_url = serializers.SerializerMethodField()
 
     class Meta:
         model = IdentityVerificationDocument
         fields = [
             'id',
-            'file',
             'file_name',
+            'download_url',
             'document_type',
             'original_filename',
             'uploaded_at',
         ]
-        read_only_fields = ['id', 'file_name', 'original_filename', 'uploaded_at']
+        read_only_fields = ['id', 'file_name', 'download_url', 'original_filename', 'uploaded_at']
 
     def get_file_name(self, obj):
         if not obj.file:
             return None
         return obj.original_filename or os.path.basename(obj.file.name)
+
+    def get_download_url(self, obj):
+        return f"/users/identity-verification-documents/{obj.id}/download/"
 
 
 class IdentityVerificationUserSerializer(serializers.ModelSerializer):
@@ -262,6 +270,12 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
         validators=[validate_password],
         style={'input_type': 'password'},
     )
+    department_name = serializers.CharField(source='department.name', read_only=True, allow_null=True)
+    department = serializers.PrimaryKeyRelatedField(
+        queryset=Department.objects.all(),
+        required=False,
+        allow_null=True,
+    )
 
     class Meta:
         model = User
@@ -272,6 +286,8 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'role',
+            'department',
+            'department_name',
             'dni',
             'phone',
             'address',
@@ -318,13 +334,24 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         password = validated_data.pop('password')
+        department = validated_data.pop('department', None)
+        if validated_data.get('role') != 't':
+            department = None
         user = User.objects.create_user(password=password, **validated_data)
+        if department is not None:
+            user.department = department
+            user.save(update_fields=['department'])
         return user
 
     def update(self, instance, validated_data):
         password = validated_data.pop('password', None)
+        department = validated_data.pop('department', serializers.empty)
         for field, value in validated_data.items():
             setattr(instance, field, value)
+        if instance.role != 't':
+            instance.department = None
+        elif department is not serializers.empty:
+            instance.department = department
         if password:
             instance.set_password(password)
         instance.save()

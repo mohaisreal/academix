@@ -83,6 +83,7 @@ class EvaluationSubmission(models.Model):
     )
     evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE, related_name='submissions')
     file = models.FileField(upload_to='evaluation_submissions/%Y/%m/')
+    original_filename = models.CharField(max_length=255, blank=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -19,6 +19,16 @@ interface ResetPageOnFilterChangeInput {
   nextRole: string;
 }
 
+interface BuildUserWritePayloadInput {
+  role: string;
+  department: number | null;
+}
+
+export interface UserDepartmentOption {
+  id: number;
+  name: string;
+}
+
 export function buildUsersListEndpoint({ page, search, role }: BuildUsersListEndpointInput): string {
   const params = new URLSearchParams();
   params.set('page', String(Math.max(1, page)));
@@ -59,4 +69,23 @@ export function resetPageOnFilterChange({
   const searchChanged = prevSearch !== nextSearch;
   const roleChanged = prevRole !== nextRole;
   return searchChanged || roleChanged ? 1 : currentPage;
+}
+
+export function shouldShowDepartmentField(role: string): boolean {
+  return role === 't';
+}
+
+export function buildUserWritePayload({ role, department }: BuildUserWritePayloadInput): { role: string; department: number | null } {
+  return {
+    role,
+    department: shouldShowDepartmentField(role) ? department : null,
+  };
+}
+
+export function canOpenExceptionalCases(role: string, isSelf: boolean): boolean {
+  return role === 's' && !isSelf;
+}
+
+export function resolveDepartmentOptions(items: UserDepartmentOption[]): UserDepartmentOption[] {
+  return items;
 }

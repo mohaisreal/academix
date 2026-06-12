@@ -16,6 +16,7 @@ class Material(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='materials'
     )
     file = models.FileField(upload_to='materials/', null=True, blank=True)
+    original_filename = models.CharField(max_length=255, blank=True)
     url = models.URLField(blank=True)
     type = models.CharField(max_length=10, choices=TYPE_CHOICES, default='document')
     created_at = models.DateTimeField(auto_now_add=True)

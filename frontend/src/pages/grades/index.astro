@@ -148,6 +148,21 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     return data;
   }
 
+  async function downloadSubmission(url, filename) {
+    const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (res.status === 401) window.location.replace('/login');
+    if (!res.ok) throw new Error('download_failed');
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename || 'submission';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(objectUrl);
+  }
+
   function statusBadge(status) {
     const cfg = {
       submitted: 'bg-green-500/15 text-green-400',
@@ -302,8 +317,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                 const pct = e.score != null && e.max_score ? ((parseFloat(e.score) / parseFloat(e.max_score)) * 100).toFixed(1) : '-';
                 const status = e.submission_status || (e.score != null ? 'submitted' : (e.due_date && new Date(e.due_date) < new Date() ? 'late' : 'pending'));
                 const canUpload = !!e.upload_allowed && !e.submission_file_url;
-                const uploadedUrl = e.submission_file_url || '';
-                const uploadedName = e.submission_file_name || fileNameFromPath(uploadedUrl);
+                  const uploadedUrl = e.submission_file_url || '';
+                  const uploadedName = e.submission_file_name || fileNameFromPath(uploadedUrl);
                 const thresholdStatus = e.min_score != null ? (e.evaluation_passed ? 'Aprobada' : 'Suspensa') : null;
                 return `<article class="rounded-xl border border-border bg-card p-4 shadow-sm" data-eval-row="${e.id}">
                 <div class="flex items-start justify-between gap-3">
@@ -333,7 +348,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                   ${e.min_score != null ? `<div class="col-span-2"><p class="text-xs uppercase tracking-wide text-muted-foreground">Nota mínima</p><p class="mt-1 text-sm text-foreground">${escHtml(String(e.min_score))}</p><p class="mt-1 text-xs ${e.evaluation_passed ? 'text-green-400' : 'text-red-400'}">${thresholdStatus}</p></div>` : ''}
                   <div class="col-span-2">
                     <p class="text-xs uppercase tracking-wide text-muted-foreground">Entrega</p>
-                    ${uploadedUrl ? `<a href="${escHtml(uploadedUrl)}" target="_blank" rel="noreferrer" class="mt-2 inline-flex items-center gap-2 text-xs text-primary hover:underline">${escHtml(uploadedName || 'Archivo entregado')}</a><p class="mt-1 text-xs text-muted-foreground">${formatDateTime(e.submitted_at)}${e.submission_file_name ? ` · ${escHtml(e.submission_file_name)}` : ''}</p>` : ''}
+                    ${uploadedUrl ? `<button type="button" class="mt-2 inline-flex items-center gap-2 text-xs text-primary hover:underline download-submission-btn" data-download-url="${escHtml(uploadedUrl)}" data-filename="${escHtml(uploadedName || 'submission')}" >${escHtml(uploadedName || 'Archivo entregado')}</button><p class="mt-1 text-xs text-muted-foreground">${formatDateTime(e.submitted_at)}${e.submission_file_name ? ` · ${escHtml(e.submission_file_name)}` : ''}</p>` : ''}
                      ${canUpload ? `<div class="mt-3 flex flex-col gap-2"><input type="file" accept="*/*" class="eval-upload-input block w-full text-xs text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary hover:file:bg-primary/20" data-eval-id="${e.id}" /><button type="button" class="eval-upload-btn inline-flex items-center justify-center rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20" data-eval-id="${e.id}">Subir archivo</button></div>` : ''}
                   </div>
                 </div>
@@ -371,7 +386,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
                       <div class="space-y-1">
                         ${statusBadge(status)}
                         ${e.min_score != null ? `<p class="text-xs ${e.evaluation_passed ? 'text-green-400' : 'text-red-400'}">Nota mínima: ${escHtml(String(e.min_score))} · ${thresholdStatus}</p>` : ''}
-                        ${e.submission_file_url ? `<a href="${escHtml(e.submission_file_url)}" target="_blank" rel="noreferrer" class="text-xs text-primary hover:underline">${escHtml(e.submission_file_name || 'Archivo entregado')}</a>` : ''}
+                         ${e.submission_file_url ? `<button type="button" class="text-xs text-primary hover:underline download-submission-btn" data-download-url="${escHtml(e.submission_file_url)}" data-filename="${escHtml(e.submission_file_name || 'submission')}">${escHtml(e.submission_file_name || 'Archivo entregado')}</button>` : ''}
                         ${canUpload ? `<div class="pt-2 flex flex-col gap-2"><input type="file" accept="*/*" class="eval-upload-input block w-full text-xs text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary hover:file:bg-primary/20" data-eval-id="${e.id}" /><button type="button" class="eval-upload-btn inline-flex items-center justify-center rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20" data-eval-id="${e.id}">Subir archivo</button></div>` : ''}
                       </div>
                     </td>
@@ -414,6 +429,15 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
           } catch {
             btn.removeAttribute('disabled');
           }
+        });
+      });
+
+      document.querySelectorAll('.download-submission-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const url = (btn as HTMLElement).dataset.downloadUrl;
+          const filename = (btn as HTMLElement).dataset.filename;
+          if (!url) return;
+          try { await downloadSubmission(url, filename); } catch {}
         });
       });
 

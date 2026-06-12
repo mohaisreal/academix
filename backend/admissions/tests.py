@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from django.test import TestCase
 from django.utils import timezone
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 from rest_framework import status
 
@@ -40,6 +41,45 @@ class AdmissionApplicationTests(TestCase):
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['status'], 'draft')
+
+    def test_default_application_persists_academic_data_and_documents(self):
+        self.client.force_authenticate(user=self.student)
+        create_response = self.client.post('/api/admissions/applications/', {
+            'career_id': self.career.pk,
+            'academic_period_id': self.period.pk,
+        })
+        app_id = create_response.data['id']
+
+        academic_response = self.client.patch(
+            f'/api/admissions/applications/{app_id}/academic-data/',
+            {
+                'access_route': 'evau',
+                'bachillerato_grade': '8.250',
+                'evau_obligatory_grade': '7.500',
+                'evau_voluntary_subjects': [{'subject': 'Historia', 'grade': '6.000'}],
+            },
+            format='json',
+        )
+        self.assertEqual(academic_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(academic_response.data['access_route'], 'evau')
+        self.assertEqual(academic_response.data['bachillerato_grade'], '8.250')
+        self.assertEqual(academic_response.data['evau_obligatory_grade'], '7.500')
+        self.assertEqual(academic_response.data['admission_score'], '8.150')
+
+        upload = SimpleUploadedFile('dni.pdf', b'%PDF-1.4 test document', content_type='application/pdf')
+        document_response = self.client.post(
+            f'/api/admissions/applications/{app_id}/documents/',
+            {'document_type': 'id_document', 'file': upload},
+            format='multipart',
+        )
+        self.assertEqual(document_response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(document_response.data['document_type'], 'id_document')
+
+        detail_response = self.client.get(f'/api/admissions/applications/{app_id}/')
+        self.assertEqual(detail_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(detail_response.data['access_route'], 'evau')
+        self.assertEqual(len(detail_response.data['documents']), 1)
+        self.assertEqual(detail_response.data['documents'][0]['document_type'], 'id_document')
 
     def test_student_cannot_create_duplicate_application(self):
         AdmissionApplication.objects.create(

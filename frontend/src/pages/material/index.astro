@@ -151,6 +151,20 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
     return new Date(str).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
+  async function downloadBlob(path, filename) {
+    const res = await fetch(`${API_URL}${path}`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(objectUrl);
+  }
+
   const TYPE_ICONS = {
     document: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
     video: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
@@ -182,7 +196,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
       const type = m.material_type || m.type || 'document';
       const icon = TYPE_ICONS[type] || TYPE_ICONS.other;
       const bg = TYPE_BG[type] || TYPE_BG.other;
-      const url = m.file_url || m.file || m.url || '';
+      const downloadUrl = m.download_url || '';
       const className = m.class_name || m.cls_name || '';
       return `<div class="bg-card text-card-foreground rounded-xl border border-border p-5 flex flex-col gap-3 hover:border-primary/50 transition-colors">
         <div class="flex items-start gap-3">
@@ -198,10 +212,10 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
         </div>
         <p class="text-xs text-muted-foreground">Subido ${formatDate(m.uploaded_at || m.created_at)}</p>
         <div class="flex items-center gap-2 mt-auto">
-          ${url ? `<a href="${escHtml(url)}" target="_blank" rel="noopener" class="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
+          ${downloadUrl ? `<button type="button" class="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors download-material-btn" data-download-url="${escHtml(downloadUrl)}" data-download-name="${escHtml(m.file_name || m.title || 'material')}">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Descargar
-          </a>` : ''}
+          </button>` : ''}
           <button class="delete-mat-btn rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition-colors" data-id="${m.id}">
             Eliminar
           </button>
@@ -225,6 +239,15 @@ import DashboardLayout from '@/layouts/DashboardLayout.astro';
             } catch { toast.error('No se pudo eliminar el material'); }
           },
         });
+      });
+    });
+
+    grid.querySelectorAll('.download-material-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const el = btn as HTMLButtonElement;
+        const downloadUrl = el.dataset.downloadUrl;
+        const downloadName = el.dataset.downloadName || 'material';
+        if (downloadUrl) void downloadBlob(downloadUrl, downloadName);
       });
     });
   }

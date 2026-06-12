@@ -1,6 +1,7 @@
 from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
+from unittest.mock import MagicMock, patch
 
 from users.models import User
 from academic.models import Career, AcademicPeriod, Subject, Class, ClassSchedule, Classroom, TimeSlot, TimetableRun, ScheduleAssignment
@@ -555,6 +556,28 @@ class ReceiptTests(TestCase):
         self.assertEqual(enrollment_response.status_code, status.HTTP_200_OK)
         self.assertEqual(enrollment_response.data['classes'][0]['teacher_name'], self.teacher.get_full_name() or self.teacher.username)
 
+    def test_my_enrollment_prefers_current_active_period(self):
+        prior_period = AcademicPeriod.objects.create(
+            name='2025-Previous', code='2025P', is_active=False,
+            start_date='2025-03-01', end_date='2025-07-31',
+        )
+        prior_career = Career.objects.create(name='Carrera Anterior', code='CARR-PREV', duration_years=4)
+
+        CareerEnrollment.objects.create(
+            student=self.student,
+            career=prior_career,
+            period=prior_period,
+            status='completed',
+        )
+        current = self.enrollment
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get('/api/enrollment/my-enrollment/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], current.id)
+        self.assertEqual(response.data['period_name'], self.period.name)
+
     def test_my_subjects_returns_empty_without_active_period(self):
         self.period.is_active = False
         self.period.save(update_fields=['is_active'])
@@ -574,3 +597,392 @@ class ReceiptTests(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])
+
+    @patch('enrollment.views._get_stripe_module')
+    @patch('enrollment.views.settings')
+    def test_complete_exposes_stripe_test_mode_for_frontend_polling(self, mock_settings, mock_get_stripe_module):
+        self.fee.status = 'pending'
+        self.fee.save(update_fields=['status'])
+
+        mock_settings.DEBUG = False
+        mock_settings.STRIPE_PAYMENT_MODE = 'stripe_test'
+        mock_settings.STRIPE_SECRET_KEY = 'sk_test_123'
+        mock_settings.STRIPE_PUBLIC_KEY = 'pk_test_123'
+        mock_settings.STRIPE_WEBHOOK_SECRET = 'whsec_test_123'
+        mock_settings.STRIPE_LIVE_PAYMENTS_ENABLED = False
+
+        stripe_lib = MagicMock()
+        stripe_lib.PaymentIntent.create.return_value = {
+            'id': 'pi_test_123',
+            'client_secret': 'secret_test_123',
+        }
+        mock_get_stripe_module.return_value = stripe_lib
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post(f'/api/enrollment/career-enrollments/{self.enrollment.pk}/complete/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['mode'], 'stripe_test')
+        self.assertEqual(response.data['next_step'], 'payment')
+        self.assertEqual(response.data['currency'], 'eur')
+        self.assertTrue(response.data['client_secret'])
+
+    @patch('enrollment.views._get_stripe_module')
+    @patch('enrollment.views.settings')
+    def test_complete_creates_stripe_test_payment_intent(self, mock_settings, mock_get_stripe_module):
+        self.fee.status = 'pending'
+        self.fee.save(update_fields=['status'])
+
+        mock_settings.DEBUG = False
+        mock_settings.STRIPE_PAYMENT_MODE = 'stripe_test'
+        mock_settings.STRIPE_SECRET_KEY = 'sk_test_123'
+        mock_settings.STRIPE_PUBLIC_KEY = 'pk_test_123'
+        mock_settings.STRIPE_WEBHOOK_SECRET = 'whsec_test_123'
+        mock_settings.STRIPE_LIVE_PAYMENTS_ENABLED = False
+
+        stripe_lib = MagicMock()
+        stripe_lib.PaymentIntent.create.return_value = {
+            'id': 'pi_test_123',
+            'client_secret': 'secret_test_123',
+        }
+        mock_get_stripe_module.return_value = stripe_lib
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post(f'/api/enrollment/career-enrollments/{self.enrollment.pk}/complete/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['mode'], 'stripe_test')
+        self.assertEqual(response.data['client_secret'], 'secret_test_123')
+        stripe_lib.PaymentIntent.create.assert_called_once()
+        _, kwargs = stripe_lib.PaymentIntent.create.call_args
+        self.assertEqual(kwargs['metadata']['source'], 'enrollment')
+        self.assertEqual(kwargs['metadata']['payment_mode'], 'stripe_test')
+        stripe_lib.PaymentIntent.create.assert_called_once()
+
+    @patch('enrollment.views.settings')
+    def test_complete_rejects_stripe_test_mode_with_missing_webhook_secret(self, mock_settings):
+        self.fee.status = 'pending'
+        self.fee.save(update_fields=['status'])
+
+        mock_settings.DEBUG = False
+        mock_settings.STRIPE_PAYMENT_MODE = 'stripe_test'
+        mock_settings.STRIPE_SECRET_KEY = 'sk_test_123'
+        mock_settings.STRIPE_PUBLIC_KEY = 'pk_test_123'
+        mock_settings.STRIPE_WEBHOOK_SECRET = ''
+        mock_settings.STRIPE_LIVE_PAYMENTS_ENABLED = False
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post(f'/api/enrollment/career-enrollments/{self.enrollment.pk}/complete/')
+
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertEqual(response.data['detail'], 'Stripe no está configurado para el modo de pruebas.')
+
+    @patch('enrollment.views.settings')
+    def test_complete_rejects_stripe_test_mode_with_live_prefixed_key(self, mock_settings):
+        self.fee.status = 'pending'
+        self.fee.save(update_fields=['status'])
+
+        mock_settings.DEBUG = False
+        mock_settings.STRIPE_PAYMENT_MODE = 'stripe_test'
+        mock_settings.STRIPE_SECRET_KEY = 'sk_live_123'
+        mock_settings.STRIPE_PUBLIC_KEY = 'pk_test_123'
+        mock_settings.STRIPE_WEBHOOK_SECRET = 'whsec_test_123'
+        mock_settings.STRIPE_LIVE_PAYMENTS_ENABLED = False
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post(f'/api/enrollment/career-enrollments/{self.enrollment.pk}/complete/')
+
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertEqual(response.data['detail'], 'Stripe no está configurado para el modo de pruebas.')
+
+    @patch('enrollment.views._get_stripe_module')
+    @patch('enrollment.views.settings')
+    def test_confirm_payment_accepts_frontend_get_polling(self, mock_settings, mock_get_stripe_module):
+        self.fee.status = 'pending'
+        self.fee.stripe_payment_intent_id = 'pi_test_123'
+        self.fee.stripe_payment_status = 'pending'
+        self.fee.save(update_fields=['status', 'stripe_payment_intent_id', 'stripe_payment_status'])
+
+        mock_settings.DEBUG = False
+        mock_settings.STRIPE_PAYMENT_MODE = 'stripe_test'
+        mock_settings.STRIPE_SECRET_KEY = 'sk_test_123'
+        mock_settings.STRIPE_WEBHOOK_SECRET = 'whsec_test_123'
+
+        stripe_lib = MagicMock()
+        stripe_lib.PaymentIntent.retrieve.return_value = {'status': 'succeeded'}
+        mock_get_stripe_module.return_value = stripe_lib
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get(f'/api/enrollment/career-enrollments/{self.enrollment.pk}/confirm-payment/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['status'], 'paid')
+        self.assertEqual(response.data['stripe_status'], 'succeeded')
+
+    @patch('enrollment.views._get_stripe_module')
+    @patch('enrollment.views.settings')
+    def test_pay_uses_stripe_test_mode_when_configured(self, mock_settings, mock_get_stripe_module):
+        self.fee.status = 'pending'
+        self.fee.save(update_fields=['status'])
+
+        mock_settings.DEBUG = False
+        mock_settings.STRIPE_PAYMENT_MODE = 'stripe_test'
+        mock_settings.STRIPE_SECRET_KEY = 'sk_test_123'
+        mock_settings.STRIPE_PUBLIC_KEY = 'pk_test_123'
+        mock_settings.STRIPE_WEBHOOK_SECRET = 'whsec_test_123'
+        mock_settings.STRIPE_LIVE_PAYMENTS_ENABLED = False
+
+        stripe_lib = MagicMock()
+        stripe_lib.PaymentIntent.create.return_value = {
+            'id': 'pi_test_123',
+            'client_secret': 'secret_test_123',
+        }
+        mock_get_stripe_module.return_value = stripe_lib
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post(f'/api/enrollment/career-enrollments/{self.enrollment.pk}/pay/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['mode'], 'stripe_test')
+        self.assertEqual(response.data['client_secret'], 'secret_test_123')
+
+    @patch('enrollment.views._get_stripe_module')
+    @patch('enrollment.views.settings')
+    def test_pay_uses_stripe_test_mode_without_webhook_secret(self, mock_settings, mock_get_stripe_module):
+        self.fee.status = 'pending'
+        self.fee.save(update_fields=['status'])
+
+        mock_settings.DEBUG = False
+        mock_settings.STRIPE_PAYMENT_MODE = 'stripe_test'
+        mock_settings.STRIPE_SECRET_KEY = 'sk_test_123'
+        mock_settings.STRIPE_PUBLIC_KEY = 'pk_test_123'
+        mock_settings.STRIPE_WEBHOOK_SECRET = ''
+        mock_settings.STRIPE_LIVE_PAYMENTS_ENABLED = False
+
+        stripe_lib = MagicMock()
+        stripe_lib.PaymentIntent.create.return_value = {
+            'id': 'pi_test_123',
+            'client_secret': 'secret_test_123',
+        }
+        mock_get_stripe_module.return_value = stripe_lib
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post(f'/api/enrollment/career-enrollments/{self.enrollment.pk}/pay/')
+
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertEqual(response.data['detail'], 'Stripe no está configurado para el modo de pruebas.')
+
+    @patch('enrollment.views.settings')
+    def test_pay_rejects_stripe_test_mode_with_live_prefixed_key(self, mock_settings):
+        self.fee.status = 'pending'
+        self.fee.save(update_fields=['status'])
+
+        mock_settings.DEBUG = False
+        mock_settings.STRIPE_PAYMENT_MODE = 'stripe_test'
+        mock_settings.STRIPE_SECRET_KEY = 'sk_live_123'
+        mock_settings.STRIPE_PUBLIC_KEY = 'pk_test_123'
+        mock_settings.STRIPE_WEBHOOK_SECRET = 'whsec_test_123'
+        mock_settings.STRIPE_LIVE_PAYMENTS_ENABLED = False
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post(f'/api/enrollment/career-enrollments/{self.enrollment.pk}/pay/')
+
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertEqual(response.data['detail'], 'Stripe no está configurado para el modo de pruebas.')
+
+    @patch('enrollment.views.settings')
+    def test_pay_rejects_stripe_test_mode_without_runtime_credentials(self, mock_settings):
+        self.fee.status = 'pending'
+        self.fee.save(update_fields=['status'])
+
+        mock_settings.DEBUG = False
+        mock_settings.STRIPE_PAYMENT_MODE = 'stripe_test'
+        mock_settings.STRIPE_SECRET_KEY = ''
+        mock_settings.STRIPE_PUBLIC_KEY = 'pk_test_123'
+        mock_settings.STRIPE_WEBHOOK_SECRET = 'whsec_test_123'
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post(f'/api/enrollment/career-enrollments/{self.enrollment.pk}/pay/')
+
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertEqual(response.data['detail'], 'Stripe no está configurado para el modo de pruebas.')
+
+    @patch('enrollment.views._get_stripe_module')
+    @patch('enrollment.views.settings')
+    def test_stripe_webhook_marks_enrollment_paid(self, mock_settings, mock_get_stripe_module):
+        self.fee.status = 'pending'
+        self.fee.stripe_payment_intent_id = 'pi_test_123'
+        self.fee.stripe_payment_status = 'pending'
+        self.fee.save(update_fields=['status', 'stripe_payment_intent_id', 'stripe_payment_status'])
+
+        mock_settings.DEBUG = False
+        mock_settings.STRIPE_PAYMENT_MODE = 'stripe_test'
+        mock_settings.STRIPE_SECRET_KEY = 'sk_test_123'
+        mock_settings.STRIPE_WEBHOOK_SECRET = 'whsec_test_123'
+
+        stripe_lib = MagicMock()
+        stripe_lib.Webhook.construct_event.return_value = {
+            'type': 'payment_intent.succeeded',
+            'data': {
+                'object': {
+                    'id': 'pi_test_123',
+                    'metadata': {
+                        'enrollment_fee_id': str(self.fee.pk),
+                        'career_enrollment_id': str(self.enrollment.pk),
+                        'source': 'enrollment',
+                        'payment_mode': 'stripe_test',
+                        'student_id': str(self.student.pk),
+                    },
+                }
+            },
+        }
+        mock_get_stripe_module.return_value = stripe_lib
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post(
+            '/api/enrollment/stripe/webhook/',
+            data='{}',
+            content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='sig_test_123',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.fee.refresh_from_db()
+        self.enrollment.refresh_from_db()
+        self.assertEqual(self.fee.status, 'paid')
+        self.assertEqual(self.fee.stripe_payment_status, 'paid')
+        self.assertEqual(self.enrollment.status, 'active')
+
+    @patch('enrollment.views._get_stripe_module')
+    @patch('enrollment.views.settings')
+    def test_stripe_webhook_rejects_mismatched_payment_intent_id(self, mock_settings, mock_get_stripe_module):
+        self.fee.status = 'pending'
+        self.fee.stripe_payment_intent_id = 'pi_test_123'
+        self.fee.stripe_payment_status = 'pending'
+        self.fee.save(update_fields=['status', 'stripe_payment_intent_id', 'stripe_payment_status'])
+
+        mock_settings.DEBUG = False
+        mock_settings.STRIPE_PAYMENT_MODE = 'stripe_test'
+        mock_settings.STRIPE_SECRET_KEY = 'sk_test_123'
+        mock_settings.STRIPE_WEBHOOK_SECRET = 'whsec_test_123'
+
+        stripe_lib = MagicMock()
+        stripe_lib.Webhook.construct_event.return_value = {
+            'type': 'payment_intent.succeeded',
+            'data': {
+                'object': {
+                    'id': 'pi_other_999',
+                    'metadata': {
+                        'enrollment_fee_id': str(self.fee.pk),
+                        'career_enrollment_id': str(self.enrollment.pk),
+                        'source': 'enrollment',
+                        'payment_mode': 'stripe_test',
+                        'student_id': str(self.student.pk),
+                    },
+                }
+            },
+        }
+        mock_get_stripe_module.return_value = stripe_lib
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post(
+            '/api/enrollment/stripe/webhook/',
+            data='{}',
+            content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='sig_test_123',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.fee.refresh_from_db()
+        self.enrollment.refresh_from_db()
+        self.assertEqual(self.fee.stripe_payment_status, 'pending')
+        self.assertEqual(self.fee.status, 'pending')
+        self.assertEqual(self.enrollment.status, 'active')
+
+    @patch('enrollment.views._get_stripe_module')
+    @patch('enrollment.views.settings')
+    def test_stripe_webhook_rejects_missing_metadata_fields(self, mock_settings, mock_get_stripe_module):
+        self.fee.status = 'pending'
+        self.fee.stripe_payment_intent_id = 'pi_test_123'
+        self.fee.stripe_payment_status = 'pending'
+        self.fee.save(update_fields=['status', 'stripe_payment_intent_id', 'stripe_payment_status'])
+
+        mock_settings.DEBUG = False
+        mock_settings.STRIPE_PAYMENT_MODE = 'stripe_test'
+        mock_settings.STRIPE_SECRET_KEY = 'sk_test_123'
+        mock_settings.STRIPE_WEBHOOK_SECRET = 'whsec_test_123'
+
+        stripe_lib = MagicMock()
+        stripe_lib.Webhook.construct_event.return_value = {
+            'type': 'payment_intent.succeeded',
+            'data': {
+                'object': {
+                    'id': 'pi_test_123',
+                    'metadata': {
+                        'enrollment_fee_id': str(self.fee.pk),
+                        'career_enrollment_id': str(self.enrollment.pk),
+                    },
+                }
+            },
+        }
+        mock_get_stripe_module.return_value = stripe_lib
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post(
+            '/api/enrollment/stripe/webhook/',
+            data='{}',
+            content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='sig_test_123',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.fee.refresh_from_db()
+        self.enrollment.refresh_from_db()
+        self.assertEqual(self.fee.stripe_payment_status, 'pending')
+        self.assertEqual(self.fee.status, 'pending')
+
+    @patch('enrollment.views._get_stripe_module')
+    @patch('enrollment.views.settings')
+    def test_stripe_webhook_marks_enrollment_failed(self, mock_settings, mock_get_stripe_module):
+        self.fee.status = 'pending'
+        self.fee.stripe_payment_intent_id = 'pi_test_123'
+        self.fee.stripe_payment_status = 'pending'
+        self.fee.save(update_fields=['status', 'stripe_payment_intent_id', 'stripe_payment_status'])
+
+        mock_settings.DEBUG = False
+        mock_settings.STRIPE_PAYMENT_MODE = 'stripe_test'
+        mock_settings.STRIPE_SECRET_KEY = 'sk_test_123'
+        mock_settings.STRIPE_WEBHOOK_SECRET = 'whsec_test_123'
+
+        stripe_lib = MagicMock()
+        stripe_lib.Webhook.construct_event.return_value = {
+            'type': 'payment_intent.payment_failed',
+            'data': {
+                'object': {
+                    'id': 'pi_test_123',
+                    'metadata': {
+                        'enrollment_fee_id': str(self.fee.pk),
+                        'career_enrollment_id': str(self.enrollment.pk),
+                        'source': 'enrollment',
+                        'payment_mode': 'stripe_test',
+                        'student_id': str(self.student.pk),
+                    },
+                }
+            },
+        }
+        mock_get_stripe_module.return_value = stripe_lib
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post(
+            '/api/enrollment/stripe/webhook/',
+            data='{}',
+            content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='sig_test_123',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.fee.refresh_from_db()
+        self.enrollment.refresh_from_db()
+        self.assertEqual(self.fee.status, 'failed')
+        self.assertEqual(self.fee.stripe_payment_status, 'failed')
+        self.assertEqual(self.enrollment.status, 'active')

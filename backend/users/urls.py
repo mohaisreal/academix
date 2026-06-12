@@ -16,6 +16,7 @@ from .views import (
     IdentityDocumentUploadView,
     IdentityVerificationListView,
     IdentityVerificationReviewView,
+    IdentityVerificationDocumentDownloadView,
 )
 
 app_name = 'users'
@@ -46,6 +47,7 @@ urlpatterns = [
     path('students/', StudentListView.as_view(), name='student_list'),
     path('teachers/', TeacherListView.as_view(), name='teacher_list'),
     path('identity-verifications/', IdentityVerificationListView.as_view(), name='identity_verification_list'),
+    path('identity-verification-documents/<int:document_id>/download/', IdentityVerificationDocumentDownloadView.as_view(), name='identity_verification_document_download'),
     path('identity-verifications/<int:user_id>/review/', IdentityVerificationReviewView.as_view(), name='identity_verification_review'),
 
     path('<int:pk>/', UserDetailView.as_view(), name='user_detail'),

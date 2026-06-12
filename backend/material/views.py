@@ -3,6 +3,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from django.http import FileResponse
+from django.utils.text import get_valid_filename
+from urllib.parse import quote
 
 from .models import Material
 from .serializers import MaterialSerializer
@@ -33,7 +36,11 @@ class MaterialViewSet(viewsets.ModelViewSet):
         return Material.objects.select_related('cls', 'uploaded_by').all()
 
     def perform_create(self, serializer):
-        material = serializer.save(uploaded_by=self.request.user)
+        file_obj = self.request.FILES.get('file')
+        material = serializer.save(
+            uploaded_by=self.request.user,
+            original_filename=file_obj.name if file_obj else '',
+        )
         subject_name = material.cls.subject.name
         uploaded_by = self.request.user.get_full_name() or self.request.user.username
         enrollments = (
@@ -68,3 +75,19 @@ class MaterialViewSet(viewsets.ModelViewSet):
         materials = Material.objects.filter(cls_id=class_id).select_related('cls', 'uploaded_by')
         serializer = self.get_serializer(materials, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['get'], url_path='download')
+    def download(self, request, pk=None):
+        material = self.get_object()
+        if not material.file:
+            return Response({'error': 'File not found'}, status=404)
+
+        try:
+            file_handle = material.file.open('rb')
+        except FileNotFoundError:
+            return Response({'error': 'File not found'}, status=404)
+
+        filename = get_valid_filename(material.original_filename or material.file.name.rsplit('/', 1)[-1])
+        response = FileResponse(file_handle, as_attachment=True, filename=filename)
+        response['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote(filename)}"
+        return response
