@@ -32,6 +32,13 @@ else
 fi
 
 echo "Running migrations..."
+cd /app
+
+if [ ! -f manage.py ]; then
+    echo "Error: /app/manage.py is missing"
+    exit 1
+fi
+
 python manage.py migrate --noinput
 
 if [ "$DJANGO_ENV" = "production" ]; then

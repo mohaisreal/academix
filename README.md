@@ -255,7 +255,7 @@ BACKEND_API_URL=http://backend:8000/api
 CSRF_TRUSTED_ORIGINS=https://academix.cv
 FRONTEND_URL=https://academix.cv
 
-POSTGRES_DB=academix
+POSTGRES_DB=academix_db
 POSTGRES_USER=academix_user
 POSTGRES_PASSWORD=secure-password
 POSTGRES_HOST=db

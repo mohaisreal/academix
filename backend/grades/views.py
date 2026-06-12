@@ -191,8 +191,13 @@ class StudentFilesView(APIView):
 
     def get(self, request):
         if request.user.role == 't':
+            active_period = get_active_academic_period()
+            if not active_period:
+                return Response([])
             enrollments = (
-                ClassEnrollment.objects.filter(cls__teacher=request.user, status='enrolled')
+                ClassEnrollment.objects.filter(
+                    cls__teacher=request.user, status='enrolled', cls__period=active_period
+                )
                 .select_related('student', 'cls__subject', 'cls__teacher')
                 .order_by('student_id', 'cls_id')
             )

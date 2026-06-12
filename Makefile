@@ -8,8 +8,8 @@ RED := \033[0;31m
 NC := \033[0m # No Color
 
 # Comandos de Docker Compose
-DOCKER_COMPOSE_DEV := docker compose -f docker-compose.dev.yml
-DOCKER_COMPOSE_PROD := docker compose -f docker-compose.prod.yml
+DOCKER_COMPOSE_DEV := docker compose --env-file .env.dev -f docker-compose.dev.yml
+DOCKER_COMPOSE_PROD := docker compose --env-file .env.prod -f docker-compose.prod.yml
 
 help:
 	@echo "$(CYAN)Academix Docker Deployment - Available Commands$(NC)"

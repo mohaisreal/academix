@@ -180,6 +180,7 @@ class CareerEnrollmentTests(TestCase):
         self.client.force_authenticate(user=self.student)
         response = self.client.post(f'/api/enrollment/career-enrollments/{enrollment.pk}/pay/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['mode'], 'demo')
         self.assertEqual(response.data['enrollment']['status'], 'active')
 
         fee = EnrollmentFee.objects.get(career_enrollment=enrollment)

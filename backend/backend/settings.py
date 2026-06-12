@@ -218,14 +218,40 @@ def _missing_production_stripe_settings(
     public_key: str,
     webhook_secret: str,
     live_payments_enabled: bool,
+    live_payments_raw: str,
 ) -> list[str]:
-    required_stripe = {
-        'STRIPE_SECRET_KEY': secret_key,
-        'STRIPE_PUBLIC_KEY': public_key,
-        'STRIPE_WEBHOOK_SECRET': webhook_secret,
-        'STRIPE_LIVE_PAYMENTS_ENABLED': live_payments_enabled,
-    }
-    return [key for key, value in required_stripe.items() if not value]
+    missing = []
+    if not live_payments_raw:
+        missing.append('STRIPE_LIVE_PAYMENTS_ENABLED')
+    if not public_key:
+        missing.append('STRIPE_PUBLIC_KEY')
+    if live_payments_enabled:
+        if not secret_key:
+            missing.append('STRIPE_SECRET_KEY')
+        if not webhook_secret:
+            missing.append('STRIPE_WEBHOOK_SECRET')
+    return missing
+
+
+# ============================================================================
+# CONFIGURACIÓN DE CORREO ELECTRÓNICO
+# ============================================================================
+
+EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = env('EMAIL_HOST', default='localhost')
+EMAIL_PORT = env.int('EMAIL_PORT', default=25)
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=False)
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@academix.local')
+FRONTEND_URL = env('FRONTEND_URL', default='https://academix.cv')
+
+STRIPE_SECRET_KEY = env('STRIPE_SECRET_KEY', default='')
+STRIPE_PUBLIC_KEY = env('STRIPE_PUBLIC_KEY', default='')
+STRIPE_WEBHOOK_SECRET = env('STRIPE_WEBHOOK_SECRET', default='')
+# STRIPE_LIVE_PAYMENTS_ENABLED must be explicitly declared in production.
+STRIPE_LIVE_PAYMENTS_ENABLED_RAW = env('STRIPE_LIVE_PAYMENTS_ENABLED', default='')
+STRIPE_LIVE_PAYMENTS_ENABLED = env.bool('STRIPE_LIVE_PAYMENTS_ENABLED', default=not DEBUG)
 
 if not DEBUG:
     missing_aws = _missing_production_media_settings(
@@ -256,6 +282,7 @@ if not DEBUG:
         STRIPE_PUBLIC_KEY,
         STRIPE_WEBHOOK_SECRET,
         STRIPE_LIVE_PAYMENTS_ENABLED,
+        STRIPE_LIVE_PAYMENTS_ENABLED_RAW,
     )
     if missing_stripe:
         raise ImproperlyConfigured(
@@ -401,19 +428,6 @@ CORS_ALLOW_METHODS = [
 ]
 
 
-# ============================================================================
-# CONFIGURACIÓN DE CORREO ELECTRÓNICO
-# ============================================================================
-
-EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
-EMAIL_HOST = env('EMAIL_HOST', default='localhost')
-EMAIL_PORT = env.int('EMAIL_PORT', default=25)
-EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=False)
-EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@academix.local')
-FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:4321')
-
 # Ajustes de admisiones
 ADMISSION_EXPIRY_DAYS = env.int('ADMISSION_EXPIRY_DAYS', default=7)
 ENROLLMENT_BASE_FEE = env.float('ENROLLMENT_BASE_FEE', default=800.00)
@@ -425,18 +439,6 @@ ENROLLMENT_BASE_FEE = env.float('ENROLLMENT_BASE_FEE', default=800.00)
 
 # Orígenes de confianza de CSRF para peticiones AJAX
 CSRF_TRUSTED_ORIGINS = env('CSRF_TRUSTED_ORIGINS')
-
-
-# ============================================================================
-# CONFIGURACIÓN DE STRIPE
-# ============================================================================
-
-STRIPE_SECRET_KEY = env('STRIPE_SECRET_KEY', default='')
-STRIPE_PUBLIC_KEY = env('STRIPE_PUBLIC_KEY', default='')
-STRIPE_WEBHOOK_SECRET = env('STRIPE_WEBHOOK_SECRET', default='')
-# Los pagos reales con Stripe solo se permiten fuera de DEBUG. La marca permite a producción
-# desactivar pagos durante incidencias sin activarlos en desarrollo.
-STRIPE_LIVE_PAYMENTS_ENABLED = env.bool('STRIPE_LIVE_PAYMENTS_ENABLED', default=not DEBUG)
 
 
 # ============================================================================

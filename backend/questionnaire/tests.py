@@ -1,8 +1,10 @@
 from django.test import TestCase
 from rest_framework.test import APIClient
+from unittest.mock import patch
 
 from users.models import User
 from questionnaire.models import Questionnaire
+from questionnaire.views import _is_production_stripe_enabled
 
 
 class QuestionnaireSearchPaginationTests(TestCase):
@@ -19,3 +21,11 @@ class QuestionnaireSearchPaginationTests(TestCase):
         data = response.json()
         self.assertEqual(data['count'], 1)
         self.assertEqual(data['results'][0]['title'], 'Ingreso medicina')
+
+
+class QuestionnaireStripeModeTests(TestCase):
+    def test_demo_mode_remains_active_when_live_payments_are_disabled(self):
+        with patch('questionnaire.views.settings.DEBUG', False), patch(
+            'questionnaire.views.settings.STRIPE_LIVE_PAYMENTS_ENABLED', False
+        ):
+            self.assertFalse(_is_production_stripe_enabled())

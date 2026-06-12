@@ -48,7 +48,19 @@ describe('ENV contract root files', () => {
     expect(env.CSRF_TRUSTED_ORIGINS).toBe('https://academix.cv');
     expect(env.FRONTEND_URL).toBe('https://academix.cv');
     expect(env.PUBLIC_API_URL).toBe('/api');
+    expect(env.BACKEND_API_URL).toBe('http://backend:8000/api');
     expect(env.ALLOWED_HOSTS).not.toContain('localhost');
+  });
+
+  it('.env.prod.example mantiene placeholders seguros para secretos de producción', () => {
+    const env = readEnvFile('.env.prod.example');
+    expect(env.AWS_ACCESS_KEY_ID).toBe('replace-with-aws-access-key');
+    expect(env.AWS_SECRET_ACCESS_KEY).toBe('replace-with-aws-secret-key');
+    expect(env.POSTGRES_PASSWORD).toBe('replace-with-strong-password');
+    expect(env.EMAIL_HOST_USER).toBe('');
+    expect(env.EMAIL_HOST_PASSWORD).toBe('');
+    expect(env.STRIPE_SECRET_KEY).toBe('');
+    expect(env.STRIPE_PUBLIC_KEY).toBe('');
   });
 
   it('.env.prod incluye conexión AWS/S3 para archivos', () => {
@@ -75,6 +87,9 @@ describe('Frontend dev server host config', () => {
     expect(content).toContain('host: true');
     expect(content).toContain('port: 4321');
     expect(content).toContain('academix.cv');
+    expect(content).toContain('localhost');
+    expect(content).toContain('127.0.0.1');
+    expect(content).toContain('::1');
     expect(content).not.toContain('vite.config.js');
   });
 });

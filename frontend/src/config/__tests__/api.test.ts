@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { resolveApiBaseUrl, resolveWebSocketBaseUrl } from '../api';
 
 describe('resolveApiBaseUrl', () => {
-  it('usa localhost en development cuando no hay env', () => {
-    expect(resolveApiBaseUrl({ MODE: 'development' })).toBe('http://localhost:8000/api');
+  it('usa /api por defecto cuando no hay env', () => {
+    expect(resolveApiBaseUrl({ MODE: 'development' })).toBe('/api');
   });
 
   it('usa /api en production cuando no hay env', () => {
@@ -29,7 +29,7 @@ describe('resolveApiBaseUrl', () => {
     ).toBe('http://backend:8000/api');
   });
 
-  it('convierte la base API a websocket ws en desarrollo', () => {
+  it('usa ws://localhost:8000 para websocket en desarrollo cuando la API es relativa', () => {
     expect(resolveWebSocketBaseUrl({ MODE: 'development', DEV: true })).toBe('ws://localhost:8000');
   });
 

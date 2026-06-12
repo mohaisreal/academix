@@ -1,3 +1,8 @@
+import importlib
+import os
+from unittest.mock import patch
+
+from django.core.exceptions import ImproperlyConfigured
 from django.test import SimpleTestCase
 
 from backend.settings import (
@@ -30,8 +35,20 @@ class ProductionStorageConfigTests(SimpleTestCase):
 class ProductionStripeConfigTests(SimpleTestCase):
     def test_missing_production_stripe_settings_are_reported(self):
         self.assertEqual(
-            _missing_production_stripe_settings('', '', '', False),
-            ['STRIPE_SECRET_KEY', 'STRIPE_PUBLIC_KEY', 'STRIPE_WEBHOOK_SECRET', 'STRIPE_LIVE_PAYMENTS_ENABLED'],
+            _missing_production_stripe_settings('', '', '', False, ''),
+            ['STRIPE_LIVE_PAYMENTS_ENABLED', 'STRIPE_PUBLIC_KEY'],
+        )
+
+    def test_missing_live_flag_is_reported_even_when_demo_mode_is_allowed(self):
+        self.assertEqual(
+            _missing_production_stripe_settings('sk_test', 'pk_test', '', False, ''),
+            ['STRIPE_LIVE_PAYMENTS_ENABLED'],
+        )
+
+    def test_live_stripe_requires_secret_and_webhook(self):
+        self.assertEqual(
+            _missing_production_stripe_settings('', 'pk_test', '', True, 'True'),
+            ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'],
         )
 
 
@@ -52,3 +69,70 @@ class ProductionEmailConfigTests(SimpleTestCase):
             _missing_production_email_settings('django.core.mail.backends.console.EmailBackend', 'smtp.example.com', 587, 'user', 'pass'),
             ['EMAIL_BACKEND'],
         )
+
+    def test_settings_imports_with_smtp_backend_before_production_validation(self):
+        env = {
+            'DEBUG': 'False',
+            'SECRET_KEY': 'test-secret-key',
+            'ALLOWED_HOSTS': 'localhost',
+            'CORS_ALLOWED_ORIGINS': 'http://localhost:4321',
+            'CSRF_TRUSTED_ORIGINS': 'http://localhost:4321',
+            'DATABASE_URL': 'sqlite:///tmp.db',
+            'JWT_ACCESS_TOKEN_LIFETIME': '60',
+            'JWT_REFRESH_TOKEN_LIFETIME': '1440',
+            'ADMISSION_WAITLIST_GRACE_DAYS': '3',
+            'AWS_ACCESS_KEY_ID': 'aws-key',
+            'AWS_SECRET_ACCESS_KEY': 'aws-secret',
+            'AWS_STORAGE_BUCKET_NAME': 'bucket',
+            'AWS_S3_REGION_NAME': 'eu-west-1',
+            'EMAIL_BACKEND': 'django.core.mail.backends.smtp.EmailBackend',
+            'EMAIL_HOST': 'smtp.example.com',
+            'EMAIL_PORT': '587',
+            'EMAIL_HOST_USER': 'user',
+            'EMAIL_HOST_PASSWORD': 'pass',
+            'STRIPE_SECRET_KEY': 'sk_test',
+            'STRIPE_PUBLIC_KEY': 'pk_test',
+            'STRIPE_WEBHOOK_SECRET': 'whsec_test',
+            'STRIPE_LIVE_PAYMENTS_ENABLED': 'True',
+        }
+
+        with patch.dict(os.environ, env, clear=False):
+            import backend.settings as settings_module
+
+            reloaded = importlib.reload(settings_module)
+
+        self.assertEqual(reloaded.EMAIL_BACKEND, 'django.core.mail.backends.smtp.EmailBackend')
+
+    def test_invalid_production_email_backend_raises_improperly_configured(self):
+        env = {
+            'DEBUG': 'False',
+            'SECRET_KEY': 'test-secret-key',
+            'ALLOWED_HOSTS': 'localhost',
+            'CORS_ALLOWED_ORIGINS': 'http://localhost:4321',
+            'CSRF_TRUSTED_ORIGINS': 'http://localhost:4321',
+            'DATABASE_URL': 'sqlite:///tmp.db',
+            'JWT_ACCESS_TOKEN_LIFETIME': '60',
+            'JWT_REFRESH_TOKEN_LIFETIME': '1440',
+            'ADMISSION_WAITLIST_GRACE_DAYS': '3',
+            'AWS_ACCESS_KEY_ID': 'aws-key',
+            'AWS_SECRET_ACCESS_KEY': 'aws-secret',
+            'AWS_STORAGE_BUCKET_NAME': 'bucket',
+            'AWS_S3_REGION_NAME': 'eu-west-1',
+            'EMAIL_BACKEND': 'django.core.mail.backends.console.EmailBackend',
+            'EMAIL_HOST': 'smtp.example.com',
+            'EMAIL_PORT': '587',
+            'EMAIL_HOST_USER': 'user',
+            'EMAIL_HOST_PASSWORD': 'pass',
+            'STRIPE_SECRET_KEY': 'sk_test',
+            'STRIPE_PUBLIC_KEY': 'pk_test',
+            'STRIPE_WEBHOOK_SECRET': 'whsec_test',
+            'STRIPE_LIVE_PAYMENTS_ENABLED': 'True',
+        }
+
+        with patch.dict(os.environ, env, clear=False):
+            import backend.settings as settings_module
+
+            with self.assertRaises(ImproperlyConfigured) as context:
+                importlib.reload(settings_module)
+
+        self.assertIn('EMAIL_BACKEND', str(context.exception))

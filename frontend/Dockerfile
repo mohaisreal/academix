@@ -53,17 +53,30 @@ EXPOSE 4321
 # El código fuente se montará como volumen para recarga en caliente
 CMD ["pnpm", "run", "dev", "--", "--host"]
 
-# Etapa 3: etapa de producción (Nginx)
-FROM nginx:1.27-alpine AS production
+# Etapa 3: etapa de producción (Astro SSR standalone)
+FROM node:20-alpine AS production
 
-# Copia la configuración de Nginx
-COPY nginx.conf /etc/nginx/nginx.conf
+WORKDIR /app
 
-# Copia los ficheros estáticos construidos desde la etapa de construcción
-COPY --from=builder /app/dist /usr/share/nginx/html
+ENV NODE_ENV=production
+ENV HOST=0.0.0.0
+ENV PORT=4321
 
-# Expose port 80
-EXPOSE 80
+ENV PNPM_HOME="/pnpm"
+ENV PNPM_STORE_DIR="/pnpm/store"
+ENV PATH="$PNPM_HOME:$PATH"
 
-# Arranca Nginx
-CMD ["nginx", "-g", "daemon off;"]
+RUN corepack enable
+
+# Copia los manifiestos e instala solo dependencias de runtime para SSR
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --prod --frozen-lockfile
+
+# Copia la salida SSR standalone construida
+COPY --from=builder /app/dist ./dist
+
+# Expone el puerto del servidor SSR de Astro
+EXPOSE 4321
+
+# Arranca el servidor Node generado por Astro
+CMD ["node", "dist/server/entry.mjs"]

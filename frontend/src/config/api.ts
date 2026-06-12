@@ -16,9 +16,7 @@ export function resolveApiBaseUrl(env: RuntimeEnv): string {
   const backend = env.BACKEND_API_URL?.trim();
   if (backend) return normalizeApiUrl(backend);
 
-  const isDev = env.DEV === true || env.MODE === 'development';
-  const devLocalApi = 'http://localhost:8000' + '/api';
-  return isDev ? devLocalApi : '/api';
+  return '/api';
 }
 
 export function resolveWebSocketBaseUrl(env: RuntimeEnv): string {
@@ -26,7 +24,14 @@ export function resolveWebSocketBaseUrl(env: RuntimeEnv): string {
   if (apiBaseUrl.startsWith('http://') || apiBaseUrl.startsWith('https://')) {
     return apiBaseUrl.replace(/\/api$/, '').replace(/^http:/, 'ws:').replace(/^https:/, 'wss:');
   }
-  return window.location.protocol === 'https:' ? `wss://${window.location.host}` : `ws://${window.location.host}`;
+  const isDev = env.DEV === true || env.MODE === 'development';
+  if (isDev) return 'ws://localhost:8000';
+
+  if (typeof window !== 'undefined') {
+    return window.location.protocol === 'https:' ? `wss://${window.location.host}` : `ws://${window.location.host}`;
+  }
+
+  return 'ws://localhost';
 }
 
 const API_URL = resolveApiBaseUrl(import.meta.env as RuntimeEnv);

@@ -38,6 +38,8 @@ ENV DJANGO_ENV=production
 
 COPY . .
 
+RUN test -f /app/manage.py
+
 # Crea un usuario sin privilegios de root
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser

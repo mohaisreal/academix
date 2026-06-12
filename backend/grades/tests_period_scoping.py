@@ -106,3 +106,47 @@ class StatisticsPeriodScopingTests(TestCase):
         self.assertEqual(response.data['career_stats'][0]['classes'], 2)
         self.assertEqual(response.data['career_stats'][0]['student_count'], 1)
         self.assertEqual(response.data['enrolment_by_status'].get('active'), 1)
+
+
+class TeacherStudentFilesPeriodScopingTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.teacher = User.objects.create_user(username='teacher_files_period', password='pass12345', role='t')
+        self.student = User.objects.create_user(username='student_files_period', password='pass12345', role='s')
+        self.career = Career.objects.create(name='Ingeniería', code='ING-TFP')
+
+        self.old_period = AcademicPeriod.objects.create(
+            name='2025-A', code='2025ATFP', start_date='2025-01-01', end_date='2025-06-30', is_active=False
+        )
+        self.new_period = AcademicPeriod.objects.create(
+            name='2026-A', code='2026ATFP', start_date='2026-01-01', end_date='2026-06-30', is_active=True
+        )
+
+        self.old_subject = Subject.objects.create(name='Historia', code='HIS-TFP', career=self.career)
+        self.new_subject = Subject.objects.create(name='Física', code='FIS-TFP', career=self.career)
+
+        self.old_class = Class.objects.create(subject=self.old_subject, period=self.old_period, teacher=self.teacher)
+        self.new_class = Class.objects.create(subject=self.new_subject, period=self.new_period, teacher=self.teacher)
+
+        ClassEnrollment.objects.create(student=self.student, cls=self.old_class, status='enrolled')
+        ClassEnrollment.objects.create(student=self.student, cls=self.new_class, status='enrolled')
+
+    def test_teacher_files_returns_only_active_period_classes(self):
+        self.client.force_authenticate(user=self.teacher)
+
+        response = self.client.get('/api/grades/files/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        student_row = next(row for row in response.data if row['id'] == self.student.id)
+        self.assertEqual({c['id'] for c in student_row['classes']}, {self.new_class.id})
+
+    def test_teacher_files_returns_empty_when_no_active_period(self):
+        self.new_period.is_active = False
+        self.new_period.save(update_fields=['is_active'])
+
+        self.client.force_authenticate(user=self.teacher)
+
+        response = self.client.get('/api/grades/files/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, [])

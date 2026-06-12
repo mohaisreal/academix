@@ -10,7 +10,7 @@ services:
       - academix-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -34,6 +34,8 @@ services:
     networks:
       - academix-network
     depends_on:
+      static-volume-init:
+        condition: service_completed_successfully
       db:
         condition: service_healthy
     restart: unless-stopped
@@ -50,24 +52,35 @@ services:
       dockerfile: Dockerfile
       target: production
       args:
-        PUBLIC_API_URL: ${PUBLIC_API_URL}
-        BACKEND_API_URL: ${BACKEND_API_URL}
+        PUBLIC_API_URL: /api
+        BACKEND_API_URL: http://backend:8000/api
     container_name: academix-frontend-prod
     env_file:
       - .env.prod
     ports:
-      - "80:80"
+      - "80:4321"
     depends_on:
       - backend
     networks:
       - academix-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:4321/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
+
+  static-volume-init:
+    image: alpine:3.20
+    container_name: academix-static-volume-init-prod
+    command: sh -c "mkdir -p /app/staticfiles && chown -R 1000:1000 /app/staticfiles"
+    user: root
+    volumes:
+      - static_data:/app/staticfiles
+    networks:
+      - academix-network
+    restart: "no"
 
 volumes:
   postgres_data:
